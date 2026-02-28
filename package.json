@@ -1,0 +1,13 @@
+{
+  "name": "architect-ai",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node api/generate.js",
+    "start": "node api/generate.js"
+  },
+  "dependencies": {
+    "@google/genai": "^1.42.0"
+  }
+}
