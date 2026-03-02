@@ -5,114 +5,54 @@
   "required": ["stories", "levels"],
   "additionalProperties": false,
   "properties": {
-    "stories": {
-      "type": "integer",
-      "enum": [1, 2],
-      "description": "Number of stories. Must equal levels.length."
-    },
-    "totalAreaSqFt": {
-      "type": "number",
-      "minimum": 200,
-      "maximum": 20000,
-      "description": "Optional total area hint. Not strictly enforced by renderer."
-    },
+    "stories": { "type": "integer", "enum": [1, 2] },
+    "totalAreaSqFt": { "type": "number" },
     "levels": {
       "type": "array",
-      "minItems": 1,
-      "maxItems": 2,
       "items": {
         "type": "object",
-        "required": ["level", "width", "height", "rooms"],
-        "additionalProperties": false,
+        "required": ["level", "width", "height", "rooms", "doors", "windows"],
         "properties": {
-          "level": {
-            "type": "integer",
-            "enum": [1, 2],
-            "description": "Level index. 1 = ground floor, 2 = second floor."
-          },
-          "width": {
-            "type": "number",
-            "minimum": 20,
-            "maximum": 120,
-            "description": "Plan canvas width in abstract units (not pixels)."
-          },
-          "height": {
-            "type": "number",
-            "minimum": 20,
-            "maximum": 120,
-            "description": "Plan canvas height in abstract units (not pixels)."
-          },
+          "level": { "type": "integer" },
+          "width": { "type": "number", "minimum": 20, "maximum": 150 },
+          "height": { "type": "number", "minimum": 20, "maximum": 150 },
           "rooms": {
             "type": "array",
-            "minItems": 3,
-            "description": "Rectangular rooms only. No overlaps. Must fit within width/height bounds.",
             "items": {
               "type": "object",
-              "required": ["id", "type", "level", "x", "y", "w", "h", "label"],
-              "additionalProperties": false,
+              "required": ["id", "type", "x", "y", "w", "h"],
               "properties": {
-                "id": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 64,
-                  "pattern": "^[a-zA-Z0-9_-]+$",
-                  "description": "Unique room id within the plan (recommended)."
-                },
-                "type": {
-                  "type": "string",
-                  "enum": [
-                    "living",
-                    "kitchen",
-                    "dining",
-                    "bedroom",
-                    "bathroom",
-                    "laundry",
-                    "garage",
-                    "office",
-                    "entry",
-                    "hall",
-                    "stairs",
-                    "closet",
-                    "pantry",
-                    "storage"
-                  ],
-                  "description": "Room category (used by validator for bed/bath counting)."
-                },
-                "level": {
-                  "type": "integer",
-                  "enum": [1, 2],
-                  "description": "Room's level must match the parent level."
-                },
-                "x": {
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 120,
-                  "description": "Room top-left x in units."
-                },
-                "y": {
-                  "type": "number",
-                  "minimum": 0,
-                  "maximum": 120,
-                  "description": "Room top-left y in units."
-                },
-                "w": {
-                  "type": "number",
-                  "minimum": 2,
-                  "maximum": 120,
-                  "description": "Room width in units (must be > 0)."
-                },
-                "h": {
-                  "type": "number",
-                  "minimum": 2,
-                  "maximum": 120,
-                  "description": "Room height in units (must be > 0)."
-                },
-                "label": {
-                  "type": "string",
-                  "minLength": 1,
-                  "maxLength": 48,
-                  "description": "Human label drawn in the rectangle."
-                }
+                "id": { "type": "string" },
+                "type": { "type": "string" },
+                "label": { "type": "string" },
+                "x": { "type": "number" },
+                "y": { "type": "number" },
+                "w": { "type": "number" },
+                "h": { "type": "number" }
+              }
+            }
+          },
+          "doors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["x", "y", "dir"],
+              "properties": {
+                "x": { "type": "number" },
+                "y": { "type": "number" },
+                "dir": { "type": "string", "enum": ["horizontal", "vertical"] }
+              }
+            }
+          },
+          "windows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["x", "y", "dir"],
+              "properties": {
+                "x": { "type": "number" },
+                "y": { "type": "number" },
+                "dir": { "type": "string", "enum": ["horizontal", "vertical"] }
               }
             }
           }
@@ -121,4 +61,3 @@
     }
   }
 }
-

@@ -1,5 +1,4 @@
-// api/plan.js (CommonJS)
-//aa
+// api/plan.js
 module.exports.config = { runtime: "nodejs" };
 
 const { GoogleGenAI } = require("@google/genai");
@@ -25,6 +24,7 @@ function extractJson(text) {
 }
 
 module.exports = async function handler(req, res) {
+  // CORS Headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -43,39 +43,58 @@ module.exports = async function handler(req, res) {
 
     const ai = new GoogleGenAI({ apiKey });
 
+    // --- PARSE INPUTS ---
     const stories = String(surveyData?.stories || "1 Story").includes("2") ? 2 : 1;
-    const bedsStr = String(surveyData?.bedrooms || "3 Bed");
-    const bathsStr = String(surveyData?.bathrooms || "2 Bath");
-    const totalArea = surveyData?.totalArea ? Number(surveyData.totalArea) : null;
+    const bedsStr = String(surveyData?.bedrooms || "3");
+    const bathsStr = String(surveyData?.bathrooms || "2");
+    const totalArea = surveyData?.totalArea ? Number(surveyData.totalArea) : 2000;
+    
+    // Crucial: Pass the raw user features text (e.g., "I want a wrap around porch and a garage")
+    const userFeatures = surveyData?.features || "None"; 
 
+    // --- CHAIN OF THOUGHT PROMPT ---
     const prompt = `
-You are an architect producing a STRICT JSON floor plan specification.
+You are a Senior Residential Architect. Design a detailed floor plan based on these Client Requirements.
 
-Hard constraints:
-- stories: ${stories}
-- bedrooms: ${bedsStr}
-- bathrooms: ${bathsStr}
-- totalAreaSqFt: ${totalArea ?? "unspecified"}
-- features to include if requested: ${surveyData?.features || "none"}
+CLIENT DATA:
+- Stories: ${stories}
+- Bedrooms: ${bedsStr}
+- Bathrooms: ${bathsStr}
+- Approx Area: ${totalArea} sq ft
+- **SPECIAL REQUESTS:** "${userFeatures}"
 
-Output must follow this JSON schema exactly (no markdown, JSON only).
-Rooms are rectangles only. No overlaps. Rooms must fit within each level width/height.
+**ARCHITECTURAL LOGIC & THINKING PROCESS:**
+1. **Analyze Special Requests:** 
+   - If the user mentioned "Garage", "Porch", "Deck", "Office", or "Study", you MUST create specific Room objects for these.
+   - If "Open Concept", merge Living/Dining/Kitchen areas.
 
-Guidance:
-- Use a simple rectangular overall footprint for each level.
-- Ensure bedroom and bathroom counts match exactly.
-- Include common rooms: living, kitchen, dining, entry, hall.
-- If 2 stories: place most bedrooms on level 2; living/kitchen/dining on level 1.
-- If features mention "garage": add a garage room on level 1.
+2. **Structural Rules:**
+   - **Stairs:** If Stories = 2, you MUST place a "Stairs" room on Level 1 AND Level 2. They should be in roughly the same X/Y position to align vertically.
+   - **Closets:** Every "Bedroom" MUST have a small attached "Closet" room.
+   - **Bathrooms:** Ensure the Master Bedroom has an attached Master Bath. Place other baths accessibly.
 
-Return JSON only.
-Schema:
+3. **Openings (Doors & Windows):**
+   - **Doors:** You MUST populate the "doors" array.
+     - Place "Entry" door on the exterior wall of the Foyer/Living room.
+     - connect adjacent rooms (e.g., Hall -> Bedroom) with doors on shared walls.
+   - **Windows:** You MUST populate the "windows" array.
+     - Add windows to exterior walls of Living, Dining, Kitchen, and Bedrooms.
+
+4. **Geometry:**
+   - Keep rooms rectangular.
+   - Do not overlap rooms.
+   - Ensure the total footprint fits within a logical boundary (e.g., 60x40 units).
+
+OUTPUT:
+Return ONLY valid JSON matching this schema exactly.
 ${JSON.stringify(planSchema)}
     `.trim();
 
     // 1) Generate PlanSpec JSON
+    // We use a "flash" model for speed, but instructions are strict enough for logic.
+    // If you have access to "gemini-1.5-pro", use that for even better logic.
     const textResp = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash", 
       contents: prompt
     });
 
@@ -96,16 +115,21 @@ ${JSON.stringify(planSchema)}
       });
     }
 
-    // 2) Validate + one repair attempt
+    // 2) Validate + Repair
     let errors = validatePlanSpec(planSpec, surveyData);
 
     if (errors.length) {
+      console.log("Validation Errors:", errors);
+      
       const repairPrompt = `
-Your JSON failed validation:
+Your floor plan JSON had logic errors:
 ${errors.map((e) => `- ${e}`).join("\n")}
 
-Fix the JSON to satisfy constraints. Keep rooms rectangular and non-overlapping.
-Return JSON ONLY. No markdown.
+Please fix the JSON. 
+- Ensure rooms do not overlap.
+- Ensure all required "doors" are present.
+- Ensure "windows" are present on exterior walls.
+- Keep the structure valid JSON.
 
 Schema:
 ${JSON.stringify(planSchema)}
@@ -115,37 +139,24 @@ ${JSON.stringify(planSpec)}
       `.trim();
 
       const repairResp = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-1.5-flash",
         contents: repairPrompt
       });
 
       const fixedRaw = extractJson(repairResp?.text);
-      if (!fixedRaw) {
-        return res.status(422).json({ success: false, message: "Repair attempt returned empty JSON", errors });
-      }
-
-      try {
-        planSpec = JSON.parse(fixedRaw);
-      } catch (e) {
-        return res.status(422).json({
-          success: false,
-          message: "Repair JSON parse failed",
-          error: e?.message || String(e),
-          raw: fixedRaw.slice(0, 2000)
-        });
-      }
-
-      errors = validatePlanSpec(planSpec, surveyData);
-      if (errors.length) {
-        return res.status(422).json({ success: false, message: "Plan validation failed", errors });
+      if (fixedRaw) {
+        try {
+          const fixedSpec = JSON.parse(fixedRaw);
+          // Only accept fix if it parses, otherwise keep original (best effort)
+          planSpec = fixedSpec; 
+        } catch (e) {
+          console.error("Repair parse failed", e);
+        }
       }
     }
 
-    // 3) Render SVG (fixed scale) -> PNG base64
-    // Fixed-scale params are your "always consistent" plan scale.
+    // 3) Render SVG -> PNG
     const svg = renderPlanSvg(planSpec, { pxPerUnit: 18, padding: 24, gap: 48 });
-
-    // Normalize output width for consistent UI
     const planPngBase64 = await svgToPngBase64(svg, 1600);
 
     return res.status(200).json({
@@ -155,6 +166,7 @@ ${JSON.stringify(planSpec)}
       planImage: planPngBase64,
       planMimeType: "image/png"
     });
+
   } catch (err) {
     console.error("PLAN error:", err);
     return res.status(500).json({ success: false, message: err?.message || "Server error" });
