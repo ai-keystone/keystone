@@ -1,103 +1,95 @@
-// api/generate.js (CommonJS)
-//aacode
-module.exports.config = { runtime: "nodejs" };
-
+// api/generate.js
 const planHandler = require("./plan");
 const renderHandler = require("./render");
 
-// Helper to run a handler internally without HTTP.
-// Supports handlers that are sync or async, and that call res.json/res.send/res.end.
+// Helper to run handlers internally
 function runHandler(handler, body) {
   return new Promise((resolve) => {
     const req = { method: "POST", body };
-
     const res = {
       headers: {},
       statusCode: 200,
-
-      setHeader(k, v) {
-        this.headers[k] = v;
-      },
-      status(code) {
-        this.statusCode = code;
-        return this;
-      },
-      json(payload) {
-        resolve({ status: this.statusCode || 200, payload });
-      },
-      send(payload) {
-        resolve({ status: this.statusCode || 200, payload });
-      },
-      end() {
-        resolve({ status: this.statusCode || 200, payload: null });
-      }
+      setHeader(k, v) { this.headers[k] = v; },
+      status(code) { this.statusCode = code; return this; },
+      json(payload) { resolve({ status: this.statusCode || 200, payload }); },
+      send(payload) { resolve({ status: this.statusCode || 200, payload }); },
+      end() { resolve({ status: this.statusCode || 200, payload: null }); }
     };
 
-    // Execute handler and catch thrown errors (sync or async)
-    Promise.resolve(handler(req, res)).catch((err) => {
-      resolve({
-        status: 500,
-        payload: { success: false, message: err?.message || "Internal handler error" }
+    try {
+      Promise.resolve(handler(req, res)).catch((err) => {
+        resolve({ status: 500, payload: { success: false, message: err?.message || "Internal error" } });
       });
-    });
+    } catch (err) {
+      resolve({ status: 500, payload: { success: false, message: err?.message || "Fatal handler error" } });
+    }
   });
 }
 
 module.exports = async function handler(req, res) {
-  // CORS
+  // CORS Headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") {
-    return res.status(405).json({ success: false, message: "Method Not Allowed" });
-  }
+  
+  // Notice we return 200 instead of 405 now to force the error through Vercel's gateway
+  if (req.method !== "POST") return res.status(200).json({ success: false, message: "Method Not Allowed. Use POST." });
 
   try {
-    const body = req.body || {};
-    const { surveyData, passkey, refinementInput } = body;
-
-    if (!surveyData || typeof surveyData !== "object") {
-      return res.status(400).json({ success: false, message: "Missing surveyData" });
+    // 1. BULLETPROOF BODY PARSING
+    let body = req.body;
+    
+    // If Vercel passed it as a raw buffer, convert to string
+    if (Buffer.isBuffer(body)) {
+      body = body.toString('utf8');
+    }
+    
+    // If it's a string, parse it to JSON
+    if (typeof body === "string") {
+      try {
+        body = JSON.parse(body);
+      } catch (e) {
+        return res.status(200).json({ success: false, message: "Vercel Gateway Error: Invalid JSON format received." });
+      }
     }
 
-    // --- AUTH ---
-    const basicKeys = (process.env.VALID_PASSKEYS || "")
-      .split(",")
-      .map((k) => k.trim())
-      .filter(Boolean);
+    body = body || {};
+    const { surveyData, passkey, refinementInput } = body;
 
-    const premiumKeys = (process.env.VALID_PASSKEYS_PREMIUM || "")
-      .split(",")
-      .map((k) => k.trim())
-      .filter(Boolean);
+    // 2. Validate Data
+    if (!surveyData) {
+      return res.status(200).json({ success: false, message: "Missing surveyData object in request body." });
+    }
 
+    // 3. Authenticate
+    const basicKeys = (process.env.VALID_PASSKEYS || "").split(",").map(k => k.trim()).filter(Boolean);
+    const premiumKeys = (process.env.VALID_PASSKEYS_PREMIUM || "").split(",").map(k => k.trim()).filter(Boolean);
     const allValidKeys = [...basicKeys, ...premiumKeys];
 
     if (!allValidKeys.includes(passkey)) {
-      return res.status(401).json({ success: false, message: "Unauthorized: Invalid Passkey" });
+      return res.status(200).json({ success: false, message: "Unauthorized: Invalid Passkey." });
     }
 
-    // Ensure GOOGLE_API_KEY exists (plan/render will also likely need it)
     if (!process.env.GOOGLE_API_KEY) {
-      return res.status(500).json({ success: false, message: "Missing GOOGLE_API_KEY" });
+      return res.status(200).json({ success: false, message: "Server configuration error: Missing GOOGLE_API_KEY." });
     }
 
-    // 1) Generate Plan (deterministic SVG->PNG)
+    // 4. Generate Plan
     const planRes = await runHandler(planHandler, { surveyData });
-
     if (!planRes.payload || planRes.payload.success !== true) {
-      const message = planRes.payload?.message || "Plan failed";
-      return res.status(planRes.status || 500).json({ success: false, message, details: planRes.payload });
+      return res.status(200).json({ 
+        success: false, 
+        message: planRes.payload?.message || "Plan API Failed",
+        details: planRes.payload 
+      });
     }
 
-    // 2) Generate 3D Render conditioned on plan image
+    // 5. Generate Render
     const mergedSurveyData = {
       ...surveyData,
-      features: refinementInput
-        ? `${surveyData.features || ""}. Refinement: ${refinementInput}`
-        : (surveyData.features || "")
+      features: refinementInput ? `${surveyData.features || ""}. Refinement: ${refinementInput}` : (surveyData.features || "")
     };
 
     const renderRes = await runHandler(renderHandler, {
@@ -106,32 +98,25 @@ module.exports = async function handler(req, res) {
     });
 
     if (!renderRes.payload || renderRes.payload.success !== true) {
-      const message = renderRes.payload?.message || "Render failed";
-      return res.status(renderRes.status || 500).json({ success: false, message, details: renderRes.payload });
+      return res.status(200).json({ 
+        success: false, 
+        message: renderRes.payload?.message || "Render API Failed",
+        details: renderRes.payload 
+      });
     }
 
-    // Response contract for frontend
+    // 6. Success Output
     return res.status(200).json({
       success: true,
-
-      // 2D plan
       planImage: planRes.payload.planImage,
-      planMimeType: planRes.payload.planMimeType || "image/png",
-      planSpec: planRes.payload.planSpec || null,
-
-      // 3D render
+      planMimeType: "image/png",
+      planSpec: planRes.payload.planSpec,
       image: renderRes.payload.image,
       mimeType: renderRes.payload.mimeType || "image/png",
-
-      // UI flags
-      isRefined: !!refinementInput,
-      prompt: "2-step: PlanSpec->SVG->PNG + Render conditioned on plan image",
-      brief: renderRes.payload.brief || null
+      isRefined: !!refinementInput
     });
+
   } catch (err) {
-    console.error("GENERATE error:", err);
-    return res.status(500).json({ success: false, message: err?.message || "Server error" });
+    return res.status(200).json({ success: false, message: "Fatal Server Crash", error: err?.message });
   }
-
 };
-
