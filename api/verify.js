@@ -1,6 +1,6 @@
 // api/verify.js (CommonJS)
 
-module.exports.config = { runtime: "nodejs" };
+
 
 module.exports = function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");

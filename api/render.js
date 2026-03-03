@@ -1,5 +1,5 @@
 // api/render.js
-module.exports.config = { runtime: "nodejs" };
+
 const { GoogleGenAI } = require("@google/genai");
 
 function stripDataUrlPrefix(b64) {

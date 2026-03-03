@@ -1,5 +1,4 @@
 // api/render.js (CommonJS)
-module.exports.config = { runtime: "nodejs" };
 
 const { GoogleGenAI } = require("@google/genai");
 
