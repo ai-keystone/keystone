@@ -27,39 +27,40 @@ module.exports = async function handler(req, res) {
     const isRevision = chatHistory.length > 0;
 
     const prompt = `
-You are a Senior Residential Architect. Output a high-detail JSON floor plan.
-Target Total Area: ${area} sq ft. 
+You are a Senior Residential Architect. Output a high-reasoning JSON floor plan.
+Target Total Area: ${area} sq ft (Sum of all levels).
 
-**ARCHITECTURAL THINKING REQUIREMENTS:**
-1. **Circulation:** Do not just place boxes. Create logical hallways. Rooms should not be used as the only way to get to other rooms.
-2. **Privacy:** Bedrooms should be separated from loud living areas by hallways or closets.
-3. **Natural Light:** Every Living Room and Bedroom MUST have at least one window on an exterior wall.
-4. **Zoning:** Group wet zones (Kitchen, Laundry, Baths) where possible for realistic plumbing logic.
-5. **Incremental Edits:** ${isRevision ? "STRICTLY use the previous JSON as your foundation. Move walls and resize rooms ONLY as requested by the user. Maintain room IDs." : "Create a fresh, high-reasoning layout from scratch."}
+**STRICT ARCHITECTURAL LOGIC:**
+1. **Zoning:** Group wet zones (Kitchen/Baths) and separate quiet zones (Bedrooms) from social areas.
+2. **Circulation:** Use hallways. Do not walk through one bedroom to get to another.
+3. **Natural Light:** Bedrooms and Living areas MUST have a window on an exterior wall.
+4. **Revisions:** ${isRevision ? "Treat the previous JSON as the fixed foundation. Modify only specific rooms as requested while keeping the overall logic consistent." : "Create a fresh, professional layout."}
 
-**STRICT MATH:**
-- Level 1 + Level 2 areas MUST equal approx ${area} sq ft.
+**SPECS:**
+- Shape: ${surveyData.shape}.
+- Levels: ${surveyData.stories}.
+- Garage: ${surveyData.garage}.
 - 1 Unit = 1 Foot.
-- Shape: ${surveyData.shape}. (Square = W:H 1:1, Rectangular = W:H 1.5:1 or more).
 
-**DATA STRUCTURE:**
-- Root: { "levels": [ { "level": 1, "width": 60, "height": 40, "rooms": [], "doors": [], "windows": [] } ] }
-- Room objects MUST include "label" and "type".
-
-OUTPUT VALID JSON ONLY.
+JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 40, "rooms": [], "doors": [], "windows": [] } ] }
     `.trim();
 
     let contents = [...chatHistory];
     contents.push({ role: "user", parts: [{ text: prompt }] });
 
-    // Using Gemini 3.1 Pro for high-reasoning architectural drafting
+    // Using Gemini 3.1 Pro Preview with "Low Thinking" for optimal speed/quality
     const result = await ai.models.generateContent({
       model: "gemini-3.1-pro-preview", 
-      contents: contents
+      contents: contents,
+      config: {
+        thinkingConfig: {
+          thinkingLevel: "low",
+        }
+      },
     });
 
     const rawJson = extractJson(result?.text);
-    if (!rawJson) throw new Error("AI failed to return valid architectural data.");
+    if (!rawJson) throw new Error("AI failed to return valid architectural JSON.");
 
     const planSpec = JSON.parse(rawJson);
     const svgString = renderPlanSvg(planSpec);
@@ -72,7 +73,7 @@ OUTPUT VALID JSON ONLY.
     });
 
   } catch (err) {
-    console.error("Plan Pro Error:", err);
+    console.error("Plan Pro Thinking Error:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 };
