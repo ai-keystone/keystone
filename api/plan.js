@@ -25,31 +25,30 @@ module.exports = async function handler(req, res) {
     const { surveyData, chatHistory = [] } = body;
     const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-    // Determine if we are in REVISION mode
     const isRevision = chatHistory.length > 0;
+    // Use Pro for revisions (logic), Flash for new (speed)
     const activeModel = isRevision ? "gemini-3.1-pro-preview" : "gemini-3-flash-preview";
 
     const basePrompt = `
-You are a Senior Architect. Generate a JSON floor plan. 1 Unit = 1 Foot.
-Target Area: ${surveyData.totalArea} sq ft. Stories: ${surveyData.stories}. Shape: ${surveyData.shape}.
+You are a Senior Architect. Output a JSON floor plan. 1 Unit = 1 Foot.
+Target Area: ${surveyData.totalArea} sq ft. Stories: ${surveyData.stories}.
 
-**STRICT RULES:**
-1. **LABELS:** Every room object MUST have a "label" (e.g., "Master Bedroom") and a "type".
-2. **STAIRS:** For 2 stories, you MUST have identical "stairs" rooms on both levels.
-3. **DOORS:** Every room needs a door. Vertical walls = "vertical", horizontal = "horizontal".
+**RULES:**
+1. **LABELS:** Every room MUST have a "label" (e.g., "Kitchen") and a "type".
+2. **STAIRS:** If 2 stories, you MUST have identical "stairs" rooms on both levels.
+3. **DOORS/WINDOWS:** Every room needs a door. Use "dir": "vertical" or "horizontal".
 
 ${isRevision ? `
 **REVISION MODE:** 
 The user is providing feedback on the PREVIOUS plan in the chat history.
 1. DO NOT start from scratch. Use the last JSON provided as your base.
-2. If the user asks for a change (e.g., "add labels" or "make kitchen bigger"), modify the EXISTING room coordinates and labels.
-3. Keep room IDs identical where possible.
-4. Maintain the current footprint unless the user asks to change the shape.
+2. If the user asks for a change, modify the EXISTING coordinates and labels.
+3. Keep room IDs identical.
 ` : `
 **NEW PLAN MODE:** Create a new plan following the specs.
 `}
 
-OUTPUT VALID JSON ONLY.
+OUTPUT VALID JSON ONLY. DO NOT WRAP IN A PARENT KEY.
     `.trim();
 
     let contents = [...chatHistory];
@@ -61,13 +60,36 @@ OUTPUT VALID JSON ONLY.
     });
 
     const rawJson = extractJson(result?.text);
-    if (!rawJson) throw new Error("AI failed to return JSON.");
+    if (!rawJson) throw new Error("AI failed to return a JSON string.");
 
     let planSpec = JSON.parse(rawJson);
-    if (planSpec.planSpec) planSpec = planSpec.planSpec;
-    else if (planSpec.plan) planSpec = planSpec.plan;
 
-    if (!planSpec.levels) throw new Error("AI JSON missing levels.");
+    // --- AGGRESSIVE AUTO-FINDER ---
+    // This finds the "levels" array wherever the AI hid it
+    let finalLevels = null;
+    
+    if (Array.isArray(planSpec.levels)) {
+        finalLevels = planSpec.levels;
+    } else {
+        // Search one level deep for any key containing the array
+        for (let key in planSpec) {
+            if (planSpec[key] && Array.isArray(planSpec[key].levels)) {
+                finalLevels = planSpec[key].levels;
+                break;
+            } else if (key === "levels" && Array.isArray(planSpec[key])) {
+                finalLevels = planSpec[key];
+                break;
+            }
+        }
+    }
+
+    if (!finalLevels) {
+        console.error("Failed to find levels. AI Output:", planSpec);
+        throw new Error("AI failed to structure the levels correctly. Please try a more specific prompt.");
+    }
+
+    // Standardize back to planSpec.levels
+    planSpec = { ...planSpec, levels: finalLevels };
 
     const svg = renderPlanSvg(planSpec);
     const planImageBase64 = await svgToPngBase64(svg, 1600);
@@ -85,7 +107,7 @@ OUTPUT VALID JSON ONLY.
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("Final Plan Error:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 };
