@@ -1,7 +1,7 @@
 // api/plan.js
 const { GoogleGenAI } = require("@google/genai");
 const { renderPlanSvg } = require("../lib/renderPlanSvg");
-const logic = require("../lib/planningLogic.json"); // Your Research Logic file
+const logic = require("../lib/planningLogic.json");
 
 function extractJson(text) {
   if (!text) return null;
@@ -25,42 +25,39 @@ module.exports = async function handler(req, res) {
 
     const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
     
-    // --- PATH FIXES FOR RESEARCH LOGIC ---
-    const garageKey = surveyData.garage === "None" ? "NONE" : 
-                     surveyData.garage.includes("1") ? "ONE_CAR" : 
-                     surveyData.garage.includes("2") ? "TWO_CAR" : "THREE_CAR";
+    // Calculate targeted math for the prompt
+    const totalArea = Number(surveyData.totalArea) || 2000;
+    const stories = String(surveyData.stories).includes("2") ? 2 : 1;
+    const areaPerLevel = Math.floor(totalArea / stories);
     
-    // Safety check for logic paths
-    const garageSpecs = logic.garagePresets?.[garageKey] || {};
-    const footprintPatterns = logic.templates?.footprintZoningPatterns || {};
-    const shapeKey = surveyData.shape.toUpperCase().replace("-","_");
-    const shapeSpecs = footprintPatterns[shapeKey] || footprintPatterns.RECTANGULAR;
-    
-    // Fix: adjacencyGraph is inside rules
-    const adjacencies = logic.rules?.adjacencyGraph || [];
+    // Geometry logic for the prompt
+    const shapeConstraint = surveyData.shape === "Square" 
+        ? `SQUARE: Width and Height must be approx ${Math.floor(Math.sqrt(areaPerLevel))}'` 
+        : `RECTANGULAR: Width must be approx ${Math.floor(Math.sqrt(areaPerLevel * 1.8))}' and Height approx ${Math.floor(Math.sqrt(areaPerLevel / 1.8))}'`;
 
     const prompt = `
-You are a Senior Architect using the "ResidentialPlanningLogic" framework. 
-Generate a high-reasoning JSON floor plan. 1 Unit = 1 Foot.
+You are a Senior Architect. Output a JSON floor plan. 1 Unit = 1 Foot.
 
-**USER'S SPECIFIC REQUEST (PRIORITY #1):** 
-"${surveyData.features}"
+**MATHEMATICAL CONSTRAINTS (MANDATORY):**
+1. **Total Area Budget:** ${totalArea} sq ft total.
+2. **Level Budget:** Exactly ${areaPerLevel} sq ft per level.
+3. **Dimensions:** ${shapeConstraint}. 
+   - Level Width * Level Height MUST equal ${areaPerLevel} (approx +/- 5%).
+   - Room areas (w * h) sum MUST NOT exceed level area.
 
-**ARCHITECTURAL FRAMEWORK (PRIORITY #2):**
-1. **Garage:** Use these dimensions: ${JSON.stringify(garageSpecs)}. Place on Level 1.
-2. **Adjacencies:** Follow these core relations:
-   ${adjacencies.filter(a => a.weight >= 9).map(a => `- ${a.from} to ${a.to}: ${a.relation}`).join("\n")}
-3. **Zoning Pattern:** Use the "${shapeSpecs.circulationTemplate}" strategy.
-4. **Dimensions:** Bedrooms min 10ft wide. Hallways 3.5ft wide.
+**PLANNING LOGIC:**
+1. **Zoning:** Use the "ResidentialPlanningLogic" adjacency rules. 
+2. **Specific Requests:** ${surveyData.features}. 
+   - If user asks for a bedroom on Level 1, it MUST be there.
+3. **Stairs:** If 2 levels, place "STAIRS" (approx 8'x10') at the EXACT same x,y coordinates on both levels.
+4. **Garage:** Size for ${surveyData.garage}. Place on Level 1.
 
-**STRICT MATH:**
-- Level 1 Area + Level 2 Area MUST equal approx ${surveyData.totalArea} sq ft.
-- Total width/height must fit the ${surveyData.shape} footprint.
+**OUTPUT RULES:**
+- NO markdown. NO conversational text.
+- JSON must contain "levels" array. 
+- Every room must have a unique "id", "label", and "type".
 
-**REVISION LOGIC:**
-${chatHistory.length > 0 ? "DO NOT start from scratch. Modify the PREVIOUS JSON in history based on the user's latest comment." : "Create a new professional draft."}
-
-JSON Output: { "levels": [ { "level": 1, "width": 60, "height": 40, "rooms": [], "doors": [], "windows": [] } ] }
+JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 22, "rooms": [...] } ] }
     `.trim();
 
     let contents = [...chatHistory];
@@ -75,7 +72,6 @@ JSON Output: { "levels": [ { "level": 1, "width": 60, "height": 40, "rooms": [],
     const rawJson = extractJson(result?.text);
     const planSpec = JSON.parse(rawJson);
 
-    // Standardize & Render
     if (planSpec.levels) {
         planSpec.levels.forEach((lvl, i) => { if(!lvl.level) lvl.level = i + 1; });
     }
@@ -90,7 +86,6 @@ JSON Output: { "levels": [ { "level": 1, "width": 60, "height": 40, "rooms": [],
     });
 
   } catch (err) {
-    console.error("Plan Logic Error:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 };
