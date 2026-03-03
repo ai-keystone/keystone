@@ -1,109 +1,96 @@
-// api/render.js (CommonJS)
-
+// api/plan.js (CommonJS)
 const { GoogleGenAI } = require("@google/genai");
+const { renderPlanSvg } = require("../lib/renderPlanSvg");
+const { svgToPngBase64 } = require("../lib/svgToPng");
 
-function stripDataUrlPrefix(b64) {
-  if (!b64) return b64;
-  const idx = b64.indexOf("base64,");
-  return idx >= 0 ? b64.slice(idx + "base64,".length) : b64;
+function extractJson(text) {
+  if (!text) return null;
+  let t = String(text).trim().replace(/```json/gi, "").replace(/```/g, "").trim();
+  const firstBrace = t.indexOf("{");
+  const lastBrace = t.lastIndexOf("}");
+  if (firstBrace >= 0 && lastBrace > firstBrace) t = t.slice(firstBrace, lastBrace + 1);
+  return t;
 }
 
 module.exports = async function handler(req, res) {
-  // CORS Headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
   if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ success: false, message: "Method Not Allowed" });
-
+  
   try {
-    const apiKey = process.env.GOOGLE_API_KEY;
-    if (!apiKey) return res.status(500).json({ success: false, message: "Missing GOOGLE_API_KEY" });
+    let body = req.body;
+    if (typeof body === "string") body = JSON.parse(body);
 
-    const { surveyData, planImageBase64 } = req.body || {};
-    if (!planImageBase64) return res.status(400).json({ success: false, message: "Missing plan image" });
+    // Get the survey data AND the chat history from the frontend
+    const { surveyData, chatHistory = [] } = body;
+    if (!surveyData) return res.status(400).json({ success: false, message: "Missing surveyData" });
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-    // 1. Extract Specific User Inputs
-    const style = surveyData?.materials || "Modern Residential";
-    const location = surveyData?.location || "A scenic landscape";
-    const features = surveyData?.features || ""; 
-    const stories = String(surveyData?.stories || "1").includes("2") ? "2-Story" : "1-Story";
+    const totalArea = Number(surveyData.totalArea) || 2500;
+    const stories = String(surveyData.stories).includes("2") ? 2 : 1;
+    const shape = surveyData.shape || "Rectangular";
+    const garage = surveyData.garage || "None";
+    
+    // Architect Logic Generation
+    const prompt = `
+You are an Expert Architect. Generate a JSON floor plan.
+1 Unit = 1 Foot.
 
-    // 2. Construct the "Hard" Prompt to fix perspective and include user features
-    const renderPrompt = `
-You are an architectural visualizer. 
+**CLIENT REQUIREMENTS:**
+- Target Total Area: ~${totalArea} sq ft.
+- Stories: ${stories}.
+- Bedrooms: ${surveyData.bedrooms}. Bathrooms: ${surveyData.bathrooms}.
+- Garage: ${garage}.
+- House Shape: ${shape}. 
+- Special Features: ${surveyData.features || "None"}
 
-**INPUT:** The attached image is a 2D floor plan footprint.
-**TASK:** Create a Photorealistic 3D EXTERIOR RENDER of the house represented by this plan.
+**MATH & SHAPE LOGIC:**
+- If Shape is "Square": Make Level width (W) and height (H) roughly equal in feet.
+- If Shape is "Rectangular": Make Level width (W) roughly 1.5x to 2x the height (H).
+- Ensure total square footage (W * H across all levels) is close to ${totalArea}.
+- The sum of (room.w * room.h) must fit inside the level W * H.
 
-**DESIGN SPECIFICATIONS (Must Follow):**
-1. **Structure:** ${stories} Residential House. 
-2. **Style:** ${style}.
-3. **Location/Environment:** ${location}.
-4. **MANDATORY FEATURES:** The client specifically requested: "${features}". You MUST include these elements visually in the scene (e.g., if they asked for a fence, draw a fence; if a wrap-around porch, draw it).
-5. **View:** Ground-level eye view from the street.
+**RULES:**
+- Rooms must be rectangles. Coordinates (x,y) start at top-left (0,0).
+- If Garage is 1 Car (12x20), 2 Car (20x20), 3 Car (30x20).
+- Add "doors" and "windows".
 
-**RESTRICTIONS (CRITICAL):**
-- DO NOT generate a top-down view.
-- DO NOT overlay the floor plan lines on the house.
-- DO NOT show any text, labels, or dimensions.
-- The house shape must roughly match the footprint provided.
-
-Create ONE single, high-end, magazine-quality photograph of the house exterior.
+OUTPUT JSON ONLY matching the schema. Do not output markdown.
     `.trim();
 
-    // 3. Generate Image using the correct Gemini 3 Pro Image model
-    const imgResp = await ai.models.generateContent({
-      model: "gemini-3-pro-image-preview",
-      contents: [
-        {
-          role: "user",
-          parts: [
-            { text: renderPrompt },
-            {
-              inlineData: {
-                data: stripDataUrlPrefix(planImageBase64),
-                mimeType: "image/png"
-              }
-            }
-          ]
-        }
-      ]
+    // Setup history for memory revisions
+    let contents = [...chatHistory];
+    contents.push({ role: "user", parts: [{ text: prompt }] });
+
+    const textResp = await ai.models.generateContent({
+      model: "gemini-3-flash-preview", 
+      contents: contents
     });
 
-    let imageBase64 = null;
-    let mimeType = "image/png";
+    const raw = extractJson(textResp?.text);
+    if (!raw) return res.status(500).json({ success: false, message: "Empty AI response" });
 
-    const parts = imgResp?.candidates?.[0]?.content?.parts || [];
-    for (const part of parts) {
-      if (part?.inlineData?.data) {
-        imageBase64 = part.inlineData.data;
-        mimeType = part.inlineData.mimeType || "image/png";
-        break;
-      }
-    }
+    const planSpec = JSON.parse(raw);
+    const svg = renderPlanSvg(planSpec);
+    const planImageBase64 = await svgToPngBase64(svg, 1600);
 
-    if (!imageBase64) {
-      return res.status(500).json({
-        success: false,
-        message: "No image returned.",
-        debug: {
-          hasCandidates: !!imgResp?.candidates?.length,
-          partsCount: parts.length
-        }
-      });
-    }
+    // Save this interaction to history to send back to frontend
+    const newHistory = [
+        ...contents,
+        { role: "model", parts: [{ text: JSON.stringify(planSpec) }] }
+    ];
 
     return res.status(200).json({
       success: true,
-      image: imageBase64,
-      mimeType
+      planSpec,
+      planImage: planImageBase64,
+      chatHistory: newHistory
     });
+
   } catch (err) {
-    console.error("RENDER error:", err);
-    return res.status(500).json({ success: false, message: err?.message || "Server error" });
+    console.error(err);
+    return res.status(500).json({ success: false, message: err?.message || "Server Error" });
   }
 };
