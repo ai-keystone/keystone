@@ -50,11 +50,11 @@ JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 40, "rooms": 
 
     // Using Gemini 3.1 Pro Preview with "Low Thinking" for optimal speed/quality
     const result = await ai.models.generateContent({
-      model: "gemini-3.1-pro-preview", 
+      model: "gemini-3-flash-preview", 
       contents: contents,
       config: {
         thinkingConfig: {
-          thinkingLevel: "low",
+          thinkingLevel: "high",
         }
       },
     });
