@@ -282,7 +282,7 @@ const { motion, useScroll, useTransform, AnimatePresence } = FM;
   });
 
   const [status, setStatus] = useState("idle");
-  const [result, setResult] = useState({ planImage: null, renderImage: null });
+  const [result, setResult] = useState({ planSvg: null, renderImage: null, planSpec: null });
   
   // UI States
   const [chatHistory, setChatHistory] = useState([]);
@@ -373,13 +373,28 @@ const handleGeneratePlan = async (e, isRefinement = false) => {
   };
 
   // Download Helper
-  const downloadImage = (url, filename) => {
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+const downloadImage = (content, filename) => {
+    // If it's the 3D Render (Base64)
+    if (content.startsWith('data:image')) {
+        const link = document.createElement("a");
+        link.href = content;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } 
+    // If it's the Blueprint (SVG String)
+    else {
+        const blob = new Blob([content], {type: 'image/svg+xml'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
   };
 
   return (
@@ -392,13 +407,14 @@ const handleGeneratePlan = async (e, isRefinement = false) => {
         <motion.div 
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setZoomImage(null)}
-            className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex items-center justify-center p-8"
+            className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex items-center justify-center p-8 cursor-zoom-out"
         >
             {zoomImage.startsWith('<svg') ? (
-                <div className="bg-white p-10 max-w-5xl w-full overflow-auto" dangerouslySetInnerHTML={{ __html: zoomImage }} />
+                <div className="bg-white p-10 max-w-5xl w-full overflow-auto shadow-2xl" dangerouslySetInnerHTML={{ __html: zoomImage }} />
             ) : (
-                <img src={zoomImage} className="max-h-screen max-w-full object-contain" />
+                <img src={zoomImage} className="max-h-screen max-w-full object-contain" alt="Zoom" />
             )}
+            <button className="absolute top-6 right-6 text-white/50 hover:text-white text-4xl font-light">&times;</button>
         </motion.div>
     )}
 </AnimatePresence>
@@ -523,21 +539,42 @@ const handleGeneratePlan = async (e, isRefinement = false) => {
                 {/* Images Container */}
                 <div className={`grid ${status === "render-ready" ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"} gap-0 flex-1 border-b border-studio-slate/10`}>
                   
-                  {/* Plan View */}
-                  <div className="relative border-r border-studio-slate/10 p-4 bg-studio-eggshell flex flex-col items-center justify-center group">
-                    <div className="absolute top-4 left-4 z-10 flex gap-2">
-                         <span className="bg-white px-2 py-1 text-[9px] uppercase tracking-widest font-bold border border-studio-slate/10 shadow-sm">2D Blueprint</span>
-                         <button onClick={() => downloadImage(result.planImage, "Keystone_Blueprint.png")} className="bg-studio-blueprint text-white px-2 py-1 text-[9px] uppercase tracking-widest font-bold shadow-sm hover:bg-studio-slate transition-colors">Download</button>
-                    </div>
-                    {/* CLICK TO ZOOM */}
-                    <img 
-                        src={result.planImage} 
-                        onClick={() => setZoomImage(result.planImage)}
-                        className="max-h-[500px] object-contain cursor-zoom-in transition-transform group-hover:scale-[1.02]" 
-                        alt="Plan" 
-                    />
-                    <div className="mt-4 text-[8px] uppercase tracking-widest opacity-40">Click image to expand</div>
-                  </div>
+{/* Images Container */}
+<div className={`grid ${status === "render-ready" ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"} gap-0 flex-1 border-b border-studio-slate/10`}>
+  
+  {/* Plan View - Renders SVG directly */}
+  <div className="relative border-r border-studio-slate/10 p-4 bg-studio-eggshell flex flex-col items-center justify-center">
+    <div className="absolute top-4 left-4 z-10 flex gap-2">
+         <span className="bg-white px-2 py-1 text-[9px] uppercase tracking-widest font-bold border border-studio-slate/10 shadow-sm">2D Blueprint</span>
+         <button onClick={() => downloadImage(result.planSvg, "Keystone_Blueprint.svg")} className="bg-studio-blueprint text-white px-2 py-1 text-[9px] uppercase tracking-widest font-bold shadow-sm hover:bg-studio-slate transition-colors">Download</button>
+    </div>
+    
+    {/* SVG RENDERER */}
+    <div 
+        className="w-full h-full flex items-center justify-center overflow-auto p-8 cursor-zoom-in"
+        onClick={() => setZoomImage(result.planSvg)}
+        dangerouslySetInnerHTML={{ __html: result.planSvg }}
+    />
+    
+    <div className="mt-4 text-[8px] uppercase tracking-widest opacity-40">Vector Engine Active • Click to expand</div>
+  </div>
+
+  {/* Render View (Only shows when ready) */}
+  {status === "render-ready" && (
+    <div className="relative bg-studio-slate flex flex-col items-center justify-center group">
+      <div className="absolute top-4 left-4 z-10 flex gap-2">
+         <span className="bg-white px-2 py-1 text-[9px] uppercase tracking-widest font-bold shadow-sm">3D Exterior</span>
+         <button onClick={() => downloadImage(result.renderImage, "Keystone_Render.png")} className="bg-white text-studio-slate px-2 py-1 text-[9px] uppercase tracking-widest font-bold shadow-sm hover:bg-studio-blueprint hover:text-white transition-colors">Download</button>
+      </div>
+      <img 
+        src={result.renderImage} 
+        onClick={() => setZoomImage(result.renderImage)}
+        className="w-full h-full object-cover cursor-zoom-in opacity-90 group-hover:opacity-100 transition-opacity" 
+        alt="Render" 
+      />
+    </div>
+  )}
+</div>
 
                   {/* Render View (Only shows when ready) */}
                   {status === "render-ready" && (

@@ -24,22 +24,19 @@ module.exports = async function handler(req, res) {
 
     const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
     const targetArea = Number(surveyData.totalArea) || 2000;
-    const isSquare = surveyData.shape === "Square";
+    const stories = String(surveyData.stories).includes("2") ? 2 : 1;
 
     const prompt = `
 You are a Senior Architect. Output ONLY valid JSON for a floor plan.
-Target Total Area: ${targetArea} sq ft (Sum of all levels).
+Target Total Area: ${targetArea} sq ft. Stories: ${stories}.
 
-**STRICT MATH:**
-- If 2 Stories: (Level 1 Area + Level 2 Area) MUST equal approx ${targetArea}.
-- If Shape is "Square": Width and Height must be nearly equal.
-- If Shape is "Rectangular": Width MUST be at least 1.5x larger than Height.
-
-**STRICT LAYOUT:**
-- Every room MUST have a label (e.g. "BEDROOM 1").
-- Level 1 MUST have an "ENTRY" and "STAIRS".
-- Level 2 MUST have "STAIRS" at the same coordinates as Level 1.
-- Draw clear doors and windows.
+**RULES:**
+- Sum of all levels MUST equal approx ${targetArea}.
+- If Shape is "Square": W and H must be roughly equal.
+- If Shape is "Rectangular": W must be at least 1.5x H.
+- Level 1 MUST have an "ENTRY" and "STAIRS". 
+- Level 2 MUST have "STAIRS" at the same spot as Level 1.
+- Every room MUST have a label and dimensions.
 
 JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 30, "rooms": [...], "doors": [...], "windows": [...] } ] }
     `.trim();
@@ -54,8 +51,6 @@ JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 30, "rooms": 
 
     const rawJson = extractJson(result?.text);
     const planSpec = JSON.parse(rawJson);
-
-    // Generate SVG string (Fast text operation)
     const svgString = renderPlanSvg(planSpec);
 
     return res.status(200).json({
@@ -66,6 +61,7 @@ JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 30, "rooms": 
     });
 
   } catch (err) {
+    console.error(err);
     return res.status(500).json({ success: false, message: err.message });
   }
 };
