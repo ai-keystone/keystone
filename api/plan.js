@@ -2,7 +2,6 @@
 const { GoogleGenAI } = require("@google/genai");
 const { renderPlanSvg } = require("../lib/renderPlanSvg");
 const { svgToPngBase64 } = require("../lib/svgToPng");
-const planSchema = require("../lib/planSchema.json");
 
 function extractJson(text) {
   if (!text) return null;
@@ -33,42 +32,44 @@ module.exports = async function handler(req, res) {
     const shape = surveyData.shape || "Rectangular";
     const garage = surveyData.garage || "None";
     
+    // Updated Prompt with STRICT Layout Logic
     const prompt = `
-You are an Expert Architect. Generate a JSON floor plan.
+You are a Senior Architect. Generate a JSON floor plan.
 1 Unit = 1 Foot.
 
-**CLIENT REQUIREMENTS:**
-- Target Total Area: ~${totalArea} sq ft.
+**SPECS:**
+- Total Area: ~${totalArea} sq ft.
 - Stories: ${stories}.
-- Bedrooms: ${surveyData.bedrooms}. Bathrooms: ${surveyData.bathrooms}.
+- Shape: ${shape}.
 - Garage: ${garage}.
-- House Shape: ${shape}. 
-- Special Features: ${surveyData.features || "None"}
+- Features: ${surveyData.features || "None"}
 
-**MATH & SHAPE LOGIC:**
-- If Shape is "Square": Make Level width (W) and height (H) roughly equal in feet.
-- If Shape is "Rectangular": Make Level width (W) roughly 1.5x to 2x the height (H).
-- Ensure total square footage (W * H across all levels) is close to ${totalArea}.
-- The sum of (room.w * room.h) must fit inside the level W * H.
+**CRITICAL LAYOUT RULES:**
+1. **STAIRS (Vital):** If Stories = 2, you MUST place a room with id "stairs" on Level 1 AND Level 2. They MUST have the exact same x,y,w,h coordinates.
+2. **ENTRANCE:** Level 1 MUST have an "Entry" or "Foyer" room.
+3. **GARAGE:** If Garage requested, place it on Level 1. It needs a large dimensions (e.g. 20x20).
+4. **DOORS & ORIENTATION:**
+   - Every room must have at least one door connecting to a Hall or another room.
+   - **Main Entry Door:** Place a door on the exterior wall of the Foyer.
+   - **Garage Door:** Place a door on the exterior wall of the Garage.
+   - **Orientation (dir):** 
+     - If the door is on a Left/Right wall, set "dir": "vertical".
+     - If the door is on a Top/Bottom wall, set "dir": "horizontal".
 
-**RULES:**
-- Rooms must be rectangles. Coordinates (x,y) start at top-left (0,0).
-- If Garage is 1 Car (12x20), 2 Car (20x20), 3 Car (30x20).
-- Add "doors" and "windows".
+**JSON STRUCTURE:**
+- Use "levels": [ { "level": 1, ... }, { "level": 2, ... } ]
+- Ensure "level" key is present in each level object.
 
-**CRITICAL JSON FORMAT:**
-- DO NOT wrap the output in a parent key like "plan" or "response".
-- The root of your JSON must DIRECTLY contain the "stories" and "levels" arrays.
-
-OUTPUT JSON ONLY matching the schema exactly. Do not output markdown.
+OUTPUT JSON ONLY.
     `.trim();
 
-    // Setup history for memory revisions
     let contents = [...chatHistory];
     contents.push({ role: "user", parts: [{ text: prompt }] });
 
+    // Using gemini-2.0-flash because it follows complex logic (stairs/coordinates) better than 3-flash-preview
+    // If you prefer 3-flash, change string below.
     const textResp = await ai.models.generateContent({
-      model: "gemini-3-flash-preview", 
+      model: "gemini-2.0-flash", 
       contents: contents
     });
 
@@ -79,33 +80,28 @@ OUTPUT JSON ONLY matching the schema exactly. Do not output markdown.
     try {
       planSpec = JSON.parse(raw);
     } catch (e) {
-      console.error("JSON Parse Failed. Raw:", raw);
-      return res.status(500).json({ success: false, message: "AI generated invalid JSON structure." });
+      return res.status(500).json({ success: false, message: "Invalid JSON structure." });
     }
 
-    // --- AUTO-UNWRAPPER ---
-    // If the AI accidentally wrapped the result (e.g., {"plan": { levels: [] }})
+    // Unwrapper
     if (planSpec.planSpec) planSpec = planSpec.planSpec;
     else if (planSpec.plan) planSpec = planSpec.plan;
-    else if (planSpec.floorplan) planSpec = planSpec.floorplan;
-    else if (planSpec.output) planSpec = planSpec.output;
 
-    // --- SAFETY CHECK ---
+    // Safety: Ensure levels exist
     if (!planSpec.levels || !Array.isArray(planSpec.levels)) {
-      console.error("AI missed 'levels' array. Final Parsed Object:", planSpec);
-      return res.status(500).json({ success: false, message: "AI failed to map the floor plan levels. Please try generating again." });
+       return res.status(500).json({ success: false, message: "AI failed to generate levels." });
     }
+
+    // Safety: Inject level numbers if missing
+    planSpec.levels.forEach((lvl, i) => {
+        if (!lvl.level) lvl.level = i + 1;
+    });
 
     const svg = renderPlanSvg(planSpec);
-    
-    // Fallback if SVG fails for some reason
-    if (!svg || typeof svg !== "string" || svg.trim() === "") {
-        return res.status(500).json({ success: false, message: "SVG Renderer failed to create a valid graphic." });
-    }
+    if (!svg) return res.status(500).json({ success: false, message: "SVG Render failed" });
 
     const planImageBase64 = await svgToPngBase64(svg, 1600);
 
-    // Save this interaction to history to send back to frontend
     const newHistory = [
         ...contents,
         { role: "model", parts: [{ text: JSON.stringify(planSpec) }] }
