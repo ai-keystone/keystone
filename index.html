@@ -269,16 +269,20 @@ const { motion, useScroll, useTransform, AnimatePresence } = FM;
   const [passkeyInput, setPasskeyInput] = useState("");
   const [unlockStatus, setUnlockStatus] = useState("idle");
 
-  const [formData, setFormData] = useState({
+const [formData, setFormData] = useState({
     location: "",
-    totalArea: "",
-    stories: "1 Story",
+    totalArea: "2100",
+    stories: "2 Stories",
     bedrooms: "3 Bed",
-    bathrooms: "2 Bath",
+    bathrooms: "3 Bath",
     shape: "Rectangular",
     garage: "2 Car Garage",
     materials: "Wood Framing with Natural Finishes",
-    features: ""
+    // --- NEW ARCHITECTURAL INPUTS ---
+    openConcept: "Open Concept (Combined)",
+    masterLocation: "Level 2 (Upper)",
+    kitchenPlacement: "Rear of House",
+    features: "1 study room, 1 gaming room"
   });
 
   const [status, setStatus] = useState("idle");
@@ -524,7 +528,33 @@ const downloadImage = (content, filename) => {
                   </select>
                 </div>
               </div>
+              {/* NEW ROW: Architectural Preferences */}
+              <div className="grid grid-cols-1 gap-3 border-t border-studio-slate/10 pt-4 mt-2">
+                <div>
+                  <label className="text-[8px] uppercase tracking-widest opacity-50 font-bold block mb-2">Living / Kitchen Style</label>
+                  <select className="w-full bg-studio-eggshell border-none p-3 text-xs" value={formData.openConcept} onChange={(e) => setFormData({ ...formData, openConcept: e.target.value })}>
+                    <option>Open Concept (Combined)</option>
+                    <option>Traditional (Separate Rooms)</option>
+                  </select>
+                </div>
 
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[8px] uppercase tracking-widest opacity-50 font-bold block mb-2">Primary Suite</label>
+                      <select className="w-full bg-studio-eggshell border-none p-3 text-xs" value={formData.masterLocation} onChange={(e) => setFormData({ ...formData, masterLocation: e.target.value })}>
+                        <option>Level 2 (Upper)</option>
+                        <option>Level 1 (Main)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[8px] uppercase tracking-widest opacity-50 font-bold block mb-2">Kitchen Location</label>
+                      <select className="w-full bg-studio-eggshell border-none p-3 text-xs" value={formData.kitchenPlacement} onChange={(e) => setFormData({ ...formData, kitchenPlacement: e.target.value })}>
+                        <option>Rear of House</option>
+                        <option>Front of House</option>
+                      </select>
+                    </div>
+                </div>
+              </div>
               <div>
                 <label className="text-[8px] uppercase tracking-widest opacity-50 font-bold block mb-2">Structural Materials</label>
                 <select className="w-full bg-studio-eggshell border-none p-3 text-xs" value={formData.materials} onChange={(e) => setFormData({ ...formData, materials: e.target.value })}>

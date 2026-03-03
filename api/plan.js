@@ -31,28 +31,37 @@ module.exports = async function handler(req, res) {
     const w = surveyData.shape === "Square" ? Math.floor(Math.sqrt(areaPerLevel)) : Math.floor(Math.sqrt(areaPerLevel * 1.8));
     const h = Math.floor(areaPerLevel / w);
 
-    // DYNAMIC INSTRUCTIONS
-    const garageRule = surveyData.garage !== "None" 
-        ? `CRITICAL: You MUST include a room labeled "${surveyData.garage.toUpperCase()}" on Level 1. Do not forget this.` 
-        : "No garage required.";
+    // DYNAMIC ZONING RULES BASED ON NEW USER INPUTS
+    const openConceptRule = surveyData.openConcept.includes("Open") 
+        ? "PUBLIC ZONE: 'Living', 'Dining', and 'Kitchen' MUST share walls and act as one continuous block."
+        : "PUBLIC ZONE: 'Living', 'Dining', and 'Kitchen' should be defined as separate but connected rooms.";
+        
+    const masterRule = surveyData.masterLocation.includes("Level 1")
+        ? "Place the 'Master Bedroom', 'Master Bath', and 'Walk-in Closet' tightly grouped together on LEVEL 1."
+        : "Place the 'Master Bedroom', 'Master Bath', and 'Walk-in Closet' tightly grouped together on LEVEL 2.";
+
+    const kitchenRule = surveyData.kitchenPlacement.includes("Rear")
+        ? "Place the Kitchen towards the top/rear coordinates (y=0)."
+        : "Place the Kitchen towards the bottom/front coordinates.";
 
     const prompt = `
-You are a strict Architectural API. Output ONLY valid JSON.
-1 Unit = 1 Foot.
+You are a Senior Architect. Output ONLY valid JSON. 1 Unit = 1 Foot.
 
-**USER REQUIREMENTS (PRIORITY 1):**
-- Features: "${surveyData.features}"
-- ${garageRule}
-- Bedrooms: ${surveyData.bedrooms}. Bathrooms: ${surveyData.bathrooms}.
+**USER PREFERENCES (CRITICAL):**
+- Layout: ${openConceptRule}
+- Primary Suite: ${masterRule}
+- Kitchen: ${kitchenRule}
+- Garage: ${surveyData.garage !== "None" ? `Place "${surveyData.garage.toUpperCase()}" on Level 1.` : "No garage."}
+- Extra Features: "${surveyData.features}"
 
-**LEVEL SPECS (PRIORITY 2):**
-- Level Footprint: ${w} ft wide x ${h} ft deep. 
-- Total Area: ${areaPerLevel} sq ft per level.
+**LEVEL FOOTPRINT (MANDATORY):**
+- Level grid: ${w} ft wide x ${h} ft deep. 
+- The sum of all room areas (w*h) MUST equal exactly ${w * h} for EACH level. Fill the footprint completely.
 
-**ROOM LAYOUT RULES (PRIORITY 3):**
-1. **COVERAGE:** The sum of all room areas (w*h) on a level MUST equal exactly ${w * h}. Rooms must fit together perfectly like a puzzle within the ${w}x${h} grid.
-2. **STAIRS:** If 2 levels, place "STAIRS" at the exact same x,y coordinates on both levels.
-3. **LABELS:** Give every room a clear "label" (e.g., "KITCHEN", "MASTER BEDROOM").
+**ZONING & ADJACENCY RULES:**
+1. **WET CORE:** Group Bathrooms near each other or near the Kitchen to share plumbing walls.
+2. **STAIRS:** If 2 levels, place "STAIRS" at the EXACT same x,y coordinates on Level 1 and Level 2.
+3. **CIRCULATION:** Use "Hallway" rooms to connect spaces. No room should be inaccessible.
 
 **JSON STRUCTURE EXAMPLE:**
 {
