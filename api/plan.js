@@ -28,22 +28,31 @@ module.exports = async function handler(req, res) {
     const stories = String(surveyData.stories).includes("2") ? 2 : 1;
     const areaPerLevel = Math.floor(totalArea / stories);
     
-    // Exact dimensions to prevent "square" default
     const w = surveyData.shape === "Square" ? Math.floor(Math.sqrt(areaPerLevel)) : Math.floor(Math.sqrt(areaPerLevel * 1.8));
     const h = Math.floor(areaPerLevel / w);
 
+    // DYNAMIC INSTRUCTIONS
+    const garageRule = surveyData.garage !== "None" 
+        ? `CRITICAL: You MUST include a room labeled "${surveyData.garage.toUpperCase()}" on Level 1. Do not forget this.` 
+        : "No garage required.";
+
     const prompt = `
-You are a Senior Architect. Output a JSON floor plan. 1 Unit = 1 Foot.
+You are a strict Architectural API. Output ONLY valid JSON.
+1 Unit = 1 Foot.
 
-**LEVEL SPECS:**
-- Level Footprint: ${w} ft wide x ${h} ft deep.
-- Total Level Area: ${areaPerLevel} sq ft.
+**USER REQUIREMENTS (PRIORITY 1):**
+- Features: "${surveyData.features}"
+- ${garageRule}
+- Bedrooms: ${surveyData.bedrooms}. Bathrooms: ${surveyData.bathrooms}.
 
-**ROOM LAYOUT RULES:**
-1. **FULL COVERAGE:** Rooms MUST fill the entire ${w}x${h} footprint. Do not leave empty space.
-2. **STRICT KEYS:** Every room object MUST use exactly these keys: "id", "label", "type", "x", "y", "w", "h".
-3. **STAIRS:** Place stairs at the same x,y coordinates on Level 1 and Level 2.
-4. **LABELS:** Use clear room names (e.g., "MASTER BEDROOM").
+**LEVEL SPECS (PRIORITY 2):**
+- Level Footprint: ${w} ft wide x ${h} ft deep. 
+- Total Area: ${areaPerLevel} sq ft per level.
+
+**ROOM LAYOUT RULES (PRIORITY 3):**
+1. **COVERAGE:** The sum of all room areas (w*h) on a level MUST equal exactly ${w * h}. Rooms must fit together perfectly like a puzzle within the ${w}x${h} grid.
+2. **STAIRS:** If 2 levels, place "STAIRS" at the exact same x,y coordinates on both levels.
+3. **LABELS:** Give every room a clear "label" (e.g., "KITCHEN", "MASTER BEDROOM").
 
 **JSON STRUCTURE EXAMPLE:**
 {
@@ -73,6 +82,11 @@ You are a Senior Architect. Output a JSON floor plan. 1 Unit = 1 Foot.
 
     const rawJson = extractJson(result?.text);
     const planSpec = JSON.parse(rawJson);
+
+    if (planSpec.levels) {
+        planSpec.levels.forEach((lvl, i) => { if(!lvl.level) lvl.level = i + 1; });
+    }
+    
     const svgString = renderPlanSvg(planSpec);
 
     return res.status(200).json({
