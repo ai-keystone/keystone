@@ -336,29 +336,13 @@ const handleGeneratePlan = async (e, isRefinement = false) => {
     };
 
     try {
-      const response = await fetch("/api/plan", { 
-          method: "POST", 
-          headers: { "Content-Type": "application/json" }, 
-          body: JSON.stringify(payload) 
-      });
+      const response = await fetch("/api/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const data = await response.json();
       
-      // CRITICAL FIX: Read as text first to catch Vercel HTML errors (Timeout/Crash)
-      const text = await response.text();
-      
-      let data;
-      try {
-          data = JSON.parse(text);
-      } catch (parseError) {
-          console.error("Server returned non-JSON response:", text);
-          throw new Error("Server crashed or timed out. Please try again.");
-      }
+      if (!data.success) throw new Error(data.message);
 
-      if (!data.success) {
-        throw new Error(data.message || "Failed to generate plan");
-      }
-
-      const watermarkedPlan = await processImage(data.planImage);
-      setResult(prev => ({ ...prev, planImage: watermarkedPlan }));
+      // We store the RAW SVG string in the state
+      setResult(prev => ({ ...prev, planSvg: data.svg, planSpec: data.planSpec }));
       setChatHistory(data.chatHistory);
       
       if(isRefinement) {
@@ -366,10 +350,8 @@ const handleGeneratePlan = async (e, isRefinement = false) => {
           setRefinementText("");
       }
       setStatus("plan-ready");
-      
     } catch (err) {
-      console.error(err);
-      alert(err.message);
+      alert("Error: " + err.message);
       setStatus(isRefinement ? "plan-ready" : "idle");
     }
   };
@@ -405,18 +387,21 @@ const handleGeneratePlan = async (e, isRefinement = false) => {
       <div className="container mx-auto max-w-7xl relative">
         
         {/* LIGHTBOX MODAL */}
-        <AnimatePresence>
-            {zoomImage && (
-                <motion.div 
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    onClick={() => setZoomImage(null)}
-                    className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out"
-                >
-                    <img src={zoomImage} className="max-h-screen max-w-full object-contain shadow-2xl" alt="Zoomed View" />
-                    <button className="absolute top-6 right-6 text-white/50 hover:text-white text-4xl font-light">&times;</button>
-                </motion.div>
+<AnimatePresence>
+    {zoomImage && (
+        <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setZoomImage(null)}
+            className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-md flex items-center justify-center p-8"
+        >
+            {zoomImage.startsWith('<svg') ? (
+                <div className="bg-white p-10 max-w-5xl w-full overflow-auto" dangerouslySetInnerHTML={{ __html: zoomImage }} />
+            ) : (
+                <img src={zoomImage} className="max-h-screen max-w-full object-contain" />
             )}
-        </AnimatePresence>
+        </motion.div>
+    )}
+</AnimatePresence>
 
         {/* UNLOCK MODAL (Keep existing code) */}
         {!isUnlocked && (

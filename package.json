@@ -9,8 +9,7 @@
     "start": "node api/generate.js"
   },
   "dependencies": {
-    "@google/genai": "^1.42.0",
-    "sharp": "^0.34.5",
-    "text-to-svg": "^3.1.0"
-  }
+  "@google/genai": "^1.42.0",
+  "text-to-svg": "^3.1.0"
+}
 }
