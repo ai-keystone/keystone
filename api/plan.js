@@ -3,7 +3,6 @@ const { GoogleGenAI } = require("@google/genai");
 const { renderPlanSvg } = require("../lib/renderPlanSvg");
 const { svgToPngBase64 } = require("../lib/svgToPng");
 
-// Helper to extract JSON from AI text
 function extractJson(text) {
   if (!text) return null;
   let t = String(text).trim().replace(/```json/gi, "").replace(/```/g, "").trim();
@@ -14,87 +13,65 @@ function extractJson(text) {
 }
 
 module.exports = async function handler(req, res) {
-  // 1. Setup Headers
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
   if (req.method === "OPTIONS") return res.status(200).end();
   
   try {
-    // 2. Parse Input
     let body = req.body;
     if (typeof body === "string") body = JSON.parse(body);
 
     const { surveyData, chatHistory = [] } = body;
-    if (!surveyData) return res.status(400).json({ success: false, message: "Missing surveyData" });
-
-    // 3. Initialize Gemini 3
     const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
-    const totalArea = Number(surveyData.totalArea) || 2500;
-    const stories = String(surveyData.stories).includes("2") ? 2 : 1;
-    const shape = surveyData.shape || "Rectangular";
-    const garage = surveyData.garage || "None";
-    
-    const prompt = `
-You are a Senior Architect. Generate a JSON floor plan.
-1 Unit = 1 Foot.
 
-**SPECS:**
-- Total Area: ~${totalArea} sq ft.
-- Stories: ${stories}.
-- Shape: ${shape}.
-- Garage: ${garage}.
-- Features: ${surveyData.features || "None"}
+    // Determine if we are in REVISION mode
+    const isRevision = chatHistory.length > 0;
+    const activeModel = isRevision ? "gemini-3.1-pro-preview" : "gemini-3-flash-preview";
 
-**CRITICAL LAYOUT RULES:**
-1. **STAIRS:** If Stories = 2, you MUST place a room with id "stairs" on Level 1 AND Level 2 with identical x,y,w,h.
-2. **ENTRANCE:** Level 1 MUST have an "Entry" or "Foyer" room.
-3. **DOORS/WINDOWS:** Every room needs at least one door. Use "dir": "horizontal" or "vertical" correctly based on wall orientation.
+    const basePrompt = `
+You are a Senior Architect. Generate a JSON floor plan. 1 Unit = 1 Foot.
+Target Area: ${surveyData.totalArea} sq ft. Stories: ${surveyData.stories}. Shape: ${surveyData.shape}.
 
-**JSON STRUCTURE:**
-- The root must be an object containing a "levels" array.
-- "levels": [ { "level": 1, "width": 50, "height": 40, "rooms": [...], "doors": [...], "windows": [...] } ]
+**STRICT RULES:**
+1. **LABELS:** Every room object MUST have a "label" (e.g., "Master Bedroom") and a "type".
+2. **STAIRS:** For 2 stories, you MUST have identical "stairs" rooms on both levels.
+3. **DOORS:** Every room needs a door. Vertical walls = "vertical", horizontal = "horizontal".
 
-OUTPUT VALID JSON ONLY. NO MARKDOWN.
+${isRevision ? `
+**REVISION MODE:** 
+The user is providing feedback on the PREVIOUS plan in the chat history.
+1. DO NOT start from scratch. Use the last JSON provided as your base.
+2. If the user asks for a change (e.g., "add labels" or "make kitchen bigger"), modify the EXISTING room coordinates and labels.
+3. Keep room IDs identical where possible.
+4. Maintain the current footprint unless the user asks to change the shape.
+` : `
+**NEW PLAN MODE:** Create a new plan following the specs.
+`}
+
+OUTPUT VALID JSON ONLY.
     `.trim();
 
-    // 4. Generate Content
     let contents = [...chatHistory];
-    contents.push({ role: "user", parts: [{ text: prompt }] });
+    contents.push({ role: "user", parts: [{ text: basePrompt }] });
 
     const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview", 
+      model: activeModel, 
       contents: contents
     });
 
     const rawJson = extractJson(result?.text);
-    if (!rawJson) throw new Error("AI failed to return a JSON string.");
+    if (!rawJson) throw new Error("AI failed to return JSON.");
 
-    // 5. Parse and Process PlanSpec
     let planSpec = JSON.parse(rawJson);
-
-    // Auto-Unwrap if AI nested it
     if (planSpec.planSpec) planSpec = planSpec.planSpec;
     else if (planSpec.plan) planSpec = planSpec.plan;
 
-    // Safety checks
-    if (!planSpec.levels || !Array.isArray(planSpec.levels)) {
-      throw new Error("AI JSON missing 'levels' array.");
-    }
+    if (!planSpec.levels) throw new Error("AI JSON missing levels.");
 
-    // Ensure level numbers are set
-    planSpec.levels.forEach((lvl, i) => {
-      if (!lvl.level) lvl.level = i + 1;
-    });
-
-    // 6. Visual Rendering
     const svg = renderPlanSvg(planSpec);
-    if (!svg) throw new Error("SVG Generation failed.");
-
     const planImageBase64 = await svgToPngBase64(svg, 1600);
 
-    // 7. Update Memory for next turn
     const newHistory = [
       ...contents,
       { role: "model", parts: [{ text: JSON.stringify(planSpec) }] }
@@ -108,7 +85,7 @@ OUTPUT VALID JSON ONLY. NO MARKDOWN.
     });
 
   } catch (err) {
-    console.error("Plan API Final Error:", err);
-    return res.status(500).json({ success: false, message: err.message || "Internal Server Error" });
+    console.error(err);
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
