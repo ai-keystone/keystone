@@ -374,7 +374,7 @@ const handleGeneratePlan = async (e, isRefinement = false) => {
 
   // Download Helper
 const downloadImage = (content, filename) => {
-    // If it's the 3D Render (Base64)
+    // If it's the 3D Render (already a Base64 image)
     if (content.startsWith('data:image')) {
         const link = document.createElement("a");
         link.href = content;
@@ -383,17 +383,40 @@ const downloadImage = (content, filename) => {
         link.click();
         document.body.removeChild(link);
     } 
-    // If it's the Blueprint (SVG String)
+    // If it's the 2D Blueprint (SVG String), convert to PNG
     else {
-        const blob = new Blob([content], {type: 'image/svg+xml'});
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
+        const svgData = content;
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const img = new Image();
+        
+        // This converts SVG to a Data URL
+        const svgBlob = new Blob([svgData], {type: "image/svg+xml;charset=utf-8"});
+        const url = URL.createObjectURL(svgBlob);
+        
+        img.onload = function() {
+            // Set canvas size to match SVG
+            canvas.width = img.width;
+            canvas.height = img.height;
+            
+            // Draw background
+            ctx.fillStyle = "#F9F8F4";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw SVG onto canvas
+            ctx.drawImage(img, 0, 0);
+            
+            // Trigger PNG download
+            const pngUrl = canvas.toDataURL("image/png");
+            const link = document.createElement("a");
+            link.href = pngUrl;
+            link.download = filename.replace('.svg', '.png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        };
+        img.src = url;
     }
   };
 

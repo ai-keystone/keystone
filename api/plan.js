@@ -23,33 +23,44 @@ module.exports = async function handler(req, res) {
     const { surveyData, chatHistory = [] } = body;
 
     const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
-    const targetArea = Number(surveyData.totalArea) || 2000;
-    const stories = String(surveyData.stories).includes("2") ? 2 : 1;
+    const area = Number(surveyData.totalArea) || 2000;
+    const isRevision = chatHistory.length > 0;
 
     const prompt = `
-You are a Senior Architect. Output ONLY valid JSON for a floor plan.
-Target Total Area: ${targetArea} sq ft. Stories: ${stories}.
+You are a Senior Residential Architect. Output a high-detail JSON floor plan.
+Target Total Area: ${area} sq ft. 
 
-**RULES:**
-- Sum of all levels MUST equal approx ${targetArea}.
-- If Shape is "Square": W and H must be roughly equal.
-- If Shape is "Rectangular": W must be at least 1.5x H.
-- Level 1 MUST have an "ENTRY" and "STAIRS". 
-- Level 2 MUST have "STAIRS" at the same spot as Level 1.
-- Every room MUST have a label and dimensions.
+**ARCHITECTURAL THINKING REQUIREMENTS:**
+1. **Circulation:** Do not just place boxes. Create logical hallways. Rooms should not be used as the only way to get to other rooms.
+2. **Privacy:** Bedrooms should be separated from loud living areas by hallways or closets.
+3. **Natural Light:** Every Living Room and Bedroom MUST have at least one window on an exterior wall.
+4. **Zoning:** Group wet zones (Kitchen, Laundry, Baths) where possible for realistic plumbing logic.
+5. **Incremental Edits:** ${isRevision ? "STRICTLY use the previous JSON as your foundation. Move walls and resize rooms ONLY as requested by the user. Maintain room IDs." : "Create a fresh, high-reasoning layout from scratch."}
 
-JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 30, "rooms": [...], "doors": [...], "windows": [...] } ] }
+**STRICT MATH:**
+- Level 1 + Level 2 areas MUST equal approx ${area} sq ft.
+- 1 Unit = 1 Foot.
+- Shape: ${surveyData.shape}. (Square = W:H 1:1, Rectangular = W:H 1.5:1 or more).
+
+**DATA STRUCTURE:**
+- Root: { "levels": [ { "level": 1, "width": 60, "height": 40, "rooms": [], "doors": [], "windows": [] } ] }
+- Room objects MUST include "label" and "type".
+
+OUTPUT VALID JSON ONLY.
     `.trim();
 
     let contents = [...chatHistory];
     contents.push({ role: "user", parts: [{ text: prompt }] });
 
+    // Using Gemini 3.1 Pro for high-reasoning architectural drafting
     const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview", 
+      model: "gemini-3.1-pro-preview", 
       contents: contents
     });
 
     const rawJson = extractJson(result?.text);
+    if (!rawJson) throw new Error("AI failed to return valid architectural data.");
+
     const planSpec = JSON.parse(rawJson);
     const svgString = renderPlanSvg(planSpec);
 
@@ -61,7 +72,7 @@ JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 30, "rooms": 
     });
 
   } catch (err) {
-    console.error(err);
+    console.error("Plan Pro Error:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 };
