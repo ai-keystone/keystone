@@ -326,7 +326,7 @@ const { motion, useScroll, useTransform, AnimatePresence } = FM;
     } catch (err) { setUnlockStatus("error"); }
   };
 
-  const handleGeneratePlan = async (e, isRefinement = false) => {
+const handleGeneratePlan = async (e, isRefinement = false) => {
     if (e) e.preventDefault();
     setStatus("loading-plan");
 
@@ -336,9 +336,23 @@ const { motion, useScroll, useTransform, AnimatePresence } = FM;
     };
 
     try {
-      const response = await fetch("/api/plan", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
-      const data = await response.json();
+      const response = await fetch("/api/plan", { 
+          method: "POST", 
+          headers: { "Content-Type": "application/json" }, 
+          body: JSON.stringify(payload) 
+      });
       
+      // CRITICAL FIX: Read as text first to catch Vercel HTML errors (Timeout/Crash)
+      const text = await response.text();
+      
+      let data;
+      try {
+          data = JSON.parse(text);
+      } catch (parseError) {
+          console.error("Server returned non-JSON response:", text);
+          throw new Error("Server crashed or timed out. Please try again.");
+      }
+
       if (!data.success) {
         throw new Error(data.message || "Failed to generate plan");
       }
@@ -352,9 +366,10 @@ const { motion, useScroll, useTransform, AnimatePresence } = FM;
           setRefinementText("");
       }
       setStatus("plan-ready");
+      
     } catch (err) {
       console.error(err);
-      alert("Error generating plan: " + err.message);
+      alert(err.message);
       setStatus(isRefinement ? "plan-ready" : "idle");
     }
   };
