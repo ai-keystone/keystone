@@ -1,7 +1,7 @@
 // api/plan.js
 const { GoogleGenAI } = require("@google/genai");
 const { renderPlanSvg } = require("../lib/renderPlanSvg");
-const logic = require("../lib/planningLogic.json"); // Import the Research Logic
+const logic = require("../lib/planningLogic.json"); // Your Research Logic file
 
 function extractJson(text) {
   if (!text) return null;
@@ -25,38 +25,42 @@ module.exports = async function handler(req, res) {
 
     const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
     
-    // --- EXTRACT LOGIC CHUNKS ---
+    // --- PATH FIXES FOR RESEARCH LOGIC ---
     const garageKey = surveyData.garage === "None" ? "NONE" : 
                      surveyData.garage.includes("1") ? "ONE_CAR" : 
                      surveyData.garage.includes("2") ? "TWO_CAR" : "THREE_CAR";
     
-    const garageSpecs = logic.garagePresets[garageKey];
-    const shapeSpecs = logic.templates.footprintZoningPatterns[surveyData.shape.toUpperCase().replace("-","_")] || logic.templates.footprintZoningPatterns.RECTANGULAR;
-    const adjacencies = logic.adjacencyGraph;
+    // Safety check for logic paths
+    const garageSpecs = logic.garagePresets?.[garageKey] || {};
+    const footprintPatterns = logic.templates?.footprintZoningPatterns || {};
+    const shapeKey = surveyData.shape.toUpperCase().replace("-","_");
+    const shapeSpecs = footprintPatterns[shapeKey] || footprintPatterns.RECTANGULAR;
+    
+    // Fix: adjacencyGraph is inside rules
+    const adjacencies = logic.rules?.adjacencyGraph || [];
 
     const prompt = `
 You are a Senior Architect using the "ResidentialPlanningLogic" framework. 
-Generate a JSON floor plan (1 Unit = 1 Foot).
+Generate a high-reasoning JSON floor plan. 1 Unit = 1 Foot.
 
-**CORE HEURISTICS TO FOLLOW:**
-1. **Garage Specs:** ${JSON.stringify(garageSpecs)}
-2. **Footprint Zoning:** Use the "${shapeSpecs.circulationTemplate}" strategy. Bands: ${shapeSpecs.zoneBands.join(", ")}.
-3. **Adjacency Requirements:** 
+**USER'S SPECIFIC REQUEST (PRIORITY #1):** 
+"${surveyData.features}"
+
+**ARCHITECTURAL FRAMEWORK (PRIORITY #2):**
+1. **Garage:** Use these dimensions: ${JSON.stringify(garageSpecs)}. Place on Level 1.
+2. **Adjacencies:** Follow these core relations:
    ${adjacencies.filter(a => a.weight >= 9).map(a => `- ${a.from} to ${a.to}: ${a.relation}`).join("\n")}
-4. **Dimensions:** Min room width for Bedrooms is 9ft, Public rooms 10ft.
-5. **Efficiency:** Aim for Net-to-Gross ratio of 0.75 (Standard). Circulation area should be ~12% of total area.
+3. **Zoning Pattern:** Use the "${shapeSpecs.circulationTemplate}" strategy.
+4. **Dimensions:** Bedrooms min 10ft wide. Hallways 3.5ft wide.
 
-**CLIENT SPECS:**
-- Total Area: ${surveyData.totalArea} sq ft.
-- Stories: ${surveyData.stories}.
-- Requirements: ${surveyData.features}
+**STRICT MATH:**
+- Level 1 Area + Level 2 Area MUST equal approx ${surveyData.totalArea} sq ft.
+- Total width/height must fit the ${surveyData.shape} footprint.
 
-**STRICT RULES:**
-- LEVEL 1 + LEVEL 2 areas must total ${surveyData.totalArea}.
-- STAIRS: Must be stacked (identical x,y,w,h) on both levels.
-- LABELS: Every room needs a "label" and "type" from logic.enums.roomCategory.
+**REVISION LOGIC:**
+${chatHistory.length > 0 ? "DO NOT start from scratch. Modify the PREVIOUS JSON in history based on the user's latest comment." : "Create a new professional draft."}
 
-JSON Structure: { "levels": [ { "level": 1, "width": 60, "height": 40, "rooms": [], "doors": [], "windows": [] } ] }
+JSON Output: { "levels": [ { "level": 1, "width": 60, "height": 40, "rooms": [], "doors": [], "windows": [] } ] }
     `.trim();
 
     let contents = [...chatHistory];
@@ -72,7 +76,10 @@ JSON Structure: { "levels": [ { "level": 1, "width": 60, "height": 40, "rooms": 
     const planSpec = JSON.parse(rawJson);
 
     // Standardize & Render
-    if (planSpec.levels) planSpec.levels.forEach((lvl, i) => { if(!lvl.level) lvl.level = i + 1; });
+    if (planSpec.levels) {
+        planSpec.levels.forEach((lvl, i) => { if(!lvl.level) lvl.level = i + 1; });
+    }
+    
     const svgString = renderPlanSvg(planSpec);
 
     return res.status(200).json({
@@ -83,6 +90,7 @@ JSON Structure: { "levels": [ { "level": 1, "width": 60, "height": 40, "rooms": 
     });
 
   } catch (err) {
+    console.error("Plan Logic Error:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 };
