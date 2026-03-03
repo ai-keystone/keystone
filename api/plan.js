@@ -1,7 +1,6 @@
 // api/plan.js
 const { GoogleGenAI } = require("@google/genai");
 const { renderPlanSvg } = require("../lib/renderPlanSvg");
-const logic = require("../lib/planningLogic.json");
 
 function extractJson(text) {
   if (!text) return null;
@@ -25,39 +24,42 @@ module.exports = async function handler(req, res) {
 
     const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
     
-    // Calculate targeted math for the prompt
     const totalArea = Number(surveyData.totalArea) || 2000;
     const stories = String(surveyData.stories).includes("2") ? 2 : 1;
     const areaPerLevel = Math.floor(totalArea / stories);
     
-    // Geometry logic for the prompt
-    const shapeConstraint = surveyData.shape === "Square" 
-        ? `SQUARE: Width and Height must be approx ${Math.floor(Math.sqrt(areaPerLevel))}'` 
-        : `RECTANGULAR: Width must be approx ${Math.floor(Math.sqrt(areaPerLevel * 1.8))}' and Height approx ${Math.floor(Math.sqrt(areaPerLevel / 1.8))}'`;
+    // Exact dimensions to prevent "square" default
+    const w = surveyData.shape === "Square" ? Math.floor(Math.sqrt(areaPerLevel)) : Math.floor(Math.sqrt(areaPerLevel * 1.8));
+    const h = Math.floor(areaPerLevel / w);
 
     const prompt = `
 You are a Senior Architect. Output a JSON floor plan. 1 Unit = 1 Foot.
 
-**MATHEMATICAL CONSTRAINTS (MANDATORY):**
-1. **Total Area Budget:** ${totalArea} sq ft total.
-2. **Level Budget:** Exactly ${areaPerLevel} sq ft per level.
-3. **Dimensions:** ${shapeConstraint}. 
-   - Level Width * Level Height MUST equal ${areaPerLevel} (approx +/- 5%).
-   - Room areas (w * h) sum MUST NOT exceed level area.
+**LEVEL SPECS:**
+- Level Footprint: ${w} ft wide x ${h} ft deep.
+- Total Level Area: ${areaPerLevel} sq ft.
 
-**PLANNING LOGIC:**
-1. **Zoning:** Use the "ResidentialPlanningLogic" adjacency rules. 
-2. **Specific Requests:** ${surveyData.features}. 
-   - If user asks for a bedroom on Level 1, it MUST be there.
-3. **Stairs:** If 2 levels, place "STAIRS" (approx 8'x10') at the EXACT same x,y coordinates on both levels.
-4. **Garage:** Size for ${surveyData.garage}. Place on Level 1.
+**ROOM LAYOUT RULES:**
+1. **FULL COVERAGE:** Rooms MUST fill the entire ${w}x${h} footprint. Do not leave empty space.
+2. **STRICT KEYS:** Every room object MUST use exactly these keys: "id", "label", "type", "x", "y", "w", "h".
+3. **STAIRS:** Place stairs at the same x,y coordinates on Level 1 and Level 2.
+4. **LABELS:** Use clear room names (e.g., "MASTER BEDROOM").
 
-**OUTPUT RULES:**
-- NO markdown. NO conversational text.
-- JSON must contain "levels" array. 
-- Every room must have a unique "id", "label", and "type".
-
-JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 22, "rooms": [...] } ] }
+**JSON STRUCTURE EXAMPLE:**
+{
+  "levels": [
+    {
+      "level": 1,
+      "width": ${w},
+      "height": ${h},
+      "rooms": [
+        { "id": "r1", "label": "LIVING ROOM", "type": "living", "x": 0, "y": 0, "w": 20, "h": ${h} }
+      ],
+      "doors": [],
+      "windows": []
+    }
+  ]
+}
     `.trim();
 
     let contents = [...chatHistory];
@@ -71,11 +73,6 @@ JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 22, "rooms": 
 
     const rawJson = extractJson(result?.text);
     const planSpec = JSON.parse(rawJson);
-
-    if (planSpec.levels) {
-        planSpec.levels.forEach((lvl, i) => { if(!lvl.level) lvl.level = i + 1; });
-    }
-    
     const svgString = renderPlanSvg(planSpec);
 
     return res.status(200).json({
