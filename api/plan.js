@@ -23,45 +23,33 @@ module.exports = async function handler(req, res) {
     const { surveyData, chatHistory = [] } = body;
 
     const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
-    const area = Number(surveyData.totalArea) || 2000;
-    const isRevision = chatHistory.length > 0;
+    const targetArea = Number(surveyData.totalArea) || 2000;
+    const isSquare = surveyData.shape === "Square";
 
     const prompt = `
-You are a Senior Residential Architect. Output a high-reasoning JSON floor plan.
-Target Total Area: ${area} sq ft (Sum of all levels).
+You are a Senior Architect. Output ONLY valid JSON for a floor plan.
+1 Unit = 1 Foot.
 
-**STRICT ARCHITECTURAL LOGIC:**
-1. **Zoning:** Group wet zones (Kitchen/Baths) and separate quiet zones (Bedrooms) from social areas.
-2. **Circulation:** Use hallways. Do not walk through one bedroom to get to another.
-3. **Natural Light:** Bedrooms and Living areas MUST have a window on an exterior wall.
-4. **Revisions:** ${isRevision ? "Treat the previous JSON as the fixed foundation. Modify only specific rooms as requested while keeping the overall logic consistent." : "Create a fresh, professional layout."}
+**STRICT RULES:**
+1. **FOOTPRINT:** Every level must have a "width" and "height" that reflects the outer shell.
+2. **ROOMS:** Every level MUST contain multiple rooms (Living, Kitchen, Beds, Hallways) that fill the footprint.
+3. **LABELS:** Every room object MUST have a "label" (e.g. "BEDROOM") and "type".
+4. **COORDINATES:** Rooms must have valid x, y, w, h that are NOT zero.
+5. **GEOMETRY:** If Shape is "Square", w/h ratio is 1:1. If "Rectangular", w/h ratio is at least 1.5:1.
 
-**SPECS:**
-- Shape: ${surveyData.shape}.
-- Levels: ${surveyData.stories}.
-- Garage: ${surveyData.garage}.
-- 1 Unit = 1 Foot.
-
-JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 40, "rooms": [], "doors": [], "windows": [] } ] }
+JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 30, "rooms": [...], "doors": [...], "windows": [...] } ] }
     `.trim();
 
     let contents = [...chatHistory];
     contents.push({ role: "user", parts: [{ text: prompt }] });
 
-    // Using Gemini 3.1 Pro Preview with "Low Thinking" for optimal speed/quality
     const result = await ai.models.generateContent({
       model: "gemini-3-flash-preview", 
       contents: contents,
-      config: {
-        thinkingConfig: {
-          thinkingLevel: "high",
-        }
-      },
+      config: { thinkingConfig: { thinkingLevel: "high" } }
     });
 
     const rawJson = extractJson(result?.text);
-    if (!rawJson) throw new Error("AI failed to return valid architectural JSON.");
-
     const planSpec = JSON.parse(rawJson);
     const svgString = renderPlanSvg(planSpec);
 
@@ -73,7 +61,6 @@ JSON Structure: { "levels": [ { "level": 1, "width": 50, "height": 40, "rooms": 
     });
 
   } catch (err) {
-    console.error("Plan Pro Thinking Error:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 };
