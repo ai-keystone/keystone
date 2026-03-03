@@ -5,6 +5,7 @@ const { svgToPngBase64 } = require("../lib/svgToPng");
 
 function extractJson(text) {
   if (!text) return null;
+  // Robust JSON extraction
   let t = String(text).trim().replace(/```json/gi, "").replace(/```/g, "").trim();
   const firstBrace = t.indexOf("{");
   const lastBrace = t.lastIndexOf("}");
@@ -32,7 +33,7 @@ module.exports = async function handler(req, res) {
     const shape = surveyData.shape || "Rectangular";
     const garage = surveyData.garage || "None";
     
-    // Updated Prompt with STRICT Layout Logic
+    // Architect Prompt - Optimized for Gemini 3.1 Reasoning
     const prompt = `
 You are a Senior Architect. Generate a JSON floor plan.
 1 Unit = 1 Foot.
@@ -45,20 +46,19 @@ You are a Senior Architect. Generate a JSON floor plan.
 - Features: ${surveyData.features || "None"}
 
 **CRITICAL LAYOUT RULES:**
-1. **STAIRS (Vital):** If Stories = 2, you MUST place a room with id "stairs" on Level 1 AND Level 2. They MUST have the exact same x,y,w,h coordinates.
+1. **STAIRS:** If Stories = 2, you MUST place a room with id "stairs" on Level 1 AND Level 2. They MUST have the exact same x,y,w,h coordinates.
 2. **ENTRANCE:** Level 1 MUST have an "Entry" or "Foyer" room.
-3. **GARAGE:** If Garage requested, place it on Level 1. It needs a large dimensions (e.g. 20x20).
+3. **GARAGE:** If Garage requested, place it on Level 1 (e.g. 20x20).
 4. **DOORS & ORIENTATION:**
-   - Every room must have at least one door connecting to a Hall or another room.
+   - Every room must have at least one door.
    - **Main Entry Door:** Place a door on the exterior wall of the Foyer.
-   - **Garage Door:** Place a door on the exterior wall of the Garage.
    - **Orientation (dir):** 
-     - If the door is on a Left/Right wall, set "dir": "vertical".
-     - If the door is on a Top/Bottom wall, set "dir": "horizontal".
+     - Left/Right wall = "vertical"
+     - Top/Bottom wall = "horizontal"
 
 **JSON STRUCTURE:**
-- Use "levels": [ { "level": 1, ... }, { "level": 2, ... } ]
-- Ensure "level" key is present in each level object.
+- The root object must directly contain a "levels" array.
+- "levels": [ { "level": 1, "width": 50, "height": 40, "rooms": [...], "doors": [...], "windows": [...] }, ... ]
 
 OUTPUT JSON ONLY.
     `.trim();
@@ -66,10 +66,9 @@ OUTPUT JSON ONLY.
     let contents = [...chatHistory];
     contents.push({ role: "user", parts: [{ text: prompt }] });
 
-    // Using gemini-2.0-flash because it follows complex logic (stairs/coordinates) better than 3-flash-preview
-    // If you prefer 3-flash, change string below.
+    // UPDATED: Using gemini-3.1-pro-preview for advanced reasoning
     const textResp = await ai.models.generateContent({
-      model: "gemini-2.0-flash", 
+      model: "gemini-3.1-pro-preview", 
       contents: contents
     });
 
@@ -80,19 +79,19 @@ OUTPUT JSON ONLY.
     try {
       planSpec = JSON.parse(raw);
     } catch (e) {
-      return res.status(500).json({ success: false, message: "Invalid JSON structure." });
+      return res.status(500).json({ success: false, message: "Invalid JSON structure from AI." });
     }
 
-    // Unwrapper
+    // Unwrapper & Safety Checks
     if (planSpec.planSpec) planSpec = planSpec.planSpec;
     else if (planSpec.plan) planSpec = planSpec.plan;
 
-    // Safety: Ensure levels exist
     if (!planSpec.levels || !Array.isArray(planSpec.levels)) {
-       return res.status(500).json({ success: false, message: "AI failed to generate levels." });
+       // If Gemini 3 is "thinking" too abstractly, it might need a retry, but usually it respects the schema.
+       return res.status(500).json({ success: false, message: "AI failed to generate levels array." });
     }
 
-    // Safety: Inject level numbers if missing
+    // Ensure level numbers exist
     planSpec.levels.forEach((lvl, i) => {
         if (!lvl.level) lvl.level = i + 1;
     });
