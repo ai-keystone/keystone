@@ -1,10 +1,11 @@
 // api/plan.js (CommonJS)
 //
-// Phase 1 improvements:
+// Phase 1 improvements (Vercel-safe):
 // 1) Enforce JSON Schema (Ajv) so malformed outputs are rejected.
 // 2) Run domain validation (validatePlanSpec) to catch overlaps/out-of-bounds/etc.
-// 3) Add a retry loop: if invalid, ask the model to minimally correct the JSON using the error list.
+// 3) Retry loop: if invalid, ask the model to minimally correct the JSON using the error list.
 // 4) Normalize missing fields (stories/totalAreaSqFt/level numbers/room.level) for consistency.
+// 5) Vercel hardening: fewer attempts + no "high thinking" + per-attempt timeout.
 
 const { GoogleGenAI } = require("@google/genai");
 const { renderPlanSvg } = require("../lib/renderPlanSvg");
@@ -18,6 +19,18 @@ function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+}
+
+async function withTimeout(promise, ms, label = "operation") {
+  let t;
+  const timeout = new Promise((_, reject) => {
+    t = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    clearTimeout(t);
+  }
 }
 
 function computeFootprint(surveyData) {
@@ -37,7 +50,7 @@ function computeFootprint(surveyData) {
 }
 
 function normalizePlanSpec(planSpec, surveyData, footprint) {
-  const out = (planSpec && typeof planSpec === "object") ? planSpec : {};
+  const out = planSpec && typeof planSpec === "object" ? planSpec : {};
 
   // Required by schema
   out.stories = Number.isFinite(out.stories) ? out.stories : footprint.stories;
@@ -47,14 +60,16 @@ function normalizePlanSpec(planSpec, surveyData, footprint) {
   if (!Array.isArray(out.levels)) out.levels = [];
   out.levels.forEach((lvl, idx) => {
     if (!lvl || typeof lvl !== "object") return;
+
     if (!Number.isFinite(lvl.level)) lvl.level = idx + 1;
     if (!Number.isFinite(lvl.width)) lvl.width = footprint.width;
     if (!Number.isFinite(lvl.height)) lvl.height = footprint.height;
+
     if (!Array.isArray(lvl.rooms)) lvl.rooms = [];
     if (!Array.isArray(lvl.doors)) lvl.doors = [];
     if (!Array.isArray(lvl.windows)) lvl.windows = [];
 
-    // Ensure rooms have a level field (your validator expects it)
+    // Ensure rooms have required fields + correct level
     lvl.rooms.forEach((r, rIdx) => {
       if (!r || typeof r !== "object") return;
       if (!r.id) r.id = `r${idx + 1}_${rIdx + 1}`;
@@ -67,13 +82,10 @@ function normalizePlanSpec(planSpec, surveyData, footprint) {
     });
   });
 
-  // If model forgot to output the right number of levels, we won't auto-invent rooms.
-  // We'll let validation fail and use the retry loop to correct it.
   return out;
 }
 
 function buildArchitectPrompt(surveyData, footprint) {
-  // DYNAMIC ZONING RULES BASED ON USER INPUTS (existing logic)
   const openConceptRule = String(surveyData?.openConcept || "").includes("Open")
     ? "PUBLIC ZONE: 'Living', 'Dining', and 'Kitchen' MUST share walls and act as one continuous block."
     : "PUBLIC ZONE: 'Living', 'Dining', and 'Kitchen' should be defined as separate but connected rooms.";
@@ -91,15 +103,22 @@ function buildArchitectPrompt(surveyData, footprint) {
       ? `Place "${String(surveyData.garage).toUpperCase()}" on Level 1 as a "garage" type room.`
       : "No garage.";
 
-  // IMPORTANT: include stories + totalAreaSqFt in the required JSON to satisfy schema
   return `
 You are a Senior Architect. Output ONLY valid JSON. 1 Unit = 1 Foot.
 
-You MUST follow this JSON Schema (high level):
-- Top-level keys: stories, totalAreaSqFt, levels
-- No extra top-level keys.
-- Each level must include: level, width, height, rooms, doors, windows
-- Each room must include: id, type, x, y, w, h (and optional label)
+You MUST follow this JSON contract exactly:
+- Top-level keys ONLY: stories, totalAreaSqFt, levels
+- stories must be ${footprint.stories}
+- totalAreaSqFt must be ${footprint.totalArea}
+- levels must have EXACTLY ${footprint.stories} items
+
+Each level must include:
+- level (1..stories), width, height, rooms, doors, windows
+
+Each room must include:
+- id, type, x, y, w, h
+- x,y,w,h must be numbers
+- Rooms must be axis-aligned rectangles
 
 **USER PREFERENCES (CRITICAL):**
 - Layout: ${openConceptRule}
@@ -109,41 +128,41 @@ You MUST follow this JSON Schema (high level):
 - Extra Features: "${surveyData?.features || ""}"
 
 **BUILDING CONSTRAINTS (MANDATORY):**
-- stories: ${footprint.stories}
-- totalAreaSqFt: ${footprint.totalArea}
-- EXACTLY ${footprint.stories} levels in levels[].
 - Each level footprint is: width=${footprint.width} ft, height=${footprint.height} ft.
 - Coordinates start at (0,0) in the top-left of the level.
-- Every room must be within bounds: 0 <= x <= width, 0 <= y <= height, x+w <= width, y+h <= height
+- Every room must be within bounds: x>=0, y>=0, x+w<=width, y+h<=height
 
 **AREA FILL CONSTRAINT (MANDATORY):**
-- The sum of all room areas (w*h) MUST equal EXACTLY ${footprint.width * footprint.height} for EACH level.
+- For EACH level, sum(room.w * room.h) MUST equal EXACTLY ${footprint.width * footprint.height}.
 - Fill the footprint completely: no gaps, no overlaps.
 
 **ZONING & ADJACENCY RULES:**
-1) WET CORE: Group Bathrooms near each other or near the Kitchen to share plumbing walls.
-2) STAIRS: If 2 levels, place a "stairs" type room on BOTH levels at the EXACT same x,y,w,h footprint.
-3) CIRCULATION: Use "hallway" rooms to connect spaces. No room should be inaccessible.
+1) WET CORE: Group bathrooms near each other or near the Kitchen.
+2) STAIRS: If 2 levels, include a "stairs" type room on BOTH levels at the EXACT same x,y,w,h.
+3) CIRCULATION: Use "hallway" rooms so rooms are accessible.
 
-Return JSON ONLY. Do not include markdown fences.
+Return JSON ONLY. No markdown. No extra commentary.
   `.trim();
 }
 
 function buildCorrectionPrompt(previousJson, errorList, footprint) {
-  const errorsText = errorList.map(e => `- ${e}`).join("\n");
+  const errorsText = errorList.map((e) => `- ${e}`).join("\n");
 
   return `
-You previously produced a PlanSpec JSON, but it failed validation.
+You produced a PlanSpec JSON, but it failed validation.
 
-Your task:
-1) Return corrected JSON ONLY (no markdown).
-2) Make the MINIMUM changes needed to fix errors.
-3) Keep room labels/types as stable as possible.
-4) Do NOT add extra top-level keys besides: stories, totalAreaSqFt, levels
-5) Ensure EXACTLY ${footprint.stories} levels.
-6) Each level must fill the entire footprint with NO overlaps and NO gaps.
-7) Every room must be within bounds.
-8) Ensure each room has fields: id, type, x, y, w, h (numbers), and the room.level matches the level number.
+Fix it with MINIMAL changes.
+Return corrected JSON ONLY (no markdown).
+
+Rules you MUST satisfy:
+- Top-level keys ONLY: stories, totalAreaSqFt, levels
+- stories = ${footprint.stories}
+- totalAreaSqFt = ${footprint.totalArea}
+- levels length = ${footprint.stories}
+- Each level fills width=${footprint.width}, height=${footprint.height} with NO overlaps and NO gaps.
+- All rooms in bounds.
+- Every room has id, type, x, y, w, h (numbers).
+- room.level must match its level number.
 
 VALIDATION ERRORS:
 ${errorsText}
@@ -160,14 +179,14 @@ function collectAllErrors(planSpec, surveyData) {
   const domain = validatePlanSpec(planSpec, surveyData);
 
   const out = [];
-  if (!schema.valid) out.push(...schema.errors.map(e => `Schema: ${e}`));
-  if (Array.isArray(domain) && domain.length) out.push(...domain.map(e => `Logic: ${e}`));
+  if (!schema.valid) out.push(...schema.errors.map((e) => `Schema: ${e}`));
+  if (Array.isArray(domain) && domain.length) out.push(...domain.map((e) => `Logic: ${e}`));
 
-  // Also enforce exact area fill per level (extra safety)
+  // Enforce exact area fill per level (extra safety)
   if (planSpec?.levels) {
     for (const lvl of planSpec.levels) {
       const sum = Array.isArray(lvl?.rooms)
-        ? lvl.rooms.reduce((acc, r) => acc + (Number(r.w) * Number(r.h)), 0)
+        ? lvl.rooms.reduce((acc, r) => acc + Number(r.w) * Number(r.h), 0)
         : 0;
       const area = Number(lvl?.width) * Number(lvl?.height);
       if (Number.isFinite(sum) && Number.isFinite(area) && sum !== area) {
@@ -191,6 +210,7 @@ module.exports = async function handler(req, res) {
   try {
     let body = req.body;
     if (typeof body === "string") body = JSON.parse(body);
+
     const { surveyData = {}, chatHistory = [] } = body;
 
     const footprint = computeFootprint(surveyData);
@@ -202,19 +222,31 @@ module.exports = async function handler(req, res) {
     let contents = Array.isArray(chatHistory) ? [...chatHistory] : [];
     contents.push({ role: "user", parts: [{ text: prompt }] });
 
-    const maxAttempts = 4;
+    // Vercel-safe settings:
+    const maxAttempts = 2;          // keep low to avoid 60s timeout
+    const perAttemptTimeoutMs = 20000; // 20s each; 2 attempts ~ 40s + overhead
+
     let lastModelText = "";
     let planSpec = null;
     let errors = [];
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const result = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents,
-        config: { thinkingConfig: { thinkingLevel: "high" } },
-      });
+      const result = await withTimeout(
+        ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents,
+          // Speed-focused: do NOT use thinkingLevel "high"
+          config: {
+            // You can optionally uncomment this if you want a bit more reasoning at slight cost:
+            // thinkingConfig: { thinkingLevel: "medium" }
+          }
+        }),
+        perAttemptTimeoutMs,
+        `Gemini generateContent (attempt ${attempt})`
+      );
 
       lastModelText = result?.text || "";
+
       const parsed = safeJsonParse(lastModelText);
       if (!parsed.ok) {
         errors = [`Parse: ${parsed.error}`];
@@ -226,21 +258,21 @@ module.exports = async function handler(req, res) {
       // If no errors, we're done.
       if (!errors.length) break;
 
-      // Otherwise, ask for a minimal correction using the last JSON (if we have it) or the raw parse.
-      const prevJson = planSpec || (parsed && parsed.value) || {};
-      const correctionPrompt = buildCorrectionPrompt(prevJson, errors, footprint);
-
-      // Append the model output (so it "sees" its own last attempt), then a correction request
-      contents.push({ role: "model", parts: [{ text: lastModelText }] });
-      contents.push({ role: "user", parts: [{ text: correctionPrompt }] });
+      // If more attempts remain, ask for a minimal correction.
+      if (attempt < maxAttempts) {
+        const prevJson = planSpec || (parsed && parsed.value) || {};
+        const correctionPrompt = buildCorrectionPrompt(prevJson, errors, footprint);
+        contents.push({ role: "model", parts: [{ text: lastModelText }] });
+        contents.push({ role: "user", parts: [{ text: correctionPrompt }] });
+      }
     }
 
     if (!planSpec || errors.length) {
       return res.status(422).json({
         success: false,
-        message: "Failed to produce a valid plan after retries",
+        message: "Failed to produce a valid plan within serverless limits",
         errors,
-        rawModelText: lastModelText,
+        rawModelText: lastModelText
       });
     }
 
@@ -249,17 +281,25 @@ module.exports = async function handler(req, res) {
     // Store the planSpec as the last model message (keeps your UI pattern working)
     const finalChatHistory = [
       ...contents,
-      { role: "model", parts: [{ text: JSON.stringify(planSpec) }] },
+      { role: "model", parts: [{ text: JSON.stringify(planSpec) }] }
     ];
 
     return res.status(200).json({
       success: true,
       planSpec,
       svg: svgString,
-      chatHistory: finalChatHistory,
+      chatHistory: finalChatHistory
     });
   } catch (err) {
     console.error("PLAN error:", err);
-    return res.status(500).json({ success: false, message: err.message });
+
+    // If timeout triggered, return a clearer error for the frontend
+    const msg = String(err?.message || "");
+    const isTimeout = msg.includes("timed out after");
+
+    return res.status(isTimeout ? 504 : 500).json({
+      success: false,
+      message: err.message
+    });
   }
 };
