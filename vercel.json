@@ -1,8 +1,8 @@
 {
-  "functions": {
-    "api/*.js": {
-      "maxDuration": 120,
-      "memory": 1024
+  "rewrites": [
+    {
+      "source": "/api/plan",
+      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/plan"
     }
-  }
+  ]
 }
