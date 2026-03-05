@@ -1,11 +1,12 @@
 // api/plan.js (CommonJS)
 //
-// Phase 1 improvements (Vercel-safe):
+// Phase 1 improvements (Vercel-safe + architect minimums):
 // - JSON extraction + schema validation (Ajv)
 // - domain validation (validatePlanSpec)
-// - retry once with a correction prompt (min changes)
-// - normalization for missing fields
-// - hardened for Vercel: short prompt + 2 attempts + 45s per attempt timeout
+// - retry loop with correction prompt
+// - normalization
+// - IMPORTANT: if attempt 1 times out, DO NOT fail; try attempt 2 within the same request
+// - Adds architectural minimum dimension checks so outputs like 16'x3' bathrooms get rejected
 
 const { GoogleGenAI } = require("@google/genai");
 const { renderPlanSvg } = require("../lib/renderPlanSvg");
@@ -13,7 +14,7 @@ const { validatePlanSpec } = require("../lib/validatePlan");
 const { validatePlanSpecSchema } = require("../lib/validateSchema");
 const { safeJsonParse } = require("../lib/llmJson");
 
-// ---- small helpers ----
+// ---- helpers ----
 
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -55,6 +56,7 @@ function normalizePlanSpec(planSpec, footprint) {
   if (!Number.isFinite(out.totalAreaSqFt)) out.totalAreaSqFt = footprint.totalArea;
 
   if (!Array.isArray(out.levels)) out.levels = [];
+
   out.levels.forEach((lvl, idx) => {
     if (!lvl || typeof lvl !== "object") return;
 
@@ -74,15 +76,15 @@ function normalizePlanSpec(planSpec, footprint) {
       if (!Number.isFinite(r.y)) r.y = 0;
       if (!Number.isFinite(r.w)) r.w = 1;
       if (!Number.isFinite(r.h)) r.h = 1;
-      r.level = lvl.level; // keep validator happy
+      r.level = lvl.level;
+      if (!r.label && typeof r.name === "string") r.label = r.name; // compatibility if model uses name
     });
   });
 
   return out;
 }
 
-// Short, speed-focused prompt.
-// (Long prompts + "thinking=high" are what usually causes Vercel timeouts.)
+// Speed-focused prompt
 function buildPrompt(surveyData, footprint) {
   const openConcept = String(surveyData?.openConcept || "").includes("Open");
   const masterOnL1 = String(surveyData?.masterLocation || "").includes("Level 1");
@@ -93,33 +95,33 @@ function buildPrompt(surveyData, footprint) {
 Return JSON ONLY (no markdown, no extra text).
 
 Top-level keys ONLY: stories, totalAreaSqFt, levels
-- stories = ${footprint.stories}
-- totalAreaSqFt = ${footprint.totalArea}
-- levels length = ${footprint.stories}
+- stories=${footprint.stories}
+- totalAreaSqFt=${footprint.totalArea}
+- levels length=${footprint.stories}
 
-Each level:
-- level (1..stories)
-- width=${footprint.width}, height=${footprint.height}
-- rooms: array of rectangles that EXACTLY tile the footprint (no overlaps, no gaps)
-- doors: []
-- windows: []
+Each level must include:
+- level, width=${footprint.width}, height=${footprint.height}, rooms, doors, windows
+- doors: [] , windows: []
 
-Each room:
-- id, type, x, y, w, h (numbers)
+Rooms are axis-aligned rectangles with fields:
+- id, type, x, y, w, h (all numbers)
 - in bounds: x>=0,y>=0,x+w<=width,y+h<=height
 
-Constraints:
-- Area fill: For EACH level, sum(w*h) MUST equal EXACTLY ${footprint.width * footprint.height}.
-- If stories=2: include a "stairs" room on BOTH levels at same x,y,w,h.
-- Use a "hallway" room if needed so rooms are accessible.
-- Group bathrooms near kitchen (wet core).
+MANDATORY tiling:
+- For EACH level: sum(w*h) MUST equal EXACTLY ${footprint.width * footprint.height}
+- No overlaps. No gaps.
+
+Rules:
+- If stories=2: include a "stairs" room on BOTH levels at the same x,y,w,h
+- Use "hallway" room(s) to connect spaces.
+- Wet core: bathrooms near kitchen.
 
 Preferences:
-- openConcept=${openConcept} (if true: living+dining+kitchen should share walls and be adjacent)
+- openConcept=${openConcept}
 - masterOnLevel=${masterOnL1 ? 1 : 2}
 - kitchenRear=${kitchenRear}
 - garage=${garage}
-- features="${(surveyData?.features || "").slice(0, 200)}"
+- features="${(surveyData?.features || "").slice(0, 180)}"
 
 JSON only.
   `.trim();
@@ -150,6 +152,114 @@ Return JSON only.
   `.trim();
 }
 
+// Architectural minimums (Phase 1)
+// These stop “legal but nonsense” rectangles.
+function getMinRulesForRoom(room) {
+  const label = String(room?.label || "").toLowerCase();
+  const type = String(room?.type || "").toLowerCase();
+
+  // Defaults (very permissive)
+  let minW = 4;
+  let minH = 4;
+  let minArea = 25;
+
+  // Hallways: should not be 3ft wide
+  if (type === "hallway" || label.includes("hall")) {
+    minW = 4;
+    minH = 6;
+    minArea = 40;
+  }
+
+  // Bathrooms: avoid 16x3 “strip bathroom”
+  if (type === "bathroom" || label.includes("bath")) {
+    minW = 5;
+    minH = 6;
+    minArea = 30;
+  }
+
+  // Kitchen / Dining / Living: avoid 16x5 living rooms
+  if (type === "kitchen" || label.includes("kitchen")) {
+    minW = 7;
+    minH = 7;
+    minArea = 50;
+  }
+  if (type === "dining_room" || label.includes("dining")) {
+    minW = 7;
+    minH = 7;
+    minArea = 45;
+  }
+  if (type === "living_room" || label.includes("living")) {
+    minW = 10;
+    minH = 10;
+    minArea = 110;
+  }
+
+  // Bedrooms
+  if (type === "bedroom" || label.includes("bedroom")) {
+    minW = 9;
+    minH = 9;
+    minArea = 90;
+  }
+
+  // Study / Office / Gaming
+  if (label.includes("study") || label.includes("office")) {
+    minW = 8;
+    minH = 8;
+    minArea = 64;
+  }
+  if (label.includes("gaming")) {
+    minW = 10;
+    minH = 10;
+    minArea = 100;
+  }
+
+  // Garage: depends, but keep it reasonable
+  if (type === "garage" || label.includes("garage")) {
+    minW = 18;
+    minH = 18;
+    minArea = 300;
+  }
+
+  // Stairs should not be tiny
+  if (type === "stairs" || label.includes("stair")) {
+    minW = 5;
+    minH = 8;
+    minArea = 40;
+  }
+
+  return { minW, minH, minArea };
+}
+
+function collectArchitectMinErrors(planSpec) {
+  const errs = [];
+  const levels = Array.isArray(planSpec?.levels) ? planSpec.levels : [];
+
+  for (const lvl of levels) {
+    const rooms = Array.isArray(lvl?.rooms) ? lvl.rooms : [];
+    for (const r of rooms) {
+      const w = Number(r.w);
+      const h = Number(r.h);
+      const area = w * h;
+
+      if (!Number.isFinite(w) || !Number.isFinite(h)) continue;
+
+      const { minW, minH, minArea } = getMinRulesForRoom(r);
+
+      // also prevent extremely skinny rooms even if area passes
+      const skinny = Math.min(w, h) < 3;
+
+      if (w < minW || h < minH || area < minArea || skinny) {
+        const name = r.label || r.type || r.id;
+        errs.push(
+          `Logic: Level ${lvl.level} room "${name}" too small/skinny (${w}x${h}=${area}). Minimum about ${minW}x${minH} and area>=${minArea}. Avoid strips.`
+        );
+      }
+    }
+  }
+
+  return errs;
+}
+
 function collectAllErrors(planSpec, surveyData) {
   const schema = validatePlanSpecSchema(planSpec);
   const domain = validatePlanSpec(planSpec, surveyData);
@@ -158,6 +268,7 @@ function collectAllErrors(planSpec, surveyData) {
   if (!schema.valid) out.push(...schema.errors.map((e) => `Schema: ${e}`));
   if (Array.isArray(domain) && domain.length) out.push(...domain.map((e) => `Logic: ${e}`));
 
+  // Enforce exact area fill per level
   if (planSpec?.levels) {
     for (const lvl of planSpec.levels) {
       const sum = Array.isArray(lvl?.rooms)
@@ -169,6 +280,10 @@ function collectAllErrors(planSpec, surveyData) {
       }
     }
   }
+
+  // Architectural minimums
+  out.push(...collectArchitectMinErrors(planSpec));
+
   return out;
 }
 
@@ -192,30 +307,40 @@ module.exports = async function handler(req, res) {
 
     const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY });
 
-    // Keep history if you want, but don't bloat requests (bloat = slower).
-    // We'll keep only the last ~4 messages to reduce latency.
+    // Keep history small (big payload = slow)
     let contents = Array.isArray(chatHistory) ? [...chatHistory] : [];
-    if (contents.length > 4) contents = contents.slice(contents.length - 4);
+    if (contents.length > 3) contents = contents.slice(contents.length - 3);
 
     contents.push({ role: "user", parts: [{ text: prompt }] });
 
-    const maxAttempts = 2;               // Vercel-safe
-    const perAttemptTimeoutMs = 45000;   // 45s per attempt (avoid 20s false timeouts)
+    const maxAttempts = 2;
+    const perAttemptTimeoutMs = 55000; // 55s (cold starts can be slow)
 
     let lastModelText = "";
     let planSpec = null;
     let errors = [];
+    let lastAttemptError = null;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const result = await withTimeout(
-        ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents,
-          config: {} // speed-focused; no thinkingConfig
-        }),
-        perAttemptTimeoutMs,
-        `Gemini generateContent (attempt ${attempt})`
-      );
+      let result;
+      try {
+        result = await withTimeout(
+          ai.models.generateContent({
+            model: "gemini-3-flash-preview",
+            contents,
+            config: {} // speed-focused
+          }),
+          perAttemptTimeoutMs,
+          `Gemini generateContent (attempt ${attempt})`
+        );
+      } catch (e) {
+        // IMPORTANT: if attempt 1 times out, try attempt 2 in the same request
+        lastAttemptError = e;
+        if (attempt < maxAttempts && String(e?.message || "").includes("timed out after")) {
+          continue;
+        }
+        throw e;
+      }
 
       lastModelText = result?.text || "";
 
@@ -229,7 +354,6 @@ module.exports = async function handler(req, res) {
 
       if (!errors.length) break;
 
-      // Retry with correction prompt
       if (attempt < maxAttempts) {
         const prevJson = planSpec || (parsed && parsed.value) || {};
         const correctionPrompt = buildCorrectionPrompt(prevJson, errors, footprint);
@@ -239,9 +363,14 @@ module.exports = async function handler(req, res) {
     }
 
     if (!planSpec || errors.length) {
-      return res.status(422).json({
+      const msg = lastAttemptError ? String(lastAttemptError.message || "") : "";
+      const timedOut = msg.includes("timed out after");
+
+      return res.status(timedOut ? 504 : 422).json({
         success: false,
-        message: "Failed to produce a valid plan within serverless limits",
+        message: timedOut
+          ? "Model timed out. Try again (cold starts can be slow)."
+          : "Failed to produce a valid plan within serverless limits",
         errors,
         rawModelText: lastModelText
       });
@@ -249,7 +378,7 @@ module.exports = async function handler(req, res) {
 
     const svgString = renderPlanSvg(planSpec);
 
-    // Keep output compact: storing giant contents can slow future requests
+    // keep response history compact
     const finalChatHistory = [
       { role: "user", parts: [{ text: prompt }] },
       { role: "model", parts: [{ text: JSON.stringify(planSpec) }] }
