@@ -22,18 +22,27 @@ app.post("/api/plan", (req, res) => planHandler(req, res));
 const port = process.env.PORT || 8080;
 app.listen(port, () => console.log(`Cloud Run listening on ${port}`));
 app.post("/api/verify", (req, res) => {
-  const passkey = String(req.body?.passkey || req.body?.key || "").trim();
+  // Your frontend might send { passkey: "..."} or { key: "..."}.
+  const passkey = String(req.body?.passkey ?? req.body?.key ?? "").trim();
 
-  // Set this in Cloud Run env vars:
-  const expected = String(process.env.ENGINE_PASSKEY || "").trim();
+  // You said your env var name is VALID_PASSKEYS and value is like "KEYSTONE-DEMO"
+  const raw = String(process.env.VALID_PASSKEYS || "").trim();
+  const valid = raw
+    .split(",")
+    .map(s => s.trim())
+    .filter(Boolean);
 
-  if (!expected) {
-    return res.status(500).json({ success: false, message: "ENGINE_PASSKEY not set on server" });
+  if (!raw) {
+    return res.status(500).json({
+      success: false,
+      message: "VALID_PASSKEYS env var is not set on server"
+    });
   }
 
-  if (passkey && passkey === expected) {
-    return res.status(200).json({ success: true });
-  }
+  const ok = valid.includes(passkey);
 
-  return res.status(401).json({ success: false, message: "Invalid passkey" });
+  return res.status(ok ? 200 : 401).json({
+    success: ok,
+    message: ok ? "Verified" : "Invalid passkey"
+  });
 });
