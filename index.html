@@ -268,6 +268,15 @@ const { motion, useScroll, useTransform, AnimatePresence } = FM;
   const [userTier, setUserTier] = useState("basic");
   const [passkeyInput, setPasskeyInput] = useState("");
   const [unlockStatus, setUnlockStatus] = useState("idle");
+  useEffect(() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem("keystone_unlock") || "null");
+    if (saved?.unlocked) {
+      setIsUnlocked(true);
+      setUserTier(saved.tier || "basic");
+    }
+  } catch (_) {}
+}, []);
 
 const [formData, setFormData] = useState({
     location: "",
@@ -320,15 +329,73 @@ const [formData, setFormData] = useState({
   };
 
   const handleUnlock = async (e) => {
-    e.preventDefault();
-    setUnlockStatus("loading");
-    try {
-      const response = await fetch("/api/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ passkey: passkeyInput }) });
-      const data = await response.json();
-      if (data.success) { setIsUnlocked(true); setUserTier(data.tier || "basic"); setUnlockStatus("idle"); } 
-      else { setUnlockStatus("error"); }
-    } catch (err) { setUnlockStatus("error"); }
-  };
+  e.preventDefault();
+
+  const key = (passkeyInput || "").trim();
+  if (!key) {
+    setUnlockStatus("error:Please enter a passkey.");
+    return;
+  }
+
+  setUnlockStatus("loading");
+
+  // timeout guard (15s)
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), 15000);
+
+  try {
+    const response = await fetch("/api/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ passkey: key }),
+      signal: controller.signal
+    });
+
+    let data = null;
+    try { data = await response.json(); } catch { data = null; }
+
+    if (response.ok && data?.success) {
+      const tier = data.tier || "basic";
+      setIsUnlocked(true);
+      setUserTier(tier);
+      setUnlockStatus("idle");
+
+      // remember unlock
+      try {
+        localStorage.setItem(
+          "keystone_unlock",
+          JSON.stringify({ unlocked: true, tier, ts: Date.now() })
+        );
+      } catch (_) {}
+
+      return;
+    }
+
+    if (response.status === 401) {
+      setUnlockStatus("error:Invalid passkey. Please try again.");
+      return;
+    }
+    if (response.status === 429) {
+      setUnlockStatus("error:Too many attempts. Please wait and try again.");
+      return;
+    }
+    if (response.status === 504) {
+      setUnlockStatus("error:Server timed out. Please try again.");
+      return;
+    }
+
+    const msg = data?.message || "Verification failed. Please try again.";
+    setUnlockStatus(`error:${msg}`);
+  } catch (err) {
+    if (String(err?.name) === "AbortError") {
+      setUnlockStatus("error:Server took too long. Please try again.");
+    } else {
+      setUnlockStatus("error:Network error. Please check your connection.");
+    }
+  } finally {
+    clearTimeout(t);
+  }
+};
 
 const handleGeneratePlan = async (e, isRefinement = false) => {
     if (e) e.preventDefault();
@@ -570,9 +637,26 @@ const downloadImage = (content, filename) => {
                 <textarea rows="2" placeholder="e.g. Wrap around porch, study room..." className="w-full bg-studio-eggshell border-none p-3 text-xs resize-none" value={formData.features} onChange={(e) => setFormData({ ...formData, features: e.target.value })} />
               </div>
 
-              <button type="submit" disabled={status.includes("loading")} className="w-full py-4 bg-studio-slate text-white uppercase tracking-[0.4em] text-[10px] font-bold disabled:opacity-50">
-                {status.includes("loading") ? "Processing..." : "Step 1: Draft Blueprint"}
-              </button>
+              <button
+  type="submit"
+  disabled={unlockStatus === "loading"}
+  className="w-full py-4 bg-studio-slate text-white uppercase text-[10px] font-bold disabled:opacity-60"
+>
+  {unlockStatus === "loading" ? "Verifying..." : "Unlock Engine"}
+</button>
+
+{/* Status message */}
+{unlockStatus.startsWith("error:") && (
+  <div className="mt-3 text-[10px] uppercase tracking-widest font-bold text-red-600">
+    {unlockStatus.replace("error:", "")}
+  </div>
+)}
+
+{unlockStatus === "idle" && (
+  <div className="mt-3 text-[9px] uppercase tracking-widest opacity-60">
+    Enter your beta key to continue.
+  </div>
+)}
             </form>
           </div>
 
@@ -922,5 +1006,6 @@ const downloadImage = (content, filename) => {
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
+    
 </body>
 </html>
