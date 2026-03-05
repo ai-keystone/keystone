@@ -7,6 +7,10 @@
     {
       "source": "/api/verify",
       "destination": "https://keystone-api-97830102261.us-central1.run.app/api/verify"
-    }
+    },
+    {
+  "source": "/api/health",
+  "destination": "https://keystone-api-97830102261.us-central1.run.app/health"
+}
   ]
 }
