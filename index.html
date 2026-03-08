@@ -459,39 +459,122 @@ const PlanSummaryPanel = ({ planSpec }) => {
 
 // ─── REFINEMENT PANEL ─────────────────────────────────────────────────────────
 const REFINEMENT_SUGGESTIONS = [
-    "Make the kitchen larger","Add more natural light to living room",
-    "Make the primary bedroom bigger","Move dining room closer to kitchen",
-    "Make the garage wider","Expand the master bathroom","Make hallways wider",
+    "Make the living room 4 feet wider",
+    "Make the primary bedroom bigger",
+    "Expand the kitchen",
+    "Make the master bathroom larger",
+    "Widen the hallways",
+    "Make the garage wider",
+    "Expand the dining room",
 ];
 
-const RefinementPanel = ({ planSpec, formData, refinementsLeft, onRefine, isLoading }) => {
+const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistory, onRefine, isLoading }) => {
     const [custom, setCustom] = React.useState('');
+    const historyRef = React.useRef(null);
+
+    // Auto-scroll history to bottom when new messages arrive
+    React.useEffect(() => {
+        if (historyRef.current) historyRef.current.scrollTop = historyRef.current.scrollHeight;
+    }, [refinementHistory]);
+
     if (!planSpec) return null;
-    const handleCustom = (e) => { e.preventDefault(); if (!custom.trim() || isLoading) return; onRefine(custom.trim()); setCustom(''); };
+
+    const handleCustom = (e) => {
+        e.preventDefault();
+        if (!custom.trim() || isLoading || refinementsLeft <= 0) return;
+        onRefine(custom.trim());
+        setCustom('');
+    };
+
+    const disabled = isLoading || refinementsLeft <= 0;
+    const countColor = refinementsLeft > 5 ? 'var(--blue)' : refinementsLeft > 2 ? 'var(--gold)' : 'var(--red)';
+
     return (
-        <div className="p-4 border-t border-black/5">
-            <div className="flex items-center justify-between mb-3">
-                <p className="mono text-[8px] uppercase tracking-widest text-blue">Refine Plan</p>
-                <span className="mono text-[9px] font-bold" style={{color: refinementsLeft > 3 ? 'var(--blue)' : 'var(--red)'}}>
-                    {refinementsLeft}/10 free left
+        <div className="border-t border-black/5">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                <div className="flex items-center gap-2">
+                    <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'var(--blue)',display:'inline-block'}}/>
+                    <p className="mono text-[8px] uppercase tracking-widest text-blue font-bold">Refine Your Plan</p>
+                </div>
+                <span className="mono text-[9px] font-bold" style={{color: countColor}}>
+                    {refinementsLeft}/10 free
                 </span>
             </div>
-            <div className="flex flex-wrap gap-1 mb-3">
+
+            {/* Conversation history */}
+            {refinementHistory.length > 0 && (
+                <div ref={historyRef} className="mx-4 mb-3 max-h-40 overflow-y-auto rounded-sm"
+                    style={{background:'var(--cream)',border:'1px solid rgba(0,0,0,0.06)'}}>
+                    {refinementHistory.map((msg, i) => (
+                        <div key={i} className="px-3 py-2 border-b border-black/4 last:border-0">
+                            {msg.role === 'user' && (
+                                <div className="flex gap-2 items-start">
+                                    <span className="mono text-[7px] uppercase text-blue pt-0.5 flex-shrink-0 font-bold">You</span>
+                                    <span className="text-[11px] leading-snug">{msg.content}</span>
+                                </div>
+                            )}
+                            {msg.role === 'assistant' && (
+                                <div className="flex gap-2 items-start">
+                                    <span className="mono text-[7px] uppercase text-mid pt-0.5 flex-shrink-0 font-bold">AI</span>
+                                    <span className="text-[11px] leading-snug text-blue">✓ {msg.content}</span>
+                                </div>
+                            )}
+                            {msg.role === 'error' && (
+                                <div className="flex gap-2 items-start">
+                                    <span className="mono text-[7px] uppercase text-red pt-0.5 flex-shrink-0 font-bold">Error</span>
+                                    <span className="text-[11px] leading-snug text-red">{msg.content}</span>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                    {isLoading && (
+                        <div className="px-3 py-2 flex items-center gap-2">
+                            <div className="w-3 h-3 border-2 border-blue border-t-transparent rounded-full animate-spin flex-shrink-0"/>
+                            <span className="mono text-[8px] uppercase tracking-widest text-mid animate-pulse">Gemini is analyzing your plan…</span>
+                        </div>
+                    )}
+                </div>
+            )}
+            {isLoading && refinementHistory.length === 0 && (
+                <div className="mx-4 mb-3 px-3 py-2 flex items-center gap-2 rounded-sm" style={{background:'var(--cream)'}}>
+                    <div className="w-3 h-3 border-2 border-blue border-t-transparent rounded-full animate-spin flex-shrink-0"/>
+                    <span className="mono text-[8px] uppercase tracking-widest text-mid animate-pulse">Gemini is analyzing your plan…</span>
+                </div>
+            )}
+
+            {/* Quick suggestion chips */}
+            <div className="flex flex-wrap gap-1 px-4 mb-3">
                 {REFINEMENT_SUGGESTIONS.map((s, i) => (
-                    <button key={i} disabled={isLoading || refinementsLeft<=0} onClick={() => onRefine(s)}
+                    <button key={i} disabled={disabled} onClick={() => onRefine(s)}
                         className="text-[9px] px-2 py-1 border border-black/8 hover:border-blue hover:text-blue transition-all disabled:opacity-30 rounded-sm bg-white">
                         {s}
                     </button>
                 ))}
             </div>
-            <form onSubmit={handleCustom} className="flex gap-2">
-                <input type="text" value={custom} onChange={e=>setCustom(e.target.value)} placeholder="Describe a custom change…" disabled={isLoading||refinementsLeft<=0} className="flex-1 text-sm"/>
-                <button type="submit" disabled={isLoading||refinementsLeft<=0||!custom.trim()}
+
+            {/* Custom input */}
+            <form onSubmit={handleCustom} className="flex gap-2 px-4 pb-4">
+                <input
+                    type="text"
+                    value={custom}
+                    onChange={e => setCustom(e.target.value)}
+                    placeholder={disabled ? 'No refinements left' : 'e.g. Make the living room 6 feet wider…'}
+                    disabled={disabled}
+                    className="flex-1 text-sm px-3 py-2 border border-black/10 rounded-sm focus:outline-none focus:border-blue disabled:opacity-40"
+                    style={{background:'white'}}
+                />
+                <button type="submit" disabled={disabled || !custom.trim()}
                     className="px-4 py-2 bg-blue text-white mono text-[9px] font-bold uppercase tracking-wider disabled:opacity-30 hover:bg-ink transition-colors rounded-sm whitespace-nowrap">
-                    Apply
+                    Apply →
                 </button>
             </form>
-            {refinementsLeft === 0 && <p className="mono text-[9px] text-red font-bold uppercase mt-2">Free refinements used — upgrade for more.</p>}
+
+            {refinementsLeft === 0 && (
+                <p className="mono text-[9px] text-red font-bold uppercase px-4 pb-3">
+                    Free refinements used — upgrade to Studio for more.
+                </p>
+            )}
         </div>
     );
 };
@@ -981,17 +1064,45 @@ const DesignGenerator = ({ onOpenModal }) => {
     const handleRefine = async (instruction) => {
         if (refinementsLeft <= 0) return;
         setStatus('refining');
-        const newHistory = [...refinementHistory, { role:'user', content:instruction }];
-        setRefinementHistory(newHistory);
+        // Optimistically add user message to history
+        setRefinementHistory(prev => [...prev, { role:'user', content: instruction }]);
         try {
-            let res = await fetch('/api/plan/refine', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ surveyData:formData, currentPlanSpec:planSpec, refinementInstruction:instruction, chatHistory:refinementHistory }) });
-            if (res.status === 404) res = await fetch('/api/plan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ surveyData:{...formData, features: formData.features+` [REFINE: ${instruction}]`}, chatHistory:newHistory }) });
+            const res = await fetch('/api/plan/refine', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    surveyData: formData,
+                    currentPlanSpec: planSpec,
+                    refinementInstruction: instruction,
+                }),
+            });
             const data = await res.json();
             if (!data.success) throw new Error(data.message);
-            setPlanSvg(data.svg); setPlanSpec(data.planSpec);
-            setRefinementHistory(prev => [...prev, { role:'assistant', content:`Applied: ${instruction}` }]);
-            setRefinementsLeft(prev => prev - 1); setStatus('plan-ready');
-        } catch(err) { alert('Refinement error: ' + err.message); setStatus('plan-ready'); }
+
+            // Build a human-readable summary of what changed
+            const changes = data.appliedChanges || [];
+            const summary = changes.length > 0
+                ? changes.map(c => {
+                    const room = planSpec.levels?.flatMap(l => l.rooms || []).find(r => r.id === c.id);
+                    const name = room?.label || c.id;
+                    if (c.action === 'resize') return `Resized ${name} to ${c.w}×${c.h} ft`;
+                    if (c.action === 'move') return `Moved ${name} to (${c.x}, ${c.y})`;
+                    if (c.action === 'resize_and_move') return `Resized & moved ${name} to ${c.w}×${c.h} ft`;
+                    return `Updated ${name}`;
+                }).join(', ')
+                : `Applied: ${instruction}`;
+
+            setPlanSvg(data.svg);
+            setPlanSpec(data.planSpec);
+            if (data.galleryId) setGalleryId(data.galleryId);
+            setRefinementHistory(prev => [...prev, { role:'assistant', content: summary }]);
+            setRefinementsLeft(prev => prev - 1);
+            setStatus('plan-ready');
+        } catch(err) {
+            console.error('[refine]', err);
+            setRefinementHistory(prev => [...prev, { role:'error', content: err.message }]);
+            setStatus('plan-ready');
+        }
     };
 
     const downloadBlueprint = () => {
@@ -1082,7 +1193,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                     <div className="w-full overflow-auto cursor-zoom-in" onClick={()=>setZoomImage(planSvg)} dangerouslySetInnerHTML={{__html:planSvg}}/>
                                 </div>
                                 <div className="px-5"><PlanSummaryPanel planSpec={planSpec}/></div>
-                                <RefinementPanel planSpec={planSpec} formData={formData} refinementsLeft={refinementsLeft} onRefine={handleRefine} isLoading={isLoading}/>
+                                <RefinementPanel planSpec={planSpec} formData={formData} refinementsLeft={refinementsLeft} refinementHistory={refinementHistory} onRefine={handleRefine} isLoading={isLoading}/>
                                 <div className="p-5 bg-paper/30 border-t border-black/5">
                                     <Render3DPanel planSpec={planSpec} formData={formData} planSvg={planSvg} galleryId={galleryId} onRenderReady={img=>setZoomImage(img)}/>
                                 </div>
