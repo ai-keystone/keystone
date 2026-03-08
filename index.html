@@ -579,27 +579,180 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
     );
 };
 
+// ─── RENDER SURVEY MODAL ──────────────────────────────────────────────────────
+const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
+    const [data, setData] = useState(initialData || {
+        zipCode: '', exteriorStyle: '', roofStyle: 'Gabled', landscaping: 'Manicured lawn',
+        surroundings: '', season: 'Summer', timeOfDay: 'Midday', lotContext: '',
+    });
+    const upd = (f, v) => setData(p => ({ ...p, [f]: v }));
+
+    const BtnRow = ({ field, options }) => (
+        <div className="flex flex-wrap gap-1.5">
+            {options.map(opt => {
+                const val = typeof opt === 'string' ? opt : opt.val;
+                const label = typeof opt === 'string' ? opt : opt.label;
+                const sel = data[field] === val;
+                return <button key={val} type="button" onClick={() => upd(field, val)}
+                    className="px-3 py-1.5 border rounded-sm text-[10px] font-semibold transition-all"
+                    style={{borderColor: sel?'var(--blue)':'rgba(0,0,0,0.1)', background: sel?'var(--ink)':'white', color: sel?'white':'var(--ink)'}}>
+                    {label}
+                </button>;
+            })}
+        </div>
+    );
+    const Lbl = ({children}) => <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1.5">{children}</label>;
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+                    className="fixed inset-0 z-[150] flex items-end md:items-center justify-center bg-ink/70 backdrop-blur-lg p-0 md:p-6">
+                    <motion.div initial={{y:40,opacity:0}} animate={{y:0,opacity:1}} exit={{y:40,opacity:0}}
+                        transition={{type:'spring',damping:26}}
+                        className="bg-paper w-full md:max-w-lg rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden">
+                        <div style={{height:'3px',background:'linear-gradient(90deg,var(--blue),var(--red))'}}/>
+                        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 bg-black/6 hover:bg-black/12 rounded-full flex items-center justify-center text-lg z-10">×</button>
+
+                        <div className="p-6 overflow-y-auto" style={{maxHeight:'85vh'}}>
+                            <span className="badge mb-3 inline-block">3D Render Options</span>
+                            <h2 className="cg text-2xl italic mb-1">Customize Your Render.</h2>
+                            <p className="text-mid text-[11px] mb-5 leading-relaxed">These details help Gemini AI generate a more accurate and context-aware exterior render.</p>
+
+                            <div className="space-y-4">
+                                {/* ZIP CODE */}
+                                <div>
+                                    <Lbl>📍 Project Zip Code</Lbl>
+                                    <input type="text" placeholder="e.g. 78701" maxLength="10"
+                                        value={data.zipCode} onChange={e => upd('zipCode', e.target.value)}
+                                        style={{maxWidth:'180px'}}/>
+                                    <p className="text-[9px] text-mid/60 mt-1">Helps set regional context — climate, terrain, neighborhood character</p>
+                                </div>
+
+                                {/* EXTERIOR STYLE OVERRIDE */}
+                                <div>
+                                    <Lbl>🏠 Exterior Style</Lbl>
+                                    <BtnRow field="exteriorStyle" options={[
+                                        {val:'Craftsman (Wood & Stone)',          label:'Craftsman'},
+                                        {val:'Modern Farmhouse (Board & Batten)', label:'Farmhouse'},
+                                        {val:'Traditional Colonial (Brick)',      label:'Colonial'},
+                                        {val:'Contemporary Modern (Concrete)',    label:'Modern'},
+                                        {val:'Mediterranean (Stucco & Tile)',     label:'Mediterranean'},
+                                        {val:'Rustic Cabin (Log & Stone)',        label:'Rustic'},
+                                    ]}/>
+                                    <p className="text-[9px] text-mid/60 mt-1">Leave blank to use your plan survey style</p>
+                                </div>
+
+                                {/* ROOF STYLE */}
+                                <div>
+                                    <Lbl>🏗️ Roof Style</Lbl>
+                                    <BtnRow field="roofStyle" options={['Gabled','Hip Roof','Flat Roof','Metal Standing Seam','Terracotta Tile','Cathedral / Vaulted']}/>
+                                </div>
+
+                                {/* SEASON */}
+                                <div>
+                                    <Lbl>🌿 Season / Vegetation</Lbl>
+                                    <BtnRow field="season" options={['Spring','Summer','Fall','Winter (Snow)']}/>
+                                </div>
+
+                                {/* TIME OF DAY */}
+                                <div>
+                                    <Lbl>☀️ Time of Day / Lighting</Lbl>
+                                    <BtnRow field="timeOfDay" options={['Sunrise','Midday','Golden Hour','Overcast','Night']}/>
+                                </div>
+
+                                {/* SURROUNDINGS */}
+                                <div>
+                                    <Lbl>🌲 Surrounding Environment</Lbl>
+                                    <BtnRow field="surroundings" options={[
+                                        {val:'Suburban neighborhood', label:'Suburban'},
+                                        {val:'Wooded forest',         label:'Wooded'},
+                                        {val:'Desert arid landscape', label:'Desert'},
+                                        {val:'Tropical lush',         label:'Tropical'},
+                                        {val:'Snow and mountains',    label:'Mountain'},
+                                        {val:'Ocean or lake waterfront', label:'Waterfront'},
+                                    ]}/>
+                                </div>
+
+                                {/* LANDSCAPING */}
+                                <div>
+                                    <Lbl>🌳 Landscaping</Lbl>
+                                    <BtnRow field="landscaping" options={[
+                                        'Manicured lawn',
+                                        'Native plantings',
+                                        'Desert xeriscaping',
+                                        'Formal hedges',
+                                        'Wildflower meadow',
+                                        'Minimal / gravel',
+                                    ]}/>
+                                </div>
+                            </div>
+
+                            <button onClick={() => onSubmit(data)}
+                                className="w-full mt-6 py-3.5 bg-ink text-white mono text-[10px] uppercase tracking-[0.18em] font-bold hover:bg-blue transition-colors rounded-sm">
+                                ✦ Generate 3D Render →
+                            </button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+};
+
 // ─── 3D RENDER PANEL ──────────────────────────────────────────────────────────
 const RENDER_REFINEMENTS = [
-    { label: 'Golden Hour',    hint: 'warm late-afternoon sunlight, long shadows, golden sky' },
-    { label: 'Overcast Day',   hint: 'soft diffuse overcast lighting, muted tones, grey sky' },
-    { label: 'Night Lit',      hint: 'dusk with interior lights glowing through windows, subtle landscape lighting, dark blue sky' },
+    { label: 'Golden Hour',  hint: 'warm late-afternoon sunlight, long shadows, golden orange sky — ONLY change the lighting and sky, keep the house architecture identical' },
+    { label: 'Overcast Day', hint: 'soft diffuse overcast lighting, muted tones, grey cloud-covered sky — ONLY change the lighting and sky, keep the house architecture identical' },
+    { label: 'Night Lit',    hint: 'night scene with interior lights glowing warmly through windows, landscape uplighting, dark blue starry sky — ONLY change the lighting and sky, keep the house architecture identical' },
+    { label: 'Sunrise',      hint: 'sunrise with pink and orange gradient sky, long warm shadows raking across the facade — ONLY change the lighting and sky, keep the house architecture identical' },
 ];
 
 const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }) => {
-    const [renderStatus, setRenderStatus] = useState('idle'); // idle|loading|error|ready
+    const [renderStatus, setRenderStatus] = useState('idle'); // idle|survey|loading|error|ready
     const [renderImage, setRenderImage] = useState(null);
+    const [renderImageClean, setRenderImageClean] = useState(null); // without watermark, for lighting edits
     const [errorMsg, setErrorMsg] = useState('');
-    const [activeRefinement, setActiveRefinement] = useState(null); // label of active refinement
+    const [activeRefinement, setActiveRefinement] = useState(null);
+    const [showSurvey, setShowSurvey] = useState(false);
+    const [renderSurveyData, setRenderSurveyData] = useState(null);
 
-    const doRender = async (lightingHint = null) => {
+    const applyWatermark = (imgSrc) => new Promise((resolve) => {
+        const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d'), img = new Image();
+        img.onload = () => {
+            canvas.width = img.width; canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            const barH = Math.max(28, canvas.height * 0.05);
+            ctx.fillStyle = 'rgba(10,10,12,0.82)';
+            ctx.fillRect(0, canvas.height - barH, canvas.width, barH);
+            ctx.fillStyle = '#fff';
+            ctx.font = `italic ${Math.floor(barH * 0.42)}px serif`;
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Property of Keystone AI', barH * 0.5, canvas.height - barH / 2);
+            resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = () => resolve(imgSrc);
+        img.src = imgSrc;
+    });
+
+    const doRender = async (renderSurvey, lightingHint = null, existingImageForLighting = null) => {
         setRenderStatus('loading');
         setErrorMsg('');
         try {
+            const payload = {
+                surveyData: formData,
+                renderSurveyData: renderSurvey || renderSurveyData || {},
+                planSpec,
+                galleryId,
+                lightingHint: lightingHint || null,
+                // Pass existing render (without watermark) for lighting-only edits
+                existingRenderImage: existingImageForLighting || null,
+            };
+
             const res = await fetch('/api/render', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ surveyData: formData, planSpec, galleryId, lightingHint }),
+                body: JSON.stringify(payload),
             });
 
             let data;
@@ -611,30 +764,12 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
                 return;
             }
 
-            // Add watermark bar
             const imgSrc = data.image.startsWith('data:') ? data.image : `data:image/jpeg;base64,${data.image}`;
-            const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d'), img = new Image();
-            img.onload = () => {
-                canvas.width = img.width; canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-                const barH = Math.max(28, canvas.height * 0.05);
-                ctx.fillStyle = 'rgba(10,10,12,0.82)';
-                ctx.fillRect(0, canvas.height - barH, canvas.width, barH);
-                ctx.fillStyle = '#fff';
-                ctx.font = `italic ${Math.floor(barH * 0.42)}px serif`;
-                ctx.textBaseline = 'middle';
-                ctx.fillText('Property of Keystone AI', barH * 0.5, canvas.height - barH / 2);
-                const watermarked = canvas.toDataURL('image/png');
-                setRenderImage(watermarked);
-                setRenderStatus('ready');
-                if (onRenderReady) onRenderReady(watermarked);
-            };
-            img.onerror = () => {
-                setRenderImage(imgSrc);
-                setRenderStatus('ready');
-                if (onRenderReady) onRenderReady(imgSrc);
-            };
-            img.src = imgSrc;
+            setRenderImageClean(imgSrc); // store clean copy for future lighting edits
+            const watermarked = await applyWatermark(imgSrc);
+            setRenderImage(watermarked);
+            setRenderStatus('ready');
+            if (onRenderReady) onRenderReady(watermarked);
         } catch(err) {
             console.error('[render]', err);
             setErrorMsg(err.message || 'Network error — is the server running?');
@@ -642,18 +777,30 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
         }
     };
 
-    const handleRender = () => { setActiveRefinement(null); doRender(null); };
+    const handleSurveySubmit = (surveyData) => {
+        setShowSurvey(false);
+        setRenderSurveyData(surveyData);
+        setActiveRefinement(null);
+        doRender(surveyData, null, null);
+    };
+
+    const handleRender = () => { setActiveRefinement(null); setShowSurvey(true); };
+    const handleRegenerate = () => { setActiveRefinement(null); doRender(renderSurveyData, null, null); };
 
     const handleRefinement = (ref) => {
         setActiveRefinement(ref.label);
-        doRender(ref.hint);
+        // Pass the clean (un-watermarked) existing image so backend can do lighting-only edit
+        doRender(renderSurveyData, ref.hint, renderImageClean);
     };
 
     if (renderStatus === 'idle') return (
-        <button onClick={handleRender}
-            className="w-full py-3.5 bg-ink text-white mono text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-blue transition-colors rounded-sm">
-            ✦ Generate AI 3D Render
-        </button>
+        <>
+            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData}/>
+            <button onClick={handleRender}
+                className="w-full py-3.5 bg-ink text-white mono text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-blue transition-colors rounded-sm">
+                ✦ Generate AI 3D Render
+            </button>
+        </>
     );
 
     if (renderStatus === 'loading') return (
@@ -661,40 +808,50 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
             <div className="flex items-center gap-3 text-blue">
                 <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"/>
                 <span className="mono text-[9px] uppercase tracking-widest animate-pulse">
-                    {activeRefinement ? `Rendering: ${activeRefinement}…` : 'Rendering with Gemini AI…'}
+                    {activeRefinement ? `Adjusting lighting: ${activeRefinement}…` : 'Rendering with Gemini AI…'}
                 </span>
             </div>
-            <p className="mono text-[8px] text-mid opacity-50">Usually 10–20 seconds</p>
+            <p className="mono text-[8px] text-mid opacity-50">
+                {activeRefinement ? 'Changing lighting only — architecture unchanged' : 'Usually 15–30 seconds'}
+            </p>
         </div>
     );
 
     if (renderStatus === 'error') return (
-        <div className="p-4 bg-red/5 border border-red/20 rounded-sm">
-            <p className="mono text-[9px] font-bold text-red uppercase mb-1">Render Failed</p>
-            <p className="text-[10px] text-mid leading-relaxed mb-3" style={{wordBreak:'break-word'}}>{errorMsg}</p>
-            <button onClick={handleRender}
-                className="mono text-[9px] uppercase tracking-widest px-3 py-1.5 bg-ink text-white rounded-sm hover:bg-blue transition-colors">
-                Retry →
-            </button>
-        </div>
+        <>
+            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData}/>
+            <div className="p-4 bg-red/5 border border-red/20 rounded-sm">
+                <p className="mono text-[9px] font-bold text-red uppercase mb-1">Render Failed</p>
+                <p className="text-[10px] text-mid leading-relaxed mb-3" style={{wordBreak:'break-word'}}>{errorMsg}</p>
+                <button onClick={() => setShowSurvey(true)}
+                    className="mono text-[9px] uppercase tracking-widest px-3 py-1.5 bg-ink text-white rounded-sm hover:bg-blue transition-colors">
+                    Retry →
+                </button>
+            </div>
+        </>
     );
 
     if (renderStatus === 'ready') return (
         <div>
+            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData}/>
             <img src={renderImage} className="w-full object-cover rounded-sm shadow-xl" alt="AI 3D Render"/>
             {/* Toolbar */}
-            <div className="flex items-center gap-2 mt-2 mb-3">
+            <div className="flex items-center gap-2 mt-2 mb-3 flex-wrap">
                 <span className="mono text-[8px] uppercase tracking-widest text-mid">
-                    {activeRefinement ? activeRefinement : 'AI Exterior Render'}
+                    {activeRefinement ? `Lighting: ${activeRefinement}` : 'AI Exterior Render'}
                 </span>
                 <button onClick={() => { const l=document.createElement('a'); l.href=renderImage; l.download='Keystone_3D.png'; l.click(); }}
                     className="ml-auto mono text-[9px] text-blue underline">↓ Download</button>
-                <button onClick={handleRender}
-                    className="mono text-[9px] text-mid underline">↺ Regenerate</button>
+                <button onClick={handleRegenerate} className="mono text-[9px] text-mid underline">↺ Regenerate</button>
+                <button onClick={() => setShowSurvey(true)} className="mono text-[9px] text-mid underline">⚙ Options</button>
             </div>
-            {/* Lighting refinement chips */}
+
+            {/* Lighting refinement chips — lighting only, architecture unchanged */}
             <div className="border-t border-black/5 pt-3">
-                <p className="mono text-[7px] uppercase tracking-widest text-mid mb-2">Lighting &amp; Mood</p>
+                <div className="flex items-center justify-between mb-2">
+                    <p className="mono text-[7px] uppercase tracking-widest text-mid">Lighting &amp; Mood</p>
+                    <p className="mono text-[7px] text-mid/40">Architecture stays unchanged</p>
+                </div>
                 <div className="flex gap-2 flex-wrap">
                     {RENDER_REFINEMENTS.map(ref => (
                         <button key={ref.label}
@@ -705,10 +862,11 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
                                 background: activeRefinement === ref.label ? 'var(--blue)' : 'white',
                                 color: activeRefinement === ref.label ? 'white' : 'var(--ink)',
                             }}>
-                            {ref.label === 'Golden Hour' && '☀'}
-                            {ref.label === 'Overcast Day' && '☁'}
-                            {ref.label === 'Night Lit' && '🌙'}
-                            {' '}{ref.label}
+                            {ref.label === 'Golden Hour' && '☀ '}
+                            {ref.label === 'Overcast Day' && '☁ '}
+                            {ref.label === 'Night Lit' && '🌙 '}
+                            {ref.label === 'Sunrise' && '🌅 '}
+                            {ref.label}
                         </button>
                     ))}
                 </div>
@@ -720,11 +878,11 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
 
 // ─── SURVEY FORM ──────────────────────────────────────────────────────────────
 const SURVEY_STEPS = [
-    { id:'basics',    title:'Basic Requirements',   subtitle:'Size, stories, and rooms',           fields:['totalArea','stories','bedrooms','bathrooms'] },
+    { id:'basics',    title:'Basic Requirements',   subtitle:'Size, stories, and rooms',           fields:['totalArea','stories','bedrooms','bathrooms','privateBaths'] },
     { id:'structure', title:'Structure & Site',      subtitle:'Garage, shape, and orientation',     fields:['garage','shape','frontFacing','lotContext'] },
     { id:'lifestyle', title:'Lifestyle & Layout',    subtitle:'How you live in the home',           fields:['openConcept','masterLocation','kitchenPlacement','laundryLocation','ceilingHeight'] },
     { id:'style',     title:'Style & Materials',     subtitle:'Aesthetic and finishes',             fields:['materials','indoorOutdoor','naturalLight'] },
-    { id:'extras',    title:'Special Features',      subtitle:'Additional rooms and wishes',        fields:['features','accessibilityNeeds','budgetTier','freeformWishes'] },
+    { id:'extras',    title:'Special Features',      subtitle:'Additional rooms and preferences',   fields:['features','accessibilityNeeds','budgetTier','freeformWishes'] },
 ];
 
 const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
@@ -749,16 +907,122 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
         </div>
     );
 
+    // Toggle-chip button for multi-select style (features)
+    const ToggleChip = ({ value, label, icon, field }) => {
+        const selected = (formData[field] || '').toLowerCase().includes(label.toLowerCase());
+        const toggle = () => {
+            const current = formData[field] || '';
+            // Parse existing features into an array
+            const parts = current.split(',').map(s => s.trim()).filter(Boolean);
+            if (selected) {
+                const next = parts.filter(p => !p.toLowerCase().includes(label.toLowerCase())).join(', ');
+                upd(field, next);
+            } else {
+                const next = [...parts, `1 ${label}`].join(', ');
+                upd(field, next);
+            }
+        };
+        return (
+            <button type="button" onClick={toggle}
+                className="flex items-center gap-1.5 px-3 py-2 border rounded-sm transition-all text-[10px] font-semibold"
+                style={{
+                    borderColor: selected ? 'var(--blue)' : 'rgba(0,0,0,0.1)',
+                    background: selected ? 'var(--ink)' : 'white',
+                    color: selected ? 'white' : 'var(--ink)',
+                }}>
+                <span style={{fontSize:'13px'}}>{icon}</span>
+                {label}
+                {selected && <span style={{opacity:0.5,fontSize:'9px'}}>✓</span>}
+            </button>
+        );
+    };
+
     const Lbl = ({children}) => <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1.5">{children}</label>;
 
+    // Footprint shape visual options
+    const FootprintOption = ({ val, label, desc, ratio }) => {
+        const sel = formData.shape === val;
+        // ratio: [w, h] proportional
+        const [fw, fh] = ratio;
+        return (
+            <button type="button" onClick={() => upd('shape', val)}
+                className={`p-3 border rounded-sm transition-all flex flex-col items-center gap-2 ${sel ? 'bg-ink text-white border-ink' : 'border-black/10 bg-white hover:border-blue'}`}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'36px'}}>
+                    <div style={{
+                        width: `${fw * 28}px`, height: `${fh * 28}px`,
+                        border: `2px solid ${sel ? 'rgba(255,255,255,0.7)' : 'var(--blue)'}`,
+                        background: sel ? 'rgba(255,255,255,0.08)' : 'rgba(27,79,130,0.06)',
+                        borderRadius: '2px',
+                    }}/>
+                </div>
+                <div className="text-[10px] font-semibold leading-tight text-center">{label}</div>
+                <div className={`text-[8px] leading-tight text-center ${sel?'opacity-50':'opacity-40'}`}>{desc}</div>
+            </button>
+        );
+    };
+
+    // Lot context visual option (like street/front but for lot type)
+    const LotOption = ({ val, label, svgContent }) => {
+        const sel = formData.lotContext === val;
+        return (
+            <button type="button" onClick={() => upd('lotContext', val)}
+                className={`p-2 border rounded-sm transition-all flex flex-col items-center gap-1.5 ${sel ? 'border-blue' : 'border-black/10 bg-white hover:border-blue'}`}
+                style={{background: sel ? 'rgba(27,79,130,0.05)' : 'white'}}>
+                <svg viewBox="0 0 60 40" width="60" height="40" style={{display:'block'}}>
+                    {svgContent}
+                </svg>
+                <div className="text-[9px] font-semibold leading-tight text-center" style={{color: sel ? 'var(--blue)' : 'var(--ink)'}}>{label}</div>
+            </button>
+        );
+    };
+
     const renderField = (field) => {
+        const bedCount = parseInt(formData.bedrooms) || 3;
         switch(field) {
             case 'totalArea': return <div key={field} className="space-y-1.5"><Lbl>Total Floor Area (Sq Ft)</Lbl><input type="number" placeholder="e.g. 2400" value={formData.totalArea} onChange={e=>upd('totalArea',e.target.value)} min="600" max="10000"/><p className="text-[9px] text-mid/60">Total finished sq ft across all levels</p></div>;
             case 'stories': return <div key={field} className="space-y-1.5"><Lbl>Number of Stories</Lbl><BtnGrid field="stories" options={['1 Story','2 Stories']}/></div>;
-            case 'bedrooms': return <div key={field} className="space-y-1.5"><Lbl>Bedrooms</Lbl><div className="flex gap-2">{[1,2,3,4,5].map(n=><button key={n} type="button" onClick={()=>upd('bedrooms',`${n} Bed`)} className={`flex-1 h-11 border text-sm font-bold rounded-sm transition-all ${formData.bedrooms===`${n} Bed`?'bg-ink text-white border-ink':'border-black/10 bg-white hover:border-blue'}`}>{n}</button>)}</div></div>;
-            case 'bathrooms': return <div key={field} className="space-y-1.5"><Lbl>Full Bathrooms</Lbl><div className="flex gap-2">{[1,2,3,4,5].map(n=><button key={n} type="button" onClick={()=>upd('bathrooms',`${n} Bath`)} className={`flex-1 h-11 border text-sm font-bold rounded-sm transition-all ${formData.bathrooms===`${n} Bath`?'bg-ink text-white border-ink':'border-black/10 bg-white hover:border-blue'}`}>{n}</button>)}</div><p className="text-[9px] text-mid/60">Half baths added automatically</p></div>;
-            case 'garage': return <div key={field} className="space-y-1.5"><Lbl>Garage</Lbl><BtnGrid field="garage" options={['None','1 Car Garage','2 Car Garage','3 Car Garage']}/></div>;
-            case 'shape': return <div key={field} className="space-y-1.5"><Lbl>Footprint Shape</Lbl><BtnGrid field="shape" options={['Rectangular','Square']}/></div>;
+            case 'bedrooms': return (
+                <div key={field} className="space-y-1.5">
+                    <Lbl>Bedrooms</Lbl>
+                    <div className="flex gap-2">{[1,2,3,4,5].map(n=><button key={n} type="button" onClick={()=>upd('bedrooms',`${n} Bed`)} className={`flex-1 h-11 border text-sm font-bold rounded-sm transition-all ${formData.bedrooms===`${n} Bed`?'bg-ink text-white border-ink':'border-black/10 bg-white hover:border-blue'}`}>{n}</button>)}</div>
+                </div>
+            );
+            case 'bathrooms': return (
+                <div key={field} className="space-y-1.5">
+                    <Lbl>Full Bathrooms</Lbl>
+                    <div className="flex gap-2">{[1,2,3,4,5].map(n=><button key={n} type="button" onClick={()=>upd('bathrooms',`${n} Bath`)} className={`flex-1 h-11 border text-sm font-bold rounded-sm transition-all ${formData.bathrooms===`${n} Bath`?'bg-ink text-white border-ink':'border-black/10 bg-white hover:border-blue'}`}>{n}</button>)}</div>
+                    <p className="text-[9px] text-mid/60">Half baths added automatically</p>
+                </div>
+            );
+            case 'privateBaths': return (
+                <div key={field} className="space-y-1.5 p-3 bg-blue/4 border border-blue/15 rounded-sm">
+                    <Lbl>🛁 Private En-Suite Bathrooms</Lbl>
+                    <p className="text-[10px] text-mid mb-2">How many bedrooms should have their own private bathroom attached?</p>
+                    <div className="flex gap-2">{[0,1,2,3].filter(n => n <= bedCount).map(n=><button key={n} type="button" onClick={()=>upd('privateBaths',`${n}`)} className={`flex-1 h-10 border text-sm font-bold rounded-sm transition-all ${formData.privateBaths===`${n}`?'bg-blue text-white border-blue':'border-black/10 bg-white hover:border-blue'}`}>{n === 0 ? 'None' : n}</button>)}</div>
+                    <p className="text-[9px] text-mid/50">Primary bedroom always gets an en-suite · Remaining baths are shared</p>
+                </div>
+            );
+            case 'garage': return (
+                <div key={field} className="space-y-1.5">
+                    <Lbl>Garage</Lbl>
+                    <BtnGrid field="garage" options={[
+                        {val:'No Garage', label:'No Garage', desc:'Driveway only'},
+                        {val:'1 Car Garage', label:'1 Car', desc:'Single attached garage'},
+                        {val:'2 Car Garage', label:'2 Car', desc:'Double attached garage'},
+                    ]}/>
+                </div>
+            );
+            case 'shape': return (
+                <div key={field} className="space-y-1.5">
+                    <Lbl>Footprint Shape</Lbl>
+                    <div className="grid grid-cols-2 gap-2">
+                        <FootprintOption val="Rectangular (Wide)" label="Wide Rectangle" desc="Width > depth — more street frontage" ratio={[1.6, 1]}/>
+                        <FootprintOption val="Rectangular (Deep)" label="Deep Rectangle" desc="Depth > width — narrow lot" ratio={[1, 1.4]}/>
+                        <FootprintOption val="Square" label="Square" desc="Equal width and depth" ratio={[1, 1]}/>
+                        <FootprintOption val="Rectangular" label="Standard Rect" desc="Classic proportions" ratio={[1.3, 1]}/>
+                    </div>
+                </div>
+            );
             case 'frontFacing': return (
                 <div key={field} className="space-y-2">
                     <Lbl>Street / Front Faces</Lbl>
@@ -804,17 +1068,123 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                     <p className="mono text-[7px] text-mid/50 text-center">☀ South = most winter sun · East = morning light</p>
                 </div>
             );
-            case 'lotContext': return <div key={field} className="space-y-1.5"><Lbl>Lot / Site Context</Lbl><select value={formData.lotContext||''} onChange={e=>upd('lotContext',e.target.value)}><option value="">Select…</option><option value="Suburban standard lot">Suburban — standard lot</option><option value="Suburban corner lot">Suburban — corner lot</option><option value="Urban tight lot">Urban — tight lot</option><option value="Rural acreage">Rural — acreage</option><option value="View focused site">View-focused site</option></select></div>;
-            case 'openConcept': return <div key={field} className="space-y-1.5"><Lbl>Kitchen / Living / Dining</Lbl><BtnGrid field="openConcept" cols={1} options={[{val:'Open Concept (Combined)',label:'Open Concept',desc:'Kitchen, dining, and living flow together'},{val:'Traditional (Separate Rooms)',label:'Traditional',desc:'Each room is enclosed and defined'}]}/></div>;
-            case 'masterLocation': return <div key={field} className="space-y-1.5"><Lbl>Primary Suite Location</Lbl><BtnGrid field="masterLocation" options={['Level 1 (Main)','Level 2 (Upper)']}/></div>;
+            case 'lotContext': return (
+                <div key={field} className="space-y-2">
+                    <Lbl>Lot / Site Context</Lbl>
+                    <div className="grid grid-cols-3 gap-2">
+                        <LotOption val="Suburban standard lot" label="Suburban" svgContent={<>
+                            <rect x="5" y="20" width="50" height="15" fill="#c8e6c9" stroke="#888" strokeWidth="0.5"/>
+                            <rect x="15" y="8" width="30" height="14" fill="#e8e4dc" stroke="#555" strokeWidth="1"/>
+                            <polygon points="15,8 30,2 45,8" fill="#555"/>
+                            <rect x="10" y="32" width="40" height="3" fill="#aaa"/>
+                            <line x1="0" y1="35" x2="60" y2="35" stroke="#aaa" strokeWidth="1"/>
+                        </>}/>
+                        <LotOption val="Suburban corner lot" label="Corner" svgContent={<>
+                            <rect x="5" y="15" width="50" height="20" fill="#c8e6c9" stroke="#888" strokeWidth="0.5"/>
+                            <rect x="8" y="8" width="25" height="14" fill="#e8e4dc" stroke="#555" strokeWidth="1"/>
+                            <polygon points="8,8 20,2 33,8" fill="#555"/>
+                            <line x1="5" y1="35" x2="55" y2="35" stroke="#aaa" strokeWidth="1.5"/>
+                            <line x1="5" y1="35" x2="5" y2="5" stroke="#aaa" strokeWidth="1.5"/>
+                        </>}/>
+                        <LotOption val="Urban tight lot" label="Urban" svgContent={<>
+                            <rect x="8" y="5" width="16" height="30" fill="#e8e4dc" stroke="#555" strokeWidth="1"/>
+                            <rect x="26" y="2" width="12" height="33" fill="#ddd" stroke="#777" strokeWidth="0.7"/>
+                            <rect x="40" y="8" width="14" height="27" fill="#d5cfc5" stroke="#666" strokeWidth="0.7"/>
+                            <line x1="0" y1="35" x2="60" y2="35" stroke="#aaa" strokeWidth="1.5"/>
+                        </>}/>
+                        <LotOption val="Rural acreage" label="Rural" svgContent={<>
+                            <rect x="0" y="25" width="60" height="15" fill="#a5d6a7" stroke="none"/>
+                            <rect x="18" y="14" width="24" height="14" fill="#e8e4dc" stroke="#555" strokeWidth="1"/>
+                            <polygon points="18,14 30,7 42,14" fill="#555"/>
+                            <circle cx="8" cy="22" r="5" fill="#66bb6a"/>
+                            <circle cx="52" cy="20" r="6" fill="#4caf50"/>
+                            <circle cx="46" cy="23" r="4" fill="#81c784"/>
+                        </>}/>
+                        <LotOption val="View focused site" label="View Site" svgContent={<>
+                            <rect x="0" y="22" width="60" height="18" fill="#b3e5fc" stroke="none"/>
+                            <polyline points="0,22 10,16 20,20 32,12 44,18 60,14" fill="none" stroke="#8d6e63" strokeWidth="1.5"/>
+                            <rect x="20" y="12" width="20" height="12" fill="#e8e4dc" stroke="#555" strokeWidth="1"/>
+                            <polygon points="20,12 30,6 40,12" fill="#555"/>
+                        </>}/>
+                        <LotOption val="Waterfront lot" label="Waterfront" svgContent={<>
+                            <rect x="0" y="24" width="60" height="16" fill="#81d4fa" stroke="none"/>
+                            <rect x="0" y="24" width="60" height="4" fill="#4fc3f7" stroke="none"/>
+                            <rect x="15" y="10" width="28" height="16" fill="#e8e4dc" stroke="#555" strokeWidth="1"/>
+                            <polygon points="15,10 29,4 43,10" fill="#555"/>
+                            <rect x="26" y="24" width="4" height="6" fill="#8d6e63"/>
+                        </>}/>
+                    </div>
+                </div>
+            );
+            case 'openConcept': return <div key={field} className="space-y-1.5"><Lbl>Kitchen / Living / Dining</Lbl><BtnGrid field="openConcept" cols={1} options={[{val:'Open Concept (Combined)',label:'Open Concept',desc:'Kitchen, dining, and living flow together as one great room'},{val:'Traditional (Separate Rooms)',label:'Traditional',desc:'Each room is enclosed and defined with walls'}]}/></div>;
+            case 'masterLocation': return (
+                <div key={field} className="space-y-1.5">
+                    <Lbl>Primary Suite Location</Lbl>
+                    <BtnGrid field="masterLocation" options={
+                        formData.stories === '1 Story'
+                            ? ['Level 1 (Main)']
+                            : ['Level 1 (Main)','Level 2 (Upper)']
+                    }/>
+                </div>
+            );
             case 'kitchenPlacement': return <div key={field} className="space-y-1.5"><Lbl>Kitchen Location</Lbl><BtnGrid field="kitchenPlacement" options={['Rear of House','Front of House']}/></div>;
-            case 'laundryLocation': return <div key={field} className="space-y-1.5"><Lbl>Laundry Location</Lbl><BtnGrid field="laundryLocation" cols={1} options={['Level 1 (near garage/mud)','Level 2 (near bedrooms)','No preference']}/></div>;
+            case 'laundryLocation': return (
+                <div key={field} className="space-y-1.5">
+                    <Lbl>Laundry Location</Lbl>
+                    <BtnGrid field="laundryLocation" cols={1} options={
+                        formData.stories === '1 Story'
+                            ? ['Level 1 (near garage/mud)', 'No preference']
+                            : ['Level 1 (near garage/mud)','Level 2 (near bedrooms)','No preference']
+                    }/>
+                </div>
+            );
             case 'ceilingHeight': return <div key={field} className="space-y-1.5"><Lbl>Ceiling Height</Lbl><BtnGrid field="ceilingHeight" cols={3} options={['Standard (9 ft)','Tall (10 ft)','Cathedral / Vaulted']}/></div>;
-            case 'materials': return <div key={field} className="space-y-1.5"><Lbl>Primary Materials</Lbl><BtnGrid field="materials" cols={1} options={['Wood Framing with Natural Finishes','Modern Concrete & Steel','Traditional Brick & Stone','Mixed Contemporary']}/></div>;
+            case 'materials': return <div key={field} className="space-y-1.5"><Lbl>Exterior Style & Materials</Lbl><BtnGrid field="materials" cols={1} options={[
+                {val:'Craftsman (Wood & Stone)',          label:'Craftsman',              desc:'Natural wood trim, stone veneer, covered porch'},
+                {val:'Modern Farmhouse (Board & Batten)', label:'Modern Farmhouse',       desc:'Board-and-batten, black frames, metal roof'},
+                {val:'Traditional Colonial (Brick)',      label:'Traditional / Colonial', desc:'Brick facade, symmetrical windows, pitched roof'},
+                {val:'Contemporary Modern (Concrete)',    label:'Contemporary / Modern',  desc:'Flat roof, concrete, floor-to-ceiling glass'},
+                {val:'Mediterranean (Stucco & Tile)',     label:'Mediterranean',          desc:'Stucco exterior, terracotta tiles, arched details'},
+            ]}/></div>;
             case 'indoorOutdoor': return <div key={field} className="space-y-1.5"><Lbl>Indoor / Outdoor Flow</Lbl><BtnGrid field="indoorOutdoor" cols={1} options={['Minimal (enclosed feel)','Moderate (some connection)','Maximum (open to outdoors)']}/></div>;
             case 'naturalLight': return <div key={field} className="space-y-1.5"><Lbl>Natural Light Priority</Lbl><BtnGrid field="naturalLight" cols={1} options={['Balanced windows','Maximum glazing','Privacy first (fewer windows)']}/></div>;
-            case 'features': return <div key={field} className="space-y-1.5"><Lbl>Special Rooms (e.g. "1 study, 1 gym")</Lbl><input type="text" placeholder="e.g. 1 study, 1 home theater" value={formData.features} onChange={e=>upd('features',e.target.value)}/></div>;
-            case 'accessibilityNeeds': return <div key={field} className="space-y-1.5"><Lbl>Accessibility Needs</Lbl><BtnGrid field="accessibilityNeeds" options={['None','Wheelchair accessible','Wide doorways','Single-level preferred']}/></div>;
+            case 'features': return (
+                <div key={field} className="space-y-2">
+                    <Lbl>Special Rooms</Lbl>
+                    <p className="text-[9px] text-mid/60 mb-2">Tap to add special rooms to your plan. Default: none.</p>
+                    <div className="flex flex-wrap gap-2">
+                        {[
+                            {label:'Study',         icon:'📚'},
+                            {label:'Home Office',   icon:'💼'},
+                            {label:'Home Theater',  icon:'🎬'},
+                            {label:'Gym',           icon:'🏋️'},
+                            {label:'Gaming Room',   icon:'🎮'},
+                            {label:'Library',       icon:'📖'},
+                            {label:'Wine Cellar',   icon:'🍷'},
+                            {label:'Music Room',    icon:'🎵'},
+                            {label:'Guest Suite',   icon:'🛏️'},
+                            {label:'Playroom',      icon:'🧸'},
+                        ].map(f => <ToggleChip key={f.label} field="features" value={f.label} label={f.label} icon={f.icon}/>)}
+                    </div>
+                    {(formData.features||'').trim() && (
+                        <div className="mt-1 p-2 bg-blue/5 border border-blue/15 rounded-sm">
+                            <span className="mono text-[7px] uppercase text-blue">Selected: </span>
+                            <span className="text-[9px] text-ink">{formData.features}</span>
+                            <button onClick={() => upd('features', '')} className="ml-2 text-[9px] text-red/60 hover:text-red">clear</button>
+                        </div>
+                    )}
+                </div>
+            );
+            case 'accessibilityNeeds': return (
+                <div key={field} className="space-y-1.5">
+                    <Lbl>Accessibility Needs</Lbl>
+                    <BtnGrid field="accessibilityNeeds" options={
+                        formData.stories === '2 Stories'
+                            ? ['None','Wheelchair accessible','Wide doorways']
+                            : ['None','Wheelchair accessible','Wide doorways','Single-level preferred']
+                    }/>
+                </div>
+            );
             case 'budgetTier': return <div key={field} className="space-y-1.5"><Lbl>Budget Tier</Lbl><BtnGrid field="budgetTier" cols={1} options={[{val:'Entry ($120–180/sqft)',label:'Entry — $120–180/sqft',desc:'Efficient, value-optimized design'},{val:'Mid ($200–300/sqft)',label:'Mid — $200–300/sqft',desc:'Quality finishes, flexible layouts'},{val:'Luxury ($350+/sqft)',label:'Luxury — $350+/sqft',desc:'Premium materials, custom details'}]}/></div>;
             case 'freeformWishes': return <div key={field} className="space-y-1.5"><Lbl>Anything Else? (optional)</Lbl><textarea rows="3" placeholder="Specific wishes, must-haves, or notes…" value={formData.freeformWishes} onChange={e=>upd('freeformWishes',e.target.value)}/></div>;
             default: return null;
@@ -1085,10 +1455,11 @@ const DesignGenerator = ({ onOpenModal }) => {
 
     const [formData, setFormData] = useState({
         location:'', totalArea:'2400', stories:'2 Stories', bedrooms:'3 Bed', bathrooms:'3 Bath',
-        shape:'Rectangular', garage:'2 Car Garage', materials:'Wood Framing with Natural Finishes',
+        privateBaths:'1',
+        shape:'Rectangular', garage:'1 Car Garage', materials:'Craftsman (Wood & Stone)',
         openConcept:'Open Concept (Combined)', masterLocation:'Level 2 (Upper)', kitchenPlacement:'Rear of House',
-        features:'1 study', frontFacing:'South', lotContext:'Suburban standard lot',
-        laundryLocation:'Level 2 (near bedrooms)', ceilingHeight:'Standard (9 ft)',
+        features:'', frontFacing:'South', lotContext:'Suburban standard lot',
+        laundryLocation:'Level 1 (near garage/mud)', ceilingHeight:'Standard (9 ft)',
         indoorOutdoor:'Moderate (some connection)', naturalLight:'Balanced windows',
         accessibilityNeeds:'None', budgetTier:'Mid ($200–300/sqft)', freeformWishes:'',
     });
