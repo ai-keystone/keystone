@@ -1,15 +1,28 @@
 {
   "rewrites": [
-    { "source": "/api/plan",    "destination": "https://keystone-api-97830102261.us-central1.run.app/api/plan" },
-    { "source": "/api/verify",  "destination": "https://keystone-api-97830102261.us-central1.run.app/api/verify" },
-    { "source": "/api/render",  "destination": "https://keystone-api-97830102261.us-central1.run.app/api/render" },
-    { "source": "/api/plan/refine", "destination": "https://keystone-api-97830102261.us-central1.run.app/api/plan/refine" },
-    { "source": "/api/health",  "destination": "https://keystone-api-97830102261.us-central1.run.app/health" },
-    { "source": "/api/gallery", "destination": "https://keystone-api-97830102261.us-central1.run.app/api/gallery" }
-  ],
-  "functions": {
-    "api/**": {
-      "maxDuration": 60
+    {
+      "source": "/api/plan",
+      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/plan"
+    },
+    {
+      "source": "/api/verify",
+      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/verify"
+    },
+    {
+      "source": "/api/render",
+      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/render"
+    },
+    {
+      "source": "/api/plan/refine",
+      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/plan/refine"
+    },
+    {
+      "source": "/api/health",
+      "destination": "https://keystone-api-97830102261.us-central1.run.app/health"
+    },
+    {
+      "source": "/api/gallery",
+      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/gallery"
     }
-  }
+  ]
 }
