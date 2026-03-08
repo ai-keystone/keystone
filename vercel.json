@@ -15,6 +15,10 @@
     {
       "source": "/api/health",
       "destination": "https://keystone-api-97830102261.us-central1.run.app/health"
+    },
+    {
+      "source": "/api/gallery",
+      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/gallery"
     }
   ]
 }

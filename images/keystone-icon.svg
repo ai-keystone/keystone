@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 180" fill="none">
+  <!--
+    Keystone AI Icon — Isometric Roman Arch
+    Faithfully traced from the keystone-line-art.png reference:
+    Curved arch of voussoir stones, left+right piers, blue keystone crown,
+    dashed isometric construction axis lines, 3-tone isometric shading.
+  -->
+  <defs>
+    <style>
+      .ft  { fill: #F2F0EB }
+      .fl  { fill: #E0DDD6 }
+      .fr  { fill: #C6C2BA }
+      .ftk { fill: #2B6CB8 }
+      .flk { fill: #1B4F82 }
+      .frk { fill: #0F3560 }
+      .s   { stroke: #1a1a1e; stroke-width: 1.1; stroke-linejoin: round; stroke-linecap: round }
+      .sk  { stroke: #0A2540; stroke-width: 1.3; stroke-linejoin: round; stroke-linecap: round }
+      .ax  { stroke: #1B4F82; stroke-width: 0.65; stroke-dasharray: 4 3.5; opacity: 0.38 }
+    </style>
+  </defs>
+
+  <!-- Axis lines -->
+  <line class="ax" x1="100" y1="2"   x2="100" y2="160"/>
+  <line class="ax" x1="10"  y1="108" x2="100" y2="158"/>
+  <line class="ax" x1="190" y1="108" x2="100" y2="158"/>
+  <line class="ax" x1="4"   y1="136" x2="100" y2="158"/>
+  <line class="ax" x1="196" y1="136" x2="100" y2="158"/>
+  <circle cx="100" cy="158" r="2.2" fill="#1B4F82" opacity="0.42"/>
+
+  <!-- LEFT PIER — Block 1 bottom -->
+  <polygon class="ft s" points="16,120 36,110 50,118 30,128"/>
+  <polygon class="fl s" points="16,120 16,140 36,130 36,110"/>
+  <polygon class="fr s" points="36,110 50,118 50,138 36,130"/>
+  <!-- LEFT PIER — Block 2 top -->
+  <polygon class="ft s" points="16,102 36,92  50,100 30,110"/>
+  <polygon class="fl s" points="16,102 16,120 36,110 36,92"/>
+  <polygon class="fr s" points="36,92  50,100 50,118 36,110"/>
+
+  <!-- RIGHT PIER — Block 1 bottom -->
+  <polygon class="ft s" points="150,118 164,110 184,120 170,128"/>
+  <polygon class="fl s" points="150,118 150,138 164,130 164,110"/>
+  <polygon class="fr s" points="164,110 184,120 184,140 164,130"/>
+  <!-- RIGHT PIER — Block 2 top -->
+  <polygon class="ft s" points="150,100 164,92  184,102 170,110"/>
+  <polygon class="fl s" points="150,100 150,118 164,110 164,92"/>
+  <polygon class="fr s" points="164,92  184,102 184,120 164,110"/>
+
+  <!-- ARCH VOUSSOIR L1 (near pier) -->
+  <polygon class="ft s" points="50,100 64,93  74,99  60,106"/>
+  <polygon class="fl s" points="50,100 50,118 64,111 64,93"/>
+  <polygon class="fr s" points="64,93  74,99  74,117 64,111"/>
+
+  <!-- ARCH VOUSSOIR L2 -->
+  <polygon class="ft s" points="64,86  78,77  89,84  75,93"/>
+  <polygon class="fl s" points="64,86  64,104 78,95  78,77"/>
+  <polygon class="fr s" points="78,77  89,84  89,102 78,95"/>
+
+  <!-- ARCH VOUSSOIR L3 -->
+  <polygon class="ft s" points="76,70  90,59  101,67 87,78"/>
+  <polygon class="fl s" points="76,70  76,88  90,77  90,59"/>
+  <polygon class="fr s" points="90,59  101,67 101,85 90,77"/>
+
+  <!-- ARCH VOUSSOIR L4 (near keystone) -->
+  <polygon class="ft s" points="86,52  100,43 110,51 96,60"/>
+  <polygon class="fl s" points="86,52  86,70  100,62 100,43"/>
+  <polygon class="fr s" points="100,43 110,51 110,69 100,62"/>
+
+  <!-- KEYSTONE (crown) — blue highlighted -->
+  <!-- Lower keystone block -->
+  <polygon class="ftk sk" points="96,40  100,34 118,42 114,48"/>
+  <polygon class="flk sk" points="96,40  96,58  100,64 100,46"/>
+  <polygon class="frk sk" points="100,46 114,48 118,66 100,64"/>
+  <!-- Upper keystone boss (the raised square visible in the reference) -->
+  <polygon class="ftk sk" points="97,28  100,22 114,30 111,36"/>
+  <polygon class="flk sk" points="97,28  97,40  100,46 100,34"/>
+  <polygon class="frk sk" points="100,34 114,30 118,42 100,46"/>
+
+  <!-- ARCH VOUSSOIR R4 (near keystone) -->
+  <polygon class="ft s" points="110,51 124,43 134,52 120,61"/>
+  <polygon class="fl s" points="110,51 110,69 124,61 124,43"/>
+  <polygon class="fr s" points="124,43 134,52 134,70 124,61"/>
+
+  <!-- ARCH VOUSSOIR R3 -->
+  <polygon class="ft s" points="119,67 133,58 144,67 130,76"/>
+  <polygon class="fl s" points="119,67 119,85 133,76 133,58"/>
+  <polygon class="fr s" points="133,58 144,67 144,85 133,76"/>
+
+  <!-- ARCH VOUSSOIR R2 -->
+  <polygon class="ft s" points="131,80 145,72 156,80 142,89"/>
+  <polygon class="fl s" points="131,80 131,98 145,90 145,72"/>
+  <polygon class="fr s" points="145,72 156,80 156,98 145,90"/>
+
+  <!-- ARCH VOUSSOIR R1 (near pier) -->
+  <polygon class="ft s" points="142,91 156,84 164,92 150,100"/>
+  <polygon class="fl s" points="142,91 142,109 156,102 156,84"/>
+  <polygon class="fr s" points="156,84 164,92 164,110 156,102"/>
+</svg>
