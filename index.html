@@ -1100,6 +1100,10 @@ const DesignGenerator = ({ onOpenModal }) => {
     const [refinementsLeft, setRefinementsLeft] = useState(10);
     const [zoomImage, setZoomImage] = useState(null);
     const [galleryId, setGalleryId] = useState(null);
+    const [planScore, setPlanScore] = useState(null);
+    const [footprintInfo, setFootprintInfo] = useState(null);
+    const [alternatives, setAlternatives] = useState([]);
+    const [showAlternatives, setShowAlternatives] = useState(false);
 
     useEffect(() => {
         try { const s = JSON.parse(localStorage.getItem('keystone_unlock')||'null'); if (s?.unlocked) setIsUnlocked(true); } catch {}
@@ -1120,11 +1124,20 @@ const DesignGenerator = ({ onOpenModal }) => {
 
     const handleGeneratePlan = async () => {
         setStatus('loading-plan');
+        setShowAlternatives(false);
         try {
             const res = await fetch('/api/plan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ surveyData:formData, chatHistory:[] }) });
             const data = await res.json();
             if (!data.success) throw new Error(data.message);
-            setPlanSvg(data.svg); setPlanSpec(data.planSpec); setRefinementHistory([]); setRefinementsLeft(10); setGalleryId(data.galleryId || null); setStatus('plan-ready');
+            setPlanSvg(data.svg);
+            setPlanSpec(data.planSpec);
+            setRefinementHistory([]);
+            setRefinementsLeft(10);
+            setGalleryId(data.galleryId || null);
+            setPlanScore(data.score ?? null);
+            setFootprintInfo(data.footprintInfo ?? null);
+            setAlternatives(data.alternatives || []);
+            setStatus('plan-ready');
         } catch(err) { alert('Error: ' + err.message); setStatus('idle'); }
     };
 
@@ -1255,14 +1268,94 @@ const DesignGenerator = ({ onOpenModal }) => {
                                     <div className="flex items-center gap-2 mb-2.5">
                                         <span className="mono text-[7px] uppercase tracking-widest bg-white border border-black/6 px-2 py-1 rounded-sm">2D Blueprint</span>
                                         <button onClick={downloadBlueprint} className="mono text-[7px] uppercase tracking-widest bg-blue text-white px-2 py-1 rounded-sm hover:bg-ink transition-colors">↓ Download</button>
+                                        {alternatives.length > 0 && (
+                                            <button
+                                                onClick={() => setShowAlternatives(true)}
+                                                className="mono text-[7px] uppercase tracking-widest bg-white border border-black/15 px-2 py-1 rounded-sm hover:border-blue hover:text-blue transition-colors flex items-center gap-1"
+                                            >
+                                                <span>⊞</span>
+                                                <span>See Other Generations ({alternatives.length})</span>
+                                            </button>
+                                        )}
                                         <button onClick={()=>setZoomImage(planSvg)} className="ml-auto mono text-[7px] uppercase tracking-widest text-mid hover:text-ink">⤢ Expand</button>
                                     </div>
+                                    {footprintInfo && (
+                                        <div className="flex gap-3 mb-2">
+                                            <span className="mono text-[7px] text-mid">
+                                                ✓ Best of {1 + alternatives.length} · {footprintInfo.widthFt}×{footprintInfo.heightFt}ft · ratio {footprintInfo.aspectRatio.toFixed(2)}
+                                                {planScore !== null && <span className="ml-2 text-blue">score {planScore}/110</span>}
+                                            </span>
+                                        </div>
+                                    )}
                                     <div className="w-full overflow-auto cursor-zoom-in" onClick={()=>setZoomImage(planSvg)} dangerouslySetInnerHTML={{__html:planSvg}}/>
                                 </div>
                                 <div className="px-5"><PlanSummaryPanel planSpec={planSpec}/></div>
                                 <RefinementPanel planSpec={planSpec} formData={formData} refinementsLeft={refinementsLeft} refinementHistory={refinementHistory} onRefine={handleRefine} isLoading={isLoading}/>
                                 <div className="p-5 bg-paper/30 border-t border-black/5">
                                     <Render3DPanel planSpec={planSpec} formData={formData} planSvg={planSvg} galleryId={galleryId} onRenderReady={img=>setZoomImage(img)}/>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── ALTERNATIVES MODAL ─────────────────────────────── */}
+                        {showAlternatives && (
+                            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)'}}>
+                                <div className="bg-paper rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                                    <div className="flex items-center justify-between p-4 border-b border-black/10">
+                                        <div>
+                                            <h3 className="font-semibold text-sm">Other Generated Plans</h3>
+                                            <p className="mono text-[8px] text-mid mt-0.5 uppercase tracking-widest">
+                                                {alternatives.length} alternative footprints — click any to use it
+                                            </p>
+                                        </div>
+                                        <button onClick={() => setShowAlternatives(false)} className="w-8 h-8 flex items-center justify-center rounded hover:bg-black/8 text-mid hover:text-ink transition-colors">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        </button>
+                                    </div>
+                                    <div className="overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                                        {alternatives.map((alt, i) => (
+                                            <div
+                                                key={i}
+                                                className="border border-black/10 rounded-lg overflow-hidden cursor-pointer hover:border-blue hover:shadow-md transition-all group"
+                                                onClick={() => {
+                                                    setPlanSvg(alt.svg);
+                                                    setPlanSpec(alt.planSpec);
+                                                    setPlanScore(alt.score);
+                                                    setFootprintInfo(alt.footprintInfo);
+                                                    // Swap: current becomes an alternative
+                                                    const newAlts = [
+                                                        { svg: planSvg, planSpec, score: planScore, footprintInfo },
+                                                        ...alternatives.filter((_, j) => j !== i),
+                                                    ].filter(a => a.svg);
+                                                    setAlternatives(newAlts);
+                                                    setShowAlternatives(false);
+                                                }}
+                                            >
+                                                <div className="bg-white p-2 overflow-hidden" style={{maxHeight:'180px'}} dangerouslySetInnerHTML={{__html: alt.svg || '<p style="padding:20px;color:#999;font-size:11px">Preview unavailable</p>'}}/>
+                                                <div className="p-2 bg-paper/60 border-t border-black/5">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="mono text-[7px] text-mid">
+                                                            {alt.footprintInfo ? `${alt.footprintInfo.widthFt}×${alt.footprintInfo.heightFt}ft` : `Option ${i+2}`}
+                                                        </span>
+                                                        {alt.footprintInfo && (
+                                                            <span className="mono text-[7px] text-mid">ratio {alt.footprintInfo.aspectRatio?.toFixed(2)}</span>
+                                                        )}
+                                                    </div>
+                                                    {alt.score !== undefined && (
+                                                        <div className="mt-1 h-1 bg-black/8 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-blue/60 rounded-full transition-all" style={{width:`${Math.min(100, (alt.score/110)*100)}%`}}/>
+                                                        </div>
+                                                    )}
+                                                    <p className="mono text-[7px] text-blue mt-1 group-hover:text-ink">
+                                                        {alt.score !== undefined ? `Score ${alt.score}/110` : ''} · Click to use
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="p-3 border-t border-black/10 bg-paper/40">
+                                        <p className="mono text-[7px] text-mid text-center">The first plan shown is the highest-scoring design. Others are alternative footprints.</p>
+                                    </div>
                                 </div>
                             </div>
                         )}
