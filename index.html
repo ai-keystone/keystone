@@ -325,14 +325,111 @@
                         </div>
                     );
                     case 'frontFacing': return (
-                        <div key={field} className="space-y-2">
+                        <div key={field} className="space-y-3">
                             <label className="text-[8px] uppercase tracking-widest opacity-50 font-bold block">Street / Front Faces</label>
-                            <div className="grid grid-cols-4 gap-2">
-                                {['North','South','East','West'].map(opt => (
-                                    <button key={opt} type="button" onClick={() => update('frontFacing', opt)} className={`py-3 border text-xs font-bold uppercase tracking-wider transition-all ${formData.frontFacing===opt ? 'bg-studio-blueprint text-white border-studio-blueprint' : 'border-studio-slate/20 hover:border-studio-blueprint'}`}>{opt}</button>
-                                ))}
+                            {/* Visual compass picker */}
+                            <div className="flex items-center justify-center">
+                                <div className="relative" style={{width:'220px',height:'220px'}}>
+                                    {/* Compass rose SVG background */}
+                                    <svg viewBox="0 0 220 220" width="220" height="220" style={{position:'absolute',top:0,left:0,pointerEvents:'none'}}>
+                                        {/* Outer ring */}
+                                        <circle cx="110" cy="110" r="105" fill="none" stroke="rgba(100,100,100,0.12)" strokeWidth="1"/>
+                                        <circle cx="110" cy="110" r="72" fill="none" stroke="rgba(100,100,100,0.1)" strokeWidth="1" strokeDasharray="3 4"/>
+                                        {/* Cardinal tick marks */}
+                                        <line x1="110" y1="8" x2="110" y2="22" stroke="rgba(100,100,100,0.3)" strokeWidth="1.5"/>
+                                        <line x1="110" y1="198" x2="110" y2="212" stroke="rgba(100,100,100,0.3)" strokeWidth="1.5"/>
+                                        <line x1="8" y1="110" x2="22" y2="110" stroke="rgba(100,100,100,0.3)" strokeWidth="1.5"/>
+                                        <line x1="198" y1="110" x2="212" y2="110" stroke="rgba(100,100,100,0.3)" strokeWidth="1.5"/>
+                                        {/* Intercardinal lighter ticks */}
+                                        <line x1="184" y1="36" x2="177" y2="43" stroke="rgba(100,100,100,0.15)" strokeWidth="1"/>
+                                        <line x1="36" y1="36" x2="43" y2="43" stroke="rgba(100,100,100,0.15)" strokeWidth="1"/>
+                                        <line x1="184" y1="184" x2="177" y2="177" stroke="rgba(100,100,100,0.15)" strokeWidth="1"/>
+                                        <line x1="36" y1="184" x2="43" y2="177" stroke="rgba(100,100,100,0.15)" strokeWidth="1"/>
+                                        {/* Sun arc on east side (morning sun) */}
+                                        <path d="M 180 70 Q 210 110 180 150" fill="none" stroke="rgba(255,180,0,0.18)" strokeWidth="2" strokeDasharray="3 3"/>
+                                        <text x="195" y="115" textAnchor="middle" fontSize="8" fill="rgba(200,140,0,0.45)" fontStyle="italic">☀ AM</text>
+                                    </svg>
+
+                                    {/* House silhouette in center */}
+                                    <div style={{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',zIndex:2}}>
+                                        {['North','South','East','West'].includes(formData.frontFacing) ? (
+                                            <svg viewBox="0 0 80 72" width="80" height="72">
+                                                {/* Rotate house body to show which face is "front" */}
+                                                {(() => {
+                                                    const dir = formData.frontFacing;
+                                                    // Front face arrow indicator direction
+                                                    const arrowByDir = {North:[40,2,40,16], South:[40,70,40,56], East:[78,36,62,36], West:[2,36,18,36]};
+                                                    const arr = arrowByDir[dir] || arrowByDir['South'];
+                                                    const labelPos = {North:{x:40,y:26,anchor:'middle'}, South:{x:40,y:50,anchor:'middle'}, East:{x:52,y:36,anchor:'start'}, West:{x:28,y:36,anchor:'end'}};
+                                                    const lp = labelPos[dir] || labelPos['South'];
+                                                    return (
+                                                        <>
+                                                            {/* House body */}
+                                                            <rect x="16" y="28" width="48" height="36" rx="1" fill="#f5f4ef" stroke="#2c2c2e" strokeWidth="1.5"/>
+                                                            {/* Roof */}
+                                                            <polygon points="10,30 40,8 70,30" fill="#2c2c2e" opacity="0.85"/>
+                                                            {/* Chimney */}
+                                                            <rect x="50" y="12" width="6" height="10" fill="#2c2c2e" opacity="0.6"/>
+                                                            {/* Garage door on appropriate face */}
+                                                            {dir === 'South' && <rect x="26" y="44" width="14" height="14" rx="1" fill="#c8c6bc" stroke="#2c2c2e" strokeWidth="1" opacity="0.8"/>}
+                                                            {dir === 'North' && <rect x="26" y="28" width="14" height="10" rx="1" fill="#c8c6bc" stroke="#2c2c2e" strokeWidth="1" opacity="0.8"/>}
+                                                            {dir === 'East'  && <rect x="52" y="36" width="12" height="16" rx="1" fill="#c8c6bc" stroke="#2c2c2e" strokeWidth="1" opacity="0.8"/>}
+                                                            {dir === 'West'  && <rect x="16" y="36" width="12" height="16" rx="1" fill="#c8c6bc" stroke="#2c2c2e" strokeWidth="1" opacity="0.8"/>}
+                                                            {/* Front door marker */}
+                                                            {dir === 'South' && <rect x="44" y="50" width="7" height="14" rx="1" fill="#7a7060" stroke="#2c2c2e" strokeWidth="0.8"/>}
+                                                            {dir === 'North' && <rect x="44" y="28" width="7" height="10" rx="0" fill="#7a7060" stroke="#2c2c2e" strokeWidth="0.8"/>}
+                                                            {dir === 'East'  && <rect x="52" y="56" width="12" height="8" rx="0" fill="#7a7060" stroke="#2c2c2e" strokeWidth="0.8"/>}
+                                                            {dir === 'West'  && <rect x="16" y="56" width="12" height="8" rx="0" fill="#7a7060" stroke="#2c2c2e" strokeWidth="0.8"/>}
+                                                            {/* "STREET" arrow pointing to selected front face */}
+                                                            <line x1={arr[0]} y1={arr[1]} x2={arr[2]} y2={arr[3]} stroke="#3b6bcc" strokeWidth="1.5" strokeDasharray="2 2"/>
+                                                            <circle cx={arr[0]} cy={arr[1]} r="2.5" fill="#3b6bcc"/>
+                                                            <text x={lp.x} y={lp.y} textAnchor={lp.anchor} fontSize="5" fill="#3b6bcc" fontWeight="bold" fontFamily="sans-serif">STREET</text>
+                                                        </>
+                                                    );
+                                                })()}
+                                            </svg>
+                                        ) : null}
+                                    </div>
+
+                                    {/* Clickable direction buttons */}
+                                    {[
+                                        {dir:'North', x:82,  y:0,   w:56, h:36, label:'N', sublabel:'North'},
+                                        {dir:'South', x:82,  y:184, w:56, h:36, label:'S', sublabel:'South'},
+                                        {dir:'West',  x:0,   y:82,  w:36, h:56, label:'W', sublabel:'West'},
+                                        {dir:'East',  x:184, y:82,  w:36, h:56, label:'E', sublabel:'East'},
+                                    ].map(({dir, x, y, w, h, label, sublabel}) => {
+                                        const isSelected = formData.frontFacing === dir;
+                                        return (
+                                            <button
+                                                key={dir}
+                                                type="button"
+                                                onClick={() => update('frontFacing', dir)}
+                                                style={{
+                                                    position:'absolute', left:x+'px', top:y+'px',
+                                                    width:w+'px', height:h+'px',
+                                                    display:'flex', flexDirection:'column',
+                                                    alignItems:'center', justifyContent:'center',
+                                                    border: isSelected ? '1.5px solid #3b6bcc' : '1px solid rgba(100,100,100,0.2)',
+                                                    borderRadius:'4px',
+                                                    background: isSelected ? '#3b6bcc' : 'rgba(249,248,244,0.9)',
+                                                    color: isSelected ? '#fff' : '#2c2c2e',
+                                                    cursor:'pointer', zIndex:10,
+                                                    transition:'all 0.15s',
+                                                    boxShadow: isSelected ? '0 2px 8px rgba(59,107,204,0.3)' : 'none',
+                                                }}
+                                            >
+                                                <span style={{fontSize:'13px',fontWeight:'900',letterSpacing:'0.05em',lineHeight:1}}>{label}</span>
+                                                <span style={{fontSize:'7px',fontWeight:'600',letterSpacing:'0.08em',opacity:0.7,marginTop:'1px'}}>{sublabel}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                            <p className="text-[9px] opacity-40">Helps orient the garage, entry, and solar gain correctly</p>
+                            {/* Solar gain hint */}
+                            <div className="text-[8px] opacity-40 leading-relaxed text-center">
+                                Orients your garage, entry &amp; windows for optimal solar gain.<br/>
+                                <span style={{color:'rgba(180,120,0,0.7)'}}>☀ East = morning sun · South = most winter sun · West = afternoon warmth</span>
+                            </div>
                         </div>
                     );
                     case 'lotContext': return (
@@ -736,9 +833,10 @@
 
             if (renderStatus === 'unavailable') return (
                 <div className="p-4 bg-studio-eggshell border border-studio-slate/10 text-center">
-                    <p className="text-[9px] uppercase tracking-widest font-bold text-studio-slate opacity-60">3D Rendering</p>
-                    <p className="text-[10px] opacity-50 mt-1">The /api/render endpoint is not yet deployed.</p>
-                    <p className="text-[9px] opacity-40 mt-1">Connect a render service (Replicate, Stability AI, etc.) to enable this feature.</p>
+                    <p className="text-[9px] uppercase tracking-widest font-bold text-studio-slate opacity-60">3D Rendering Unavailable</p>
+                    <p className="text-[10px] opacity-50 mt-1">The Gemini render service could not generate an image.</p>
+                    <p className="text-[9px] opacity-40 mt-1">Ensure <code>GEMINI_API_KEY</code> is set on the server and the Gemini API is accessible.</p>
+                    <button onClick={handleRender} className="mt-3 text-[9px] underline opacity-40 hover:opacity-70 cursor-pointer">Try again</button>
                 </div>
             );
 
