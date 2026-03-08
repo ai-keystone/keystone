@@ -580,21 +580,26 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
 };
 
 // ─── 3D RENDER PANEL ──────────────────────────────────────────────────────────
+const RENDER_REFINEMENTS = [
+    { label: 'Golden Hour',    hint: 'warm late-afternoon sunlight, long shadows, golden sky' },
+    { label: 'Overcast Day',   hint: 'soft diffuse overcast lighting, muted tones, grey sky' },
+    { label: 'Night Lit',      hint: 'dusk with interior lights glowing through windows, subtle landscape lighting, dark blue sky' },
+];
+
 const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }) => {
     const [renderStatus, setRenderStatus] = useState('idle'); // idle|loading|error|ready
     const [renderImage, setRenderImage] = useState(null);
     const [errorMsg, setErrorMsg] = useState('');
+    const [activeRefinement, setActiveRefinement] = useState(null); // label of active refinement
 
-    const handleRender = async () => {
+    const doRender = async (lightingHint = null) => {
         setRenderStatus('loading');
         setErrorMsg('');
         try {
-            // NOTE: We do NOT send planImageBase64 — it blows past Vercel's 4.5MB body limit.
-            // The server builds the render purely from surveyData + planSpec (text-to-image).
             const res = await fetch('/api/render', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ surveyData: formData, planSpec, galleryId }),
+                body: JSON.stringify({ surveyData: formData, planSpec, galleryId, lightingHint }),
             });
 
             let data;
@@ -625,7 +630,6 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
                 if (onRenderReady) onRenderReady(watermarked);
             };
             img.onerror = () => {
-                // Image data fine even without watermark
                 setRenderImage(imgSrc);
                 setRenderStatus('ready');
                 if (onRenderReady) onRenderReady(imgSrc);
@@ -636,6 +640,13 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
             setErrorMsg(err.message || 'Network error — is the server running?');
             setRenderStatus('error');
         }
+    };
+
+    const handleRender = () => { setActiveRefinement(null); doRender(null); };
+
+    const handleRefinement = (ref) => {
+        setActiveRefinement(ref.label);
+        doRender(ref.hint);
     };
 
     if (renderStatus === 'idle') return (
@@ -649,7 +660,9 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
         <div className="flex flex-col items-center gap-3 py-5">
             <div className="flex items-center gap-3 text-blue">
                 <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"/>
-                <span className="mono text-[9px] uppercase tracking-widest animate-pulse">Rendering with Gemini AI…</span>
+                <span className="mono text-[9px] uppercase tracking-widest animate-pulse">
+                    {activeRefinement ? `Rendering: ${activeRefinement}…` : 'Rendering with Gemini AI…'}
+                </span>
             </div>
             <p className="mono text-[8px] text-mid opacity-50">Usually 10–20 seconds</p>
         </div>
@@ -669,12 +682,36 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
     if (renderStatus === 'ready') return (
         <div>
             <img src={renderImage} className="w-full object-cover rounded-sm shadow-xl" alt="AI 3D Render"/>
-            <div className="flex items-center gap-2 mt-2">
-                <span className="mono text-[8px] uppercase tracking-widest text-mid">AI Exterior Render</span>
+            {/* Toolbar */}
+            <div className="flex items-center gap-2 mt-2 mb-3">
+                <span className="mono text-[8px] uppercase tracking-widest text-mid">
+                    {activeRefinement ? activeRefinement : 'AI Exterior Render'}
+                </span>
                 <button onClick={() => { const l=document.createElement('a'); l.href=renderImage; l.download='Keystone_3D.png'; l.click(); }}
                     className="ml-auto mono text-[9px] text-blue underline">↓ Download</button>
                 <button onClick={handleRender}
                     className="mono text-[9px] text-mid underline">↺ Regenerate</button>
+            </div>
+            {/* Lighting refinement chips */}
+            <div className="border-t border-black/5 pt-3">
+                <p className="mono text-[7px] uppercase tracking-widest text-mid mb-2">Lighting &amp; Mood</p>
+                <div className="flex gap-2 flex-wrap">
+                    {RENDER_REFINEMENTS.map(ref => (
+                        <button key={ref.label}
+                            onClick={() => handleRefinement(ref)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 border rounded-sm transition-all mono text-[9px] font-bold uppercase tracking-wide"
+                            style={{
+                                borderColor: activeRefinement === ref.label ? 'var(--blue)' : 'rgba(0,0,0,0.1)',
+                                background: activeRefinement === ref.label ? 'var(--blue)' : 'white',
+                                color: activeRefinement === ref.label ? 'white' : 'var(--ink)',
+                            }}>
+                            {ref.label === 'Golden Hour' && '☀'}
+                            {ref.label === 'Overcast Day' && '☁'}
+                            {ref.label === 'Night Lit' && '🌙'}
+                            {' '}{ref.label}
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );
