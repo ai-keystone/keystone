@@ -498,39 +498,61 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, onRefine, isLoad
 
 // ─── 3D RENDER PANEL ──────────────────────────────────────────────────────────
 const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }) => {
-    const [renderStatus, setRenderStatus] = useState('idle');
+    const [renderStatus, setRenderStatus] = useState('idle'); // idle|loading|error|ready
     const [renderImage, setRenderImage] = useState(null);
-
-    const svgToPng = (svgString) => new Promise((resolve, reject) => {
-        const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d'), img = new Image();
-        let svg = svgString;
-        if (!svg.includes('xmlns=')) svg = svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
-        img.onload = () => { canvas.width=img.width||1200; canvas.height=img.height||800; ctx.fillStyle='#F6F4EF'; ctx.fillRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0); resolve(canvas.toDataURL('image/png').split(',')[1]); };
-        img.onerror = reject;
-        img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-    });
+    const [errorMsg, setErrorMsg] = useState('');
 
     const handleRender = async () => {
-        setRenderStatus('converting');
+        setRenderStatus('loading');
+        setErrorMsg('');
         try {
-            const planPng = await svgToPng(planSvg);
-            setRenderStatus('loading');
-            const res = await fetch('/api/render', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ surveyData:formData, planSpec, planImageBase64:planPng, galleryId }) });
-            if (res.status === 404) { setRenderStatus('unavailable'); return; }
-            const data = await res.json();
-            if (!data.success) throw new Error(data.message);
+            // NOTE: We do NOT send planImageBase64 — it blows past Vercel's 4.5MB body limit.
+            // The server builds the render purely from surveyData + planSpec (text-to-image).
+            const res = await fetch('/api/render', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ surveyData: formData, planSpec, galleryId }),
+            });
+
+            let data;
+            try { data = await res.json(); } catch(_) { data = { success: false, message: `Server error ${res.status}` }; }
+
+            if (!data.success) {
+                setErrorMsg(data.message || 'Unknown error from server');
+                setRenderStatus('error');
+                return;
+            }
+
+            // Add watermark bar
+            const imgSrc = data.image.startsWith('data:') ? data.image : `data:image/jpeg;base64,${data.image}`;
             const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d'), img = new Image();
             img.onload = () => {
-                canvas.width=img.width; canvas.height=img.height; ctx.drawImage(img,0,0);
-                const barH = Math.max(28, canvas.height*0.05);
-                ctx.fillStyle='rgba(10,10,12,0.82)'; ctx.fillRect(0,canvas.height-barH,canvas.width,barH);
-                ctx.fillStyle='#fff'; ctx.font=`italic ${Math.floor(barH*0.42)}px 'Cormorant Garamond', serif`; ctx.textBaseline='middle';
-                ctx.fillText('Property of Keystone AI', barH*0.5, canvas.height-barH/2);
-                const w = canvas.toDataURL('image/png');
-                setRenderImage(w); setRenderStatus('ready'); if (onRenderReady) onRenderReady(w);
+                canvas.width = img.width; canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                const barH = Math.max(28, canvas.height * 0.05);
+                ctx.fillStyle = 'rgba(10,10,12,0.82)';
+                ctx.fillRect(0, canvas.height - barH, canvas.width, barH);
+                ctx.fillStyle = '#fff';
+                ctx.font = `italic ${Math.floor(barH * 0.42)}px serif`;
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Property of Keystone AI', barH * 0.5, canvas.height - barH / 2);
+                const watermarked = canvas.toDataURL('image/png');
+                setRenderImage(watermarked);
+                setRenderStatus('ready');
+                if (onRenderReady) onRenderReady(watermarked);
             };
-            img.src = data.image.startsWith('data:') ? data.image : `data:image/png;base64,${data.image}`;
-        } catch(err) { console.error(err); setRenderStatus('unavailable'); }
+            img.onerror = () => {
+                // Image data fine even without watermark
+                setRenderImage(imgSrc);
+                setRenderStatus('ready');
+                if (onRenderReady) onRenderReady(imgSrc);
+            };
+            img.src = imgSrc;
+        } catch(err) {
+            console.error('[render]', err);
+            setErrorMsg(err.message || 'Network error — is the server running?');
+            setRenderStatus('error');
+        }
     };
 
     if (renderStatus === 'idle') return (
@@ -539,25 +561,37 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
             ✦ Generate AI 3D Render
         </button>
     );
-    if (renderStatus === 'converting' || renderStatus === 'loading') return (
-        <div className="flex items-center gap-3 text-blue py-3">
-            <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"/>
-            <span className="mono text-[9px] uppercase tracking-widest">{renderStatus==='converting' ? 'Preparing blueprint…' : 'Rendering with Gemini AI…'}</span>
+
+    if (renderStatus === 'loading') return (
+        <div className="flex flex-col items-center gap-3 py-5">
+            <div className="flex items-center gap-3 text-blue">
+                <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"/>
+                <span className="mono text-[9px] uppercase tracking-widest animate-pulse">Rendering with Gemini AI…</span>
+            </div>
+            <p className="mono text-[8px] text-mid opacity-50">Usually 10–20 seconds</p>
         </div>
     );
-    if (renderStatus === 'unavailable') return (
-        <div className="p-4 bg-cream border border-black/6 text-center rounded-sm">
-            <p className="mono text-[9px] font-bold text-mid uppercase">3D Rendering Unavailable</p>
-            <p className="text-[10px] opacity-50 mt-1">Set <code>GOOGLE_API_KEY</code> on the server to enable.</p>
-            <button onClick={handleRender} className="mt-2 mono text-[9px] underline opacity-40 hover:opacity-70">Retry</button>
+
+    if (renderStatus === 'error') return (
+        <div className="p-4 bg-red/5 border border-red/20 rounded-sm">
+            <p className="mono text-[9px] font-bold text-red uppercase mb-1">Render Failed</p>
+            <p className="text-[10px] text-mid leading-relaxed mb-3" style={{wordBreak:'break-word'}}>{errorMsg}</p>
+            <button onClick={handleRender}
+                className="mono text-[9px] uppercase tracking-widest px-3 py-1.5 bg-ink text-white rounded-sm hover:bg-blue transition-colors">
+                Retry →
+            </button>
         </div>
     );
+
     if (renderStatus === 'ready') return (
         <div>
             <img src={renderImage} className="w-full object-cover rounded-sm shadow-xl" alt="AI 3D Render"/>
             <div className="flex items-center gap-2 mt-2">
                 <span className="mono text-[8px] uppercase tracking-widest text-mid">AI Exterior Render</span>
-                <button onClick={() => { const l=document.createElement('a'); l.href=renderImage; l.download='Keystone_3D.png'; l.click(); }} className="ml-auto mono text-[9px] text-blue underline">↓ Download</button>
+                <button onClick={() => { const l=document.createElement('a'); l.href=renderImage; l.download='Keystone_3D.png'; l.click(); }}
+                    className="ml-auto mono text-[9px] text-blue underline">↓ Download</button>
+                <button onClick={handleRender}
+                    className="mono text-[9px] text-mid underline">↺ Regenerate</button>
             </div>
         </div>
     );
