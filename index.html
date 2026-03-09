@@ -1625,17 +1625,23 @@ const DesignGenerator = ({ onOpenModal }) => {
     };
 
     const downloadBlueprint = async () => {
-        try {
-            const pngUrl = await svgToPngDataUrl(planSvg, { background: '#F6F4EF' });
-            const l = document.createElement('a');
-            l.href = pngUrl;
-            l.download = 'Keystone_Blueprint.png';
-            l.click();
-        } catch (err) {
-            console.error('[downloadBlueprint]', err);
-            alert('Download failed.');
-        }
-    };
+    try {
+        const pngUrl = await svgToPngDataUrl(planSvg, {
+            background: '#F6F4EF',
+            exportWidth: 4096,
+        });
+
+        const l = document.createElement('a');
+        l.href = pngUrl;
+        l.download = 'Keystone_Blueprint_4K.png';
+        document.body.appendChild(l);
+        l.click();
+        l.remove();
+    } catch (err) {
+        console.error('[downloadBlueprint]', err);
+        alert('Download failed.');
+    }
+};
 
     const isLoading = status === 'loading-plan' || status === 'refining';
 
