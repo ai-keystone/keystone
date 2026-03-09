@@ -325,7 +325,7 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
                     </button>
                 </div>
                 <div className="flex-1 px-8 py-8 flex flex-col gap-0">
-                    {[['About','about'],['Gallery','gallery'],['The Gap','problem'],['How It Works','workflow'],['Pricing','pricing']].map(([label, id], i) => (
+                    {[['About','about'],['The Problem','problem'],['Compare','compare'],['Market','market'],['Pricing','pricing'],['Roadmap','roadmap']].map(([label, id], i) => (
                         <button key={id} onClick={() => { scrollTo(id); onClose(); }}
                             className="cg italic text-[2.2rem] text-left border-b border-white/6 py-4 flex justify-between items-center text-white/90 hover:text-white transition-colors">
                             {label}
@@ -1892,7 +1892,7 @@ const App = () => {
                             <span className="cg italic text-[1.3rem] font-semibold tracking-tight">Keystone</span>
                         </a>
                         <div className="hidden md:flex items-center gap-7 mono text-[8px] uppercase tracking-[0.35em]" style={{color:'rgba(10,10,12,0.45)'}}>
-                            {[['About','about'],['Demo','generator'],['Gallery','gallery'],['Pricing','pricing'],['Values','values'],['Roadmap','roadmap']].map(([label,id]) => (
+                            {[['About','about'],['Demo','generator'],['Compare','compare'],['Market','market'],['Pricing','pricing'],['Team','team']].map(([label,id]) => (
                                 <a key={id} href={`#${id}`} className="hover:text-blue transition-colors"
                                     style={{color: id==='generator' ? 'var(--blue)' : undefined}}>{label}</a>
                             ))}
@@ -1958,9 +1958,27 @@ const App = () => {
                                 Free for qualified architects · Qualify instantly — they fill out the form, you get the passkey.
                             </motion.p>
 
+                            {/* How it works mini flow */}
+                            <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:1.0}}
+                                className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-0">
+                                {[
+                                    { step:'01', text:'Fill out the form' },
+                                    { step:'02', text:'Get your passkey instantly' },
+                                    { step:'03', text:'Run your first session free' },
+                                ].map((s, i) => (
+                                    <React.Fragment key={i}>
+                                        <div className="flex flex-col items-center px-4 py-2">
+                                            <span className="mono" style={{fontSize:'7px',letterSpacing:'0.25em',color:'var(--blue-lt)',textTransform:'uppercase'}}>{s.step}</span>
+                                            <span style={{fontSize:'0.78rem',color:'rgba(255,255,255,0.5)',marginTop:'2px',whiteSpace:'nowrap'}}>{s.text}</span>
+                                        </div>
+                                        {i < 2 && <span style={{color:'rgba(255,255,255,0.15)',fontSize:'0.9rem',margin:'0 2px'}} className="hidden sm:block">→</span>}
+                                    </React.Fragment>
+                                ))}
+                            </motion.div>
+
                             {/* Trust badges */}
-                            <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:1.1}}
-                                className="mt-8 flex flex-wrap justify-center gap-4">
+                            <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:1.2}}
+                                className="mt-6 flex flex-wrap justify-center gap-4">
                                 {['10 Free Refinements','AI Floor Plans','3D Renders Included','No Code Required'].map((b,i) => (
                                     <div key={i} className="flex items-center gap-1.5" style={{color:'rgba(255,255,255,0.3)'}}>
                                         <span style={{color:'var(--blue-lt)',fontSize:'12px'}}>✓</span>
@@ -2065,26 +2083,46 @@ const App = () => {
                                     </motion.div>
                                 ))}
                             </div>
+                            <p className="text-center mono mt-8" style={{fontSize:'7px',letterSpacing:'0.1em',textTransform:'uppercase',color:'rgba(10,10,12,0.3)'}}>* Based on AIA billing surveys and architect industry research</p>
                         </div>
                     </section>
 
                     {/* ══ ABOUT ══════════════════════════════════════════════════ */}
                     <section id="about" style={{background:'var(--ink)',padding:'6rem 0'}}>
-                        <div className="container mx-auto max-w-4xl px-5 md:px-10 text-center">
-                            <span className="badge" style={{borderColor:'rgba(27,79,130,0.3)',color:'rgba(91,152,209,0.8)',background:'rgba(27,79,130,0.1)'}}>Proof of Concept</span>
-                            <h2 className="cg italic mt-4 mb-8 text-white" style={{fontSize:'clamp(2rem,5vw,3.5rem)'}}>Building the Future of<br/>Architectural Discovery.</h2>
-                            <div className="space-y-4 text-base leading-relaxed mx-auto max-w-2xl" style={{color:'rgba(255,255,255,0.55)'}}>
-                                <p>Architectural firms spend countless unbillable hours decoding a client's imagination before a single line is drawn. <strong style={{color:'rgba(255,255,255,0.9)',fontWeight:600}}>Keystone AI</strong> eliminates that gap — turning a 5-minute survey into a professional floor plan and 3D render, instantly.</p>
-                                <div style={{margin:'2rem 0',padding:'1.5rem',border:'1px solid rgba(27,79,130,0.25)',background:'rgba(255,255,255,0.03)',borderRadius:'4px',position:'relative'}}>
-                                    <div className="mono" style={{position:'absolute',top:0,left:'50%',transform:'translate(-50%,-50%)',background:'var(--ink)',padding:'0 1rem',fontSize:'7px',letterSpacing:'0.2em',textTransform:'uppercase',color:'var(--blue)'}}>Disclaimer</div>
-                                    <p className="cg italic" style={{color:'rgba(255,255,255,0.75)',fontSize:'1.1rem'}}>"Currently in active MVP development. Plans demonstrate our AI's architectural reasoning capabilities — the platform is designed for professional use."</p>
+                        <div className="container mx-auto max-w-5xl px-5 md:px-10">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+                                <div>
+                                    <span className="badge" style={{borderColor:'rgba(27,79,130,0.3)',color:'rgba(91,152,209,0.8)',background:'rgba(27,79,130,0.1)'}}>The Founder's Story</span>
+                                    <h2 className="cg italic mt-4 mb-6 text-white" style={{fontSize:'clamp(2rem,4.5vw,3rem)'}}>Built by someone who lived the pain.</h2>
+                                    <span style={{display:'block',width:'44px',height:'2px',background:'var(--blue)',marginBottom:'1.5rem'}}/>
+                                    <p className="leading-relaxed mb-5" style={{color:'rgba(255,255,255,0.55)',fontSize:'0.95rem'}}>
+                                        Sujan Acharya spent <strong style={{color:'rgba(255,255,255,0.85)'}}>4 years inside architectural firms</strong>, watching principals drain their weekends on discovery sketches for clients who sometimes never signed. He felt every unbillable hour personally.
+                                    </p>
+                                    <p className="leading-relaxed mb-5" style={{color:'rgba(255,255,255,0.55)',fontSize:'0.95rem'}}>
+                                        A Civil Engineering graduate with a Master's in Construction Management, Sujan is now a <strong style={{color:'rgba(255,255,255,0.85)'}}>PhD scholar focused on commercializing emerging technologies</strong> — which means Keystone isn't just a project. It's the academic and professional thesis of someone who understands both the jobsite and the venture path.
+                                    </p>
+                                    <div style={{padding:'1.25rem 1.5rem',borderLeft:'3px solid var(--blue)',background:'rgba(27,79,130,0.08)',borderRadius:'0 4px 4px 0'}}>
+                                        <p className="cg italic text-white" style={{fontSize:'1.15rem',lineHeight:1.55}}>"Architects are creatives running businesses under impossible constraints. I built Keystone to give them their Saturdays back."</p>
+                                        <p className="mono mt-3" style={{fontSize:'8px',letterSpacing:'0.15em',textTransform:'uppercase',color:'rgba(91,152,209,0.7)'}}>— Sujan Acharya, CEO &amp; Founder</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style={{padding:'1.5rem',border:'1px solid rgba(255,255,255,0.06)',borderRadius:'6px',background:'rgba(255,255,255,0.02)',marginBottom:'1rem'}}>
+                                        <p className="mono text-[8px] uppercase tracking-widest mb-3" style={{color:'rgba(91,152,209,0.7)'}}>Proof of Concept</p>
+                                        <p className="text-sm leading-relaxed mb-4" style={{color:'rgba(255,255,255,0.45)'}}>Keystone AI is in active MVP development. The floor plans you generate here demonstrate the AI's architectural reasoning. We're onboarding early firms for the paid beta launch.</p>
+                                        <div className="flex gap-2 flex-wrap">
+                                            {['B.Sc Civil Engineering','M.Sc Construction Mgmt','PhD — Tech Commercialization','4 Yrs Arch. Practice'].map((tag,i) => (
+                                                <span key={i} className="mono text-[7px] uppercase tracking-wider px-2 py-1 rounded-sm" style={{background:'rgba(27,79,130,0.15)',border:'1px solid rgba(27,79,130,0.25)',color:'rgba(91,152,209,0.8)'}}>{tag}</span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setModalOpen(true)}
+                                        className="w-full py-4 text-[11px] font-bold uppercase tracking-wider rounded-sm transition-all text-white"
+                                        style={{background:'var(--blue)',letterSpacing:'0.2em'}}>
+                                        Join the Beta Queue →
+                                    </button>
                                 </div>
                             </div>
-                            <button onClick={() => setModalOpen(true)}
-                                className="mt-8 px-8 py-4 text-[11px] font-bold uppercase tracking-wider rounded-sm transition-all text-white"
-                                style={{background:'var(--blue)',letterSpacing:'0.2em'}}>
-                                Join the Beta Queue →
-                            </button>
                         </div>
                     </section>
 
@@ -2113,6 +2151,111 @@ const App = () => {
                                         </motion.div>
                                     ))}
                                 </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ══ TESTIMONIAL ════════════════════════════════════════════ */}
+                    <section style={{background:'var(--cream)',padding:'5rem 0'}}>
+                        <div className="container mx-auto max-w-4xl px-5 md:px-10">
+                            <div className="text-center mb-10">
+                                <span className="badge">Early Feedback</span>
+                                <h2 className="cg italic mt-3" style={{fontSize:'clamp(1.6rem,3.5vw,2.4rem)'}}>What Beta Users Are Saying.</h2>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {[
+                                    { quote:"I've been waiting for something like this for years. The direction Keystone is heading is exactly what our firm needs — we waste so much time before the first billable hour. Can't wait for the full launch.", name:'M. Torres', firm:'Principal, Small Residential Firm · Austin, TX', tag:'Beta Pilot' },
+                                    { quote:"The floor plan quality surprised me. Obviously it's early-stage, but showing a client a visual anchor before our first meeting? That changes the entire dynamic of the discovery call.", name:'R. Patel', firm:'Senior Architect · Dallas, TX', tag:'Beta Pilot' },
+                                ].map((t,i) => (
+                                    <motion.div key={i} initial={{opacity:0,y:16}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*0.1}}
+                                        style={{background:'white',border:'1.5px solid var(--border)',borderRadius:'6px',padding:'2rem',position:'relative'}}>
+                                        <div style={{position:'absolute',top:'1.5rem',right:'1.5rem',background:'rgba(27,79,130,0.08)',border:'1px solid rgba(27,79,130,0.15)',borderRadius:'3px',padding:'3px 8px'}}>
+                                            <span className="mono text-[7px] uppercase tracking-wider" style={{color:'var(--blue)'}}>{t.tag}</span>
+                                        </div>
+                                        <div style={{fontSize:'2rem',color:'var(--blue)',lineHeight:1,marginBottom:'1rem',fontFamily:'serif',opacity:0.4}}>"</div>
+                                        <p className="cg italic mb-5" style={{fontSize:'1.05rem',lineHeight:1.6,color:'var(--ink)'}}>{t.quote}</p>
+                                        <span style={{display:'block',width:'32px',height:'2px',background:'var(--blue)',marginBottom:'1rem'}}/>
+                                        <p className="font-semibold text-sm">{t.name}</p>
+                                        <p className="mono text-[8px] uppercase tracking-wider mt-0.5" style={{color:'var(--mid)'}}>{t.firm}</p>
+                                    </motion.div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ══ COMPETITIVE TABLE ══════════════════════════════════════ */}
+                    <section id="compare" style={{background:'white',padding:'6rem 0'}}>
+                        <div className="container mx-auto max-w-5xl px-5 md:px-10">
+                            <div className="text-center mb-12">
+                                <span className="badge">Competitive Research</span>
+                                <h2 className="cg italic mt-3" style={{fontSize:'clamp(2rem,4.5vw,3.2rem)'}}>Why Keystone Wins.</h2>
+                                <p className="mt-3 text-sm max-w-md mx-auto" style={{color:'var(--mid)'}}>We're not competing with AutoCAD. We're replacing the blank-slate discovery call.</p>
+                            </div>
+                            <div style={{overflowX:'auto'}}>
+                                <table style={{width:'100%',borderCollapse:'collapse',fontSize:'0.875rem'}}>
+                                    <thead>
+                                        <tr style={{borderBottom:'2px solid var(--ink)'}}>
+                                            {['Solution','Model','Client-Facing?','Instant 2D/3D?','Est. Cost per Lead'].map((h,i) => (
+                                                <th key={i} className="mono text-left py-3 px-4" style={{fontSize:'8px',letterSpacing:'0.15em',textTransform:'uppercase',color:'var(--mid)',fontWeight:700,background: i===0?'transparent':'transparent'}}>
+                                                    {h}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[
+                                            { sol:'⭐ Keystone AI', model:'Pay-As-You-Go', client:'Yes', instant:'Yes', cost:'$129–$149', highlight:true },
+                                            { sol:'Traditional Manual', model:'Unbillable Hours', client:'No (Architect-led)', instant:'Days for sketches', cost:'$1,500+ (10h @ $150)', highlight:false },
+                                            { sol:'Outsourced 3D Rendering', model:'Per Project Fee', client:'Middleman', instant:'No (48h+ turnaround)', cost:'$300–$600', highlight:false },
+                                            { sol:'Enterprise BIM (Autodesk)', model:'High Subscription', client:'No (Expert Only)', instant:'Yes (expert required)', cost:'$250+/mo + fees', highlight:false },
+                                        ].map((row,i) => (
+                                            <tr key={i} style={{borderBottom:'1px solid rgba(0,0,0,0.06)',background:row.highlight?'rgba(27,79,130,0.04)':'transparent'}}>
+                                                <td className="py-4 px-4 font-semibold" style={{color:row.highlight?'var(--blue)':'var(--ink)'}}>{row.sol}</td>
+                                                <td className="py-4 px-4" style={{color:'var(--mid)'}}>{row.model}</td>
+                                                <td className="py-4 px-4">
+                                                    <span className="mono text-[8px] uppercase tracking-wider px-2 py-1 rounded-sm" style={{background:row.client==='Yes'?'rgba(27,79,130,0.1)':'rgba(0,0,0,0.04)',color:row.client==='Yes'?'var(--blue)':'var(--mid)',border:`1px solid ${row.client==='Yes'?'rgba(27,79,130,0.2)':'rgba(0,0,0,0.08)'}`}}>{row.client}</span>
+                                                </td>
+                                                <td className="py-4 px-4">
+                                                    <span className="mono text-[8px] uppercase tracking-wider px-2 py-1 rounded-sm" style={{background:row.instant==='Yes'?'rgba(27,79,130,0.1)':'rgba(0,0,0,0.04)',color:row.instant==='Yes'?'var(--blue)':'var(--mid)',border:`1px solid ${row.instant==='Yes'?'rgba(27,79,130,0.2)':'rgba(0,0,0,0.08)'}`}}>{row.instant}</span>
+                                                </td>
+                                                <td className="py-4 px-4 font-semibold" style={{color:row.highlight?'var(--blue)':'var(--ink)'}}>{row.cost}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ══ MARKET OPPORTUNITY (TAM / SAM / SOM) ══════════════════ */}
+                    <section id="market" style={{background:'var(--ink)',padding:'6rem 0'}}>
+                        <div className="container mx-auto max-w-5xl px-5 md:px-10">
+                            <div className="text-center mb-14">
+                                <span className="badge" style={{borderColor:'rgba(27,79,130,0.35)',color:'rgba(91,152,209,0.9)',background:'rgba(27,79,130,0.12)'}}>Market Opportunity</span>
+                                <h2 className="cg italic text-white mt-3" style={{fontSize:'clamp(2rem,4.5vw,3.2rem)'}}>Starting in Texas.<br/>Built for the Nation.</h2>
+                                <p className="mt-3 text-sm max-w-md mx-auto" style={{color:'rgba(255,255,255,0.4)'}}>We're laser-focused on a beachhead, not boiling the ocean.</p>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                                {[
+                                    { label:'TAM', sub:'Total Addressable Market', n:'18,328', unit:'Architectural Firms (USA)', desc:'Every licensed architectural firm in the United States that handles residential projects and onboards new clients through a discovery process.', color:'rgba(255,255,255,0.15)', border:'rgba(255,255,255,0.08)' },
+                                    { label:'SAM', sub:'Serviceable Addressable Market', n:'2,500+', unit:'Architecture Firms (Texas)', desc:'Texas ranks among the top states for residential construction activity and new firm formation — our primary expansion corridor with AIA chapter access.', color:'rgba(27,79,130,0.15)', border:'rgba(27,79,130,0.3)' },
+                                    { label:'SOM', sub:'Serviceable Obtainable Market', n:'162', unit:'Early-Adopter Firms · TX Hubs', desc:'Our 12-month beachhead: tech-forward small firms in Austin, Dallas, and Houston — reachable through AIA local chapters, LinkedIn outreach, and word of mouth.', color:'rgba(200,40,28,0.12)', border:'rgba(200,40,28,0.3)', hot:true },
+                                ].map((m,i) => (
+                                    <motion.div key={i} initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*0.1}}
+                                        style={{border:`1.5px solid ${m.border}`,background:m.color,borderRadius:'6px',padding:'1.75rem',position:'relative',overflow:'hidden'}}>
+                                        {m.hot && <div style={{position:'absolute',top:'12px',right:'12px',background:'var(--red)',color:'white',fontSize:'7px',letterSpacing:'0.15em',fontFamily:'Space Mono',textTransform:'uppercase',padding:'3px 8px',borderRadius:'3px'}}>Active Target</div>}
+                                        <div className="mono text-[8px] uppercase tracking-widest mb-1" style={{color:'rgba(255,255,255,0.35)'}}>{m.sub}</div>
+                                        <div className="cg italic text-white mb-1" style={{fontSize:'4rem',lineHeight:1}}>{m.label}</div>
+                                        <div className="cg italic" style={{fontSize:'2.2rem',color:m.hot?'var(--red)':i===1?'var(--blue-lt)':'rgba(255,255,255,0.6)',lineHeight:1,marginBottom:'0.25rem'}}>{m.n}</div>
+                                        <div className="mono text-[7px] uppercase tracking-widest mb-4" style={{color:'rgba(255,255,255,0.3)'}}>{m.unit}</div>
+                                        <span style={{display:'block',width:'28px',height:'1px',background:m.hot?'var(--red)':i===1?'var(--blue)':'rgba(255,255,255,0.2)',marginBottom:'0.75rem'}}/>
+                                        <p style={{fontSize:'0.8rem',color:'rgba(255,255,255,0.4)',lineHeight:1.6}}>{m.desc}</p>
+                                    </motion.div>
+                                ))}
+                            </div>
+                            <div style={{padding:'1.5rem 2rem',border:'1px solid rgba(27,79,130,0.25)',background:'rgba(27,79,130,0.06)',borderRadius:'6px',textAlign:'center'}}>
+                                <p className="cg italic text-white" style={{fontSize:'1.1rem'}}>At $149/session and 2 sessions/month per firm, <strong style={{color:'var(--blue-lt)'}}>162 early-adopter firms = ~$580K ARR potential</strong> from the beachhead alone.</p>
+                                <p className="mono mt-2" style={{fontSize:'8px',letterSpacing:'0.1em',textTransform:'uppercase',color:'rgba(255,255,255,0.3)'}}>Conservative estimate · Does not include Studio 10-Pack tier</p>
                             </div>
                         </div>
                     </section>
@@ -2297,21 +2440,49 @@ const App = () => {
 
                     {/* ══ TEAM ═══════════════════════════════════════════════════ */}
                     <section id="team" style={{background:'white',padding:'6rem 0'}}>
-                        <div className="container mx-auto max-w-5xl px-5 md:px-10 text-center">
-                            <span className="badge">The Founders</span>
-                            <h2 className="cg italic mt-3 mb-14" style={{fontSize:'clamp(2rem,4.5vw,3.2rem)'}}>The Minds Behind Keystone.</h2>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                        <div className="container mx-auto max-w-5xl px-5 md:px-10">
+                            <div className="text-center mb-14">
+                                <span className="badge">The Founders</span>
+                                <h2 className="cg italic mt-3" style={{fontSize:'clamp(2rem,4.5vw,3.2rem)'}}>The Minds Behind Keystone.</h2>
+                                <p className="mt-3 text-sm max-w-lg mx-auto" style={{color:'var(--mid)'}}>Three builders — engineering, finance, and technology — united around one mission: ending the $1,500 discovery gap.</p>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                                 {[
-                                    { name:'Sujan Acharya',  role:'CEO', img:ASSETS.team.sujan },
-                                    { name:'Subrat Acharya', role:'CFO', img:ASSETS.team.subrat },
-                                    { name:'Rhythm Bhattarai', role:'CTO', img:ASSETS.team.rhythm },
+                                    {
+                                        name:'Sujan Acharya', role:'CEO & Founder', img:ASSETS.team.sujan,
+                                        bio:'4 years hands-on in residential architectural firms. B.Sc Civil Engineering · M.Sc Construction Management · PhD candidate in technology commercialization. Built Keystone after living the discovery pain firsthand.',
+                                        tags:['Civil Engineering','Construction Mgmt','PhD — Tech Commercialization','4 Yrs Arch. Practice'],
+                                        color:'var(--blue)'
+                                    },
+                                    {
+                                        name:'Subrat Acharya', role:'CFO', img:ASSETS.team.subrat,
+                                        bio:'Accountant overseeing financial operations for 10+ hydropower infrastructure projects. Undergraduate in Business Science. ACCA track — building the financial rigor Keystone needs to scale.',
+                                        tags:['Business Science','10+ Hydropower Projects','ACCA Track','Financial Operations'],
+                                        color:'var(--gold)'
+                                    },
+                                    {
+                                        name:'Rhythm Bhattarai', role:'CTO', img:ASSETS.team.rhythm,
+                                        bio:'Civil Engineer with 6 years of industry experience, a Master\'s in Civil Engineering, and a PhD scholarship. Python developer and full-stack web builder — the technical force behind Keystone\'s generative engine.',
+                                        tags:['Civil Engineering (MEng)','PhD Scholar','Python & Web Dev','6 Yrs Industry'],
+                                        color:'var(--red)'
+                                    },
                                 ].map((m,i) => (
-                                    <motion.div key={i} initial={{opacity:0,y:16}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*0.1}}>
-                                        <div style={{width:'180px',height:'240px',overflow:'hidden',margin:'0 auto 1.25rem',background:'var(--paper)'}}>
-                                            <motion.img src={m.img} initial={{filter:'grayscale(100%)'}} whileInView={{filter:'grayscale(0%)'}} whileHover={{scale:1.04}} transition={{duration:0.7}} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                                    <motion.div key={i} initial={{opacity:0,y:16}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*0.1}}
+                                        style={{border:'1.5px solid var(--border)',borderRadius:'6px',overflow:'hidden',background:'var(--paper)'}}>
+                                        <div style={{height:'260px',overflow:'hidden',background:'var(--cream)'}}>
+                                            <motion.img src={m.img} initial={{filter:'grayscale(100%)'}} whileInView={{filter:'grayscale(0%)'}} whileHover={{scale:1.04}} transition={{duration:0.7}} style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
                                         </div>
-                                        <h3 className="cg italic text-xl mb-1">{m.name}</h3>
-                                        <p className="mono text-[8px] uppercase tracking-widest" style={{color:'var(--blue)'}}>{m.role}</p>
+                                        <div style={{padding:'1.5rem'}}>
+                                            <div style={{width:'32px',height:'3px',background:m.color,marginBottom:'1rem'}}/>
+                                            <h3 className="cg italic text-xl mb-0.5">{m.name}</h3>
+                                            <p className="mono text-[8px] uppercase tracking-widest mb-3" style={{color:m.color}}>{m.role}</p>
+                                            <p className="text-sm leading-relaxed mb-4" style={{color:'var(--mid)'}}>{m.bio}</p>
+                                            <div className="flex flex-wrap gap-1">
+                                                {m.tags.map((tag,j) => (
+                                                    <span key={j} className="mono text-[7px] uppercase tracking-wider px-2 py-1 rounded-sm" style={{background:'rgba(0,0,0,0.04)',border:'1px solid rgba(0,0,0,0.08)',color:'var(--mid)'}}>{tag}</span>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </motion.div>
                                 ))}
                             </div>
@@ -2327,7 +2498,7 @@ const App = () => {
                                     <span className="cg italic" style={{fontSize:'1.2rem',color:'rgba(255,255,255,0.5)'}}>Keystone AI</span>
                                 </div>
                                 <div className="flex gap-7 mono text-[8px] uppercase tracking-widest" style={{color:'rgba(255,255,255,0.25)'}}>
-                                    {[['About','about'],['How It Works','workflow'],['Values','values'],['Roadmap','roadmap'],['Pricing','pricing'],['Try Demo','generator']].map(([l,id]) => (
+                                    {[['About','about'],['Compare','compare'],['Market','market'],['Values','values'],['Roadmap','roadmap'],['Pricing','pricing'],['Demo','generator']].map(([l,id]) => (
                                         <a key={id} href={`#${id}`} className="hover:text-white/50 transition-colors">{l}</a>
                                     ))}
                                 </div>
