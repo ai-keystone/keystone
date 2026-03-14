@@ -9,6 +9,8 @@
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Azeret+Mono:wght@400;500;600&family=Familjen+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script defer src="/_vercel/insights/script.js"></script>
     <style>
@@ -534,6 +536,16 @@
         .footer-link:hover {
             color: rgba(244,239,230,0.9);
         }
+        .defer-section {
+            content-visibility: auto;
+            contain-intrinsic-size: 1px 900px;
+        }
+        .faq-card summary::-webkit-details-marker {
+            display: none;
+        }
+        .faq-card[open] {
+            box-shadow: 0 20px 50px rgba(10,10,12,0.08);
+        }
         .proof-shelf {
             position: relative;
             margin-top: -4.75rem;
@@ -645,9 +657,24 @@
             .proof-frame { border-radius: 22px; }
             .cta-live { width: 100%; justify-content: center; }
             .cta-live-mark { display: none; }
+            .hero-video-wave { filter: blur(34px); opacity: 0.4; }
         }
         @media (max-width: 1279px) {
             .attention-float { display: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+            .hero-video-wave,
+            .hero-video-mesh,
+            .marquee-track,
+            .cta-live {
+                animation: none !important;
+            }
         }
     </style>
     <script>

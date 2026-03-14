@@ -1,4 +1,4 @@
-const { useState, useEffect, useRef } = React;
+﻿const { useState, useEffect, useRef } = React;
 const FM = window.framerMotion || window.Motion;
 const { motion, AnimatePresence } = FM;
 
@@ -14,10 +14,26 @@ const ASSETS = {
     exampleRender:    "images/sample_3d.png",
 };
 
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+const BRAND_NAME = 'Keystone AI Studio';
+const CONTACT_EMAIL = 'aikeystone559@gmail.com';
+const LEGAL_UPDATED_AT = 'March 14, 2026';
+const getCurrentPath = () => {
+    const raw = (window.location.pathname || '/').replace(/\/+$/, '') || '/';
+    return raw === '/index.html' ? '/' : raw;
+};
+const homeSectionHref = (id) => id === 'hero' ? '/' : `/#${id}`;
+const SmartImage = ({ eager = false, ...props }) => (
+    <img
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+        fetchPriority={eager ? 'high' : 'auto'}
+        {...props}
+    />
+);
 
-// ─── MOBILE NAV ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ MOBILE NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MobileNavBar = ({ onOpenMenu }) => (
     <div className="fixed bottom-0 left-0 w-full bottom-nav z-[90] md:hidden pb-safe">
         <div className="grid grid-cols-5 h-[60px] items-center">
@@ -70,7 +86,7 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
                     </button>
                 </div>
                 <div className="flex-1 px-6 py-6 flex flex-col gap-0">
-                    {[['Work','work'],['Services','services'],['Pricing','pricing'],['Studio','studio'],['Live Studio','generator'],['Sessions','gallery']].map(([label, id], i) => (
+                    {[['Work','work'],['Services','services'],['Pricing','pricing'],['Live Studio','generator'],['Studio','studio'],['Sessions','gallery']].map(([label, id], i) => (
                         <button key={id} onClick={() => { scrollTo(id); onClose(); }}
                             className="cg text-[2rem] text-left border-b border-white/6 py-4 flex justify-between items-center text-white/90 hover:text-white transition-colors"
                             style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>
@@ -78,6 +94,14 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
                             <span className="mono text-sm text-white/20">0{i+1}</span>
                         </button>
                     ))}
+                    <div className="grid grid-cols-2 gap-2 mt-5">
+                        <a href="/case-study" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
+                            Case Study
+                        </a>
+                        <a href="/faq" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
+                            FAQ
+                        </a>
+                    </div>
                     <div className="mt-auto pt-8 grid gap-3">
                         <button onClick={() => { scrollTo('generator'); onClose(); }}
                             className="cta-hero cta-glow w-full text-center py-4">
@@ -94,7 +118,7 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
     </AnimatePresence>
 );
 
-// ─── JOIN MODAL ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ JOIN MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const JoinModal = ({ isOpen, onClose }) => {
     const [formData, setFormData] = React.useState({ fullName:'', firmName:'', email:'', volume:'1-10 Projects', questions:'' });
     const [status, setStatus] = React.useState('idle'); // idle | loading | success
@@ -223,30 +247,38 @@ const JoinModal = ({ isOpen, onClose }) => {
     );
 };
 
-// PLAN SUMMARY ─────────────────────────────────────────────────────────────
+// PLAN SUMMARY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const PlanSummaryPanel = ({ planSpec }) => {
     if (!planSpec) return null;
     const allRooms = (planSpec.levels||[]).flatMap(l => l.rooms||[]);
     const roomCounts = {};
     allRooms.forEach(r => { const t = r.label||r.type; roomCounts[t] = (roomCounts[t]||0)+1; });
     return (
-        <div className="border border-black/6 rounded-sm p-4 mt-4 bg-white/60">
-            <p className="mono text-[8px] uppercase tracking-widest text-blue mb-3">Plan Summary</p>
-            <div className="grid grid-cols-3 gap-2 mb-3">
+        <div className="paper-panel p-4 md:p-5 mt-4">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                <div>
+                    <p className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.82)'}}>Generated plan summary</p>
+                    <p className="text-[13px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>This is the live floor plan output currently available in Keystone today.</p>
+                </div>
+                <div className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
+                    Download-ready PNG
+                </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-4 mt-4">
                 <div className="spec-panel"><div className="spec-label">Area</div><div className="spec-value">{(planSpec.totalAreaSqFt||0).toLocaleString()} sqft</div></div>
                 <div className="spec-panel"><div className="spec-label">Stories</div><div className="spec-value">{planSpec.stories}</div></div>
                 <div className="spec-panel"><div className="spec-label">Levels</div><div className="spec-value">{(planSpec.levels||[]).length}</div></div>
             </div>
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-1.5">
                 {Object.entries(roomCounts).map(([label, count]) => (
-                    <span key={label} className="room-badge active" style={{cursor:'default'}}>{label}{count > 1 ? ` ×${count}` : ''}</span>
+                    <span key={label} className="room-badge active" style={{cursor:'default'}}>{label}{count > 1 ? ` Ã—${count}` : ''}</span>
                 ))}
             </div>
         </div>
     );
 };
 
-// ─── REFINEMENT PANEL ─────────────────────────────────────────────────────────
+// â”€â”€â”€ REFINEMENT PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const REFINEMENT_SUGGESTIONS = [
     "Make the living room 4 feet wider",
     "Make the primary bedroom bigger",
@@ -279,40 +311,43 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
     const countColor = refinementsLeft > 5 ? 'var(--blue)' : refinementsLeft > 2 ? 'var(--gold)' : 'var(--red)';
 
     return (
-        <div className="border-t border-black/5">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 pt-4 pb-2">
+        <div className="border-t border-white/8">
+            <div className="flex items-center justify-between px-4 md:px-5 pt-4 pb-2">
                 <div className="flex items-center gap-2">
-                    <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'var(--blue)',display:'inline-block'}}/>
-                    <p className="mono text-[8px] uppercase tracking-widest text-blue font-bold">Refine Your Plan</p>
+                    <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'var(--accent)',display:'inline-block'}}/>
+                    <p className="mono text-[8px] uppercase tracking-[0.24em] font-bold" style={{color:'rgba(244,239,230,0.76)'}}>Studio notes</p>
                 </div>
                 <span className="mono text-[9px] font-bold" style={{color: countColor}}>
-                    {refinementsLeft}/10 free
+                    {refinementsLeft}/10 edits left
                 </span>
             </div>
+            <div className="px-4 md:px-5 pb-3">
+                <p className="text-[12px] leading-relaxed" style={{color:'rgba(244,239,230,0.56)'}}>
+                    Use quick edits to explore the floor plan before you export it or move into the Gemini exterior study.
+                </p>
+            </div>
 
-            {/* Conversation history */}
             {refinementHistory.length > 0 && (
-                <div ref={historyRef} className="mx-4 mb-3 max-h-40 overflow-y-auto rounded-sm"
-                    style={{background:'var(--cream)',border:'1px solid rgba(0,0,0,0.06)'}}>
+                <div ref={historyRef} className="mx-4 md:mx-5 mb-3 max-h-40 overflow-y-auto rounded-[14px]"
+                    style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)'}}>
                     {refinementHistory.map((msg, i) => (
-                        <div key={i} className="px-3 py-2 border-b border-black/4 last:border-0">
+                        <div key={i} className="px-3 py-2.5 border-b last:border-0" style={{borderColor:'rgba(255,255,255,0.06)'}}>
                             {msg.role === 'user' && (
                                 <div className="flex gap-2 items-start">
-                                    <span className="mono text-[7px] uppercase text-blue pt-0.5 flex-shrink-0 font-bold">You</span>
-                                    <span className="text-[11px] leading-snug">{msg.content}</span>
+                                    <span className="mono text-[7px] uppercase pt-0.5 flex-shrink-0 font-bold" style={{color:'rgba(255,181,160,0.92)'}}>You</span>
+                                    <span className="text-[11px] leading-snug" style={{color:'rgba(244,239,230,0.82)'}}>{msg.content}</span>
                                 </div>
                             )}
                             {msg.role === 'assistant' && (
                                 <div className="flex gap-2 items-start">
-                                    <span className="mono text-[7px] uppercase text-mid pt-0.5 flex-shrink-0 font-bold">AI</span>
-                                    <span className="text-[11px] leading-snug text-blue">✓ {msg.content}</span>
+                                    <span className="mono text-[7px] uppercase pt-0.5 flex-shrink-0 font-bold" style={{color:'rgba(244,239,230,0.46)'}}>Studio</span>
+                                    <span className="text-[11px] leading-snug" style={{color:'rgba(190,221,255,0.92)'}}>Updated: {msg.content}</span>
                                 </div>
                             )}
                             {msg.role === 'error' && (
                                 <div className="flex gap-2 items-start">
-                                    <span className="mono text-[7px] uppercase text-red pt-0.5 flex-shrink-0 font-bold">Error</span>
-                                    <span className="text-[11px] leading-snug text-red">{msg.content}</span>
+                                    <span className="mono text-[7px] uppercase pt-0.5 flex-shrink-0 font-bold" style={{color:'rgba(255,133,119,0.92)'}}>Error</span>
+                                    <span className="text-[11px] leading-snug" style={{color:'rgba(255,178,164,0.92)'}}>{msg.content}</span>
                                 </div>
                             )}
                         </div>
@@ -320,55 +355,54 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
                     {isLoading && (
                         <div className="px-3 py-2 flex items-center gap-2">
                             <div className="w-3 h-3 border-2 border-blue border-t-transparent rounded-full animate-spin flex-shrink-0"/>
-                            <span className="mono text-[8px] uppercase tracking-widest text-mid animate-pulse">Gemini is analyzing your plan…</span>
+                            <span className="mono text-[8px] uppercase tracking-widest animate-pulse" style={{color:'rgba(244,239,230,0.48)'}}>Updating the plan...</span>
                         </div>
                     )}
                 </div>
             )}
             {isLoading && refinementHistory.length === 0 && (
-                <div className="mx-4 mb-3 px-3 py-2 flex items-center gap-2 rounded-sm" style={{background:'var(--cream)'}}>
+                <div className="mx-4 md:mx-5 mb-3 px-3 py-2 flex items-center gap-2 rounded-[14px]" style={{background:'rgba(255,255,255,0.06)'}}>
                     <div className="w-3 h-3 border-2 border-blue border-t-transparent rounded-full animate-spin flex-shrink-0"/>
-                    <span className="mono text-[8px] uppercase tracking-widest text-mid animate-pulse">Gemini is analyzing your plan…</span>
+                    <span className="mono text-[8px] uppercase tracking-widest animate-pulse" style={{color:'rgba(244,239,230,0.48)'}}>Updating the plan...</span>
                 </div>
             )}
 
-            {/* Quick suggestion chips */}
-            <div className="flex flex-wrap gap-1 px-4 mb-3">
+            <div className="flex flex-wrap gap-1.5 px-4 md:px-5 mb-3">
                 {REFINEMENT_SUGGESTIONS.map((s, i) => (
                     <button key={i} disabled={disabled} onClick={() => onRefine(s)}
-                        className="text-[9px] px-2 py-1 border border-black/8 hover:border-blue hover:text-blue transition-all disabled:opacity-30 rounded-sm bg-white">
+                        className="text-[9px] px-2.5 py-1.5 border transition-all disabled:opacity-30 rounded-full"
+                        style={{borderColor:'rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.04)',color:'rgba(244,239,230,0.74)'}}>
                         {s}
                     </button>
                 ))}
             </div>
 
-            {/* Custom input */}
-            <form onSubmit={handleCustom} className="flex gap-2 px-4 pb-4">
+            <form onSubmit={handleCustom} className="flex gap-2 px-4 md:px-5 pb-5">
                 <input
                     type="text"
                     value={custom}
                     onChange={e => setCustom(e.target.value)}
-                    placeholder={disabled ? 'No refinements left' : 'e.g. Make the living room 6 feet wider…'}
+                    placeholder={disabled ? 'No edits left' : 'e.g. Make the living room 6 feet wider'}
                     disabled={disabled}
-                    className="flex-1 text-sm px-3 py-2 border border-black/10 rounded-sm focus:outline-none focus:border-blue disabled:opacity-40"
-                    style={{background:'white'}}
+                    className="flex-1 text-sm px-3 py-2 border rounded-[14px] focus:outline-none disabled:opacity-40"
+                    style={{background:'rgba(255,255,255,0.92)',borderColor:'rgba(255,255,255,0.18)'}}
                 />
                 <button type="submit" disabled={disabled || !custom.trim()}
-                    className="px-4 py-2 bg-blue text-white mono text-[9px] font-bold uppercase tracking-wider disabled:opacity-30 hover:bg-ink transition-colors rounded-sm whitespace-nowrap">
-                    Apply →
+                    className="px-4 py-2 cta-hero cta-glow-soft text-[9px] disabled:opacity-30 whitespace-nowrap">
+                    Apply
                 </button>
             </form>
 
             {refinementsLeft === 0 && (
-                <p className="mono text-[9px] text-red font-bold uppercase px-4 pb-3">
-                    Free refinements used — upgrade to Studio for more.
+                <p className="mono text-[9px] font-bold uppercase px-4 md:px-5 pb-4" style={{color:'rgba(255,133,119,0.92)'}}>
+                    Included edits used. Request guided access if you need a deeper session.
                 </p>
             )}
         </div>
     );
 };
 
-// ─── RENDER SURVEY MODAL ──────────────────────────────────────────────────────
+// â”€â”€â”€ RENDER SURVEY MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     const [data, setData] = useState(initialData || {
         zipCode: '', exteriorStyle: '', roofStyle: 'Gabled', landscaping: 'Manicured lawn',
@@ -401,7 +435,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                         transition={{type:'spring',damping:26}}
                         className="bg-paper w-full md:max-w-lg rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden">
                         <div style={{height:'3px',background:'linear-gradient(90deg,var(--blue),var(--red))'}}/>
-                        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 bg-black/6 hover:bg-black/12 rounded-full flex items-center justify-center text-lg z-10">×</button>
+                        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 bg-black/6 hover:bg-black/12 rounded-full flex items-center justify-center text-lg z-10">Ã—</button>
 
                         <div className="p-6 overflow-y-auto" style={{maxHeight:'85vh'}}>
                             <span className="badge mb-3 inline-block">3D Render Options</span>
@@ -411,16 +445,16 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                             <div className="space-y-4">
                                 {/* ZIP CODE */}
                                 <div>
-                                    <Lbl>📍 Project Zip Code</Lbl>
+                                    <Lbl>ðŸ“ Project Zip Code</Lbl>
                                     <input type="text" placeholder="e.g. 78701" maxLength="10"
                                         value={data.zipCode} onChange={e => upd('zipCode', e.target.value)}
                                         style={{maxWidth:'180px'}}/>
-                                    <p className="text-[9px] text-mid/60 mt-1">Helps set regional context — climate, terrain, neighborhood character</p>
+                                    <p className="text-[9px] text-mid/60 mt-1">Helps set regional context â€” climate, terrain, neighborhood character</p>
                                 </div>
 
                                 {/* EXTERIOR STYLE OVERRIDE */}
                                 <div>
-                                    <Lbl>🏠 Exterior Style</Lbl>
+                                    <Lbl>ðŸ  Exterior Style</Lbl>
                                     <BtnRow field="exteriorStyle" options={[
                                         {val:'Craftsman (Wood & Stone)',          label:'Craftsman'},
                                         {val:'Modern Farmhouse (Board & Batten)', label:'Farmhouse'},
@@ -434,25 +468,25 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                                 {/* ROOF STYLE */}
                                 <div>
-                                    <Lbl>🏗️ Roof Style</Lbl>
+                                    <Lbl>ðŸ—ï¸ Roof Style</Lbl>
                                     <BtnRow field="roofStyle" options={['Gabled','Hip Roof','Flat Roof','Metal Standing Seam','Terracotta Tile','Cathedral / Vaulted']}/>
                                 </div>
 
                                 {/* SEASON */}
                                 <div>
-                                    <Lbl>🌿 Season / Vegetation</Lbl>
+                                    <Lbl>ðŸŒ¿ Season / Vegetation</Lbl>
                                     <BtnRow field="season" options={['Spring','Summer','Fall','Winter (Snow)']}/>
                                 </div>
 
                                 {/* TIME OF DAY */}
                                 <div>
-                                    <Lbl>☀️ Time of Day / Lighting</Lbl>
+                                    <Lbl>â˜€ï¸ Time of Day / Lighting</Lbl>
                                     <BtnRow field="timeOfDay" options={['Sunrise','Midday','Golden Hour','Overcast','Night']}/>
                                 </div>
 
                                 {/* SURROUNDINGS */}
                                 <div>
-                                    <Lbl>🌲 Surrounding Environment</Lbl>
+                                    <Lbl>ðŸŒ² Surrounding Environment</Lbl>
                                     <BtnRow field="surroundings" options={[
                                         {val:'Suburban neighborhood', label:'Suburban'},
                                         {val:'Wooded forest',         label:'Wooded'},
@@ -465,7 +499,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                                 {/* LANDSCAPING */}
                                 <div>
-                                    <Lbl>🌳 Landscaping</Lbl>
+                                    <Lbl>ðŸŒ³ Landscaping</Lbl>
                                     <BtnRow field="landscaping" options={[
                                         'Manicured lawn',
                                         'Native plantings',
@@ -479,7 +513,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                             <button onClick={() => onSubmit(data)}
                                 className="w-full mt-6 py-3.5 bg-ink text-white mono text-[10px] uppercase tracking-[0.18em] font-bold hover:bg-blue transition-colors rounded-sm">
-                                ✦ Generate 3D Render →
+                                âœ¦ Generate 3D Render â†’
                             </button>
                         </div>
                     </motion.div>
@@ -552,12 +586,12 @@ const svgToPngDataUrl = (svgMarkup, options = {}) => new Promise((resolve, rejec
     }
 });
 
-// ─── 3D RENDER PANEL ──────────────────────────────────────────────────────────
+// â”€â”€â”€ 3D RENDER PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const RENDER_REFINEMENTS = [
-    { label: 'Golden Hour',  hint: 'warm late-afternoon sunlight, long shadows, golden orange sky — ONLY change the lighting and sky, keep the house architecture identical' },
-    { label: 'Overcast Day', hint: 'soft diffuse overcast lighting, muted tones, grey cloud-covered sky — ONLY change the lighting and sky, keep the house architecture identical' },
-    { label: 'Night Lit',    hint: 'night scene with interior lights glowing warmly through windows, landscape uplighting, dark blue starry sky — ONLY change the lighting and sky, keep the house architecture identical' },
-    { label: 'Sunrise',      hint: 'sunrise with pink and orange gradient sky, long warm shadows raking across the facade — ONLY change the lighting and sky, keep the house architecture identical' },
+    { label: 'Golden Hour',  hint: 'warm late-afternoon sunlight, long shadows, golden orange sky â€” ONLY change the lighting and sky, keep the house architecture identical' },
+    { label: 'Overcast Day', hint: 'soft diffuse overcast lighting, muted tones, grey cloud-covered sky â€” ONLY change the lighting and sky, keep the house architecture identical' },
+    { label: 'Night Lit',    hint: 'night scene with interior lights glowing warmly through windows, landscape uplighting, dark blue starry sky â€” ONLY change the lighting and sky, keep the house architecture identical' },
+    { label: 'Sunrise',      hint: 'sunrise with pink and orange gradient sky, long warm shadows raking across the facade â€” ONLY change the lighting and sky, keep the house architecture identical' },
 ];
 
 const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }) => {
@@ -629,7 +663,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
             if (onRenderReady) onRenderReady(watermarked);
         } catch(err) {
             console.error('[render]', err);
-            setErrorMsg(err.message || 'Network error — is the server running?');
+            setErrorMsg(err.message || 'Network error â€” is the server running?');
             setRenderStatus('error');
         }
     };
@@ -654,8 +688,8 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
         <>
             <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData}/>
             <button onClick={handleRender}
-                className="w-full py-3.5 bg-ink text-white mono text-[10px] uppercase tracking-[0.2em] font-bold hover:bg-blue transition-colors rounded-sm">
-                ✦ Generate AI 3D Render
+                className="w-full py-3.5 cta-hero cta-glow text-[10px]">
+                Generate Gemini Exterior Study
             </button>
         </>
     );
@@ -665,11 +699,11 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
             <div className="flex items-center gap-3 text-blue">
                 <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"/>
                 <span className="mono text-[9px] uppercase tracking-widest animate-pulse">
-                    {activeRefinement ? `Adjusting lighting: ${activeRefinement}…` : 'Rendering with Gemini AI…'}
+                    {activeRefinement ? `Adjusting lighting: ${activeRefinement}...` : 'Rendering with Gemini...'}
                 </span>
             </div>
             <p className="mono text-[8px] text-mid opacity-50">
-                {activeRefinement ? 'Changing lighting only — architecture unchanged' : 'Usually 15–30 seconds'}
+                {activeRefinement ? 'Changing lighting only - architecture unchanged' : 'Usually 15-30 seconds'}
             </p>
         </div>
     );
@@ -682,7 +716,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
                 <p className="text-[10px] text-mid leading-relaxed mb-3" style={{wordBreak:'break-word'}}>{errorMsg}</p>
                 <button onClick={() => setShowSurvey(true)}
                     className="mono text-[9px] uppercase tracking-widest px-3 py-1.5 bg-ink text-white rounded-sm hover:bg-blue transition-colors">
-                    Retry →
+                    Retry
                 </button>
             </div>
         </>
@@ -691,19 +725,19 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
     if (renderStatus === 'ready') return (
         <div>
             <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData}/>
-            <img src={renderImage} className="w-full object-cover rounded-sm shadow-xl" alt="AI 3D Render"/>
+            <SmartImage src={renderImage} className="w-full object-cover rounded-[16px] shadow-xl" alt="Gemini exterior study"/>
             {/* Toolbar */}
             <div className="flex items-center gap-2 mt-2 mb-3 flex-wrap">
                 <span className="mono text-[8px] uppercase tracking-widest text-mid">
-                    {activeRefinement ? `Lighting: ${activeRefinement}` : 'AI Exterior Render'}
+                    {activeRefinement ? `Lighting: ${activeRefinement}` : 'Gemini exterior study'}
                 </span>
                 <button onClick={() => { const l=document.createElement('a'); l.href=renderImage; l.download='Keystone_3D.png'; l.click(); }}
                     className="ml-auto mono text-[9px] text-blue underline">Download</button>
-                <button onClick={handleRegenerate} className="mono text-[9px] text-mid underline">↺ Regenerate</button>
-                <button onClick={() => setShowSurvey(true)} className="mono text-[9px] text-mid underline">⚙ Options</button>
+                <button onClick={handleRegenerate} className="mono text-[9px] text-mid underline">Regenerate</button>
+                <button onClick={() => setShowSurvey(true)} className="mono text-[9px] text-mid underline">Options</button>
             </div>
 
-            {/* Lighting refinement chips — lighting only, architecture unchanged */}
+            {/* Lighting refinement chips â€” lighting only, architecture unchanged */}
             <div className="border-t border-black/5 pt-3">
                 <div className="flex items-center justify-between mb-2">
                     <p className="mono text-[7px] uppercase tracking-widest text-mid">Lighting &amp; Mood</p>
@@ -719,10 +753,6 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
                                 background: activeRefinement === ref.label ? 'var(--blue)' : 'white',
                                 color: activeRefinement === ref.label ? 'white' : 'var(--ink)',
                             }}>
-                            {ref.label === 'Golden Hour' && '☀ '}
-                            {ref.label === 'Overcast Day' && '☁ '}
-                            {ref.label === 'Night Lit' && '🌙 '}
-                            {ref.label === 'Sunrise' && '🌅 '}
                             {ref.label}
                         </button>
                     ))}
@@ -733,7 +763,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
     return null;
 };
 
-// ─── SURVEY FORM ──────────────────────────────────────────────────────────────
+// â”€â”€â”€ SURVEY FORM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const SURVEY_STEPS = [
     { id:'basics',    title:'Basic Requirements',   subtitle:'Size, stories, and rooms',           fields:['totalArea','stories','bedrooms','bathrooms','privateBaths'] },
     { id:'structure', title:'Structure & Site',      subtitle:'Garage, shape, and orientation',     fields:['garage','shape','frontFacing','lotContext'] },
@@ -789,7 +819,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                 }}>
                 <span style={{fontSize:'13px'}}>{icon}</span>
                 {label}
-                {selected && <span style={{opacity:0.5,fontSize:'9px'}}>✓</span>}
+                {selected && <span style={{opacity:0.5,fontSize:'9px'}}>âœ“</span>}
             </button>
         );
     };
@@ -853,10 +883,10 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
             );
             case 'privateBaths': return (
                 <div key={field} className="space-y-1.5 p-3 bg-blue/4 border border-blue/15 rounded-sm">
-                    <Lbl>🛁 Private En-Suite Bathrooms</Lbl>
+                    <Lbl>ðŸ› Private En-Suite Bathrooms</Lbl>
                     <p className="text-[10px] text-mid mb-2">How many bedrooms should have their own private bathroom attached?</p>
                     <div className="flex gap-2">{[0,1,2,3].filter(n => n <= bedCount).map(n=><button key={n} type="button" onClick={()=>upd('privateBaths',`${n}`)} className={`flex-1 h-10 border text-sm font-bold rounded-sm transition-all ${formData.privateBaths===`${n}`?'bg-blue text-white border-blue':'border-black/10 bg-white hover:border-blue'}`}>{n === 0 ? 'None' : n}</button>)}</div>
-                    <p className="text-[9px] text-mid/50">Primary bedroom always gets an en-suite · Remaining baths are shared</p>
+                    <p className="text-[9px] text-mid/50">Primary bedroom always gets an en-suite Â· Remaining baths are shared</p>
                 </div>
             );
             case 'garage': return (
@@ -873,8 +903,8 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                 <div key={field} className="space-y-1.5">
                     <Lbl>Footprint Shape</Lbl>
                     <div className="grid grid-cols-2 gap-2">
-                        <FootprintOption val="Rectangular (Wide)" label="Wide Rectangle" desc="Width > depth — more street frontage" ratio={[1.6, 1]}/>
-                        <FootprintOption val="Rectangular (Deep)" label="Deep Rectangle" desc="Depth > width — narrow lot" ratio={[1, 1.4]}/>
+                        <FootprintOption val="Rectangular (Wide)" label="Wide Rectangle" desc="Width > depth â€” more street frontage" ratio={[1.6, 1]}/>
+                        <FootprintOption val="Rectangular (Deep)" label="Deep Rectangle" desc="Depth > width â€” narrow lot" ratio={[1, 1.4]}/>
                         <FootprintOption val="Square" label="Square" desc="Equal width and depth" ratio={[1, 1]}/>
                         <FootprintOption val="Rectangular" label="Standard Rect" desc="Classic proportions" ratio={[1.3, 1]}/>
                     </div>
@@ -890,7 +920,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                                 <circle cx="105" cy="105" r="68" fill="none" stroke="rgba(100,100,100,0.07)" strokeWidth="1" strokeDasharray="3 4"/>
                                 {[[105,6,105,20],[105,190,105,204],[6,105,20,105],[190,105,204,105]].map(([x1,y1,x2,y2],i)=><line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(100,100,100,0.22)" strokeWidth="1.5"/>)}
                                 <path d="M 174 68 Q 200 105 174 142" fill="none" stroke="rgba(181,136,42,0.2)" strokeWidth="1.5" strokeDasharray="3 3"/>
-                                <text x="188" y="109" textAnchor="middle" fontSize="8" fill="rgba(181,136,42,0.5)">☀</text>
+                                <text x="188" y="109" textAnchor="middle" fontSize="8" fill="rgba(181,136,42,0.5)">â˜€</text>
                             </svg>
                             <div style={{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',zIndex:2}}>
                                 {['North','South','East','West'].includes(formData.frontFacing) && (() => {
@@ -922,7 +952,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                             })}
                         </div>
                     </div>
-                    <p className="mono text-[7px] text-mid/50 text-center">☀ South = most winter sun · East = morning light</p>
+                    <p className="mono text-[7px] text-mid/50 text-center">â˜€ South = most winter sun Â· East = morning light</p>
                 </div>
             );
             case 'lotContext': return (
@@ -1011,16 +1041,16 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                     <p className="text-[9px] text-mid/60 mb-2">Tap to add special rooms to your plan. Default: none.</p>
                     <div className="flex flex-wrap gap-2">
                         {[
-                            {label:'Study',         icon:'📚'},
-                            {label:'Home Office',   icon:'💼'},
-                            {label:'Home Theater',  icon:'🎬'},
-                            {label:'Gym',           icon:'🏋️'},
-                            {label:'Gaming Room',   icon:'🎮'},
-                            {label:'Library',       icon:'📖'},
-                            {label:'Wine Cellar',   icon:'🍷'},
-                            {label:'Music Room',    icon:'🎵'},
-                            {label:'Guest Suite',   icon:'🛏️'},
-                            {label:'Playroom',      icon:'🧸'},
+                            {label:'Study',         icon:'ðŸ“š'},
+                            {label:'Home Office',   icon:'ðŸ’¼'},
+                            {label:'Home Theater',  icon:'ðŸŽ¬'},
+                            {label:'Gym',           icon:'ðŸ‹ï¸'},
+                            {label:'Gaming Room',   icon:'ðŸŽ®'},
+                            {label:'Library',       icon:'ðŸ“–'},
+                            {label:'Wine Cellar',   icon:'ðŸ·'},
+                            {label:'Music Room',    icon:'ðŸŽµ'},
+                            {label:'Guest Suite',   icon:'ðŸ›ï¸'},
+                            {label:'Playroom',      icon:'ðŸ§¸'},
                         ].map(f => <ToggleChip key={f.label} field="features" value={f.label} label={f.label} icon={f.icon}/>)}
                     </div>
                     {(formData.features||'').trim() && (
@@ -1042,8 +1072,8 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                     }/>
                 </div>
             );
-            case 'budgetTier': return <div key={field} className="space-y-1.5"><Lbl>Budget Tier</Lbl><BtnGrid field="budgetTier" cols={1} options={[{val:'Entry ($120–180/sqft)',label:'Entry — $120–180/sqft',desc:'Efficient, value-optimized design'},{val:'Mid ($200–300/sqft)',label:'Mid — $200–300/sqft',desc:'Quality finishes, flexible layouts'},{val:'Luxury ($350+/sqft)',label:'Luxury — $350+/sqft',desc:'Premium materials, custom details'}]}/></div>;
-            case 'freeformWishes': return <div key={field} className="space-y-1.5"><Lbl>Anything Else? (optional)</Lbl><textarea rows="3" placeholder="Specific wishes, must-haves, or notes…" value={formData.freeformWishes} onChange={e=>upd('freeformWishes',e.target.value)}/></div>;
+            case 'budgetTier': return <div key={field} className="space-y-1.5"><Lbl>Budget Tier</Lbl><BtnGrid field="budgetTier" cols={1} options={[{val:'Entry ($120â€“180/sqft)',label:'Entry â€” $120â€“180/sqft',desc:'Efficient, value-optimized design'},{val:'Mid ($200â€“300/sqft)',label:'Mid â€” $200â€“300/sqft',desc:'Quality finishes, flexible layouts'},{val:'Luxury ($350+/sqft)',label:'Luxury â€” $350+/sqft',desc:'Premium materials, custom details'}]}/></div>;
+            case 'freeformWishes': return <div key={field} className="space-y-1.5"><Lbl>Anything Else? (optional)</Lbl><textarea rows="3" placeholder="Specific wishes, must-haves, or notesâ€¦" value={formData.freeformWishes} onChange={e=>upd('freeformWishes',e.target.value)}/></div>;
             default: return null;
         }
     };
@@ -1065,11 +1095,11 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                 {cur.fields.map(f => renderField(f))}
             </div>
             <div className="flex gap-2.5 mt-5">
-                {step > 0 && <button type="button" onClick={() => setStep(s=>s-1)} className="px-5 py-3 border border-black/10 text-[11px] font-semibold hover:border-ink transition-colors rounded-sm">← Back</button>}
+                {step > 0 && <button type="button" onClick={() => setStep(s=>s-1)} className="px-5 py-3 border border-black/10 text-[11px] font-semibold hover:border-ink transition-colors rounded-sm">â† Back</button>}
                 {!isLast
-                    ? <button type="button" onClick={() => setStep(s=>s+1)} className="flex-1 py-3 bg-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-ink transition-colors rounded-sm">Continue →</button>
+                    ? <button type="button" onClick={() => setStep(s=>s+1)} className="flex-1 py-3 bg-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-ink transition-colors rounded-sm">Continue â†’</button>
                     : <button type="button" onClick={onSubmit} disabled={isLoading} className="flex-1 py-3 bg-ink text-white text-[11px] font-bold uppercase tracking-wider hover:bg-blue transition-colors disabled:opacity-50 rounded-sm">
-                        {isLoading ? '⟳  Generating…' : '✦  Generate Floor Plan'}
+                        {isLoading ? 'âŸ³  Generatingâ€¦' : 'âœ¦  Generate Floor Plan'}
                       </button>
                 }
             </div>
@@ -1078,7 +1108,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
 };
 
 
-// ─── GALLERY COMPONENT ────────────────────────────────────────────────────────
+// â”€â”€â”€ GALLERY COMPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const Gallery = ({ onOpenModal }) => {
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -1117,7 +1147,7 @@ const Gallery = ({ onOpenModal }) => {
                         {typeof zoomImg === 'string' && zoomImg.startsWith('<svg')
                             ? <div className="bg-white p-6 max-w-4xl w-full max-h-[90vh] overflow-auto rounded-sm shadow-2xl" dangerouslySetInnerHTML={{__html:zoomImg}}/>
                             : <img src={zoomImg} className="max-h-[90vh] max-w-full object-contain rounded-sm" alt="Zoom"/>}
-                        <button className="absolute top-4 right-4 text-white/40 hover:text-white text-4xl font-light">×</button>
+                        <button className="absolute top-4 right-4 text-white/40 hover:text-white text-4xl font-light">Ã—</button>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -1139,17 +1169,17 @@ const Gallery = ({ onOpenModal }) => {
                                         <h3 className="cg italic text-2xl mt-2">{selected.label || 'Floor Plan'}</h3>
                                         <p className="mono text-[8px] uppercase tracking-widest text-mid mt-1">{fmt(selected.createdAt)}</p>
                                     </div>
-                                    <button onClick={() => setSelected(null)} className="w-9 h-9 bg-black/6 rounded-full flex items-center justify-center text-lg hover:bg-black/12 transition-colors flex-shrink-0">×</button>
+                                    <button onClick={() => setSelected(null)} className="w-9 h-9 bg-black/6 rounded-full flex items-center justify-center text-lg hover:bg-black/12 transition-colors flex-shrink-0">Ã—</button>
                                 </div>
-                                {/* Side-by-side at 50% scale each — both visible without scrolling */}
+                                {/* Side-by-side at 50% scale each â€” both visible without scrolling */}
                                 <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
-                                    {/* SVG blueprint — clipped to fixed height, scaled down */}
+                                    {/* SVG blueprint â€” clipped to fixed height, scaled down */}
                                     <div className="border border-black/6 rounded-sm overflow-hidden cursor-zoom-in"
                                         style={{background:'white'}} onClick={() => setZoomImg(selected.svg)}>
                                         <div className="flex items-center gap-1.5 px-3 py-2 border-b border-black/5">
                                             <span style={{width:'5px',height:'5px',borderRadius:'50%',background:'var(--blue)',flexShrink:0,display:'inline-block'}}/>
                                             <span className="mono text-[7px] uppercase tracking-widest text-mid">2D Blueprint</span>
-                                            <span className="mono text-[7px] text-mid ml-auto opacity-40">⤢ expand</span>
+                                            <span className="mono text-[7px] text-mid ml-auto opacity-40">â¤¢ expand</span>
                                         </div>
                                         {/* Fixed-height container, SVG scaled to fit at ~50% */}
                                         <div style={{height:'200px', overflow:'hidden', position:'relative', padding:'8px'}}>
@@ -1169,7 +1199,7 @@ const Gallery = ({ onOpenModal }) => {
                                         <div className="flex items-center gap-1.5 px-3 py-2 border-b border-black/5">
                                             <span style={{width:'5px',height:'5px',borderRadius:'50%',background:'var(--gold)',flexShrink:0,display:'inline-block'}}/>
                                             <span className="mono text-[7px] uppercase tracking-widest text-mid">3D Render</span>
-                                            {selected.renderImage && <span className="mono text-[7px] text-mid ml-auto opacity-40">⤢ expand</span>}
+                                            {selected.renderImage && <span className="mono text-[7px] text-mid ml-auto opacity-40">â¤¢ expand</span>}
                                         </div>
                                         {selected.renderImage
                                             ? <img src={selected.renderImage} alt="3D render"
@@ -1187,10 +1217,10 @@ const Gallery = ({ onOpenModal }) => {
                                 {selected.surveyData && (
                                     <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
                                         {[
-                                            ['Area', selected.planSpec?.totalAreaSqFt ? `${selected.planSpec.totalAreaSqFt.toLocaleString()} sqft` : '—'],
-                                            ['Stories', selected.surveyData.stories || '—'],
-                                            ['Garage', selected.surveyData.garage || '—'],
-                                            ['Style', (selected.surveyData.budgetTier || '—').split(' ')[0]],
+                                            ['Area', selected.planSpec?.totalAreaSqFt ? `${selected.planSpec.totalAreaSqFt.toLocaleString()} sqft` : 'â€”'],
+                                            ['Stories', selected.surveyData.stories || 'â€”'],
+                                            ['Garage', selected.surveyData.garage || 'â€”'],
+                                            ['Style', (selected.surveyData.budgetTier || 'â€”').split(' ')[0]],
                                         ].map(([k,v]) => (
                                             <div key={k} className="spec-panel">
                                                 <div className="spec-label">{k}</div>
@@ -1210,7 +1240,7 @@ const Gallery = ({ onOpenModal }) => {
                     <div>
                         <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>Recent sessions</span>
                         <h2 className="cg mt-5" style={{fontSize:'clamp(2.2rem,4.8vw,3.6rem)',letterSpacing:'-0.05em',textTransform:'uppercase',lineHeight:0.94}}>Recent sessions, not mockups.</h2>
-                        <p className="text-mid text-sm mt-2">The last 10 plans generated by Keystone AI users — live from the server.</p>
+                        <p className="text-mid text-sm mt-2">The last 10 plans generated by Keystone AI users â€” live from the server.</p>
                     </div>
                     <div className="flex flex-wrap gap-2 lg:justify-end">
                         <button onClick={fetchGallery} className="cta-secondary flex items-center gap-1.5 px-4 py-3">
@@ -1250,7 +1280,7 @@ const Gallery = ({ onOpenModal }) => {
                                 onClick={() => setSelected(entry)}
                                 className="group cursor-pointer paper-panel overflow-hidden hover:shadow-xl transition-all duration-200 hover:-translate-y-1">
 
-                                {/* Thumbnail — blueprint + render side by side at 50% */}
+                                {/* Thumbnail â€” blueprint + render side by side at 50% */}
                                 <div style={{position:'relative', borderBottom:'1px solid rgba(0,0,0,0.05)'}}>
                                     <div style={{display:'grid', gridTemplateColumns: entry.renderImage ? '1fr 1fr' : '1fr', height:'140px', background:'white'}}>
                                         {/* Blueprint at 50% scale */}
@@ -1296,7 +1326,7 @@ const Gallery = ({ onOpenModal }) => {
 
                 {!loading && entries.length > 0 && (
                     <div className="text-center mt-10">
-                        <p className="mono text-[8px] uppercase tracking-widest text-mid opacity-40">Showing {entries.length} most recent · Auto-refreshes every 30s · Cleared on server restart</p>
+                        <p className="mono text-[8px] uppercase tracking-widest text-mid opacity-40">Showing {entries.length} most recent Â· Auto-refreshes every 30s Â· Cleared on server restart</p>
                     </div>
                 )}
             </div>
@@ -1304,7 +1334,7 @@ const Gallery = ({ onOpenModal }) => {
     );
 };
 
-// ─── DESIGN GENERATOR ────────────────────────────────────────────────────────
+// â”€â”€â”€ DESIGN GENERATOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const DesignGenerator = ({ onOpenModal }) => {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [passkeyInput, setPasskeyInput] = useState('');
@@ -1318,7 +1348,7 @@ const DesignGenerator = ({ onOpenModal }) => {
         features:'', frontFacing:'South', lotContext:'Suburban standard lot',
         laundryLocation:'Level 1 (near garage/mud)', ceilingHeight:'Standard (9 ft)',
         indoorOutdoor:'Moderate (some connection)', naturalLight:'Balanced windows',
-        accessibilityNeeds:'None', budgetTier:'Mid ($200–300/sqft)', freeformWishes:'',
+        accessibilityNeeds:'None', budgetTier:'Mid ($200â€“300/sqft)', freeformWishes:'',
     });
 
     const [status, setStatus] = useState('idle');
@@ -1393,9 +1423,9 @@ const DesignGenerator = ({ onOpenModal }) => {
                 ? changes.map(c => {
                     const room = planSpec.levels?.flatMap(l => l.rooms || []).find(r => r.id === c.id);
                     const name = room?.label || c.id;
-                    if (c.action === 'resize') return `Resized ${name} to ${c.w}×${c.h} ft`;
+                    if (c.action === 'resize') return `Resized ${name} to ${c.w}Ã—${c.h} ft`;
                     if (c.action === 'move') return `Moved ${name} to (${c.x}, ${c.y})`;
-                    if (c.action === 'resize_and_move') return `Resized & moved ${name} to ${c.w}×${c.h} ft`;
+                    if (c.action === 'resize_and_move') return `Resized & moved ${name} to ${c.w}Ã—${c.h} ft`;
                     return `Updated ${name}`;
                 }).join(', ')
                 : `Applied: ${instruction}`;
@@ -1445,7 +1475,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                             {typeof zoomImage === 'string' && zoomImage.startsWith('<svg')
                                 ? <div className="bg-white p-4 md:p-8 max-w-5xl w-full max-h-[90vh] overflow-auto shadow-2xl rounded-sm" dangerouslySetInnerHTML={{__html:zoomImage}}/>
                                 : <img src={zoomImage} className="max-h-[90vh] max-w-full object-contain rounded-sm" alt="Zoom"/>}
-                            <button className="absolute top-4 right-4 text-white/40 hover:text-white text-4xl font-light">×</button>
+                            <button className="absolute top-4 right-4 text-white/40 hover:text-white text-4xl font-light">Ã—</button>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -1454,18 +1484,18 @@ const DesignGenerator = ({ onOpenModal }) => {
                     <div>
                         <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>Live studio</span>
                         <h2 className="cg mt-6" style={{fontSize:'clamp(2.8rem, 6vw, 5rem)',letterSpacing:'-0.06em',textTransform:'uppercase',lineHeight:0.9}}>Open the workflow your clients will actually feel.</h2>
-                        <p className="text-mid mt-4 text-base max-w-2xl leading-relaxed">Five guided steps become a floor plan, a refinement trail, and a 3D exterior study. The goal is not novelty. It is a stronger first meeting.</p>
+                        <p className="text-mid mt-4 text-base max-w-2xl leading-relaxed">Your live workflow today is simple and real: generate a floor plan, download it as a clean PNG, and create a Gemini-powered exterior study from the same brief.</p>
                     </div>
                     <div className="dream-panel p-5 md:p-6">
-                        <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.46)'}}>Session promise</div>
+                        <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.46)'}}>Live now</div>
                         <div className="grid grid-cols-2 gap-3 mt-5">
                             <div className="studio-metric">
                                 <strong>{'<60s'}</strong>
                                 <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>first plan</span>
                             </div>
                             <div className="studio-metric">
-                                <strong>10</strong>
-                                <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>refinements</span>
+                                <strong>4K</strong>
+                                <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>plan export</span>
                             </div>
                         </div>
                     </div>
@@ -1477,15 +1507,15 @@ const DesignGenerator = ({ onOpenModal }) => {
                         <div className="w-11 h-11 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
                             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         </div>
-                        <h3 className="cg text-2xl mb-1 text-white" style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>Private access</h3>
-                        <p className="mono text-[8px] uppercase tracking-widest mb-5" style={{color:'rgba(244,239,230,0.46)'}}>Passkey required</p>
+                        <h3 className="cg text-2xl mb-1 text-white" style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>Private beta access</h3>
+                        <p className="mono text-[8px] uppercase tracking-widest mb-5" style={{color:'rgba(244,239,230,0.46)'}}>Enter your access code</p>
                         <form onSubmit={handleUnlock} className="space-y-3">
-                            <input type="password" placeholder="Enter passkey" className="text-center tracking-[0.2em]" value={passkeyInput} onChange={e=>setPasskeyInput(e.target.value)} required style={{background:'rgba(255,255,255,0.92)',borderColor:'rgba(255,255,255,0.2)'}}/>
+                            <input type="password" placeholder="Enter access code" className="text-center tracking-[0.2em]" value={passkeyInput} onChange={e=>setPasskeyInput(e.target.value)} required style={{background:'rgba(255,255,255,0.92)',borderColor:'rgba(255,255,255,0.2)'}}/>
                             <button type="submit" disabled={unlockStatus==='loading'} className="cta-hero cta-glow w-full">{unlockStatus==='loading'?'Verifying...':'Unlock Live Studio'}</button>
                         </form>
                         {unlockStatus.startsWith('error:') && <p className="mt-3 mono text-[9px] uppercase font-bold text-red">{unlockStatus.replace('error:','')}</p>}
                         <div className="mt-5 pt-4 border-t border-white/10">
-                            <p className="text-[11px]" style={{color:'rgba(244,239,230,0.6)'}}>Need a passkey first?</p>
+                            <p className="text-[11px]" style={{color:'rgba(244,239,230,0.6)'}}>Need guided access first?</p>
                             <button onClick={onOpenModal} className="mt-3 cta-hero cta-glow-soft">
                                 Request Access
                             </button>
@@ -1520,7 +1550,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                 <div className="p-4 border-b border-white/8" style={{background:'rgba(255,255,255,0.04)'}}>
                                     <div className="flex items-center gap-2 mb-2.5">
                                         <span className="mono text-[7px] uppercase tracking-widest bg-white border border-black/6 px-2 py-1 rounded-sm">2D Blueprint</span>
-                                        <button onClick={downloadBlueprint} className="mono text-[7px] uppercase tracking-widest bg-blue text-white px-2 py-1 rounded-sm hover:bg-ink transition-colors">Download</button>
+                                        <button onClick={downloadBlueprint} className="mono text-[7px] uppercase tracking-widest bg-blue text-white px-2 py-1 rounded-sm hover:bg-ink transition-colors">Download PNG</button>
                                         {alternatives.length > 0 && (
                                             <button
                                                 onClick={() => setShowAlternatives(true)}
@@ -1551,7 +1581,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                             </div>
                         )}
 
-                        {/* ── ALTERNATIVES MODAL ─────────────────────────────── */}
+                        {/* â”€â”€ ALTERNATIVES MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                         {showAlternatives && (
                             <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)'}}>
                                 <div className="bg-paper rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
@@ -1620,7 +1650,136 @@ const DesignGenerator = ({ onOpenModal }) => {
     );
 };
 
-// ─── APP ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+const HOME_NAV_ITEMS = [
+    { label:'Work', kind:'section', value:'work' },
+    { label:'Case Study', kind:'path', value:'/case-study' },
+    { label:'Services', kind:'section', value:'services' },
+    { label:'Pricing', kind:'section', value:'pricing' },
+    { label:'FAQ', kind:'path', value:'/faq' },
+    { label:'Live Studio', kind:'section', value:'generator' },
+];
+const FOOTER_SECTION_LINKS = [
+    ['Work', 'work'],
+    ['Services', 'services'],
+    ['Pricing', 'pricing'],
+    ['Studio', 'studio'],
+    ['Live Studio', 'generator'],
+    ['Sessions', 'gallery'],
+];
+const RESOURCE_PAGE_LINKS = [
+    ['Case Study', '/case-study'],
+    ['FAQ', '/faq'],
+    ['Privacy', '/privacy'],
+    ['Terms', '/terms'],
+];
+const LIVE_NOW_FEATURES = [
+    'Live floor plan generation',
+    'High-resolution plan download',
+    'Gemini-powered exterior study',
+];
+const navHref = (item, home = false) => item.kind === 'section' ? (home ? `#${item.value}` : homeSectionHref(item.value)) : item.value;
+
+const SiteFooter = ({ home = false }) => (
+    <footer style={{background:'var(--night)',padding:'3.75rem 0',borderTop:'1px solid rgba(255,255,255,0.08)'}}>
+        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+            <div className="grid md:grid-cols-[1.15fr_0.9fr_0.9fr_1fr] gap-8 items-start">
+                <div>
+                    <div className="flex items-center gap-3">
+                        <SmartImage src={ASSETS.icon} alt="Keystone" eager style={{width:'30px',height:'30px',filter:'brightness(0) invert(1)'}}/>
+                        <div>
+                            <span className="cg text-[1.1rem] uppercase tracking-[-0.05em] text-white">Keystone AI</span>
+                            <p className="mono text-[10px] uppercase tracking-[0.22em] mt-1" style={{color:'rgba(244,239,230,0.36)'}}>Architect-first discovery</p>
+                        </div>
+                    </div>
+                    <p className="text-sm leading-relaxed mt-4" style={{color:'rgba(244,239,230,0.58)'}}>
+                        Keystone helps residential firms move from a vague intake to a generated floor plan, a downloadable blueprint, and a Gemini exterior study.
+                    </p>
+                </div>
+                <div>
+                    <p className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.34)'}}>Explore</p>
+                    <div className="grid gap-3 mt-4 mono text-[10px] uppercase tracking-[0.22em]">
+                        {FOOTER_SECTION_LINKS.map(([label, id]) => (
+                            <a key={id} href={home ? `#${id}` : homeSectionHref(id)} className="footer-link">{label}</a>
+                        ))}
+                    </div>
+                </div>
+                <div>
+                    <p className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.34)'}}>Read Next</p>
+                    <div className="grid gap-3 mt-4 mono text-[10px] uppercase tracking-[0.22em]">
+                        {RESOURCE_PAGE_LINKS.map(([label, href]) => (
+                            <a key={href} href={href} className="footer-link">{label}</a>
+                        ))}
+                    </div>
+                </div>
+                <div style={{border:'1px solid rgba(255,255,255,0.08)',borderRadius:'18px',background:'rgba(255,255,255,0.04)',padding:'1.15rem'}}>
+                    <p className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.34)'}}>Contact</p>
+                    <a href={`mailto:${CONTACT_EMAIL}`} className="inline-block mt-4 text-sm" style={{color:'rgba(244,239,230,0.82)'}}>{CONTACT_EMAIL}</a>
+                    <div className="grid gap-2 mt-5">
+                        {LIVE_NOW_FEATURES.map((item) => (
+                            <div key={item} className="flex items-start gap-2 text-[12px] leading-relaxed" style={{color:'rgba(244,239,230,0.56)'}}>
+                                <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0" style={{background:'var(--accent)'}}/>
+                                <span>{item}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            <div className="mt-10 pt-5 flex flex-col md:flex-row justify-between gap-4 mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.26)'}}>
+                <span>Copyright 2026 {BRAND_NAME}</span>
+                <span>Legal pages last updated {LEGAL_UPDATED_AT}</span>
+            </div>
+        </div>
+    </footer>
+);
+
+const PageNav = ({ onOpenModal }) => (
+    <nav className="fixed top-0 w-full z-40 h-[64px] flex items-center justify-between px-5 md:px-10"
+        style={{background:'rgba(245,240,233,0.84)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',borderBottom:'1px solid rgba(9,9,9,0.08)'}}>
+        <a href="/" className="flex items-center gap-3">
+            <SmartImage src={ASSETS.icon} alt="Keystone" eager style={{width:'30px',height:'30px'}}/>
+            <div>
+                <span className="cg text-[1.2rem] leading-none uppercase tracking-[-0.05em]" style={{color:'var(--ink)'}}>Keystone</span>
+                <div className="mono text-[8px] uppercase tracking-[0.22em] mt-1" style={{color:'rgba(9,9,9,0.42)'}}>AI studio</div>
+            </div>
+        </a>
+        <div className="hidden md:flex items-center gap-7 mono text-[11px] uppercase tracking-[0.24em]" style={{color:'rgba(9,9,9,0.54)'}}>
+            {[
+                ['Home', '/'],
+                ['Case Study', '/case-study'],
+                ['FAQ', '/faq'],
+                ['Privacy', '/privacy'],
+                ['Terms', '/terms'],
+                ['Live Studio', '/#generator'],
+            ].map(([label, href]) => (
+                <a key={href} href={href} className="transition-colors hover:text-black">{label}</a>
+            ))}
+            <button onClick={onOpenModal} className="cta-hero cta-glow-soft px-5 py-3 text-[11px]">
+                Request Access
+            </button>
+        </div>
+        <div className="md:hidden flex items-center gap-2">
+            <a href="/#generator" className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(9,9,9,0.56)'}}>Live Studio</a>
+            <button onClick={onOpenModal} className="cta-hero cta-glow-soft px-4 py-2 text-[10px]">Access</button>
+        </div>
+    </nav>
+);
+
+const SubpageChrome = ({ children }) => {
+    const [isModalOpen, setModalOpen] = useState(false);
+
+    return (
+        <div className="selection:bg-blue selection:text-white">
+            <JoinModal isOpen={isModalOpen} onClose={() => setModalOpen(false)}/>
+            <PageNav onOpenModal={() => setModalOpen(true)}/>
+            <main style={{paddingTop:'74px'}}>
+                {children({ openModal: () => setModalOpen(true) })}
+            </main>
+            <SiteFooter/>
+        </div>
+    );
+};
+
 const DreamApp = () => {
     const [isModalOpen, setModalOpen] = useState(false);
     const [isMenuOpen, setMenuOpen] = useState(false);
@@ -1628,23 +1787,23 @@ const DreamApp = () => {
 
     const featuredWorks = [
         {
-            eyebrow: 'Selected output 01',
-            title: 'House warmth, visualized early.',
-            body: 'Keystone gives a residential brief enough atmosphere to feel real before the first billable session begins.',
-            image: ASSETS.exampleRender,
-            alt: 'Keystone generated exterior concept',
-        },
-        {
-            eyebrow: 'Selected output 02',
-            title: 'Plans that start conversations.',
-            body: 'Room priorities, area targets, and site cues become a working plan your team can critique instead of sketch from zero.',
+            eyebrow: 'Generated floor plan',
+            title: 'A plan the studio can react to immediately.',
+            body: 'Room count, circulation intent, and footprint goals become a real plan instead of a vague first-meeting transcript.',
             image: ASSETS.exampleBlueprint,
-            alt: 'Keystone generated blueprint',
+            alt: 'Keystone generated floor plan',
         },
         {
-            eyebrow: 'Selected output 03',
-            title: 'Client taste, translated cleanly.',
-            body: 'The intake experience captures mood, material, light, and footprint intent in a way clients actually enjoy completing.',
+            eyebrow: 'Gemini exterior study',
+            title: 'An atmosphere the client can actually feel.',
+            body: 'The same brief can produce a visual anchor that helps the client react emotionally while the architect reacts spatially.',
+            image: ASSETS.exampleRender,
+            alt: 'Keystone Gemini exterior study',
+        },
+        {
+            eyebrow: 'Guided intake',
+            title: 'A calmer way to collect the right early signal.',
+            body: 'Light, taste, room priorities, and lot context arrive in a structure that feels more premium than a cold intake form.',
             image: ASSETS.phase3[4],
             alt: 'Keystone client experience preview',
         },
@@ -1659,53 +1818,53 @@ const DreamApp = () => {
         {
             eyebrow: 'Inside the studio',
             title: 'The blank page disappears.',
-            body: 'Instead of starting from a vague conversation, your team begins with a plan, a mood study, and a refinement trail worth discussing.',
+            body: 'Instead of starting from a vague conversation, your team begins with a plan and a visual study worth discussing.',
             stat: '<60s',
         },
         {
             eyebrow: 'Across the pipeline',
             title: 'Early hours stay protected.',
             body: 'Keystone helps firms qualify seriousness faster, save unpaid exploration time, and move active leads into real design momentum.',
-            stat: '10 rounds',
+            stat: '4K PNG',
         },
     ];
     const marqueeItems = [
         'Architect-first discovery',
         'Live floor plan generation',
-        'Fast 3D exterior studies',
-        '10 refinement rounds included',
+        '4K PNG blueprint download',
+        'Gemini exterior studies',
         'Pay-as-you-go for firms',
         'Client-ready visual anchors',
     ];
     const serviceCards = [
         {
             number: '01',
-            title: 'Client-facing discovery',
-            body: 'Send a passkey-backed link before the first meeting. Keystone captures taste, footprint, room priorities, and lot cues with surprising clarity.',
+            title: 'Structured intake',
+            body: 'The client gives Keystone the room count, footprint direction, light priorities, and stylistic cues your team usually has to excavate manually.',
         },
         {
             number: '02',
-            title: 'Generative floor planning',
-            body: 'Survey answers become a scored footprint, a room schedule, and a blueprint PNG your team can refine instead of invent from scratch.',
+            title: 'Generated floor plan',
+            body: 'That intake becomes a first residential layout your team can review, export, and use as the basis for the real conversation.',
         },
         {
             number: '03',
-            title: 'Atmospheric visualization',
-            body: 'Every strong concept deserves mood. Keystone pairs the plan with a quick exterior study so clients react to something tangible, not abstraction.',
+            title: 'Gemini exterior study',
+            body: 'The paired exterior image gives the client a mood to react to while keeping the architect anchored in a concrete floor plan.',
         },
     ];
     const studioMetrics = [
-        { value: '<60s', label: 'to a first plan' },
-        { value: '10', label: 'refinements included' },
-        { value: '2D + 3D', label: 'paired outputs every session' },
-        { value: 'Pay as needed', label: 'no dead-month subscription' },
+        { value: '<60s', label: 'first floor plan' },
+        { value: '4K PNG', label: 'download ready' },
+        { value: 'Gemini', label: '3D exterior study' },
+        { value: '1 brief', label: 'becomes 2 outputs' },
     ];
     const sessionStack = [
-        'Five-step residential intake',
+        'Residential intake flow',
         'Scored footprint alternatives',
         'Blueprint PNG export',
-        'Room-by-room refinement log',
-        'Lighting and mood variations',
+        'Gemini exterior study',
+        'Alternative footprints',
         'Recent-session gallery proof',
     ];
     const studioTeam = [
@@ -1729,29 +1888,29 @@ const DreamApp = () => {
         },
     ];
     const roadmapCards = [
+        'Guided refinement trail',
         'DWG export for downstream drafting',
         'White-label studio branding',
         'CRM handoff for qualified leads',
-        'Preliminary cost range overlays',
     ];
     const quoteCards = [
         {
-            quote: "I've been waiting for something like this for years. Showing a client a visual anchor before our first meeting changes the entire tone of discovery.",
-            name: 'M. Torres',
-            firm: 'Principal, residential studio in Austin',
+            quote: 'The live product today is intentionally focused: generate the plan, export the blueprint, and create the Gemini exterior study from the same brief.',
+            name: 'Live now',
+            firm: 'Current product scope',
         },
         {
-            quote: 'The floor plan quality surprised me. It already feels like a smarter way to qualify taste, space, and seriousness before we ever open our notebooks.',
-            name: 'R. Patel',
-            firm: 'Senior architect in Dallas',
+            quote: 'The next gain is not another marketing claim. It is helping one active residential lead feel more concrete before the kickoff meeting.',
+            name: 'Why it matters',
+            firm: 'Studio-facing outcome',
         },
     ];
     const pricingTiers = [
         {
-            tag: 'Free demo',
+            tag: 'Guided demo',
             price: '$0',
             unit: 'for qualified firms',
-            desc: 'One guided session, 10 refinements, and a full exterior study so your team can feel the workflow in a real project context.',
+            desc: 'A guided walkthrough of the live workflow so your team can see the generated plan, export path, and Gemini study together.',
             cta: 'Request Access',
             featured: false,
         },
@@ -1767,7 +1926,7 @@ const DreamApp = () => {
             tag: 'Studio pack',
             price: '$1,199',
             unit: '10 sessions',
-            desc: 'For studios turning Keystone into part of their intake rhythm. Lower per-session cost and a cleaner pipeline for active projects.',
+            desc: 'For firms that want Keystone to become a consistent first-step rhythm for active discovery conversations.',
             cta: 'Request Access',
             featured: false,
         },
@@ -1802,15 +1961,15 @@ const DreamApp = () => {
                     <nav className="fixed top-0 w-full z-40 h-[64px] flex items-center justify-between px-5 md:px-10"
                         style={{background:'rgba(245,240,233,0.84)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',borderBottom:'1px solid rgba(9,9,9,0.08)'}}>
                         <a href="#hero" className="flex items-center gap-3">
-                            <img src={ASSETS.icon} alt="Keystone" style={{width:'30px',height:'30px'}}/>
+                            <SmartImage src={ASSETS.icon} alt="Keystone" eager style={{width:'30px',height:'30px'}}/>
                             <div>
                                 <span className="cg text-[1.2rem] leading-none uppercase tracking-[-0.05em]" style={{color:'var(--ink)'}}>Keystone</span>
                                 <div className="mono text-[8px] uppercase tracking-[0.22em] mt-1" style={{color:'rgba(9,9,9,0.42)'}}>AI studio</div>
                             </div>
                         </a>
                         <div className="hidden md:flex items-center gap-8 mono text-[11px] uppercase tracking-[0.26em]" style={{color:'rgba(9,9,9,0.54)'}}>
-                            {[['Work','work'],['Services','services'],['Pricing','pricing'],['Studio','studio'],['Live Studio','generator'],['Sessions','gallery']].map(([label,id]) => (
-                                <a key={id} href={`#${id}`} className="transition-colors hover:text-black">{label}</a>
+                            {HOME_NAV_ITEMS.map((item) => (
+                                <a key={item.label} href={navHref(item, true)} className="transition-colors hover:text-black">{item.label}</a>
                             ))}
                             <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow-soft px-5 py-3 text-[11px]">
                                 Request Access
@@ -1859,11 +2018,11 @@ const DreamApp = () => {
                                     <motion.p initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.4}}
                                         className="mt-5 max-w-[46rem] leading-relaxed"
                                         style={{fontSize:'clamp(1rem, 1.9vw, 1.16rem)',color:'rgba(32,26,21,0.72)'}}>
-                                        Keystone turns an early, half-formed client dream into a generated floor plan, a cinematic exterior study, and a clearer place for your studio to begin.
+                                        Keystone turns an early client dream into a generated floor plan, a downloadable blueprint, and a Gemini exterior study so the first design conversation starts somewhere tangible.
                                     </motion.p>
                                     <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.72}}
                                         className="mt-5 flex flex-wrap gap-3">
-                                        {['Architect intake that feels premium','First plan in under a minute','3D study included'].map((item) => (
+                                        {LIVE_NOW_FEATURES.map((item) => (
                                             <span key={item} className="marquee-pill" style={{animation:'none',background:'rgba(255,255,255,0.68)',borderColor:'rgba(10,10,12,0.08)',color:'rgba(10,10,12,0.72)'}}>
                                                 {item}
                                             </span>
@@ -1890,12 +2049,10 @@ const DreamApp = () => {
                                         ))}
                                     </div>
                                     <div className="mt-5 pt-4 border-t border-white/10">
-                                        <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.5)'}}>What a session holds</p>
-                                        <div className="flex flex-wrap gap-2 mt-3">
-                                            {['2D blueprint', '3D exterior study', 'Refinement history', 'Passkey access'].map((item) => (
-                                                <span key={item} className="stack-pill text-[12px]">{item}</span>
-                                            ))}
-                                        </div>
+                                        <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.5)'}}>Proof before pitch</p>
+                                        <a href="/case-study" className="inline-block mt-3 text-sm" style={{color:'rgba(255,255,255,0.9)'}}>
+                                            View the representative sample case study
+                                        </a>
                                     </div>
                                 </motion.aside>
                             </div>
@@ -1912,10 +2069,10 @@ const DreamApp = () => {
                                             Real output. No imagination tax.
                                         </h2>
                                         <p className="mt-4 text-sm md:text-base leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
-                                            The quickest way to trust Keystone is to watch one intake become the plan and the mood study side by side. This is the proof layer the hero was missing.
+                                            The fastest way to trust Keystone is to watch one intake become two live outputs: a plan the studio can discuss and a Gemini study the client can feel.
                                         </p>
                                         <div className="grid gap-3 mt-5">
-                                            {['One intake becomes two outputs', 'Enough detail to react to before the paid meeting', 'A stronger first conversation for both firm and client'].map((item) => (
+                                            {['One brief becomes a generated plan and an exterior study.', 'The architect starts with something spatial instead of conversational fog.', 'The client reacts to a picture and a plan, not just promises.'].map((item) => (
                                                 <div key={item} className="proof-mini-tile">
                                                     <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>Why it lands</div>
                                                     <p className="mt-2 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.78)'}}>{item}</p>
@@ -1926,9 +2083,7 @@ const DreamApp = () => {
                                             <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow">
                                                 Open Live Studio
                                             </button>
-                                            <button onClick={() => setModalOpen(true)} className="cta-secondary">
-                                                Request Access
-                                            </button>
+                                            <a href="/case-study" className="cta-secondary">View Case Study</a>
                                         </div>
                                     </div>
                                     <div>
@@ -1943,7 +2098,7 @@ const DreamApp = () => {
                                                     </div>
                                                     <div className="proof-browser-screen plan">
                                                         <div className="diagonal-accent"/>
-                                                        <img src={ASSETS.exampleBlueprint} alt="Keystone sample floor plan" style={{width:'100%',display:'block',objectFit:'contain'}}/>
+                                                        <SmartImage src={ASSETS.exampleBlueprint} alt="Keystone sample floor plan" style={{width:'100%',display:'block',objectFit:'contain'}}/>
                                                     </div>
                                                     <div className="proof-caption">
                                                         <span className="proof-dot" style={{background:'var(--blue)'}}/>
@@ -1960,7 +2115,7 @@ const DreamApp = () => {
                                                         <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / 3D EXTERIOR STUDY</span>
                                                     </div>
                                                     <div className="proof-browser-screen" style={{minHeight:'100%'}}>
-                                                        <img src={ASSETS.exampleRender} alt="Keystone sample exterior study" style={{width:'100%',height:'100%',minHeight:'320px',objectFit:'cover',display:'block'}}/>
+                                                    <SmartImage src={ASSETS.exampleRender} alt="Keystone sample exterior study" style={{width:'100%',height:'100%',minHeight:'320px',objectFit:'cover',display:'block'}}/>
                                                         <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, rgba(9,9,9,0.02) 0%, rgba(9,9,9,0.48) 100%)'}}/>
                                                         <div className="proof-caption" style={{position:'absolute',left:0,right:0,bottom:0,borderTop:'none',color:'rgba(255,255,255,0.72)',background:'linear-gradient(180deg, transparent, rgba(9,9,9,0.58))'}}>
                                                             <span className="proof-dot" style={{background:'var(--gold)'}}/>
@@ -1986,7 +2141,7 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    <section className="py-14 md:py-16" style={{background:'var(--paper)'}}>
+                    <section className="defer-section py-14 md:py-16" style={{background:'var(--paper)'}}>
                         <div className="container mx-auto max-w-6xl px-5 md:px-10">
                             <div className="paper-panel p-7 md:p-10">
                                 <div className="grid lg:grid-cols-[minmax(0,1fr)_220px] gap-8 items-end">
@@ -2024,7 +2179,7 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    <section id="work" className="py-16 md:py-20" style={{background:'var(--paper)'}}>
+                    <section id="work" className="defer-section py-16 md:py-20" style={{background:'var(--paper)'}}>
                         <div className="container mx-auto max-w-7xl px-5 md:px-10">
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-10 items-end mb-10 md:mb-12">
                                 <div>
@@ -2056,7 +2211,7 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    <section id="services" className="py-16 md:py-20" style={{background:'linear-gradient(180deg, #ECE3D3 0%, #F7F2E9 60%, #F0EBE1 100%)',color:'var(--ink)'}}>
+                    <section id="services" className="defer-section py-16 md:py-20" style={{background:'linear-gradient(180deg, #ECE3D3 0%, #F7F2E9 60%, #F0EBE1 100%)',color:'var(--ink)'}}>
                         <div className="container mx-auto max-w-7xl px-5 md:px-10">
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-12 items-end">
                                 <div>
@@ -2104,7 +2259,7 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    <section id="pricing" className="py-16 md:py-20" style={{background:'var(--paper)',color:'var(--ink)'}}>
+                    <section id="pricing" className="defer-section py-16 md:py-20" style={{background:'var(--paper)',color:'var(--ink)'}}>
                         <div className="container mx-auto max-w-7xl px-5 md:px-10">
                             <div className="max-w-3xl">
                                 <span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Pricing</span>
@@ -2130,7 +2285,7 @@ const DreamApp = () => {
                                                 <div className="mono text-[10px] uppercase tracking-[0.22em] mt-2" style={{color:tier.featured ? 'rgba(232,238,244,0.46)' : 'rgba(10,10,12,0.42)'}}>{tier.unit}</div>
                                                 <p className="mt-5 text-sm leading-relaxed flex-1" style={{color:tier.featured ? 'rgba(244,239,230,0.72)' : 'var(--mid)'}}>{tier.desc}</p>
                                                 <button onClick={() => tier.featured ? scrollTo('generator') : setModalOpen(true)}
-                                                    className={`cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.featured ? 'cta-glow' : tier.tag === 'Free demo' ? 'cta-glow-soft' : ''}`}>
+                                                    className={`cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.featured ? 'cta-glow' : tier.tag === 'Guided demo' ? 'cta-glow-soft' : ''}`}>
                                                     {tier.cta}
                                                 </button>
                                             </motion.div>
@@ -2142,7 +2297,7 @@ const DreamApp = () => {
                                         <motion.div key={quote.name} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
                                             className="quote-card p-5">
                                             <p className="cg text-[1.2rem] leading-[1.1]" style={{color:'var(--ink)'}}>
-                                                "{quote.quote}"
+                                                {quote.quote}
                                             </p>
                                             <div className="mt-4 pt-4" style={{borderTop:'1px solid rgba(10,10,12,0.08)'}}>
                                                 <p className="font-semibold text-sm">{quote.name}</p>
@@ -2155,7 +2310,7 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    <section id="studio" className="py-16 md:py-20 relative overflow-hidden" style={{background:'linear-gradient(180deg, rgba(10,10,10,1) 0%, rgba(23,23,23,1) 100%)'}}>
+                    <section id="studio" className="defer-section py-16 md:py-20 relative overflow-hidden" style={{background:'linear-gradient(180deg, rgba(10,10,10,1) 0%, rgba(23,23,23,1) 100%)'}}>
                         <div className="hero-glow" style={{top:'12%', left:'18%', width:'540px', height:'540px', background:'radial-gradient(circle, rgba(255,106,55,0.1), transparent 70%)'}}/>
                         <div className="container mx-auto max-w-7xl px-5 md:px-10 relative z-10">
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-10 items-start">
@@ -2191,7 +2346,7 @@ const DreamApp = () => {
                                     <motion.article key={member.name} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.25}} transition={{delay:index * 0.08}}
                                         className="dream-panel p-4 md:p-5 flex items-start gap-4">
                                         <div className="rounded-[20px] overflow-hidden flex-shrink-0" style={{width:'88px',height:'104px',background:'rgba(255,255,255,0.03)'}}>
-                                            <img src={member.image} alt={member.name} style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+                                            <SmartImage src={member.image} alt={member.name} style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
                                         </div>
                                         <div>
                                             <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.46)'}}>{member.role}</div>
@@ -2204,7 +2359,7 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    <section className="py-16 md:py-20" style={{background:'linear-gradient(180deg, #FFFDFC 0%, #F5F0E9 100%)'}}>
+                    <section className="defer-section py-16 md:py-20" style={{background:'linear-gradient(180deg, #FFFDFC 0%, #F5F0E9 100%)'}}>
                         <div className="container mx-auto max-w-5xl px-5 md:px-10 text-center">
                             <span className="section-label justify-center" style={{color:'rgba(9,9,9,0.42)'}}>Final invitation</span>
                             <h2 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 5.8rem)',lineHeight:0.88,letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
@@ -2228,29 +2383,444 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    <footer style={{background:'var(--night)',padding:'3.5rem 0',borderTop:'1px solid rgba(255,255,255,0.08)'}}>
-                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
-                            <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                                <div className="flex items-center gap-3">
-                                    <img src={ASSETS.icon} alt="Keystone" style={{width:'30px',height:'30px',filter:'brightness(0) invert(1)'}}/>
-                                    <div>
-                                        <span className="cg text-[1.1rem] uppercase tracking-[-0.05em] text-white">Keystone AI</span>
-                                        <p className="mono text-[10px] uppercase tracking-[0.22em] mt-1" style={{color:'rgba(244,239,230,0.36)'}}>Dream spaces, drawn fast</p>
-                                    </div>
-                                </div>
-                                <div className="flex flex-wrap justify-center gap-6 mono text-[10px] uppercase tracking-[0.22em]">
-                                    {[['Work','work'],['Services','services'],['Pricing','pricing'],['Studio','studio'],['Live Studio','generator'],['Sessions','gallery']].map(([label,id]) => (
-                                        <a key={id} href={`#${id}`} className="footer-link">{label}</a>
-                                    ))}
-                                </div>
-                                <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.3)'}}>Copyright 2026 Keystone AI Studio</p>
-                            </div>
-                        </div>
-                    </footer>
+                    <SiteFooter home/>
             </motion.main>
         </div>
     );
 };
 
+const CaseStudyPage = () => {
+    const caseFacts = [
+        ['Project type', 'Representative family-home intake'],
+        ['Location', 'Austin, Texas'],
+        ['Area target', '2,640 sq ft'],
+        ['Live outputs', 'Plan export + Gemini study'],
+    ];
+    const intakeSignals = [
+        'Four-bedroom layout with one quiet home office',
+        'Warm modern exterior with wood, stone, and soft daylight',
+        'Open kitchen / living core with a cleaner circulation path',
+        'A first impression strong enough to lead the kickoff meeting',
+    ];
+    const processSteps = [
+        {
+            step: '01',
+            title: 'A brief worth acting on',
+            body: 'The intake captures room count, lot context, circulation intent, and stylistic cues before the architect spends an unpaid hour pulling it out in conversation.',
+        },
+        {
+            step: '02',
+            title: 'Floor plan generation',
+            body: 'Keystone turns that brief into a first residential layout so the team starts with something spatial, not verbal abstraction.',
+        },
+        {
+            step: '03',
+            title: 'Download-ready blueprint',
+            body: 'The generated plan becomes a clean PNG export the team can save, review, and annotate immediately after the session.',
+        },
+        {
+            step: '04',
+            title: 'Gemini exterior study',
+            body: 'A fast exterior image gives the client something emotional to react to while the plan gives the studio something precise to refine.',
+        },
+    ];
+
+    return (
+        <SubpageChrome>
+            {({ openModal }) => (
+                <>
+                    <section className="relative overflow-hidden" style={{background:'linear-gradient(180deg, #FFFDF9 0%, #F2E9DE 100%)'}}>
+                        <div className="hero-video-shell">
+                            <div className="hero-video-base"/>
+                            <div className="hero-video-wave orange"/>
+                            <div className="hero-video-wave soft"/>
+                            <div className="hero-video-wave sand"/>
+                        </div>
+                        <div className="dream-grid absolute inset-0 opacity-70"/>
+                        <div className="container mx-auto max-w-7xl px-5 md:px-10 py-16 md:py-24 relative z-10">
+                            <div className="grid xl:grid-cols-[minmax(0,1.05fr)_360px] gap-8 items-start">
+                                <div>
+                                    <span className="section-label">Representative case study</span>
+                                    <h1 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 6rem)',lineHeight:0.9,letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
+                                        A residential brief, turned into a first plan the kickoff meeting can actually use.
+                                    </h1>
+                                    <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
+                                        This sample is intentionally labeled as a representative session. It uses the Keystone workflow that is live today: floor plan generation, downloadable blueprint export, and a Gemini-powered exterior study.
+                                    </p>
+                                    <div className="grid sm:grid-cols-2 gap-3 mt-8 max-w-3xl">
+                                        {caseFacts.map(([label, value]) => (
+                                            <div key={label} className="paper-panel p-4 md:p-5">
+                                                <div className="mono text-[9px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>{label}</div>
+                                                <div className="cg text-[1.4rem] mt-3 leading-[0.95]" style={{color:'var(--ink)'}}>{value}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-8 flex flex-wrap gap-3">
+                                        <a href="/#generator" className="cta-hero cta-glow">Open Live Studio</a>
+                                        <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
+                                    </div>
+                                </div>
+                                <aside className="dream-panel p-6 md:p-7 overflow-hidden relative">
+                                    <span className="section-label" style={{color:'rgba(245,240,233,0.58)'}}>What went in</span>
+                                    <h2 className="cg text-white mt-5" style={{fontSize:'clamp(1.8rem,3vw,2.6rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
+                                        Enough specificity to feel architectural, not generic.
+                                    </h2>
+                                    <div className="grid gap-3 mt-6">
+                                        {intakeSignals.map((item) => (
+                                            <div key={item} className="flex items-start gap-3 text-sm leading-relaxed" style={{color:'rgba(244,239,230,0.66)'}}>
+                                                <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{background:'var(--accent)'}}/>
+                                                <span>{item}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-8 pt-5 border-t border-white/10">
+                                        <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.46)'}}>Outcome</p>
+                                        <p className="text-sm leading-relaxed mt-3" style={{color:'rgba(244,239,230,0.7)'}}>
+                                            The architect starts with a plan that can be critiqued and an image that can be felt. The client stops reacting to abstractions and starts reacting to something real.
+                                        </p>
+                                    </div>
+                                </aside>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="py-10 md:py-14" style={{background:'linear-gradient(180deg, #FFFDFC 0%, #F5F0E9 100%)'}}>
+                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                            <div className="proof-frame p-4 md:p-6">
+                                <div className="grid lg:grid-cols-[1fr_1fr] gap-4">
+                                    <div className="proof-browser">
+                                        <div className="proof-browser-top">
+                                            <div className="bc-dot" style={{background:'#FF5F57'}}/>
+                                            <div className="bc-dot" style={{background:'#FFBD2E'}}/>
+                                            <div className="bc-dot" style={{background:'#28C840'}}/>
+                                            <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>SAMPLE SESSION / GENERATED PLAN</span>
+                                        </div>
+                                        <div className="proof-browser-screen plan">
+                                            <div className="diagonal-accent"/>
+                                            <SmartImage src={ASSETS.exampleBlueprint} alt="Sample generated floor plan" style={{width:'100%',display:'block',objectFit:'contain'}}/>
+                                        </div>
+                                        <div className="proof-caption">
+                                            <span className="proof-dot" style={{background:'var(--blue)'}}/>
+                                            Keystone turns the intake into a working plan the team can save and discuss.
+                                        </div>
+                                    </div>
+                                    <div className="proof-browser">
+                                        <div className="proof-browser-top">
+                                            <div className="bc-dot" style={{background:'#FF5F57'}}/>
+                                            <div className="bc-dot" style={{background:'#FFBD2E'}}/>
+                                            <div className="bc-dot" style={{background:'#28C840'}}/>
+                                            <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>SAMPLE SESSION / GEMINI EXTERIOR STUDY</span>
+                                        </div>
+                                        <div className="proof-browser-screen render">
+                                            <SmartImage src={ASSETS.exampleRender} alt="Sample Gemini exterior study" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                                        </div>
+                                        <div className="proof-caption">
+                                            <span className="proof-dot" style={{background:'var(--accent)'}}/>
+                                            The paired Gemini study gives the client a mood to react to during the same early conversation.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="py-16 md:py-20" style={{background:'var(--paper)'}}>
+                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                            <div className="grid lg:grid-cols-[320px_minmax(0,1fr)] gap-8 items-start">
+                                <div>
+                                    <span className="section-label" style={{color:'rgba(10,10,12,0.42)'}}>Why it matters</span>
+                                    <h2 className="cg mt-6" style={{fontSize:'clamp(2.4rem, 5vw, 4.3rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
+                                        The value is not more content. It is a better first conversation.
+                                    </h2>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {processSteps.map((item) => (
+                                        <article key={item.step} className="paper-panel p-5 md:p-6">
+                                            <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(27,79,130,0.72)'}}>{item.step}</div>
+                                            <h3 className="cg text-[1.7rem] mt-5 leading-[0.95]" style={{color:'var(--ink)'}}>{item.title}</h3>
+                                            <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.64)'}}>{item.body}</p>
+                                        </article>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </>
+            )}
+        </SubpageChrome>
+    );
+};
+
+const FAQPage = () => {
+    const faqItems = [
+        {
+            question: 'What is live in Keystone right now?',
+            answer: 'The live workflow today includes floor plan generation, high-resolution plan download, and Gemini-powered exterior study generation from the same project brief.',
+        },
+        {
+            question: 'Who is Keystone actually for?',
+            answer: 'Keystone is aimed at residential architecture and design-led studios that want a stronger first discovery conversation with active leads.',
+        },
+        {
+            question: 'Does Keystone replace the architect?',
+            answer: 'No. Keystone is an early discovery tool. It helps generate an initial plan and visual anchor, but design judgment still belongs to the architect and project team.',
+        },
+        {
+            question: 'What do I receive after one session?',
+            answer: 'A generated floor plan, a downloadable plan image, and a Gemini exterior study that can be used to guide the next client conversation.',
+        },
+        {
+            question: 'Are these outputs construction documents?',
+            answer: 'No. Keystone outputs are concept aids only. They are not permit-ready drawings, stamped documents, engineering deliverables, or final construction instructions.',
+        },
+        {
+            question: 'Why is access private right now?',
+            answer: 'Keystone is still being introduced through guided access so the workflow, onboarding, and firm fit stay strong while the product is maturing.',
+        },
+        {
+            question: 'How long does it take?',
+            answer: 'The first floor plan is designed to arrive quickly, often in under a minute. Gemini exterior studies take longer, but still fit comfortably inside an early-stage session.',
+        },
+        {
+            question: 'How should I think about data and privacy?',
+            answer: 'Project inputs and generated outputs are used to operate the service, support access requests, and improve product quality. The current privacy page explains the starter policy in more detail.',
+        },
+    ];
+
+    return (
+        <SubpageChrome>
+            {({ openModal }) => (
+                <>
+                    <section className="py-16 md:py-24" style={{background:'linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)'}}>
+                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                            <div className="grid xl:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start">
+                                <div>
+                                    <span className="section-label">FAQ</span>
+                                    <h1 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 5.8rem)',lineHeight:0.9,letterSpacing:'-0.06em',textTransform:'uppercase'}}>
+                                        Questions serious firms ask before they open Keystone.
+                                    </h1>
+                                    <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
+                                        These answers stay anchored to what is actually live right now, not to a future roadmap version of the product.
+                                    </p>
+                                </div>
+                                <aside className="paper-panel p-6 md:p-7">
+                                    <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.72)'}}>Live today</div>
+                                    <div className="grid gap-3 mt-5">
+                                        {LIVE_NOW_FEATURES.map((item) => (
+                                            <div key={item} className="flex items-start gap-3 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.7)'}}>
+                                                <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{background:'var(--accent)'}}/>
+                                                <span>{item}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-8 pt-5" style={{borderTop:'1px solid rgba(10,10,12,0.08)'}}>
+                                        <p className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(10,10,12,0.42)'}}>Need a direct answer?</p>
+                                        <a href={`mailto:${CONTACT_EMAIL}`} className="inline-block mt-3 text-sm" style={{color:'var(--ink)'}}>{CONTACT_EMAIL}</a>
+                                        <div className="mt-5 flex flex-col gap-3">
+                                            <a href="/case-study" className="cta-secondary text-center">View Case Study</a>
+                                            <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
+                                        </div>
+                                    </div>
+                                </aside>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="py-8 md:py-12" style={{background:'var(--paper)'}}>
+                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                            <div className="grid lg:grid-cols-2 gap-4">
+                                {faqItems.map((item, index) => (
+                                    <details key={item.question} className="faq-card paper-panel p-5 md:p-6" open={index === 0}>
+                                        <summary className="flex items-start justify-between gap-4 cursor-pointer list-none">
+                                            <span className="cg text-[1.4rem] leading-[0.98]" style={{color:'var(--ink)'}}>{item.question}</span>
+                                            <span className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.36)'}}>Open</span>
+                                        </summary>
+                                        <p className="mt-4 text-sm md:text-base leading-relaxed" style={{color:'rgba(10,10,12,0.66)'}}>{item.answer}</p>
+                                    </details>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+                </>
+            )}
+        </SubpageChrome>
+    );
+};
+
+const LegalPage = ({ eyebrow, title, intro, sections }) => (
+    <SubpageChrome>
+        {({ openModal }) => (
+            <>
+                <section className="py-16 md:py-24" style={{background:'linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)'}}>
+                    <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                        <div className="grid xl:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start">
+                            <div>
+                                <span className="section-label">{eyebrow}</span>
+                                <h1 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 5.8rem)',lineHeight:0.9,letterSpacing:'-0.06em',textTransform:'uppercase'}}>
+                                    {title}
+                                </h1>
+                                <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
+                                    {intro}
+                                </p>
+                            </div>
+                            <aside className="paper-panel p-6 md:p-7">
+                                <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.72)'}}>Starter legal draft</div>
+                                <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.66)'}}>
+                                    These pages use the public brand name {BRAND_NAME} while the formal legal entity details are still being finalized.
+                                </p>
+                                <p className="mono text-[10px] uppercase tracking-[0.22em] mt-5" style={{color:'rgba(10,10,12,0.42)'}}>Last updated</p>
+                                <p className="text-sm mt-2" style={{color:'var(--ink)'}}>{LEGAL_UPDATED_AT}</p>
+                                <p className="mono text-[10px] uppercase tracking-[0.22em] mt-5" style={{color:'rgba(10,10,12,0.42)'}}>Contact</p>
+                                <a href={`mailto:${CONTACT_EMAIL}`} className="inline-block mt-2 text-sm" style={{color:'var(--ink)'}}>{CONTACT_EMAIL}</a>
+                                <div className="mt-5 flex flex-col gap-3">
+                                    <a href="/#generator" className="cta-secondary text-center">Open Live Studio</a>
+                                    <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
+                                </div>
+                            </aside>
+                        </div>
+                    </div>
+                </section>
+
+                <section className="py-8 md:py-12" style={{background:'var(--paper)'}}>
+                    <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                        <div className="grid lg:grid-cols-2 gap-4">
+                            {sections.map((section) => (
+                                <article key={section.title} className="paper-panel p-5 md:p-6">
+                                    <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(27,79,130,0.72)'}}>{section.title}</div>
+                                    <div className="grid gap-3 mt-4">
+                                        {section.body.map((paragraph, index) => (
+                                            <p key={index} className="text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.66)'}}>{paragraph}</p>
+                                        ))}
+                                    </div>
+                                </article>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            </>
+        )}
+    </SubpageChrome>
+);
+
+const PrivacyPage = () => {
+    const sections = [
+        {
+            title: 'Information we collect',
+            body: [
+                'We may collect contact details you send through access forms, project brief information submitted through the product, and the outputs generated from those inputs.',
+                'We may also collect limited technical data such as basic usage logs, browser information, and service diagnostics needed to keep the product working.',
+            ],
+        },
+        {
+            title: 'How the information is used',
+            body: [
+                'We use information to operate Keystone, respond to access requests, improve output quality, maintain security, and understand whether the product is reliable for firms using it.',
+                'We do not treat your project data as public marketing material without permission.',
+            ],
+        },
+        {
+            title: 'Sharing and service providers',
+            body: [
+                'Keystone relies on hosted infrastructure and model providers to generate outputs and deliver the service. Information may be processed by those providers as part of normal operation.',
+                'We do not sell personal information. We share data only as needed to run, secure, or improve the service.',
+            ],
+        },
+        {
+            title: 'Retention',
+            body: [
+                'We retain information for as long as reasonably necessary to operate the product, support users, evaluate product quality, and comply with legal obligations.',
+                'If you need a deletion request reviewed, contact us at the email listed on this page and we will handle it where reasonably possible.',
+            ],
+        },
+        {
+            title: 'Your choices',
+            body: [
+                'You can choose not to submit forms or project details, though that may limit access to Keystone.',
+                'You may also contact us to ask questions about access, stored contact details, or deletion requests.',
+            ],
+        },
+        {
+            title: 'Important note',
+            body: [
+                'Keystone is an early-stage product. This privacy page is a starter draft designed to be transparent while the formal company structure is still being finalized.',
+            ],
+        },
+    ];
+
+    return (
+        <LegalPage
+            eyebrow="Privacy"
+            title="A plain-language privacy draft for an early-stage studio product."
+            intro="This page explains the current privacy posture for Keystone in straightforward terms. It is meant to be readable now and tightened further as the business structure becomes formalized."
+            sections={sections}
+        />
+    );
+};
+
+const TermsPage = () => {
+    const sections = [
+        {
+            title: 'Nature of the service',
+            body: [
+                'Keystone is a design-assist product for early residential discovery. It helps generate conceptual floor plans, downloadable images, and Gemini-powered exterior studies from project inputs.',
+                'The service is offered on an early-stage basis and may evolve, change, pause, or improve over time.',
+            ],
+        },
+        {
+            title: 'Professional responsibility',
+            body: [
+                'Keystone does not replace licensed design professionals. All outputs must be reviewed, interpreted, and validated by qualified professionals before they are used in any meaningful project context.',
+                'You are responsible for how you use outputs inside your own practice or process.',
+            ],
+        },
+        {
+            title: 'Not construction documents',
+            body: [
+                'Keystone outputs are conceptual only. They are not permit-ready drawings, engineering documents, code compliance confirmations, or final construction instructions.',
+                'You must not rely on Keystone outputs as final technical documents without further professional development and review.',
+            ],
+        },
+        {
+            title: 'User responsibilities',
+            body: [
+                'You agree to provide information you have the right to use and to avoid unlawful, infringing, or harmful inputs.',
+                'If Keystone access is private or code-based, you are responsible for safeguarding that access and using it only as intended.',
+            ],
+        },
+        {
+            title: 'Payments and availability',
+            body: [
+                'Pricing, access policies, and demo eligibility may change as the product evolves. Guided sessions or free demos may be limited or discontinued.',
+                'We do not guarantee uninterrupted availability, and we may suspend or modify access when needed for reliability or safety.',
+            ],
+        },
+        {
+            title: 'Warranty and liability',
+            body: [
+                'Keystone is provided as-is to the fullest extent permitted by law. We make no guarantee that outputs will be accurate for every project, complete for every use case, or uninterrupted at all times.',
+                'To the fullest extent permitted by law, Keystone is not liable for project losses, downstream design decisions, construction reliance, or other damages arising from use of conceptual outputs.',
+            ],
+        },
+    ];
+
+    return (
+        <LegalPage
+            eyebrow="Terms"
+            title="Interim terms for using Keystone responsibly."
+            intro="These terms are written to match the current reality of the product: an early-stage studio tool for first conversations, not a substitute for professional design responsibility."
+            sections={sections}
+        />
+    );
+};
+
+const AppRouter = () => {
+    const path = getCurrentPath();
+    if (path === '/case-study') return <CaseStudyPage/>;
+    if (path === '/faq') return <FAQPage/>;
+    if (path === '/privacy') return <PrivacyPage/>;
+    if (path === '/terms') return <TermsPage/>;
+    return <DreamApp/>;
+};
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<DreamApp/>);
+root.render(<AppRouter/>);

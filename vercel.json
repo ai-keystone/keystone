@@ -23,6 +23,22 @@
     {
       "source": "/api/gallery",
       "destination": "https://keystone-api-97830102261.us-central1.run.app/api/gallery"
+    },
+    {
+      "source": "/case-study",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/faq",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/index.html"
     }
   ]
 }
