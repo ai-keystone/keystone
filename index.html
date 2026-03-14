@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Keystone AI — Floor Plans in 60 Seconds</title>
+    <title>Keystone AI - Floor Plans in 60 Seconds</title>
     <link rel="icon" href="images/keystone-icon.svg" type="image/svg+xml">
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -95,6 +95,85 @@
             background: radial-gradient(ellipse, rgba(216,208,196,0.42) 0%, transparent 70%);
             pointer-events: none;
         }
+        .hero-video-shell {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+        }
+        .hero-video-base {
+            position: absolute;
+            inset: -12%;
+            background:
+                radial-gradient(circle at 18% 28%, rgba(255,255,255,0.58), transparent 26%),
+                radial-gradient(circle at 72% 16%, rgba(255,106,55,0.08), transparent 22%),
+                linear-gradient(120deg, rgba(255,255,255,0.34), rgba(255,255,255,0.04));
+            opacity: 0.9;
+        }
+        .hero-video-wave {
+            position: absolute;
+            border-radius: 999px;
+            filter: blur(54px);
+            opacity: 0.6;
+        }
+        .hero-video-wave.orange {
+            width: 560px;
+            height: 560px;
+            left: -10%;
+            top: 3%;
+            background: radial-gradient(circle, rgba(255,106,55,0.22) 0%, rgba(255,106,55,0.1) 34%, transparent 74%);
+            animation: heroDriftOne 30s ease-in-out infinite alternate;
+        }
+        .hero-video-wave.soft {
+            width: 720px;
+            height: 720px;
+            right: -18%;
+            top: -10%;
+            background: radial-gradient(circle, rgba(255,171,126,0.18) 0%, rgba(216,208,196,0.16) 34%, transparent 76%);
+            animation: heroDriftTwo 34s ease-in-out infinite alternate;
+        }
+        .hero-video-wave.sand {
+            width: 420px;
+            height: 420px;
+            left: 46%;
+            bottom: -18%;
+            background: radial-gradient(circle, rgba(216,208,196,0.4) 0%, rgba(216,208,196,0.16) 40%, transparent 74%);
+            animation: heroDriftThree 26s ease-in-out infinite alternate;
+        }
+        .hero-video-mesh {
+            position: absolute;
+            inset: -22%;
+            background:
+                conic-gradient(from 140deg at 50% 50%, rgba(255,255,255,0), rgba(255,106,55,0.05), rgba(255,255,255,0), rgba(216,208,196,0.08), rgba(255,255,255,0));
+            filter: blur(24px);
+            opacity: 0.72;
+            animation: heroSpin 40s linear infinite;
+        }
+        .hero-video-scan {
+            position: absolute;
+            inset: 0;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.42), rgba(255,255,255,0.12) 32%, rgba(255,255,255,0.24)),
+                repeating-linear-gradient(180deg, rgba(255,255,255,0.08) 0, rgba(255,255,255,0.08) 1px, transparent 1px, transparent 7px);
+            opacity: 0.14;
+            mix-blend-mode: screen;
+        }
+        @keyframes heroDriftOne {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            100% { transform: translate3d(18%, 11%, 0) scale(1.14); }
+        }
+        @keyframes heroDriftTwo {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            100% { transform: translate3d(-12%, 10%, 0) scale(1.12); }
+        }
+        @keyframes heroDriftThree {
+            0% { transform: translate3d(0, 0, 0) scale(1); }
+            100% { transform: translate3d(-10%, -8%, 0) scale(1.08); }
+        }
+        @keyframes heroSpin {
+            from { transform: rotate(0deg) scale(1); }
+            to { transform: rotate(360deg) scale(1.04); }
+        }
 
         /* ── CTA BUTTON ── */
         .cta-hero {
@@ -108,10 +187,13 @@
             padding: 1rem 1.65rem;
             border: 1px solid rgba(9,9,9,0.92);
             cursor: pointer;
-            transition: background 0.18s, transform 0.15s, box-shadow 0.18s, color 0.18s;
+            transition: background 0.18s, transform 0.15s, box-shadow 0.22s, color 0.18s, border-color 0.18s;
             border-radius: 999px;
             white-space: nowrap;
             box-shadow: none;
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
         }
         .cta-hero:hover { background: var(--accent); color: var(--paper); border-color: var(--accent); transform: translateY(-1px); box-shadow: none; }
         .cta-hero:active { transform: scale(0.98); }
@@ -132,6 +214,70 @@
             white-space: nowrap;
         }
         .cta-secondary:hover { background: rgba(9,9,9,0.04); border-color: rgba(9,9,9,0.28); color: var(--ink); }
+        .cta-glow-soft {
+            background: linear-gradient(180deg, rgba(9,9,9,0.96), rgba(22,22,22,0.96));
+            border-color: rgba(255,106,55,0.54);
+            box-shadow: 0 12px 26px rgba(255,106,55,0.18), inset 0 0 0 1px rgba(255,173,142,0.1);
+        }
+        .cta-glow-soft:hover {
+            background: linear-gradient(180deg, rgba(255,106,55,0.96), rgba(255,77,29,0.92));
+            border-color: rgba(255,147,109,0.8);
+            box-shadow: 0 16px 34px rgba(255,106,55,0.28), inset 0 0 0 1px rgba(255,229,212,0.18);
+        }
+        .cta-glow {
+            background: linear-gradient(135deg, rgba(255,126,79,0.98), rgba(255,92,41,0.94));
+            color: #fff8f2;
+            border-color: rgba(255,198,175,0.46);
+            box-shadow: 0 16px 36px rgba(255,106,55,0.24), inset 0 0 0 1px rgba(255,235,225,0.16);
+        }
+        .cta-glow::before,
+        .cta-glow-soft::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(115deg, rgba(255,255,255,0.28), transparent 36%, transparent 62%, rgba(255,255,255,0.16));
+            opacity: 0.45;
+            pointer-events: none;
+            z-index: -1;
+        }
+        .cta-glow:hover {
+            color: white;
+            border-color: rgba(255,230,219,0.62);
+            box-shadow: 0 18px 42px rgba(255,106,55,0.34), inset 0 0 0 1px rgba(255,245,240,0.22);
+        }
+        .cta-live {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.9rem;
+            animation: livePulse 4.8s ease-in-out infinite;
+        }
+        .cta-live-mark {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding-left: 0.9rem;
+            border-left: 1px solid rgba(255,241,232,0.28);
+            font-size: 0.67rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+        .cta-live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #fff4eb;
+            box-shadow: 0 0 0 0 rgba(255,255,255,0.38);
+            animation: liveDot 2.8s ease-out infinite;
+        }
+        @keyframes livePulse {
+            0%, 100% { transform: translateY(0); box-shadow: 0 16px 36px rgba(255,106,55,0.24), inset 0 0 0 1px rgba(255,235,225,0.16); }
+            50% { transform: translateY(-1px); box-shadow: 0 18px 44px rgba(255,106,55,0.34), inset 0 0 0 1px rgba(255,245,240,0.22); }
+        }
+        @keyframes liveDot {
+            0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.34); }
+            70% { box-shadow: 0 0 0 12px rgba(255,255,255,0); }
+            100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
+        }
 
         /* ── FLOATING MOBILE CTA ── */
         .mobile-cta-float {
@@ -389,6 +535,106 @@
         .footer-link:hover {
             color: rgba(244,239,230,0.9);
         }
+        .proof-shelf {
+            position: relative;
+            margin-top: -4.75rem;
+            z-index: 16;
+        }
+        .proof-frame {
+            border-radius: 28px;
+            border: 1px solid rgba(10,10,12,0.08);
+            background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.52));
+            box-shadow: 0 24px 60px rgba(10,10,12,0.08);
+            overflow: hidden;
+        }
+        .proof-browser {
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid rgba(10,10,12,0.08);
+            background: white;
+        }
+        .proof-browser-top {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.8rem 1rem;
+            background: linear-gradient(180deg, rgba(18,18,18,1), rgba(9,9,9,1));
+        }
+        .proof-browser-screen {
+            position: relative;
+            background: white;
+            overflow: hidden;
+        }
+        .proof-browser-screen.plan {
+            padding: 1rem 1rem 0.8rem;
+        }
+        .proof-caption {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            padding: 0.85rem 1rem;
+            border-top: 1px solid rgba(10,10,12,0.06);
+            color: rgba(10,10,12,0.48);
+            font-family: 'Azeret Mono', monospace;
+            font-size: 0.58rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+        .proof-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 999px;
+            flex-shrink: 0;
+        }
+        .proof-mini-tile {
+            padding: 1rem;
+            border-radius: 16px;
+            border: 1px solid rgba(10,10,12,0.08);
+            background: rgba(255,255,255,0.74);
+        }
+        .attention-float {
+            position: absolute;
+            right: clamp(18rem, 26vw, 22rem);
+            bottom: 3.25rem;
+            z-index: 15;
+            pointer-events: none;
+        }
+        .attention-orbit {
+            position: relative;
+            width: 138px;
+            height: 138px;
+            border-radius: 999px;
+        }
+        .attention-orbit svg {
+            width: 100%;
+            height: 100%;
+            animation: orbitSpin 18s linear infinite;
+            overflow: visible;
+        }
+        .attention-orbit-core {
+            position: absolute;
+            inset: 22px;
+            border-radius: 999px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            background: rgba(255,252,248,0.92);
+            border: 1px solid rgba(255,106,55,0.24);
+            box-shadow: 0 16px 30px rgba(255,106,55,0.12);
+            color: var(--ink);
+        }
+        .attention-orbit-core strong {
+            font-family: 'Familjen Grotesk', sans-serif;
+            font-size: 1.7rem;
+            line-height: 0.9;
+            letter-spacing: -0.06em;
+        }
+        @keyframes orbitSpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
         @keyframes marqueeLeft {
             from { transform: translateX(0); }
             to { transform: translateX(-50%); }
@@ -396,6 +642,13 @@
         @media (max-width: 767px) {
             .marquee-track { animation-duration: 22s; }
             .work-tile { min-height: 280px; }
+            .proof-shelf { margin-top: -2rem; }
+            .proof-frame { border-radius: 22px; }
+            .cta-live { width: 100%; justify-content: center; }
+            .cta-live-mark { display: none; }
+        }
+        @media (max-width: 1279px) {
+            .attention-float { display: none; }
         }
     </style>
     <script>
@@ -2802,7 +3055,7 @@ const DreamApp = () => {
             price: '$0',
             unit: 'for qualified firms',
             desc: 'One guided session, 10 refinements, and a full exterior study so your team can feel the workflow in a real project context.',
-            cta: 'Request demo',
+            cta: 'Request access',
             featured: false,
         },
         {
@@ -2810,7 +3063,7 @@ const DreamApp = () => {
             price: '$149',
             unit: 'per live run',
             desc: 'A complete Keystone session for an active lead. Fast enough for early qualification, strong enough for a serious first meeting.',
-            cta: 'Book one session',
+            cta: 'Try live session',
             featured: true,
         },
         {
@@ -2870,8 +3123,8 @@ const DreamApp = () => {
                 {!loading && !heroVisible && (
                     <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0,y:20}}
                         className="mobile-cta-float md:hidden">
-                        <button onClick={() => setModalOpen(true)} className="cta-hero px-6 py-3 text-sm">
-                            Free Demo
+                        <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow px-6 py-3 text-sm">
+                            Open Live Studio
                         </button>
                     </motion.div>
                 )}
@@ -2892,18 +3145,26 @@ const DreamApp = () => {
                             {[['Work','work'],['Services','services'],['Pricing','pricing'],['Studio','studio'],['Live Demo','generator'],['Sessions','gallery']].map(([label,id]) => (
                                 <a key={id} href={`#${id}`} className="transition-colors hover:text-black">{label}</a>
                             ))}
-                            <button onClick={() => setModalOpen(true)} className="cta-hero px-5 py-3 text-[11px]">
-                                Request Free Demo
+                            <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow-soft px-5 py-3 text-[11px]">
+                                Request Access
                             </button>
                         </div>
                     </nav>
 
-                    <section id="hero" className="relative overflow-hidden" style={{minHeight:'92svh',paddingTop:'74px',background:'linear-gradient(180deg, #FDFBF7 0%, #F5F0E9 100%)'}}>
+                    <section id="hero" className="relative overflow-hidden" style={{minHeight:'92svh',paddingTop:'74px',background:'linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)'}}>
+                        <div className="hero-video-shell">
+                            <div className="hero-video-base"/>
+                            <div className="hero-video-wave orange"/>
+                            <div className="hero-video-wave soft"/>
+                            <div className="hero-video-wave sand"/>
+                            <div className="hero-video-mesh"/>
+                            <div className="hero-video-scan"/>
+                        </div>
                         <div className="dream-grid absolute inset-0 opacity-80"/>
                         <div className="hero-glow" style={{top:'-12%', width:'780px', height:'780px', background:'radial-gradient(circle, rgba(255,106,55,0.14), transparent 72%)'}}/>
                         <div className="hero-glow-red" style={{bottom:'10%', right:'4%', width:'520px', height:'520px', background:'radial-gradient(circle, rgba(216,208,196,0.52), transparent 72%)'}}/>
                         <div className="container mx-auto max-w-7xl px-5 md:px-10 relative z-10">
-                            <div className="grid lg:grid-cols-[minmax(0,1.22fr)_360px] gap-8 lg:gap-10 items-start min-h-[calc(72svh-64px)] pt-3 pb-8 md:pt-5 md:pb-12">
+                            <div className="grid lg:grid-cols-[minmax(0,1.08fr)_380px] gap-8 lg:gap-10 items-start min-h-[calc(72svh-64px)] pt-3 pb-10 md:pt-5 md:pb-16">
                                 <div>
                                     <motion.span initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:0.15}} className="section-label">
                                         Keystone AI Studio / architect-first discovery
@@ -2913,26 +3174,30 @@ const DreamApp = () => {
                                         style={{fontSize:'clamp(3.45rem, 8vw, 7.2rem)',letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
                                         <span className="block">Build the</span>
                                         <span className="block" style={{color:'var(--ink)'}}>feeling of home</span>
-                                        <span className="block" style={{color:'rgba(9,9,9,0.56)'}}>before the first meeting.</span>
+                                        <span className="block" style={{color:'rgba(78,69,61,0.62)'}}>before the first meeting.</span>
                                     </motion.h1>
                                     <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.56}}
                                         className="mt-7 flex flex-col sm:flex-row gap-3 items-start">
-                                        <button onClick={() => setModalOpen(true)} className="cta-hero">
-                                            Request Free Demo
+                                        <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow cta-live">
+                                            <span>Open Live Studio</span>
+                                            <span className="cta-live-mark">
+                                                <span className="cta-live-dot"/>
+                                                Try it now
+                                            </span>
                                         </button>
-                                        <button onClick={() => scrollTo('generator')} className="cta-secondary">
-                                            Open Live Studio
+                                        <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow-soft">
+                                            Request Access
                                         </button>
                                     </motion.div>
                                     <motion.p initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.4}}
                                         className="mt-5 max-w-[46rem] leading-relaxed"
-                                        style={{fontSize:'clamp(1rem, 1.9vw, 1.16rem)',color:'rgba(9,9,9,0.64)'}}>
+                                        style={{fontSize:'clamp(1rem, 1.9vw, 1.16rem)',color:'rgba(32,26,21,0.72)'}}>
                                         Keystone turns an early, half-formed client dream into a generated floor plan, a cinematic exterior study, and a clearer place for your studio to begin.
                                     </motion.p>
                                     <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.72}}
                                         className="mt-5 flex flex-wrap gap-3">
                                         {['Architect intake that feels premium','First plan in under a minute','3D study included'].map((item) => (
-                                            <span key={item} className="marquee-pill" style={{animation:'none'}}>
+                                            <span key={item} className="marquee-pill" style={{animation:'none',background:'rgba(255,255,255,0.68)',borderColor:'rgba(10,10,12,0.08)',color:'rgba(10,10,12,0.72)'}}>
                                                 {item}
                                             </span>
                                         ))}
@@ -2941,7 +3206,7 @@ const DreamApp = () => {
 
                                 <motion.aside initial={{opacity:0,x:24}} animate={{opacity:1,x:0}} transition={{delay:0.42}}
                                     className="dream-panel p-5 md:p-6 relative overflow-hidden">
-                                    <div className="absolute inset-x-0 top-0 h-px bg-white/12"/>
+                                    <div className="absolute inset-x-0 top-0 h-px" style={{background:'rgba(255,255,255,0.12)'}}/>
                                     <span className="section-label" style={{color:'rgba(245,240,233,0.58)'}}>Inside the room</span>
                                     <h2 className="cg text-white mt-4" style={{fontSize:'clamp(1.9rem,3.4vw,2.8rem)',lineHeight:0.92,textTransform:'uppercase',letterSpacing:'-0.05em'}}>
                                         A first pass that already feels worth discussing.
@@ -2953,12 +3218,12 @@ const DreamApp = () => {
                                         {studioMetrics.map((metric) => (
                                             <div key={metric.label} className="studio-metric">
                                                 <strong>{metric.value}</strong>
-                                                <span className="text-[11px] uppercase tracking-[0.18em] text-white/42">{metric.label}</span>
+                                                <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>{metric.label}</span>
                                             </div>
                                         ))}
                                     </div>
                                     <div className="mt-5 pt-4 border-t border-white/10">
-                                        <p className="mono text-[10px] uppercase tracking-[0.22em] text-white/42">What a session holds</p>
+                                        <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.5)'}}>What a session holds</p>
                                         <div className="flex flex-wrap gap-2 mt-3">
                                             {['2D blueprint', '3D exterior study', 'Refinement history', 'Passkey access'].map((item) => (
                                                 <span key={item} className="stack-pill text-[12px]">{item}</span>
@@ -2967,7 +3232,107 @@ const DreamApp = () => {
                                     </div>
                                 </motion.aside>
                             </div>
+                            <div className="attention-float hidden xl:block" aria-hidden="true">
+                                <div className="attention-orbit">
+                                    <svg viewBox="0 0 140 140">
+                                        <defs>
+                                            <path id="hero-orbit-path" d="M70,70 m-54,0 a54,54 0 1,1 108,0 a54,54 0 1,1 -108,0"/>
+                                        </defs>
+                                        <text fill="rgba(255,106,55,0.8)" style={{fontFamily:'Azeret Mono, monospace',fontSize:'7px',letterSpacing:'0.34em',textTransform:'uppercase'}}>
+                                            <textPath href="#hero-orbit-path">Open live studio - see a real session - first plan in under 60 seconds - </textPath>
+                                        </text>
+                                    </svg>
+                                    <div className="attention-orbit-core">
+                                        <span className="mono" style={{fontSize:'8px',letterSpacing:'0.24em',textTransform:'uppercase',color:'rgba(9,9,9,0.48)'}}>Live now</span>
+                                        <strong>Under<br/>60s</strong>
+                                    </div>
+                                </div>
+                            </div>
 
+                        </div>
+                    </section>
+
+                    <section className="proof-shelf">
+                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                            <div className="proof-frame p-4 md:p-6">
+                                <div className="grid lg:grid-cols-[300px_minmax(0,1fr)] gap-5 items-start">
+                                    <div className="p-2 md:p-4">
+                                        <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>Sample session</span>
+                                        <h2 className="cg mt-5" style={{fontSize:'clamp(2.1rem, 4.6vw, 3.8rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
+                                            Real output. No imagination tax.
+                                        </h2>
+                                        <p className="mt-4 text-sm md:text-base leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
+                                            The quickest way to trust Keystone is to watch one intake become the plan and the mood study side by side. This is the proof layer the hero was missing.
+                                        </p>
+                                        <div className="grid gap-3 mt-5">
+                                            {['One intake becomes two outputs', 'Enough detail to react to before the paid meeting', 'A stronger first conversation for both firm and client'].map((item) => (
+                                                <div key={item} className="proof-mini-tile">
+                                                    <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>Why it lands</div>
+                                                    <p className="mt-2 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.78)'}}>{item}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-6 flex flex-wrap gap-3">
+                                            <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow">
+                                                Try the live flow
+                                            </button>
+                                            <button onClick={() => scrollTo('gallery')} className="cta-secondary">
+                                                See recent proof
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div className="grid md:grid-cols-[1.02fr_0.98fr] gap-4">
+                                            <motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}}>
+                                                <div className="proof-browser">
+                                                    <div className="proof-browser-top">
+                                                        <div className="bc-dot" style={{background:'#FF5F57'}}/>
+                                                        <div className="bc-dot" style={{background:'#FFBD2E'}}/>
+                                                        <div className="bc-dot" style={{background:'#28C840'}}/>
+                                                        <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / 2D FLOOR PLAN</span>
+                                                    </div>
+                                                    <div className="proof-browser-screen plan">
+                                                        <div className="diagonal-accent"/>
+                                                        <img src={ASSETS.exampleBlueprint} alt="Keystone sample floor plan" style={{width:'100%',display:'block',objectFit:'contain'}}/>
+                                                    </div>
+                                                    <div className="proof-caption">
+                                                        <span className="proof-dot" style={{background:'var(--blue)'}}/>
+                                                        Client footprint translated into a working blueprint
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                            <motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:0.08}}>
+                                                <div className="proof-browser">
+                                                    <div className="proof-browser-top">
+                                                        <div className="bc-dot" style={{background:'#FF5F57'}}/>
+                                                        <div className="bc-dot" style={{background:'#FFBD2E'}}/>
+                                                        <div className="bc-dot" style={{background:'#28C840'}}/>
+                                                        <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / 3D EXTERIOR STUDY</span>
+                                                    </div>
+                                                    <div className="proof-browser-screen" style={{minHeight:'100%'}}>
+                                                        <img src={ASSETS.exampleRender} alt="Keystone sample exterior study" style={{width:'100%',height:'100%',minHeight:'320px',objectFit:'cover',display:'block'}}/>
+                                                        <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, rgba(9,9,9,0.02) 0%, rgba(9,9,9,0.48) 100%)'}}/>
+                                                        <div className="proof-caption" style={{position:'absolute',left:0,right:0,bottom:0,borderTop:'none',color:'rgba(255,255,255,0.72)',background:'linear-gradient(180deg, transparent, rgba(9,9,9,0.58))'}}>
+                                                            <span className="proof-dot" style={{background:'var(--gold)'}}/>
+                                                            The same brief, now felt as atmosphere
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        </div>
+                                        <div className="grid md:grid-cols-3 gap-3 mt-4">
+                                            {featuredWorks.map((item, index) => (
+                                                <motion.article key={item.eyebrow} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
+                                                    className="proof-mini-tile">
+                                                    <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>{item.eyebrow}</div>
+                                                    <h3 className="cg mt-3 text-[1.3rem] leading-[0.98]" style={{color:'var(--ink)'}}>{item.title}</h3>
+                                                    <p className="mt-3 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>{item.body}</p>
+                                                </motion.article>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </section>
 
@@ -2995,18 +3360,16 @@ const DreamApp = () => {
                                 </p>
                             </div>
                             <div className="grid md:grid-cols-3 gap-4">
-                                {[
-                                    { n:'01', label:'First visual anchor', body:'Clients do not have to imagine an atmosphere from scratch. The room already has a direction.', value:'3D study' },
-                                    { n:'02', label:'Program before drafting', body:'Bedrooms, bath counts, lot assumptions, and square footage enter the conversation before your team opens CAD.', value:'2D blueprint' },
-                                    { n:'03', label:'Better starting chemistry', body:'Discovery stops feeling like mind reading and starts feeling like design leadership.', value:'Billable first meeting' },
-                                ].map((item, index) => (
-                                    <motion.div key={item.n} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
-                                        className="dream-panel p-6">
-                                        <div className="mono text-[10px] uppercase tracking-[0.22em] text-white/42">{item.n}</div>
-                                        <h3 className="cg text-white mt-4 text-[2rem] leading-[0.94]">{item.value}</h3>
-                                        <p className="mt-3 text-sm uppercase tracking-[0.18em] text-white/46">{item.label}</p>
-                                        <p className="mt-5 text-sm leading-relaxed text-white/70">{item.body}</p>
-                                    </motion.div>
+                                {featuredWorks.map((item, index) => (
+                                    <motion.article key={item.eyebrow} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
+                                        className="work-tile">
+                                        <img src={item.image} alt={item.alt}/>
+                                        <div className="work-overlay">
+                                            <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.5)'}}>{item.eyebrow}</div>
+                                            <h3 className="cg text-white mt-4 text-[2rem] leading-[0.94]">{item.title}</h3>
+                                            <p className="mt-5 text-sm leading-relaxed" style={{color:'rgba(244,239,230,0.78)'}}>{item.body}</p>
+                                        </div>
+                                    </motion.article>
                                 ))}
                             </div>
                         </div>
@@ -3025,30 +3388,30 @@ const DreamApp = () => {
                                     Keystone is not trying to replace architectural judgment. It removes the blank page at the exact moment firms are most exposed to wasted time.
                                 </p>
                             </div>
-                            <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-6 mt-10">
-                                <div className="grid md:grid-cols-3 gap-5">
+                            <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-6 mt-10 items-start">
+                                <div className="grid md:grid-cols-3 gap-5 self-start">
                                     {serviceCards.map((card, index) => (
                                         <motion.div key={card.number} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
-                                            className="service-card-dream p-6 md:p-7">
-                                            <div className="mono text-[10px] uppercase tracking-[0.24em] text-blue/70">{card.number}</div>
+                                            className="service-card-dream p-6 md:p-7 self-start">
+                                            <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.7)'}}>{card.number}</div>
                                             <h3 className="cg mt-5 text-[2rem] leading-[0.96]">{card.title}</h3>
-                                            <p className="mt-4 text-sm leading-relaxed text-mid">{card.body}</p>
+                                            <p className="mt-4 text-sm leading-relaxed" style={{color:'var(--mid)'}}>{card.body}</p>
                                         </motion.div>
                                     ))}
                                 </div>
-                                <div className="paper-panel p-6 md:p-7">
-                                    <div className="mono text-[10px] uppercase tracking-[0.24em] text-blue/70">Inside every session</div>
+                                <div className="paper-panel p-6 md:p-7 self-start">
+                                    <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.7)'}}>Inside every session</div>
                                     <h3 className="cg mt-5 text-[2.1rem] leading-[0.95]">The studio stack clients never see, but your team will feel.</h3>
                                     <div className="flex flex-wrap gap-2 mt-6">
                                         {sessionStack.map((item) => (
-                                            <span key={item} className="px-4 py-3 rounded-full border border-black/8 bg-white/70 text-sm text-mid">{item}</span>
+                                            <span key={item} className="px-4 py-3 rounded-full text-sm" style={{border:'1px solid rgba(10,10,12,0.08)',background:'rgba(255,255,255,0.7)',color:'var(--mid)',borderRadius:'999px'}}>{item}</span>
                                         ))}
                                     </div>
-                                    <div className="mt-8 pt-6 border-t border-black/8">
-                                        <div className="mono text-[10px] uppercase tracking-[0.24em] text-mid/60">Coming next</div>
+                                    <div className="mt-8 pt-6" style={{borderTop:'1px solid rgba(10,10,12,0.08)'}}>
+                                        <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(110,106,102,0.68)'}}>Coming next</div>
                                         <div className="grid gap-3 mt-4">
                                             {roadmapCards.map((item) => (
-                                                <div key={item} className="flex items-center gap-3 text-sm text-mid">
+                                                <div key={item} className="flex items-center gap-3 text-sm" style={{color:'var(--mid)'}}>
                                                     <span className="w-2 h-2 rounded-full bg-blue flex-shrink-0"/>
                                                     <span>{item}</span>
                                                 </div>
@@ -3062,46 +3425,48 @@ const DreamApp = () => {
 
                     <section id="pricing" className="py-16 md:py-20" style={{background:'var(--paper)',color:'var(--ink)'}}>
                         <div className="container mx-auto max-w-7xl px-5 md:px-10">
-                            <div className="grid lg:grid-cols-[300px_minmax(0,1fr)] gap-8 items-start">
+                            <div className="max-w-3xl">
+                                <span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Pricing</span>
+                                <h2 className="cg mt-6" style={{fontSize:'clamp(2.4rem, 5.6vw, 4.5rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
+                                    Clear pricing before your team commits the hours.
+                                </h2>
+                                <p className="mt-5 text-base leading-relaxed" style={{color:'var(--mid)'}}>
+                                    Start with a guided demo, try a live session for an active lead, or turn Keystone into a repeatable studio rhythm without a dead-month subscription.
+                                </p>
+                            </div>
+                            <div className="grid xl:grid-cols-[minmax(0,1fr)_300px] gap-6 mt-10 items-start">
                                 <div>
-                                    <span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Pricing</span>
-                                    <h2 className="cg mt-6" style={{fontSize:'clamp(2.4rem, 5.6vw, 4.5rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        Clear pricing before your team commits the hours.
-                                    </h2>
-                                    <p className="mt-5 text-base leading-relaxed text-mid">
-                                        Start with a guided demo, book a live session for a lead, or turn Keystone into a repeatable studio rhythm.
-                                    </p>
-                                    <div className="grid gap-4 mt-7">
-                                        {quoteCards.map((quote, index) => (
-                                            <motion.div key={quote.name} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
-                                                className="quote-card p-5">
-                                                <p className="cg text-[1.3rem] leading-[1.12]" style={{color:'var(--ink)'}}>
-                                                    "{quote.quote}"
-                                                </p>
-                                                <div className="mt-4 pt-4 border-t border-black/8">
-                                                    <p className="font-semibold text-sm">{quote.name}</p>
-                                                    <p className="mono text-[10px] uppercase tracking-[0.2em] text-mid mt-2">{quote.firm}</p>
-                                                </div>
+                                    <div className="grid md:grid-cols-3 gap-4">
+                                        {pricingTiers.map((tier, index) => (
+                                            <motion.div key={tier.tag} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
+                                                className="p-6 md:p-7 rounded-[14px] flex flex-col min-h-[360px]"
+                                                style={tier.featured
+                                                    ? {background:'linear-gradient(180deg, #171717 0%, #0A0A0A 100%)',border:'1px solid rgba(255,255,255,0.06)',color:'white'}
+                                                    : {background:'rgba(255,255,255,0.62)',border:'1px solid rgba(10,10,12,0.08)',color:'var(--ink)'}
+                                                }>
+                                                <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:tier.featured ? 'rgba(232,238,244,0.58)' : 'rgba(10,10,12,0.4)'}}>{tier.tag}</div>
+                                                <div className="cg mt-5" style={{fontSize:'3rem',lineHeight:0.88,letterSpacing:'-0.06em'}}>{tier.price}</div>
+                                                <div className="mono text-[10px] uppercase tracking-[0.22em] mt-2" style={{color:tier.featured ? 'rgba(232,238,244,0.46)' : 'rgba(10,10,12,0.42)'}}>{tier.unit}</div>
+                                                <p className="mt-5 text-sm leading-relaxed flex-1" style={{color:tier.featured ? 'rgba(244,239,230,0.72)' : 'var(--mid)'}}>{tier.desc}</p>
+                                                <button onClick={() => tier.featured ? scrollTo('generator') : setModalOpen(true)}
+                                                    className={`cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.featured ? 'cta-glow' : tier.tag === 'Free demo' ? 'cta-glow-soft' : ''}`}>
+                                                    {tier.cta}
+                                                </button>
                                             </motion.div>
                                         ))}
                                     </div>
                                 </div>
-                                <div className="grid md:grid-cols-3 gap-4">
-                                    {pricingTiers.map((tier, index) => (
-                                        <motion.div key={tier.tag} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
-                                            className="p-6 md:p-7 rounded-[14px] flex flex-col min-h-full"
-                                            style={tier.featured
-                                                ? {background:'linear-gradient(180deg, #171717 0%, #0A0A0A 100%)',border:'1px solid rgba(255,255,255,0.06)',color:'white'}
-                                                : {background:'rgba(255,255,255,0.62)',border:'1px solid rgba(10,10,12,0.08)',color:'var(--ink)'}
-                                            }>
-                                            <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:tier.featured ? 'rgba(232,238,244,0.58)' : 'rgba(10,10,12,0.4)'}}>{tier.tag}</div>
-                                            <div className="cg mt-5" style={{fontSize:'3rem',lineHeight:0.88,letterSpacing:'-0.06em'}}>{tier.price}</div>
-                                            <div className="mono text-[10px] uppercase tracking-[0.22em] mt-2" style={{color:tier.featured ? 'rgba(232,238,244,0.46)' : 'rgba(10,10,12,0.42)'}}>{tier.unit}</div>
-                                            <p className="mt-5 text-sm leading-relaxed flex-1" style={{color:tier.featured ? 'rgba(244,239,230,0.72)' : 'var(--mid)'}}>{tier.desc}</p>
-                                            <button onClick={() => setModalOpen(true)}
-                                                className="cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center">
-                                                {tier.cta}
-                                            </button>
+                                <div className="grid gap-4">
+                                    {quoteCards.map((quote, index) => (
+                                        <motion.div key={quote.name} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
+                                            className="quote-card p-5">
+                                            <p className="cg text-[1.2rem] leading-[1.1]" style={{color:'var(--ink)'}}>
+                                                "{quote.quote}"
+                                            </p>
+                                            <div className="mt-4 pt-4" style={{borderTop:'1px solid rgba(10,10,12,0.08)'}}>
+                                                <p className="font-semibold text-sm">{quote.name}</p>
+                                                <p className="mono text-[10px] uppercase tracking-[0.2em] mt-2" style={{color:'var(--mid)'}}>{quote.firm}</p>
+                                            </div>
                                         </motion.div>
                                     ))}
                                 </div>
@@ -3118,24 +3483,24 @@ const DreamApp = () => {
                                     <h2 className="cg text-white mt-6" style={{fontSize:'clamp(2.8rem, 7vw, 5.2rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
                                         Built by people who have felt the discovery gap up close.
                                     </h2>
-                                    <p className="mt-6 max-w-2xl text-base leading-relaxed text-white/68">
+                                    <p className="mt-6 max-w-2xl text-base leading-relaxed" style={{color:'rgba(244,239,230,0.72)'}}>
                                         Keystone began from a simple frustration: talented architects were burning unpaid hours trying to pull clarity out of clients who had not yet learned how to describe what they wanted.
                                     </p>
-                                    <p className="mt-4 max-w-2xl text-base leading-relaxed text-white/68">
+                                    <p className="mt-4 max-w-2xl text-base leading-relaxed" style={{color:'rgba(244,239,230,0.72)'}}>
                                         The product is designed to make that first conversation feel more like design and less like interrogation. Not colder. Not more automated. Just clearer.
                                     </p>
                                     <div className="mt-8 pt-6 border-t border-white/10">
                                         <p className="cg text-white" style={{fontSize:'clamp(1.6rem, 3vw, 2.6rem)',lineHeight:1.08}}>
                                             "Architects should spend their energy shaping ideas, not extracting them one exhausted question at a time."
                                         </p>
-                                        <p className="mono mt-4 text-[10px] uppercase tracking-[0.24em] text-white/42">Founder note / Keystone AI</p>
+                                        <p className="mono mt-4 text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.5)'}}>Founder note / Keystone AI</p>
                                     </div>
                                 </div>
                                 <div className="grid gap-4">
                                     {studioMetrics.map((metric) => (
                                         <div key={metric.label} className="studio-metric">
                                             <strong>{metric.value}</strong>
-                                            <span className="text-[11px] uppercase tracking-[0.18em] text-white/42">{metric.label}</span>
+                                            <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>{metric.label}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -3148,9 +3513,9 @@ const DreamApp = () => {
                                             <img src={member.image} alt={member.name} style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
                                         </div>
                                         <div>
-                                            <div className="mono text-[10px] uppercase tracking-[0.24em] text-white/40">{member.role}</div>
+                                            <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.46)'}}>{member.role}</div>
                                             <h3 className="cg text-white text-[1.6rem] mt-2 leading-[0.96]">{member.name}</h3>
-                                            <p className="mt-2 text-[13px] leading-relaxed text-white/66">{member.bio}</p>
+                                            <p className="mt-2 text-[13px] leading-relaxed" style={{color:'rgba(244,239,230,0.68)'}}>{member.bio}</p>
                                         </div>
                                     </motion.article>
                                 ))}
@@ -3171,8 +3536,12 @@ const DreamApp = () => {
                                             The real product is here. Use the live survey, shape the plan, and watch Keystone make choices where a future client would normally hand you a vague sentence and a Pinterest board.
                                         </p>
                                     </div>
-                                    <button onClick={() => scrollTo('generator')} className="cta-secondary w-full lg:w-auto justify-self-start lg:justify-self-end">
-                                        Open the live studio
+                                    <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow cta-live w-full lg:w-auto justify-self-start lg:justify-self-end">
+                                        <span>Open Live Studio</span>
+                                        <span className="cta-live-mark">
+                                            <span className="cta-live-dot"/>
+                                            Try it now
+                                        </span>
                                     </button>
                                 </div>
                             </div>
@@ -3192,11 +3561,15 @@ const DreamApp = () => {
                                 If the goal is to make residential clients feel seen faster while protecting your studio's time, Keystone is ready for a real conversation.
                             </p>
                             <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-                                <button onClick={() => setModalOpen(true)} className="cta-hero">
-                                    Request Free Demo
+                                <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow cta-live">
+                                    <span>Open Live Studio</span>
+                                    <span className="cta-live-mark">
+                                        <span className="cta-live-dot"/>
+                                        Try it now
+                                    </span>
                                 </button>
-                                <button onClick={() => scrollTo('gallery')} className="cta-secondary">
-                                    See Recent Sessions
+                                <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow-soft">
+                                    Request Access
                                 </button>
                             </div>
                         </div>
@@ -3209,7 +3582,7 @@ const DreamApp = () => {
                                     <img src={ASSETS.icon} alt="Keystone" style={{width:'30px',height:'30px',filter:'brightness(0) invert(1)'}}/>
                                     <div>
                                         <span className="cg text-[1.1rem] uppercase tracking-[-0.05em] text-white">Keystone AI</span>
-                                        <p className="mono text-[10px] uppercase tracking-[0.22em] text-white/34 mt-1">Dream spaces, drawn fast</p>
+                                        <p className="mono text-[10px] uppercase tracking-[0.22em] mt-1" style={{color:'rgba(244,239,230,0.36)'}}>Dream spaces, drawn fast</p>
                                     </div>
                                 </div>
                                 <div className="flex flex-wrap justify-center gap-6 mono text-[10px] uppercase tracking-[0.22em]">
@@ -3217,7 +3590,7 @@ const DreamApp = () => {
                                         <a key={id} href={`#${id}`} className="footer-link">{label}</a>
                                     ))}
                                 </div>
-                                <p className="mono text-[10px] uppercase tracking-[0.22em] text-white/28">Copyright 2025 Keystone AI Studio</p>
+                                <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.3)'}}>Copyright 2026 Keystone AI Studio</p>
                             </div>
                         </div>
                     </footer>
