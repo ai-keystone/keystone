@@ -32,6 +32,16 @@ const SmartImage = ({ eager = false, ...props }) => (
         {...props}
     />
 );
+const CloseIcon = ({ className = 'w-4 h-4' }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M6 18L18 6M6 6l12 12"/>
+    </svg>
+);
+const CheckIcon = ({ className = 'w-3 h-3' }) => (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M5 13l4 4L19 7"/>
+    </svg>
+);
 
 // â”€â”€â”€ MOBILE NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MobileNavBar = ({ onOpenMenu }) => (
@@ -271,7 +281,7 @@ const PlanSummaryPanel = ({ planSpec }) => {
             </div>
             <div className="flex flex-wrap gap-1.5">
                 {Object.entries(roomCounts).map(([label, count]) => (
-                    <span key={label} className="room-badge active" style={{cursor:'default'}}>{label}{count > 1 ? ` Ã—${count}` : ''}</span>
+                    <span key={label} className="room-badge active" style={{cursor:'default'}}>{label}{count > 1 ? ` x${count}` : ''}</span>
                 ))}
             </div>
         </div>
@@ -435,7 +445,9 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                         transition={{type:'spring',damping:26}}
                         className="bg-paper w-full md:max-w-lg rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden">
                         <div style={{height:'3px',background:'linear-gradient(90deg,var(--blue),var(--red))'}}/>
-                        <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 bg-black/6 hover:bg-black/12 rounded-full flex items-center justify-center text-lg z-10">Ã—</button>
+                        <button type="button" onClick={onClose} aria-label="Close render options" className="absolute top-4 right-4 w-8 h-8 bg-black/6 hover:bg-black/12 rounded-full flex items-center justify-center z-10">
+                            <CloseIcon className="w-4 h-4"/>
+                        </button>
 
                         <div className="p-6 overflow-y-auto" style={{maxHeight:'85vh'}}>
                             <span className="badge mb-3 inline-block">3D Render Options</span>
@@ -445,16 +457,16 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                             <div className="space-y-4">
                                 {/* ZIP CODE */}
                                 <div>
-                                    <Lbl>ðŸ“ Project Zip Code</Lbl>
+                                    <Lbl>Project ZIP Code</Lbl>
                                     <input type="text" placeholder="e.g. 78701" maxLength="10"
                                         value={data.zipCode} onChange={e => upd('zipCode', e.target.value)}
                                         style={{maxWidth:'180px'}}/>
-                                    <p className="text-[9px] text-mid/60 mt-1">Helps set regional context â€” climate, terrain, neighborhood character</p>
+                                    <p className="text-[9px] text-mid/60 mt-1">Helps set regional context - climate, terrain, neighborhood character</p>
                                 </div>
 
                                 {/* EXTERIOR STYLE OVERRIDE */}
                                 <div>
-                                    <Lbl>ðŸ  Exterior Style</Lbl>
+                                    <Lbl>Exterior Style</Lbl>
                                     <BtnRow field="exteriorStyle" options={[
                                         {val:'Craftsman (Wood & Stone)',          label:'Craftsman'},
                                         {val:'Modern Farmhouse (Board & Batten)', label:'Farmhouse'},
@@ -468,25 +480,25 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                                 {/* ROOF STYLE */}
                                 <div>
-                                    <Lbl>ðŸ—ï¸ Roof Style</Lbl>
+                                    <Lbl>Roof Style</Lbl>
                                     <BtnRow field="roofStyle" options={['Gabled','Hip Roof','Flat Roof','Metal Standing Seam','Terracotta Tile','Cathedral / Vaulted']}/>
                                 </div>
 
                                 {/* SEASON */}
                                 <div>
-                                    <Lbl>ðŸŒ¿ Season / Vegetation</Lbl>
+                                    <Lbl>Season / Vegetation</Lbl>
                                     <BtnRow field="season" options={['Spring','Summer','Fall','Winter (Snow)']}/>
                                 </div>
 
                                 {/* TIME OF DAY */}
                                 <div>
-                                    <Lbl>â˜€ï¸ Time of Day / Lighting</Lbl>
+                                    <Lbl>Time of Day / Lighting</Lbl>
                                     <BtnRow field="timeOfDay" options={['Sunrise','Midday','Golden Hour','Overcast','Night']}/>
                                 </div>
 
                                 {/* SURROUNDINGS */}
                                 <div>
-                                    <Lbl>ðŸŒ² Surrounding Environment</Lbl>
+                                    <Lbl>Surrounding Environment</Lbl>
                                     <BtnRow field="surroundings" options={[
                                         {val:'Suburban neighborhood', label:'Suburban'},
                                         {val:'Wooded forest',         label:'Wooded'},
@@ -499,7 +511,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                                 {/* LANDSCAPING */}
                                 <div>
-                                    <Lbl>ðŸŒ³ Landscaping</Lbl>
+                                    <Lbl>Landscaping</Lbl>
                                     <BtnRow field="landscaping" options={[
                                         'Manicured lawn',
                                         'Native plantings',
@@ -513,7 +525,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
 
                             <button onClick={() => onSubmit(data)}
                                 className="w-full mt-6 py-3.5 bg-ink text-white mono text-[10px] uppercase tracking-[0.18em] font-bold hover:bg-blue transition-colors rounded-sm">
-                                âœ¦ Generate 3D Render â†’
+                                Generate Exterior Study
                             </button>
                         </div>
                     </motion.div>
@@ -588,10 +600,10 @@ const svgToPngDataUrl = (svgMarkup, options = {}) => new Promise((resolve, rejec
 
 // â”€â”€â”€ 3D RENDER PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const RENDER_REFINEMENTS = [
-    { label: 'Golden Hour',  hint: 'warm late-afternoon sunlight, long shadows, golden orange sky â€” ONLY change the lighting and sky, keep the house architecture identical' },
-    { label: 'Overcast Day', hint: 'soft diffuse overcast lighting, muted tones, grey cloud-covered sky â€” ONLY change the lighting and sky, keep the house architecture identical' },
-    { label: 'Night Lit',    hint: 'night scene with interior lights glowing warmly through windows, landscape uplighting, dark blue starry sky â€” ONLY change the lighting and sky, keep the house architecture identical' },
-    { label: 'Sunrise',      hint: 'sunrise with pink and orange gradient sky, long warm shadows raking across the facade â€” ONLY change the lighting and sky, keep the house architecture identical' },
+    { label: 'Golden Hour',  hint: 'warm late-afternoon sunlight, long shadows, golden orange sky. Only change the lighting and sky; keep the house architecture identical.' },
+    { label: 'Overcast Day', hint: 'soft diffuse overcast lighting, muted tones, grey cloud-covered sky. Only change the lighting and sky; keep the house architecture identical.' },
+    { label: 'Night Lit',    hint: 'night scene with interior lights glowing warmly through windows, landscape uplighting, and a deep blue sky. Only change the lighting and sky; keep the house architecture identical.' },
+    { label: 'Sunrise',      hint: 'sunrise with a pink-orange gradient sky and long warm shadows across the facade. Only change the lighting and sky; keep the house architecture identical.' },
 ];
 
 const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }) => {
@@ -663,7 +675,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
             if (onRenderReady) onRenderReady(watermarked);
         } catch(err) {
             console.error('[render]', err);
-            setErrorMsg(err.message || 'Network error â€” is the server running?');
+            setErrorMsg(err.message || 'Network error - is the server running?');
             setRenderStatus('error');
         }
     };
@@ -817,9 +829,9 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                     background: selected ? 'var(--ink)' : 'white',
                     color: selected ? 'white' : 'var(--ink)',
                 }}>
-                <span style={{fontSize:'13px'}}>{icon}</span>
+                {icon ? <span className="mono text-[9px] uppercase tracking-[0.18em]" style={{opacity:0.6}}>{icon}</span> : null}
                 {label}
-                {selected && <span style={{opacity:0.5,fontSize:'9px'}}>âœ“</span>}
+                {selected && <CheckIcon className="w-3 h-3 opacity-60"/>}
             </button>
         );
     };
@@ -883,10 +895,10 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
             );
             case 'privateBaths': return (
                 <div key={field} className="space-y-1.5 p-3 bg-blue/4 border border-blue/15 rounded-sm">
-                    <Lbl>ðŸ› Private En-Suite Bathrooms</Lbl>
+                    <Lbl>Private En-Suite Bathrooms</Lbl>
                     <p className="text-[10px] text-mid mb-2">How many bedrooms should have their own private bathroom attached?</p>
                     <div className="flex gap-2">{[0,1,2,3].filter(n => n <= bedCount).map(n=><button key={n} type="button" onClick={()=>upd('privateBaths',`${n}`)} className={`flex-1 h-10 border text-sm font-bold rounded-sm transition-all ${formData.privateBaths===`${n}`?'bg-blue text-white border-blue':'border-black/10 bg-white hover:border-blue'}`}>{n === 0 ? 'None' : n}</button>)}</div>
-                    <p className="text-[9px] text-mid/50">Primary bedroom always gets an en-suite Â· Remaining baths are shared</p>
+                    <p className="text-[9px] text-mid/50">Primary bedroom always gets an en-suite. Remaining baths are shared.</p>
                 </div>
             );
             case 'garage': return (
@@ -903,8 +915,8 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                 <div key={field} className="space-y-1.5">
                     <Lbl>Footprint Shape</Lbl>
                     <div className="grid grid-cols-2 gap-2">
-                        <FootprintOption val="Rectangular (Wide)" label="Wide Rectangle" desc="Width > depth â€” more street frontage" ratio={[1.6, 1]}/>
-                        <FootprintOption val="Rectangular (Deep)" label="Deep Rectangle" desc="Depth > width â€” narrow lot" ratio={[1, 1.4]}/>
+                        <FootprintOption val="Rectangular (Wide)" label="Wide Rectangle" desc="Width > depth - more street frontage" ratio={[1.6, 1]}/>
+                        <FootprintOption val="Rectangular (Deep)" label="Deep Rectangle" desc="Depth > width - narrow lot" ratio={[1, 1.4]}/>
                         <FootprintOption val="Square" label="Square" desc="Equal width and depth" ratio={[1, 1]}/>
                         <FootprintOption val="Rectangular" label="Standard Rect" desc="Classic proportions" ratio={[1.3, 1]}/>
                     </div>
@@ -920,7 +932,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                                 <circle cx="105" cy="105" r="68" fill="none" stroke="rgba(100,100,100,0.07)" strokeWidth="1" strokeDasharray="3 4"/>
                                 {[[105,6,105,20],[105,190,105,204],[6,105,20,105],[190,105,204,105]].map(([x1,y1,x2,y2],i)=><line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="rgba(100,100,100,0.22)" strokeWidth="1.5"/>)}
                                 <path d="M 174 68 Q 200 105 174 142" fill="none" stroke="rgba(181,136,42,0.2)" strokeWidth="1.5" strokeDasharray="3 3"/>
-                                <text x="188" y="109" textAnchor="middle" fontSize="8" fill="rgba(181,136,42,0.5)">â˜€</text>
+                                <text x="188" y="109" textAnchor="middle" fontSize="8" fill="rgba(181,136,42,0.5)">sun</text>
                             </svg>
                             <div style={{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',zIndex:2}}>
                                 {['North','South','East','West'].includes(formData.frontFacing) && (() => {
@@ -952,7 +964,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                             })}
                         </div>
                     </div>
-                    <p className="mono text-[7px] text-mid/50 text-center">â˜€ South = most winter sun Â· East = morning light</p>
+                    <p className="mono text-[7px] text-mid/50 text-center">South = most winter sun - East = morning light</p>
                 </div>
             );
             case 'lotContext': return (
@@ -1041,16 +1053,16 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                     <p className="text-[9px] text-mid/60 mb-2">Tap to add special rooms to your plan. Default: none.</p>
                     <div className="flex flex-wrap gap-2">
                         {[
-                            {label:'Study',         icon:'ðŸ“š'},
-                            {label:'Home Office',   icon:'ðŸ’¼'},
-                            {label:'Home Theater',  icon:'ðŸŽ¬'},
-                            {label:'Gym',           icon:'ðŸ‹ï¸'},
-                            {label:'Gaming Room',   icon:'ðŸŽ®'},
-                            {label:'Library',       icon:'ðŸ“–'},
-                            {label:'Wine Cellar',   icon:'ðŸ·'},
-                            {label:'Music Room',    icon:'ðŸŽµ'},
-                            {label:'Guest Suite',   icon:'ðŸ›ï¸'},
-                            {label:'Playroom',      icon:'ðŸ§¸'},
+                            {label:'Study'},
+                            {label:'Home Office'},
+                            {label:'Home Theater'},
+                            {label:'Gym'},
+                            {label:'Gaming Room'},
+                            {label:'Library'},
+                            {label:'Wine Cellar'},
+                            {label:'Music Room'},
+                            {label:'Guest Suite'},
+                            {label:'Playroom'},
                         ].map(f => <ToggleChip key={f.label} field="features" value={f.label} label={f.label} icon={f.icon}/>)}
                     </div>
                     {(formData.features||'').trim() && (
@@ -1072,8 +1084,8 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                     }/>
                 </div>
             );
-            case 'budgetTier': return <div key={field} className="space-y-1.5"><Lbl>Budget Tier</Lbl><BtnGrid field="budgetTier" cols={1} options={[{val:'Entry ($120â€“180/sqft)',label:'Entry â€” $120â€“180/sqft',desc:'Efficient, value-optimized design'},{val:'Mid ($200â€“300/sqft)',label:'Mid â€” $200â€“300/sqft',desc:'Quality finishes, flexible layouts'},{val:'Luxury ($350+/sqft)',label:'Luxury â€” $350+/sqft',desc:'Premium materials, custom details'}]}/></div>;
-            case 'freeformWishes': return <div key={field} className="space-y-1.5"><Lbl>Anything Else? (optional)</Lbl><textarea rows="3" placeholder="Specific wishes, must-haves, or notesâ€¦" value={formData.freeformWishes} onChange={e=>upd('freeformWishes',e.target.value)}/></div>;
+            case 'budgetTier': return <div key={field} className="space-y-1.5"><Lbl>Budget Tier</Lbl><BtnGrid field="budgetTier" cols={1} options={[{val:'Entry ($120-180/sqft)',label:'Entry - $120-180/sqft',desc:'Efficient, value-optimized design'},{val:'Mid ($200-300/sqft)',label:'Mid - $200-300/sqft',desc:'Quality finishes, flexible layouts'},{val:'Luxury ($350+/sqft)',label:'Luxury - $350+/sqft',desc:'Premium materials, custom details'}]}/></div>;
+            case 'freeformWishes': return <div key={field} className="space-y-1.5"><Lbl>Anything Else? (optional)</Lbl><textarea rows="3" placeholder="Specific wishes, must-haves, or notes..." value={formData.freeformWishes} onChange={e=>upd('freeformWishes',e.target.value)}/></div>;
             default: return null;
         }
     };
@@ -1095,11 +1107,11 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                 {cur.fields.map(f => renderField(f))}
             </div>
             <div className="flex gap-2.5 mt-5">
-                {step > 0 && <button type="button" onClick={() => setStep(s=>s-1)} className="px-5 py-3 border border-black/10 text-[11px] font-semibold hover:border-ink transition-colors rounded-sm">â† Back</button>}
+                {step > 0 && <button type="button" onClick={() => setStep(s=>s-1)} className="px-5 py-3 border border-black/10 text-[11px] font-semibold hover:border-ink transition-colors rounded-sm">Back</button>}
                 {!isLast
-                    ? <button type="button" onClick={() => setStep(s=>s+1)} className="flex-1 py-3 bg-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-ink transition-colors rounded-sm">Continue â†’</button>
+                    ? <button type="button" onClick={() => setStep(s=>s+1)} className="flex-1 py-3 bg-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-ink transition-colors rounded-sm">Continue</button>
                     : <button type="button" onClick={onSubmit} disabled={isLoading} className="flex-1 py-3 bg-ink text-white text-[11px] font-bold uppercase tracking-wider hover:bg-blue transition-colors disabled:opacity-50 rounded-sm">
-                        {isLoading ? 'âŸ³  Generatingâ€¦' : 'âœ¦  Generate Floor Plan'}
+                        {isLoading ? 'Generating...' : 'Generate Floor Plan'}
                       </button>
                 }
             </div>
@@ -1147,7 +1159,9 @@ const Gallery = ({ onOpenModal }) => {
                         {typeof zoomImg === 'string' && zoomImg.startsWith('<svg')
                             ? <div className="bg-white p-6 max-w-4xl w-full max-h-[90vh] overflow-auto rounded-sm shadow-2xl" dangerouslySetInnerHTML={{__html:zoomImg}}/>
                             : <img src={zoomImg} className="max-h-[90vh] max-w-full object-contain rounded-sm" alt="Zoom"/>}
-                        <button className="absolute top-4 right-4 text-white/40 hover:text-white text-4xl font-light">Ã—</button>
+                        <button type="button" onClick={() => setZoomImg(null)} aria-label="Close zoomed preview" className="absolute top-4 right-4 text-white/40 hover:text-white">
+                            <CloseIcon className="w-6 h-6"/>
+                        </button>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -1169,7 +1183,9 @@ const Gallery = ({ onOpenModal }) => {
                                         <h3 className="cg italic text-2xl mt-2">{selected.label || 'Floor Plan'}</h3>
                                         <p className="mono text-[8px] uppercase tracking-widest text-mid mt-1">{fmt(selected.createdAt)}</p>
                                     </div>
-                                    <button onClick={() => setSelected(null)} className="w-9 h-9 bg-black/6 rounded-full flex items-center justify-center text-lg hover:bg-black/12 transition-colors flex-shrink-0">Ã—</button>
+                                    <button type="button" onClick={() => setSelected(null)} aria-label="Close session detail" className="w-9 h-9 bg-black/6 rounded-full flex items-center justify-center hover:bg-black/12 transition-colors flex-shrink-0">
+                                        <CloseIcon className="w-4 h-4"/>
+                                    </button>
                                 </div>
                                 {/* Side-by-side at 50% scale each â€” both visible without scrolling */}
                                 <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
@@ -1179,7 +1195,7 @@ const Gallery = ({ onOpenModal }) => {
                                         <div className="flex items-center gap-1.5 px-3 py-2 border-b border-black/5">
                                             <span style={{width:'5px',height:'5px',borderRadius:'50%',background:'var(--blue)',flexShrink:0,display:'inline-block'}}/>
                                             <span className="mono text-[7px] uppercase tracking-widest text-mid">2D Blueprint</span>
-                                            <span className="mono text-[7px] text-mid ml-auto opacity-40">â¤¢ expand</span>
+                                            <span className="mono text-[7px] text-mid ml-auto opacity-40">open</span>
                                         </div>
                                         {/* Fixed-height container, SVG scaled to fit at ~50% */}
                                         <div style={{height:'200px', overflow:'hidden', position:'relative', padding:'8px'}}>
@@ -1199,7 +1215,7 @@ const Gallery = ({ onOpenModal }) => {
                                         <div className="flex items-center gap-1.5 px-3 py-2 border-b border-black/5">
                                             <span style={{width:'5px',height:'5px',borderRadius:'50%',background:'var(--gold)',flexShrink:0,display:'inline-block'}}/>
                                             <span className="mono text-[7px] uppercase tracking-widest text-mid">3D Render</span>
-                                            {selected.renderImage && <span className="mono text-[7px] text-mid ml-auto opacity-40">â¤¢ expand</span>}
+                                            {selected.renderImage && <span className="mono text-[7px] text-mid ml-auto opacity-40">open</span>}
                                         </div>
                                         {selected.renderImage
                                             ? <img src={selected.renderImage} alt="3D render"
@@ -1217,10 +1233,10 @@ const Gallery = ({ onOpenModal }) => {
                                 {selected.surveyData && (
                                     <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
                                         {[
-                                            ['Area', selected.planSpec?.totalAreaSqFt ? `${selected.planSpec.totalAreaSqFt.toLocaleString()} sqft` : 'â€”'],
-                                            ['Stories', selected.surveyData.stories || 'â€”'],
-                                            ['Garage', selected.surveyData.garage || 'â€”'],
-                                            ['Style', (selected.surveyData.budgetTier || 'â€”').split(' ')[0]],
+                                            ['Area', selected.planSpec?.totalAreaSqFt ? `${selected.planSpec.totalAreaSqFt.toLocaleString()} sqft` : '-'],
+                                            ['Stories', selected.surveyData.stories || '-'],
+                                            ['Garage', selected.surveyData.garage || '-'],
+                                            ['Style', (selected.surveyData.budgetTier || '-').split(' ')[0]],
                                         ].map(([k,v]) => (
                                             <div key={k} className="spec-panel">
                                                 <div className="spec-label">{k}</div>
@@ -1240,7 +1256,7 @@ const Gallery = ({ onOpenModal }) => {
                     <div>
                         <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>Recent sessions</span>
                         <h2 className="cg mt-5" style={{fontSize:'clamp(2.2rem,4.8vw,3.6rem)',letterSpacing:'-0.05em',textTransform:'uppercase',lineHeight:0.94}}>Recent sessions, not mockups.</h2>
-                        <p className="text-mid text-sm mt-2">The last 10 plans generated by Keystone AI users â€” live from the server.</p>
+                        <p className="text-mid text-sm mt-2">The last 10 plans generated by Keystone AI users, live from the server.</p>
                     </div>
                     <div className="flex flex-wrap gap-2 lg:justify-end">
                         <button onClick={fetchGallery} className="cta-secondary flex items-center gap-1.5 px-4 py-3">
@@ -1326,7 +1342,7 @@ const Gallery = ({ onOpenModal }) => {
 
                 {!loading && entries.length > 0 && (
                     <div className="text-center mt-10">
-                        <p className="mono text-[8px] uppercase tracking-widest text-mid opacity-40">Showing {entries.length} most recent Â· Auto-refreshes every 30s Â· Cleared on server restart</p>
+                        <p className="mono text-[8px] uppercase tracking-widest text-mid opacity-40">Showing {entries.length} most recent - auto-refreshes every 30s - cleared on server restart</p>
                     </div>
                 )}
             </div>
@@ -1348,7 +1364,7 @@ const DesignGenerator = ({ onOpenModal }) => {
         features:'', frontFacing:'South', lotContext:'Suburban standard lot',
         laundryLocation:'Level 1 (near garage/mud)', ceilingHeight:'Standard (9 ft)',
         indoorOutdoor:'Moderate (some connection)', naturalLight:'Balanced windows',
-        accessibilityNeeds:'None', budgetTier:'Mid ($200â€“300/sqft)', freeformWishes:'',
+        accessibilityNeeds:'None', budgetTier:'Mid ($200-300/sqft)', freeformWishes:'',
     });
 
     const [status, setStatus] = useState('idle');
@@ -1423,9 +1439,9 @@ const DesignGenerator = ({ onOpenModal }) => {
                 ? changes.map(c => {
                     const room = planSpec.levels?.flatMap(l => l.rooms || []).find(r => r.id === c.id);
                     const name = room?.label || c.id;
-                    if (c.action === 'resize') return `Resized ${name} to ${c.w}Ã—${c.h} ft`;
+                    if (c.action === 'resize') return `Resized ${name} to ${c.w} x ${c.h} ft`;
                     if (c.action === 'move') return `Moved ${name} to (${c.x}, ${c.y})`;
-                    if (c.action === 'resize_and_move') return `Resized & moved ${name} to ${c.w}Ã—${c.h} ft`;
+                    if (c.action === 'resize_and_move') return `Resized & moved ${name} to ${c.w} x ${c.h} ft`;
                     return `Updated ${name}`;
                 }).join(', ')
                 : `Applied: ${instruction}`;
@@ -1475,7 +1491,9 @@ const DesignGenerator = ({ onOpenModal }) => {
                             {typeof zoomImage === 'string' && zoomImage.startsWith('<svg')
                                 ? <div className="bg-white p-4 md:p-8 max-w-5xl w-full max-h-[90vh] overflow-auto shadow-2xl rounded-sm" dangerouslySetInnerHTML={{__html:zoomImage}}/>
                                 : <img src={zoomImage} className="max-h-[90vh] max-w-full object-contain rounded-sm" alt="Zoom"/>}
-                            <button className="absolute top-4 right-4 text-white/40 hover:text-white text-4xl font-light">Ã—</button>
+                            <button type="button" onClick={() => setZoomImage(null)} aria-label="Close zoomed plan" className="absolute top-4 right-4 text-white/40 hover:text-white">
+                                <CloseIcon className="w-6 h-6"/>
+                            </button>
                         </motion.div>
                     )}
                 </AnimatePresence>
@@ -1567,7 +1585,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                         <div className="flex gap-3 mb-2">
                                             <span className="mono text-[7px] text-mid">
                                                 Best of {1 + alternatives.length} - {footprintInfo.widthFt} x {footprintInfo.heightFt} ft - ratio {footprintInfo.aspectRatio.toFixed(2)}
-                                                {planScore !== null && <span className="ml-2 text-blue">score {planScore}/110</span>}
+                                                {planScore !== null && <span className="ml-2 text-blue">score {planScore}/100</span>}
                                             </span>
                                         </div>
                                     )}
@@ -1627,11 +1645,11 @@ const DesignGenerator = ({ onOpenModal }) => {
                                                     </div>
                                                     {alt.score !== undefined && (
                                                         <div className="mt-1 h-1 bg-black/8 rounded-full overflow-hidden">
-                                                            <div className="h-full bg-blue/60 rounded-full transition-all" style={{width:`${Math.min(100, (alt.score/110)*100)}%`}}/>
+                                                            <div className="h-full bg-blue/60 rounded-full transition-all" style={{width:`${Math.min(100, alt.score)}%`}}/>
                                                         </div>
                                                     )}
                                                     <p className="mono text-[7px] text-blue mt-1 group-hover:text-ink">
-                                                        {alt.score !== undefined ? `Score ${alt.score}/110` : ''} - Click to use
+                                                        {alt.score !== undefined ? `Score ${alt.score}/100` : ''} - Click to use
                                                     </p>
                                                 </div>
                                             </div>
