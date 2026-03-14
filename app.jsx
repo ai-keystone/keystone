@@ -43,6 +43,149 @@ const CheckIcon = ({ className = 'w-3 h-3' }) => (
     </svg>
 );
 
+const LaserCursor = () => {
+    const cursorRef = useRef(null);
+    const beamRef = useRef(null);
+    const frameRef = useRef(null);
+    const stateRef = useRef({ x: 0, y: 0, tx: 0, ty: 0, visible: false });
+    const [enabled, setEnabled] = useState(false);
+    const [label, setLabel] = useState('');
+
+    useEffect(() => {
+        const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const sync = () => setEnabled(finePointer.matches && !reducedMotion.matches);
+        sync();
+        finePointer.addEventListener?.('change', sync);
+        reducedMotion.addEventListener?.('change', sync);
+        return () => {
+            finePointer.removeEventListener?.('change', sync);
+            reducedMotion.removeEventListener?.('change', sync);
+        };
+    }, []);
+
+    useEffect(() => {
+        document.body.classList.toggle('has-laser-cursor', enabled);
+        return () => document.body.classList.remove('has-laser-cursor');
+    }, [enabled]);
+
+    useEffect(() => {
+        if (!enabled) return undefined;
+        const cursor = cursorRef.current;
+        const beam = beamRef.current;
+        if (!cursor || !beam) return undefined;
+
+        const render = () => {
+            const state = stateRef.current;
+            state.x += (state.tx - state.x) * 0.28;
+            state.y += (state.ty - state.y) * 0.28;
+            cursor.style.transform = `translate3d(${state.x}px, ${state.y}px, 0)`;
+            const dx = state.tx - state.x;
+            const dy = state.ty - state.y;
+            const speed = Math.hypot(dx, dy);
+            const angle = Math.atan2(dy || 0.0001, dx || 0.0001) * 180 / Math.PI;
+            const trailLength = Math.max(16, Math.min(54, speed * 1.45 + 14));
+            const trailOpacity = Math.max(0.12, Math.min(0.62, speed / 24));
+            beam.style.width = `${trailLength}px`;
+            beam.style.opacity = `${trailOpacity}`;
+            beam.style.transform = `translate(-100%, -50%) rotate(${angle}deg)`;
+            frameRef.current = requestAnimationFrame(render);
+        };
+
+        const setHoverLabel = (target) => {
+            const next = target?.getAttribute('data-cursor-text') || '';
+            setLabel((prev) => (prev === next ? prev : next));
+        };
+
+        const handleMove = (event) => {
+            stateRef.current.tx = event.clientX;
+            stateRef.current.ty = event.clientY;
+            stateRef.current.visible = true;
+            cursor.classList.add('is-visible');
+            setHoverLabel(event.target.closest('[data-cursor-text], .cursor-target'));
+        };
+
+        const handleLeave = () => {
+            stateRef.current.visible = false;
+            cursor.classList.remove('is-visible');
+            setLabel('');
+        };
+        const handleMouseOut = (event) => {
+            if (!event.relatedTarget) handleLeave();
+        };
+
+        frameRef.current = requestAnimationFrame(render);
+        window.addEventListener('mousemove', handleMove, { passive: true });
+        window.addEventListener('mouseout', handleMouseOut);
+        window.addEventListener('blur', handleLeave);
+
+        return () => {
+            if (frameRef.current) cancelAnimationFrame(frameRef.current);
+            window.removeEventListener('mousemove', handleMove);
+            window.removeEventListener('mouseout', handleMouseOut);
+            window.removeEventListener('blur', handleLeave);
+        };
+    }, [enabled]);
+
+    if (!enabled) return null;
+
+    return (
+        <div ref={cursorRef} className={`laser-cursor${label ? ' has-label' : ''}`} aria-hidden="true">
+            <div ref={beamRef} className="laser-cursor-trail"/>
+            <div className="laser-cursor-ring"/>
+            <div className="laser-cursor-core"/>
+            <div className="laser-cursor-label">{label || 'Explore'}</div>
+        </div>
+    );
+};
+
+const SectionRail = () => {
+    const [activeId, setActiveId] = useState('hero');
+    const items = [
+        { id: 'hero', label: 'Intro' },
+        { id: 'proof', label: 'Proof' },
+        { id: 'generator', label: 'Live' },
+        { id: 'services', label: 'Services' },
+        { id: 'pricing', label: 'Pricing' },
+        { id: 'studio', label: 'Studio' },
+    ];
+
+    useEffect(() => {
+        const observer = new IntersectionObserver((entries) => {
+            const visible = entries
+                .filter((entry) => entry.isIntersecting)
+                .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+            if (visible[0]?.target?.id) setActiveId(visible[0].target.id);
+        }, {
+            threshold: [0.2, 0.45, 0.7],
+            rootMargin: '-28% 0px -48% 0px',
+        });
+
+        items.forEach(({ id }) => {
+            const node = document.getElementById(id);
+            if (node) observer.observe(node);
+        });
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <aside className="section-rail" aria-label="Page sections">
+            {items.map((item) => (
+                <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => scrollTo(item.id)}
+                    data-cursor-text={`Go ${item.label}`}
+                    className={`section-rail-link${activeId === item.id ? ' is-active' : ''}`}
+                >
+                    <span className="section-rail-dot"/>
+                    <span>{item.label}</span>
+                </button>
+            ))}
+        </aside>
+    );
+};
+
 // â”€â”€â”€ MOBILE NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const MobileNavBar = ({ onOpenMenu }) => (
     <div className="fixed bottom-0 left-0 w-full bottom-nav z-[90] md:hidden pb-safe">
@@ -200,13 +343,13 @@ const JoinModal = ({ isOpen, onClose }) => {
                         <div className="p-6 md:p-8 overflow-y-auto" style={{ maxHeight:'90vh' }}>
                             <span className="badge mb-3 inline-block">Request Access</span>
                             <h2 className="cg text-3xl mb-1 mt-2" style={{ letterSpacing:'-0.05em', textTransform:'uppercase' }}>Access the live studio.</h2>
-                            <p className="text-mid text-sm mt-2 mb-6 leading-relaxed">Qualified residential architecture firms get a guided look at the live workflow with no credit card and no commitment.</p>
+                            <p className="text-mid text-sm mt-2 mb-6 leading-relaxed">Qualified residential architecture firms can see how the B2B workflow works in practice: send the client a guided link, collect a structured brief, and review outputs before the first meeting.</p>
 
                             {status === 'success' ? (
                                 <motion.div initial={{ scale:0.9, opacity:0 }} animate={{ scale:1, opacity:1 }} className="flex flex-col items-center text-center py-10">
                                     <div className="w-16 h-16 rounded-full bg-blue flex items-center justify-center text-white text-xl mb-4">OK</div>
                                     <h3 className="cg text-2xl" style={{ letterSpacing:'-0.05em', textTransform:'uppercase' }}>You&apos;re in the queue.</h3>
-                                    <p className="text-mid text-sm mt-2">We will follow up with studio access details and next steps shortly.</p>
+                                    <p className="text-mid text-sm mt-2">We will follow up with studio access details and next steps for your firm shortly.</p>
                                 </motion.div>
                             ) : (
                                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -1315,7 +1458,7 @@ const Gallery = ({ onOpenModal }) => {
                 )}
             </AnimatePresence>
 
-            <div className="container mx-auto max-w-7xl px-5 md:px-10">
+            <div className="site-shell">
                 <div className="grid lg:grid-cols-[minmax(0,1fr)_280px] gap-6 items-end mb-10">
                     <div>
                         <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>Recent sessions</span>
@@ -1406,7 +1549,7 @@ const Gallery = ({ onOpenModal }) => {
 
                 {!loading && entries.length > 0 && (
                     <div className="text-center mt-10">
-                        <p className="mono text-[8px] uppercase tracking-widest text-mid opacity-40">Showing {entries.length} most recent - auto-refreshes every 30s - cleared on server restart</p>
+                        <p className="mono text-[8px] uppercase tracking-widest text-mid opacity-40">Showing {entries.length} recent sessions - refreshes quietly while this section is visible</p>
                     </div>
                 )}
             </div>
@@ -1537,8 +1680,8 @@ const DesignGenerator = ({ onOpenModal }) => {
     const resetSampleBrief = () => setFormData({ ...DEFAULT_FORM_DATA });
 
     return (
-        <section id="generator" className="py-16 md:py-24 px-4 md:px-10" style={{background:'linear-gradient(180deg, #ECE3D3 0%, #F7F2E9 58%, #F3EEE6 100%)'}}>
-            <div className="container mx-auto max-w-7xl">
+        <section id="generator" className="py-14 md:py-[4.75rem] px-4 md:px-10" style={{background:'linear-gradient(180deg, #ECE3D3 0%, #F7F2E9 58%, #F3EEE6 100%)'}}>
+            <div className="site-shell">
                 {/* Lightbox */}
                 <AnimatePresence>
                     {zoomImage && (
@@ -1554,11 +1697,11 @@ const DesignGenerator = ({ onOpenModal }) => {
                     )}
                 </AnimatePresence>
 
-                <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start mb-10">
+                <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start mb-8 md:mb-10">
                     <div>
                         <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>Live studio</span>
-                        <h2 className="cg mt-6" style={{fontSize:'clamp(2.8rem, 6vw, 5rem)',letterSpacing:'-0.06em',textTransform:'uppercase',lineHeight:0.9}}>Open the workflow your clients will actually feel.</h2>
-                        <p className="text-mid mt-4 text-base max-w-2xl leading-relaxed">This is the real product: a guided residential brief becomes a scored floor plan, a downloadable PNG, and a Gemini-powered exterior study from the same inputs.</p>
+                        <h2 className="cg mt-6" style={{fontSize:'clamp(2.6rem, 5.6vw, 4.6rem)',letterSpacing:'-0.06em',textTransform:'uppercase',lineHeight:0.9}}>Open the client-to-studio workflow your firm will actually use.</h2>
+                        <p className="text-mid mt-4 text-base max-w-2xl leading-relaxed">This is the real product: the firm shares a guided brief, the client completes it, and Keystone turns the same inputs into a scored floor plan, a downloadable PNG, and an optional Gemini-powered exterior study.</p>
                     </div>
                     <div className="dream-panel p-5 md:p-6">
                         <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.46)'}}>Live now</div>
@@ -1586,30 +1729,75 @@ const DesignGenerator = ({ onOpenModal }) => {
 
                 {/* Passkey gate */}
                 {!isUnlocked && (
-                    <div className="dream-panel max-w-xl mx-auto mb-8 p-8 text-center">
-                        <div className="w-11 h-11 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                        </div>
-                        <h3 className="cg text-2xl mb-1 text-white" style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>Private beta access</h3>
-                        <p className="mono text-[8px] uppercase tracking-widest mb-5" style={{color:'rgba(244,239,230,0.46)'}}>Use your passkey or request a guided walkthrough</p>
-                        <form onSubmit={handleUnlock} className="space-y-3">
-                            <input type="password" placeholder="Enter access code" className="text-center tracking-[0.2em]" value={passkeyInput} onChange={e=>setPasskeyInput(e.target.value)} required style={{background:'rgba(255,255,255,0.92)',borderColor:'rgba(255,255,255,0.2)'}}/>
-                            <button type="submit" disabled={unlockStatus==='loading'} className="cta-hero cta-glow w-full">{unlockStatus==='loading'?'Verifying...':'Unlock Live Studio'}</button>
-                        </form>
-                        {unlockStatus.startsWith('error:') && <p className="mt-3 mono text-[9px] uppercase font-bold text-red">{unlockStatus.replace('error:','')}</p>}
-                        <div className="unlock-preview-grid mt-6">
-                            {GENERATOR_UNLOCK_PREVIEW.map((item) => (
-                                <div key={item.label} className="unlock-preview-card">
-                                    <div className="mono text-[8px] uppercase tracking-[0.2em]" style={{color:'rgba(244,239,230,0.42)'}}>{item.label}</div>
-                                    <p>{item.body}</p>
+                    <div className="studio-access-grid mb-8">
+                        <div className="dream-panel studio-access-card p-6 md:p-8">
+                            <div className="w-11 h-11 bg-white/10 rounded-full flex items-center justify-center mb-5">
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                            </div>
+                            <span className="section-label" style={{color:'rgba(244,239,230,0.56)'}}>Private beta access</span>
+                            <h3 className="cg text-white mt-4" style={{fontSize:'clamp(1.9rem, 3vw, 2.6rem)',letterSpacing:'-0.05em',textTransform:'uppercase',lineHeight:0.94}}>
+                                Unlock the same passkey-based workflow firms share with clients.
+                            </h3>
+                            <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(244,239,230,0.66)'}}>
+                                Use a passkey if you already have one, or request a guided walkthrough if you want to see how the client link and architect handoff work in practice.
+                            </p>
+                            <form onSubmit={handleUnlock} className="space-y-3 mt-6">
+                                <input type="password" placeholder="Enter access code" className="text-center tracking-[0.2em]" value={passkeyInput} onChange={e=>setPasskeyInput(e.target.value)} required style={{background:'rgba(255,255,255,0.92)',borderColor:'rgba(255,255,255,0.2)'}}/>
+                                <button type="submit" disabled={unlockStatus==='loading'} className="cta-hero cta-glow w-full">{unlockStatus==='loading'?'Verifying...':'Unlock Live Studio'}</button>
+                            </form>
+                            {unlockStatus.startsWith('error:') && <p className="mt-3 mono text-[9px] uppercase font-bold text-red">{unlockStatus.replace('error:','')}</p>}
+                            <div className="grid grid-cols-2 gap-3 mt-6">
+                                <div className="studio-metric">
+                                    <strong>3</strong>
+                                    <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>live outputs</span>
                                 </div>
-                            ))}
+                                <div className="studio-metric">
+                                    <strong>1</strong>
+                                    <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>sample brief loaded</span>
+                                </div>
+                            </div>
+                            <div className="mt-6 pt-5 border-t border-white/10">
+                                <p className="text-[11px]" style={{color:'rgba(244,239,230,0.6)'}}>Need guided access for your firm first?</p>
+                                <button onClick={onOpenModal} className="mt-3 cta-hero cta-glow-soft">
+                                    Request Access
+                                </button>
+                            </div>
                         </div>
-                        <div className="mt-5 pt-4 border-t border-white/10">
-                            <p className="text-[11px]" style={{color:'rgba(244,239,230,0.6)'}}>Need guided access first?</p>
-                            <button onClick={onOpenModal} className="mt-3 cta-hero cta-glow-soft">
-                                Request Access
-                            </button>
+                        <div className="paper-panel studio-preview-card p-5 md:p-6">
+                            <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>What opens up</span>
+                            <h3 className="cg mt-4" style={{fontSize:'clamp(1.85rem, 3vw, 2.5rem)',lineHeight:0.95,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
+                                What the architect gets back is already sitting inside the product.
+                            </h3>
+                            <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.64)'}}>
+                                One client intake becomes a structured brief, a blueprint first, and a Gemini study second. The goal is not spectacle. It is a stronger first discussion for the studio.
+                            </p>
+                            <div className="studio-preview-rail mt-5">
+                                {LIVE_STUDIO_PREVIEW.map((item) => (
+                                    <article key={item.label} className="studio-preview-browser">
+                                        <div className="proof-browser-top">
+                                            <div className="bc-dot" style={{background:'#FF5F57'}}/>
+                                            <div className="bc-dot" style={{background:'#FFBD2E'}}/>
+                                            <div className="bc-dot" style={{background:'#28C840'}}/>
+                                            <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>{item.label}</span>
+                                        </div>
+                                        <div className="studio-preview-screen">
+                                            <SmartImage src={item.image} alt={item.alt} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                                        </div>
+                                        <div className="studio-preview-copy">
+                                            <strong>{item.title}</strong>
+                                            <p>{item.body}</p>
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+                            <div className="unlock-preview-grid mt-5">
+                                {GENERATOR_UNLOCK_PREVIEW.map((item) => (
+                                    <div key={item.label} className="unlock-preview-card" style={{background:'rgba(255,255,255,0.64)',borderColor:'rgba(10,10,12,0.08)'}}>
+                                        <div className="mono text-[8px] uppercase tracking-[0.2em]" style={{color:'rgba(10,10,12,0.42)'}}>{item.label}</div>
+                                        <p style={{color:'rgba(10,10,12,0.66)'}}>{item.body}</p>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -1767,48 +1955,98 @@ const RESOURCE_PAGE_LINKS = [
     ['Terms', '/terms'],
 ];
 const LIVE_NOW_FEATURES = [
-    'Live floor plan generation',
-    'High-resolution plan download',
+    'Client-guided brief capture',
+    'Generated plan plus 4K blueprint export',
     'Gemini-powered exterior study',
+];
+const HERO_SIGNAL_CARDS = [
+    {
+        label: 'Live today',
+        value: 'Client brief -> plan -> export',
+        note: 'The firm shares a link, and Keystone returns something useful before the meeting.',
+    },
+    {
+        label: 'Best fit',
+        value: 'Residential architecture firms',
+        note: 'Built for B2B studios that want stronger first meetings and less unpaid drift.',
+    },
+    {
+        label: 'Commercial model',
+        value: 'Firm-led rollout',
+        note: 'Start with one active lead, then expand the workflow across the studio.',
+    },
 ];
 const SAMPLE_SESSION_STEPS = [
     {
         number: '01',
-        title: 'Brief captured',
-        body: 'Area target, room count, light preferences, and lot cues are gathered in a form that already feels more design-aware than a cold intake.',
+        title: 'Firm shares the link',
+        body: 'The studio sends a guided intake link and passkey before the first meeting so the client can do the early thinking in structure.',
     },
     {
         number: '02',
-        title: 'Plan generated',
-        body: 'Keystone scores multiple footprint options, keeps the strongest one, and gives the studio a real blueprint to react to.',
+        title: 'Client brief captured',
+        body: 'Room count, area target, light priorities, and lot cues arrive in a format the architect can review later instead of re-extracting live.',
     },
     {
         number: '03',
-        title: 'Blueprint exported',
-        body: 'The chosen plan becomes a clean PNG your team can carry into the first meeting without additional cleanup.',
+        title: 'Plan generated and saved',
+        body: 'Keystone scores multiple footprint options, keeps the strongest one, and gives the firm a clean blueprint export before kickoff.',
     },
     {
         number: '04',
-        title: 'Mood visualized',
-        body: 'The same brief becomes a Gemini exterior study so the client can react emotionally while the architect stays spatially grounded.',
+        title: 'Meeting starts ahead',
+        body: 'If the studio wants it, the same brief also becomes a Gemini study so the client reacts to mood while the architect reacts to plan.',
     },
 ];
 const GENERATOR_FLOW_STEPS = [
-    { label: 'Unlock', body: 'Enter a passkey or request access for a guided walkthrough.' },
-    { label: 'Answer', body: 'Move through five guided steps with a sample residential brief already loaded.' },
-    { label: 'Compare', body: 'Review the strongest plan, inspect alternatives, and refine what matters.' },
-    { label: 'Export', body: 'Download the blueprint and create a Gemini exterior study from the same brief.' },
+    { label: 'Unlock', body: 'Open the same passkey-based workflow a firm can share with its clients.' },
+    { label: 'Answer', body: 'Move through the guided intake a client would complete before the first architect meeting.' },
+    { label: 'Compare', body: 'Review the strongest plan and alternatives the architect would see before kickoff.' },
+    { label: 'Export', body: 'Download the blueprint and optionally create a Gemini exterior study from the same brief.' },
 ];
 const GENERATOR_UNLOCK_PREVIEW = [
-    { label: 'Generated plan', body: 'A scored floor plan appears first so the studio has something precise to discuss.' },
-    { label: 'PNG export', body: 'The live output can be downloaded as a clean blueprint image right away.' },
-    { label: 'Gemini study', body: 'The same plan brief can create an exterior atmosphere image from within the session.' },
+    { label: 'Structured brief', body: 'The firm can review exactly what the client entered before anyone sits down together.' },
+    { label: 'Plan export', body: 'A scored floor plan can be saved immediately as a clean blueprint image for the meeting.' },
+    { label: 'Optional study', body: 'The same brief can create a Gemini exterior image when the studio wants an emotional anchor too.' },
+];
+const LIVE_STUDIO_PREVIEW = [
+    {
+        label: 'Firm-ready blueprint',
+        title: 'The architect gets something concrete before kickoff.',
+        body: 'A scored plan gives the studio a real layout to critique instead of relying on raw intake notes.',
+        image: ASSETS.exampleBlueprint,
+        alt: 'Keystone generated blueprint preview',
+    },
+    {
+        label: 'Client-facing visual anchor',
+        title: 'Mood can be added without losing the plan.',
+        body: 'The paired exterior study gives the client something emotional to respond to while the architect stays spatially grounded.',
+        image: ASSETS.exampleRender,
+        alt: 'Keystone exterior study preview',
+    },
+];
+const SERVICE_BENEFITS = [
+    {
+        eyebrow: 'Before the meeting',
+        title: 'The architect opens with clearer intent.',
+        body: 'The client has already described rooms, goals, light, and taste in a format the studio can actually use.',
+    },
+    {
+        eyebrow: 'Protect studio time',
+        title: 'Unpaid discovery hours stop leaking into fog.',
+        body: 'Keystone is designed to keep early qualification from becoming free-form consulting before the relationship is real.',
+    },
+    {
+        eyebrow: 'Clear next step',
+        title: 'Both sides leave with a real artifact.',
+        body: 'A saved plan export and optional visual study give the architect and the client something specific to continue from.',
+    },
 ];
 const navHref = (item, home = false) => item.kind === 'section' ? (home ? `#${item.value}` : homeSectionHref(item.value)) : item.value;
 
 const SiteFooter = ({ home = false }) => (
     <footer style={{background:'var(--night)',padding:'3.75rem 0',borderTop:'1px solid rgba(255,255,255,0.08)'}}>
-        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+        <div className="site-shell">
             <div className="grid md:grid-cols-[1.15fr_0.9fr_0.9fr_1fr] gap-8 items-start">
                 <div>
                     <div className="flex items-center gap-3">
@@ -1819,7 +2057,7 @@ const SiteFooter = ({ home = false }) => (
                         </div>
                     </div>
                     <p className="text-sm leading-relaxed mt-4" style={{color:'rgba(244,239,230,0.58)'}}>
-                        Keystone helps residential firms move from vague intake notes to a generated floor plan, a downloadable blueprint, and a Gemini exterior study.
+                        Keystone lets residential firms send a guided client link before kickoff, then walk into the meeting with a structured brief, a generated plan, and a downloadable blueprint already in hand.
                     </p>
                 </div>
                 <div>
@@ -1914,61 +2152,61 @@ const DreamApp = () => {
     const featuredWorks = [
         {
             eyebrow: 'Generated floor plan',
-            title: 'A plan the studio can react to immediately.',
-            body: 'Room count, circulation intent, and footprint goals become a real plan instead of a vague first-meeting transcript.',
+            title: 'A plan the architect can react to before kickoff.',
+            body: 'Room count, circulation intent, and footprint goals become a real plan instead of a vague transcript taken in the room.',
             image: ASSETS.exampleBlueprint,
             alt: 'Keystone generated floor plan',
         },
         {
             eyebrow: 'Gemini exterior study',
             title: 'An atmosphere the client can actually feel.',
-            body: 'The same brief can produce a visual anchor that helps the client react emotionally while the architect reacts spatially.',
+            body: 'The same brief can produce a visual anchor that helps the client respond emotionally while the architect stays tied to the plan.',
             image: ASSETS.exampleRender,
             alt: 'Keystone Gemini exterior study',
         },
         {
             eyebrow: 'Guided intake',
-            title: 'A calmer way to collect the right early signal.',
-            body: 'Light, taste, room priorities, and lot context arrive in a structure that feels more premium than a cold intake form.',
+            title: 'A client link that does real pre-meeting work.',
+            body: 'Light, taste, room priorities, and lot context arrive in a structure the firm can review before the first conversation starts.',
             image: ASSETS.phase3[4],
             alt: 'Keystone client experience preview',
         },
     ];
     const trustCards = [
         {
+            eyebrow: 'Firm workflow',
+            title: 'Sold to the studio, used by the client.',
+            body: 'The firm shares the link and passkey, the client completes the guided brief, and the architect reviews the output before the meeting.',
+        },
+        {
             eyebrow: 'Live today',
-            title: 'Three live outputs. No inflated claims.',
-            body: 'Keystone currently covers floor plan generation, high-resolution PNG download, and Gemini exterior study generation from the same brief.',
+            title: 'Plan generation, export, and Gemini study.',
+            body: 'Keystone currently covers guided intake, floor plan generation, high-resolution PNG export, and Gemini exterior study generation from the same brief.',
         },
         {
-            eyebrow: 'Best fit',
-            title: 'Made for active residential leads.',
-            body: 'The strongest use case is the in-between moment when a serious client exists, but the architect still needs something concrete to react to.',
-        },
-        {
-            eyebrow: 'What it is not',
-            title: 'Not final documentation.',
-            body: 'Keystone is an architect-first discovery tool. It does not replace downstream drafting, code review, or professional design judgment.',
+            eyebrow: 'Coming next',
+            title: 'CAD/DWG and estimate layers are on the roadmap.',
+            body: 'DWG or CAD export, quantity takeoff, and early cost-estimate features are planned next, but they are not being sold as live today.',
         },
     ];
     const outcomeCards = [
         {
             eyebrow: 'Before the meeting',
-            title: 'A clearer client arrives.',
+            title: 'A more prepared client arrives.',
             body: 'Taste, light, priorities, and rough footprint intent are already translated into something your team can react to together.',
-            stat: '1 intake',
+            stat: '1 link',
         },
         {
             eyebrow: 'Inside the studio',
             title: 'The blank page disappears.',
-            body: 'Instead of starting from a vague conversation, your team begins with a plan and a visual study worth discussing.',
+            body: 'Instead of starting from raw notes, your team begins with a structured brief, a plan, and an optional visual anchor worth discussing.',
             stat: '<60s',
         },
         {
             eyebrow: 'Across the pipeline',
             title: 'Early hours stay protected.',
             body: 'Keystone helps firms qualify seriousness faster, save unpaid exploration time, and move active leads into real design momentum.',
-            stat: '4K PNG',
+            stat: 'B2B',
         },
     ];
     const marqueeItems = [
@@ -1982,18 +2220,18 @@ const DreamApp = () => {
     const serviceCards = [
         {
             number: '01',
-            title: 'Structured intake',
-            body: 'The client gives Keystone the room count, footprint direction, light priorities, and stylistic cues your team usually has to excavate manually.',
+            title: 'Firm sends the link',
+            body: 'The architect shares a guided link and passkey before kickoff so the client can complete the early thinking asynchronously.',
         },
         {
             number: '02',
-            title: 'Generated floor plan',
+            title: 'Client brief becomes a plan',
             body: 'That intake becomes a first residential layout your team can review, export, and use as the basis for the real conversation.',
         },
         {
             number: '03',
-            title: 'Gemini exterior study',
-            body: 'The paired exterior image gives the client a mood to react to while keeping the architect anchored in a concrete floor plan.',
+            title: 'Architect walks in prepared',
+            body: 'Before the meeting starts, the firm can already review the brief, save the plan, and optionally add a Gemini study for emotional context.',
         },
     ];
     const studioMetrics = [
@@ -2003,11 +2241,12 @@ const DreamApp = () => {
         { value: '1 brief', label: 'becomes 2 outputs' },
     ];
     const sessionStack = [
-        'Residential intake flow',
+        'Client-facing intake link',
+        'Passkey-controlled access',
         'Scored footprint alternatives',
         'Blueprint PNG export',
+        'Firm-visible session history',
         'Gemini exterior study',
-        'Alternative footprints',
         'Recent-session gallery proof',
     ];
     const studioTeam = [
@@ -2031,21 +2270,22 @@ const DreamApp = () => {
         },
     ];
     const roadmapCards = [
-        'Guided refinement trail',
-        'DWG export for downstream drafting',
+        'DWG/CAD export for downstream drafting',
+        'Quantity takeoff support',
+        'Early cost estimate ranges',
         'White-label studio branding',
         'CRM handoff for qualified leads',
     ];
     const quoteCards = [
         {
-            quote: 'Keystone is strongest when a residential firm wants one active lead to feel concrete before the first serious meeting.',
-            name: 'Best fit',
-            firm: 'Conversion signal',
+            quote: 'The best use case is a firm that wants to send one link before the first serious meeting and walk in with something concrete already on screen.',
+            name: 'Workflow fit',
+            firm: 'B2B motion',
         },
         {
-            quote: 'The current workflow is intentionally narrow: generate the plan, export the blueprint, and create the Gemini exterior study. That focus is part of the trust.',
-            name: 'Live today',
-            firm: 'Product scope',
+            quote: 'The current promise stays narrow on purpose: guided intake, generated plan, PNG export, and Gemini study. CAD and estimating come next, but only when they are real.',
+            name: 'Scope discipline',
+            firm: 'Product truth',
         },
     ];
     const pricingTiers = [
@@ -2053,7 +2293,7 @@ const DreamApp = () => {
             tag: 'Guided demo',
             price: '$0',
             unit: 'for qualified firms',
-            desc: 'A guided walkthrough of the live workflow so your team can see the generated plan, export path, and Gemini study together.',
+            desc: 'A guided walkthrough of the firm workflow so your team can see the client link, plan generation, export path, and Gemini study together.',
             cta: 'Request Access',
             featured: false,
         },
@@ -2061,7 +2301,7 @@ const DreamApp = () => {
             tag: 'Single session',
             price: '$149',
             unit: 'per live run',
-            desc: 'A complete Keystone session for an active lead. Fast enough for early qualification, strong enough for a serious first meeting.',
+            desc: 'A complete Keystone session for one active lead, from client brief capture through architect-ready plan export and optional Gemini study.',
             cta: 'Open Live Studio',
             featured: true,
         },
@@ -2069,7 +2309,7 @@ const DreamApp = () => {
             tag: 'Studio pack',
             price: '$1,199',
             unit: '10 sessions',
-            desc: 'For firms that want Keystone to become a consistent first-step rhythm for active discovery conversations.',
+            desc: 'For firms that want Keystone to become a repeatable pre-meeting rhythm across multiple active residential leads.',
             cta: 'Request Access',
             featured: false,
         },
@@ -2086,8 +2326,10 @@ const DreamApp = () => {
     return (
         <div className="selection:bg-blue selection:text-white pb-[60px] md:pb-0">
             <JoinModal isOpen={isModalOpen} onClose={() => setModalOpen(false)}/>
+            <LaserCursor/>
             <MobileNavBar onOpenMenu={() => setMenuOpen(true)}/>
             <MobileMenuOverlay isOpen={isMenuOpen} onClose={() => setMenuOpen(false)} onJoin={() => setModalOpen(true)}/>
+            <SectionRail/>
 
             <AnimatePresence>
                 {!heroVisible && (
@@ -2120,7 +2362,7 @@ const DreamApp = () => {
                         </div>
                     </nav>
 
-                    <section id="hero" className="relative overflow-hidden" style={{minHeight:'92svh',paddingTop:'74px',background:'linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)'}}>
+                        <section id="hero" className="relative overflow-hidden" style={{minHeight:'min(84svh, 860px)',paddingTop:'74px',background:'linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)'}}>
                         <div className="hero-video-shell">
                             <div className="hero-video-base"/>
                             <div className="hero-video-wave orange"/>
@@ -2132,8 +2374,8 @@ const DreamApp = () => {
                         <div className="dream-grid absolute inset-0 opacity-80"/>
                         <div className="hero-glow" style={{top:'-12%', width:'780px', height:'780px', background:'radial-gradient(circle, rgba(255,106,55,0.14), transparent 72%)'}}/>
                         <div className="hero-glow-red" style={{bottom:'10%', right:'4%', width:'520px', height:'520px', background:'radial-gradient(circle, rgba(216,208,196,0.52), transparent 72%)'}}/>
-                        <div className="container mx-auto max-w-7xl px-5 md:px-10 relative z-10">
-                            <div className="grid lg:grid-cols-[minmax(0,1.08fr)_380px] gap-8 lg:gap-10 items-start min-h-[calc(72svh-64px)] pt-3 pb-10 md:pt-5 md:pb-16">
+                        <div className="site-shell relative z-10">
+                            <div className="grid lg:grid-cols-[minmax(0,1.08fr)_380px] gap-8 lg:gap-10 items-start pt-3 pb-6 md:pt-5 md:pb-10" style={{minHeight:'min(calc(64svh - 64px), 640px)'}}>
                                 <div>
                                     <motion.span initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:0.15}} className="section-label">
                                         Keystone AI Studio / architect-first discovery
@@ -2142,26 +2384,28 @@ const DreamApp = () => {
                                         className="cg mt-5 leading-[0.84]"
                                         style={{fontSize:'clamp(3.45rem, 8vw, 7.2rem)',letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
                                         <span className="block">Build the</span>
-                                        <span className="block" style={{color:'var(--ink)'}}>feeling of home</span>
+                                        <span className="block" style={{color:'var(--ink)'}}>
+                                            <span className="serif hero-accent-word">feeling of home</span>
+                                        </span>
                                         <span className="block" style={{color:'rgba(78,69,61,0.62)'}}>before the first meeting.</span>
                                     </motion.h1>
                                     <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.56}}
                                         className="mt-7 flex flex-col sm:flex-row gap-3 items-start">
-                                        <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow cta-live">
+                                        <button onClick={() => scrollTo('generator')} data-cursor-text="Open studio" className="cta-hero cta-glow cta-live">
                                             <span>Open Live Studio</span>
                                             <span className="cta-live-mark">
                                                 <span className="cta-live-dot"/>
                                                 Try it now
                                             </span>
                                         </button>
-                                        <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow-soft">
+                                        <button onClick={() => setModalOpen(true)} data-cursor-text="Request access" className="cta-hero cta-glow-soft">
                                             Request Access
                                         </button>
                                     </motion.div>
                                     <motion.p initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.4}}
                                         className="mt-5 max-w-[46rem] leading-relaxed"
                                         style={{fontSize:'clamp(1rem, 1.9vw, 1.16rem)',color:'rgba(32,26,21,0.72)'}}>
-                                        Keystone helps residential firms turn an early client dream into a generated floor plan, a downloadable blueprint, and a Gemini exterior study so the first design conversation starts somewhere tangible.
+                                        Keystone helps residential firms send a guided client link before kickoff, then open the first design conversation with a structured brief, a generated floor plan, a downloadable blueprint, and an optional Gemini study.
                                     </motion.p>
                                     <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.72}}
                                         className="mt-5 flex flex-wrap gap-3">
@@ -2169,6 +2413,20 @@ const DreamApp = () => {
                                             <span key={item} className="marquee-pill" style={{animation:'none',background:'rgba(255,255,255,0.68)',borderColor:'rgba(10,10,12,0.08)',color:'rgba(10,10,12,0.72)'}}>
                                                 {item}
                                             </span>
+                                        ))}
+                                    </motion.div>
+                                    <motion.div
+                                        initial={{opacity:0,y:14}}
+                                        animate={{opacity:1,y:0}}
+                                        transition={{delay:0.82}}
+                                        className="hero-proof-grid mt-8"
+                                    >
+                                        {HERO_SIGNAL_CARDS.map((item) => (
+                                            <article key={item.label} className="hero-proof-card cursor-target" data-cursor-text={item.label}>
+                                                <div className="mono text-[9px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>{item.label}</div>
+                                                <h3 className="hero-proof-value">{item.value}</h3>
+                                                <p className="hero-proof-note">{item.note}</p>
+                                            </article>
                                         ))}
                                     </motion.div>
                                 </div>
@@ -2193,7 +2451,7 @@ const DreamApp = () => {
                                     </div>
                                     <div className="mt-5 pt-4 border-t border-white/10">
                                         <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.5)'}}>Proof before pitch</p>
-                                        <a href="/case-study" className="inline-block mt-3 text-sm" style={{color:'rgba(255,255,255,0.9)'}}>
+                                        <a href="/case-study" data-cursor-text="Open case study" className="inline-block mt-3 text-sm" style={{color:'rgba(255,255,255,0.9)'}}>
                                             View the representative sample case study
                                         </a>
                                     </div>
@@ -2202,100 +2460,101 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    <section className="proof-shelf">
-                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                    <section id="proof" className="proof-shelf">
+                        <div className="site-shell">
                             <div className="proof-frame p-4 md:p-6">
-                                <div className="grid lg:grid-cols-[300px_minmax(0,1fr)] gap-5 items-start">
+                                <div className="proof-top-grid">
                                     <div className="p-2 md:p-4">
                                         <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>Sample session</span>
                                         <h2 className="cg mt-5" style={{fontSize:'clamp(2.1rem, 4.6vw, 3.8rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                            Real output. No imagination tax.
+                                            Real output. <span className="serif proof-accent-word">No imagination tax.</span>
                                         </h2>
                                         <p className="mt-4 text-sm md:text-base leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
-                                            The fastest way to trust Keystone is to watch one intake travel through the whole live sequence: brief, generated plan, export-ready blueprint, and Gemini study.
+                                            The fastest way to trust Keystone is to watch the whole firm workflow happen in sequence: client brief, generated plan, export-ready blueprint, and optional Gemini study before the first architect meeting.
                                         </p>
-                                        <div className="proof-journey-rail mt-5">
-                                            {SAMPLE_SESSION_STEPS.map((item) => (
-                                                <article key={item.number} className="proof-journey-card">
-                                                    <div className="proof-journey-step">{item.number}</div>
-                                                    <h3>{item.title}</h3>
-                                                    <p>{item.body}</p>
-                                                </article>
-                                            ))}
-                                        </div>
-                                        <div className="grid gap-3 mt-5">
-                                            {trustCards.map((item) => (
-                                                <div key={item.title} className="proof-mini-tile">
-                                                    <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>{item.eyebrow}</div>
-                                                    <p className="cg mt-2 text-[1.15rem] leading-[1.02]" style={{color:'var(--ink)'}}>{item.title}</p>
-                                                    <p className="mt-2 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.78)'}}>{item.body}</p>
-                                                </div>
-                                            ))}
-                                        </div>
                                         <div className="mt-6 flex flex-wrap gap-3">
-                                            <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow">
+                                            <button onClick={() => scrollTo('generator')} data-cursor-text="Open studio" className="cta-hero cta-glow">
                                                 Open Live Studio
                                             </button>
-                                            <a href="/case-study" className="cta-secondary">View Case Study</a>
+                                            <a href="/case-study" data-cursor-text="Open case study" className="cta-secondary">View Case Study</a>
                                         </div>
                                     </div>
-                                    <div>
-                                        <div className="grid md:grid-cols-[1.02fr_0.98fr] gap-4">
-                                            <motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}}>
-                                                <div className="proof-browser">
-                                                    <div className="proof-browser-top">
-                                                        <div className="bc-dot" style={{background:'#FF5F57'}}/>
-                                                        <div className="bc-dot" style={{background:'#FFBD2E'}}/>
-                                                        <div className="bc-dot" style={{background:'#28C840'}}/>
-                                                        <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / 2D FLOOR PLAN</span>
-                                                    </div>
-                                                    <div className="proof-browser-screen plan">
-                                                        <div className="diagonal-accent"/>
-                                                        <SmartImage src={ASSETS.exampleBlueprint} alt="Keystone sample floor plan" style={{width:'100%',display:'block',objectFit:'contain'}}/>
-                                                    </div>
-                                                    <div className="proof-caption">
-                                                        <span className="proof-dot" style={{background:'var(--blue)'}}/>
-                                                        Client footprint translated into a working blueprint
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                            <motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:0.08}}>
-                                                <div className="proof-browser">
-                                                    <div className="proof-browser-top">
-                                                        <div className="bc-dot" style={{background:'#FF5F57'}}/>
-                                                        <div className="bc-dot" style={{background:'#FFBD2E'}}/>
-                                                        <div className="bc-dot" style={{background:'#28C840'}}/>
-                                                        <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / 3D EXTERIOR STUDY</span>
-                                                    </div>
-                                                    <div className="proof-browser-screen" style={{minHeight:'100%'}}>
-                                                    <SmartImage src={ASSETS.exampleRender} alt="Keystone sample exterior study" style={{width:'100%',height:'100%',minHeight:'320px',objectFit:'cover',display:'block'}}/>
-                                                        <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, rgba(9,9,9,0.02) 0%, rgba(9,9,9,0.48) 100%)'}}/>
-                                                        <div className="proof-caption" style={{position:'absolute',left:0,right:0,bottom:0,borderTop:'none',color:'rgba(255,255,255,0.72)',background:'linear-gradient(180deg, transparent, rgba(9,9,9,0.58))'}}>
-                                                            <span className="proof-dot" style={{background:'var(--gold)'}}/>
-                                                            The same brief, now felt as atmosphere
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
-                                        </div>
-                                        <div className="grid md:grid-cols-3 gap-3 mt-4">
-                                            {featuredWorks.map((item, index) => (
-                                                <motion.article key={item.eyebrow} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
-                                                    className="proof-mini-tile">
-                                                    <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>{item.eyebrow}</div>
-                                                    <h3 className="cg mt-3 text-[1.3rem] leading-[0.98]" style={{color:'var(--ink)'}}>{item.title}</h3>
-                                                    <p className="mt-3 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>{item.body}</p>
-                                                </motion.article>
-                                            ))}
-                                        </div>
+                                    <div className="proof-journey-rail mt-2 md:mt-0">
+                                        {SAMPLE_SESSION_STEPS.map((item) => (
+                                            <article key={item.number} className="proof-journey-card cursor-target" data-cursor-text={item.title}>
+                                                <div className="proof-journey-step">{item.number}</div>
+                                                <h3>{item.title}</h3>
+                                                <p>{item.body}</p>
+                                            </article>
+                                        ))}
                                     </div>
+                                </div>
+                                <div className="proof-browsers-grid mt-5">
+                                    <motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}}
+                                        className="proof-browser cursor-target" data-cursor-text="Preview plan">
+                                        <div className="proof-browser-top">
+                                            <div className="bc-dot" style={{background:'#FF5F57'}}/>
+                                            <div className="bc-dot" style={{background:'#FFBD2E'}}/>
+                                            <div className="bc-dot" style={{background:'#28C840'}}/>
+                                            <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / 2D FLOOR PLAN</span>
+                                        </div>
+                                        <div className="proof-browser-screen plan">
+                                            <div className="diagonal-accent"/>
+                                            <SmartImage src={ASSETS.exampleBlueprint} alt="Keystone sample floor plan" style={{width:'100%',display:'block',objectFit:'contain'}}/>
+                                        </div>
+                                        <div className="proof-caption">
+                                            <span className="proof-dot" style={{background:'var(--blue)'}}/>
+                                            Client footprint translated into a working blueprint
+                                        </div>
+                                    </motion.div>
+                                    <motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:0.08}}
+                                        className="proof-browser cursor-target" data-cursor-text="Preview study">
+                                        <div className="proof-browser-top">
+                                            <div className="bc-dot" style={{background:'#FF5F57'}}/>
+                                            <div className="bc-dot" style={{background:'#FFBD2E'}}/>
+                                            <div className="bc-dot" style={{background:'#28C840'}}/>
+                                            <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / 3D EXTERIOR STUDY</span>
+                                        </div>
+                                        <div className="proof-browser-screen" style={{minHeight:'100%'}}>
+                                            <SmartImage src={ASSETS.exampleRender} alt="Keystone sample exterior study" style={{width:'100%',height:'100%',minHeight:'320px',objectFit:'cover',display:'block'}}/>
+                                            <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, rgba(9,9,9,0.02) 0%, rgba(9,9,9,0.48) 100%)'}}/>
+                                            <div className="proof-caption" style={{position:'absolute',left:0,right:0,bottom:0,borderTop:'none',color:'rgba(255,255,255,0.72)',background:'linear-gradient(180deg, transparent, rgba(9,9,9,0.58))'}}>
+                                                <span className="proof-dot" style={{background:'var(--gold)'}}/>
+                                                The same brief, now felt as atmosphere
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                </div>
+                                <div className="proof-card-row mt-4">
+                                    {trustCards.map((item) => (
+                                        <div key={item.title} className="proof-mini-tile cursor-target" data-cursor-text={item.eyebrow}>
+                                            <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>{item.eyebrow}</div>
+                                            <p className="cg mt-2 text-[1.15rem] leading-[1.02]" style={{color:'var(--ink)'}}>{item.title}</p>
+                                            <p className="mt-2 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.78)'}}>{item.body}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="proof-card-row mt-4">
+                                    {featuredWorks.map((item, index) => (
+                                        <motion.article key={item.eyebrow} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
+                                            className="proof-feature-card cursor-target" data-cursor-text={item.eyebrow}>
+                                            <div className="proof-feature-thumb">
+                                                <SmartImage src={item.image} alt={item.alt} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                                            </div>
+                                            <div className="proof-feature-copy">
+                                                <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>{item.eyebrow}</div>
+                                                <h3 className="cg mt-3 text-[1.3rem] leading-[0.98]" style={{color:'var(--ink)'}}>{item.title}</h3>
+                                                <p className="mt-3 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>{item.body}</p>
+                                            </div>
+                                        </motion.article>
+                                    ))}
                                 </div>
                             </div>
                         </div>
                     </section>
 
-                    <section className="defer-section py-14 md:py-16" style={{background:'var(--paper)'}}>
-                        <div className="container mx-auto max-w-6xl px-5 md:px-10">
+                    <section className="defer-section py-12 md:py-14" style={{background:'var(--paper)'}}>
+                        <div className="site-shell">
                             <div className="paper-panel p-7 md:p-10">
                                 <div className="grid lg:grid-cols-[minmax(0,1fr)_220px] gap-8 items-end">
                                     <div>
@@ -2304,7 +2563,7 @@ const DreamApp = () => {
                                             Try the real workflow, not a teaser.
                                         </h2>
                                         <p className="mt-5 max-w-2xl text-base leading-relaxed" style={{color:'rgba(9,9,9,0.62)'}}>
-                                            The same product logic behind the hero is right below. Open the live studio, shape a plan, refine it, and compare it against recent sessions from the server.
+                                            The same client-to-studio logic behind the hero is right below. Open the live studio, walk through the guided intake, shape a plan, and see what the architect gets back before kickoff.
                                         </p>
                                     </div>
                                     <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow cta-live w-full lg:w-auto justify-self-start lg:justify-self-end">
@@ -2332,17 +2591,17 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    <section id="work" className="defer-section py-16 md:py-20" style={{background:'var(--paper)'}}>
-                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                    <section id="work" className="defer-section py-14 md:py-[4.75rem]" style={{background:'var(--paper)'}}>
+                        <div className="site-shell">
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-10 items-end mb-10 md:mb-12">
                                 <div>
                                     <span className="section-label">What changes</span>
                                     <h2 className="cg mt-6" style={{fontSize:'clamp(2.8rem, 7vw, 5.8rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase',color:'var(--ink)'}}>
-                                        The point is not more content. It is better first conversations.
+                                        The point is not more content. It is better-prepared first meetings.
                                     </h2>
                                 </div>
                                 <p className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.58)'}}>
-                                    Keystone works when the client, the architect, and the next decision all feel less vague. These are the shifts the product is built to create.
+                                    Keystone works when the client, the architect, and the next decision all feel less vague. These are the business-level shifts the workflow is built to create for firms.
                                 </p>
                             </div>
                             <div className="grid md:grid-cols-3 gap-4">
@@ -2364,17 +2623,17 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    <section id="services" className="defer-section py-16 md:py-20" style={{background:'linear-gradient(180deg, #ECE3D3 0%, #F7F2E9 60%, #F0EBE1 100%)',color:'var(--ink)'}}>
-                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                    <section id="services" className="defer-section py-14 md:py-[4.75rem]" style={{background:'linear-gradient(180deg, #ECE3D3 0%, #F7F2E9 60%, #F0EBE1 100%)',color:'var(--ink)'}}>
+                        <div className="site-shell">
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-12 items-end">
                                 <div>
-                                    <span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Services</span>
+                                    <span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Firm workflow</span>
                                     <h2 className="cg mt-6" style={{fontSize:'clamp(2.8rem, 7vw, 5.4rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        A calmer way to move from curiosity to design intent.
+                                        A calmer way to move from first inquiry to architect-ready intent.
                                     </h2>
                                 </div>
                                 <p className="text-sm md:text-base leading-relaxed text-mid">
-                                    Keystone is not trying to replace architectural judgment. It removes the blank page at the exact moment firms are most exposed to wasted time.
+                                    Keystone is not trying to replace architectural judgment. It gives firms a better handoff from client curiosity to the first serious design conversation.
                                 </p>
                             </div>
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-6 mt-10 items-start">
@@ -2409,18 +2668,34 @@ const DreamApp = () => {
                                     </div>
                                 </div>
                             </div>
+                            <div className="service-summary-grid mt-8">
+                                {SERVICE_BENEFITS.map((item, index) => (
+                                    <motion.article
+                                        key={item.eyebrow}
+                                        initial={{opacity:0,y:18}}
+                                        whileInView={{opacity:1,y:0}}
+                                        viewport={{once:true,amount:0.3}}
+                                        transition={{delay:index * 0.08}}
+                                        className="service-summary-card"
+                                    >
+                                        <div className="service-summary-kicker">{item.eyebrow}</div>
+                                        <h3>{item.title}</h3>
+                                        <p>{item.body}</p>
+                                    </motion.article>
+                                ))}
+                            </div>
                         </div>
                     </section>
 
-                    <section id="pricing" className="defer-section py-16 md:py-20" style={{background:'var(--paper)',color:'var(--ink)'}}>
-                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                    <section id="pricing" className="defer-section py-14 md:py-[4.75rem]" style={{background:'var(--paper)',color:'var(--ink)'}}>
+                        <div className="site-shell">
                             <div className="max-w-3xl">
                                 <span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Pricing</span>
                                 <h2 className="cg mt-6" style={{fontSize:'clamp(2.4rem, 5.6vw, 4.5rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
                                     Clear pricing before your team commits the hours.
                                 </h2>
                                 <p className="mt-5 text-base leading-relaxed" style={{color:'var(--mid)'}}>
-                                    Start with a guided demo, try a live session for an active lead, or turn Keystone into a repeatable studio rhythm without a dead-month subscription.
+                                    Start with a guided demo, try one live client session, or turn Keystone into a repeatable pre-meeting rhythm without a dead-month subscription.
                                 </p>
                             </div>
                             <div className="grid xl:grid-cols-[minmax(0,1fr)_300px] gap-6 mt-10 items-start">
@@ -2465,7 +2740,7 @@ const DreamApp = () => {
 
                     <section id="studio" className="defer-section py-16 md:py-20 relative overflow-hidden" style={{background:'linear-gradient(180deg, rgba(10,10,10,1) 0%, rgba(23,23,23,1) 100%)'}}>
                         <div className="hero-glow" style={{top:'12%', left:'18%', width:'540px', height:'540px', background:'radial-gradient(circle, rgba(255,106,55,0.1), transparent 70%)'}}/>
-                        <div className="container mx-auto max-w-7xl px-5 md:px-10 relative z-10">
+                        <div className="site-shell relative z-10">
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-10 items-start">
                                 <div className="dream-panel p-7 md:p-10">
                                     <span className="section-label" style={{color:'rgba(232,238,244,0.65)'}}>Studio</span>
@@ -2476,7 +2751,7 @@ const DreamApp = () => {
                                         Keystone began from a simple frustration: talented architects were burning unpaid hours trying to pull clarity out of clients who had not yet learned how to describe what they wanted.
                                     </p>
                                     <p className="mt-4 max-w-2xl text-base leading-relaxed" style={{color:'rgba(244,239,230,0.72)'}}>
-                                        The product is designed to make that first conversation feel more like design and less like interrogation. Not colder. Not more automated. Just clearer.
+                                        The product is designed to let the client do some of that thinking before the meeting so the architect can spend the kickoff shaping ideas instead of extracting basics.
                                     </p>
                                     <div className="mt-8 pt-6 border-t border-white/10">
                                         <p className="cg text-white" style={{fontSize:'clamp(1.6rem, 3vw, 2.6rem)',lineHeight:1.08}}>
@@ -2516,10 +2791,10 @@ const DreamApp = () => {
                         <div className="container mx-auto max-w-5xl px-5 md:px-10 text-center">
                             <span className="section-label justify-center" style={{color:'rgba(9,9,9,0.42)'}}>Final invitation</span>
                             <h2 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 5.8rem)',lineHeight:0.88,letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
-                                Give the first meeting a little wonder.
+                                Give the first meeting a stronger starting point.
                             </h2>
                             <p className="mt-5 max-w-2xl mx-auto text-base md:text-lg leading-relaxed" style={{color:'rgba(9,9,9,0.62)'}}>
-                                If the goal is to make residential clients feel seen faster while protecting your studio's time, Keystone is ready for a real conversation.
+                                If the goal is to help residential clients arrive better prepared while protecting your studio's time, Keystone is ready for a real conversation.
                             </p>
                             <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
                                 <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow cta-live">
@@ -2545,36 +2820,36 @@ const DreamApp = () => {
 const CaseStudyPage = () => {
     const caseFacts = [
         ['Project type', 'Representative family-home intake'],
-        ['Location', 'Austin, Texas'],
+        ['Firm workflow', 'Client completes guided link before kickoff'],
         ['Area target', '2,640 sq ft'],
-        ['Live outputs', 'Plan export + Gemini study'],
+        ['Architect handoff', 'Structured brief + plan export'],
     ];
     const intakeSignals = [
+        'Client completed the brief through a firm-issued pre-meeting link',
         'Four-bedroom layout with one quiet home office',
         'Warm modern exterior with wood, stone, and soft daylight',
         'Open kitchen / living core with a cleaner circulation path',
-        'A first impression strong enough to lead the kickoff meeting',
     ];
     const processSteps = [
         {
             step: '01',
-            title: 'A brief worth acting on',
-            body: 'The intake captures room count, lot context, circulation intent, and stylistic cues before the architect spends an unpaid hour pulling it out in conversation.',
+            title: 'Firm sends the link',
+            body: 'The studio shares a guided intake link before kickoff so the client can describe needs, priorities, and taste before the architect meeting begins.',
         },
         {
             step: '02',
-            title: 'Floor plan generation',
-            body: 'Keystone turns that brief into a first residential layout so the team starts with something spatial, not verbal abstraction.',
+            title: 'Client brief is structured',
+            body: 'The intake captures room count, lot context, circulation intent, and stylistic cues before the architect spends an unpaid hour pulling it out in conversation.',
         },
         {
             step: '03',
-            title: 'Download-ready blueprint',
-            body: 'The generated plan becomes a clean PNG export the team can save, review, and annotate immediately after the session.',
+            title: 'Plan is generated and saved',
+            body: 'Keystone turns that brief into a first residential layout and a clean PNG export the team can save, review, and annotate before kickoff.',
         },
         {
             step: '04',
-            title: 'Gemini exterior study',
-            body: 'A fast exterior image gives the client something emotional to react to while the plan gives the studio something precise to refine.',
+            title: 'Meeting starts ahead',
+            body: 'A Gemini exterior image can add emotional context, but the real gain is that the architect begins with a plan, not a blank page.',
         },
     ];
 
@@ -2590,15 +2865,15 @@ const CaseStudyPage = () => {
                             <div className="hero-video-wave sand"/>
                         </div>
                         <div className="dream-grid absolute inset-0 opacity-70"/>
-                        <div className="container mx-auto max-w-7xl px-5 md:px-10 py-16 md:py-24 relative z-10">
+                        <div className="site-shell py-16 md:py-24 relative z-10">
                             <div className="grid xl:grid-cols-[minmax(0,1.05fr)_360px] gap-8 items-start">
                                 <div>
                                     <span className="section-label">Representative case study</span>
                                     <h1 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 6rem)',lineHeight:0.9,letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
-                                        A residential brief, turned into a first plan the kickoff meeting can actually use.
+                                        A firm-sent client brief, turned into a first plan the kickoff meeting can actually use.
                                     </h1>
                                     <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
-                                        This sample is intentionally labeled as a representative session. It uses the Keystone workflow that is live today: floor plan generation, downloadable blueprint export, and a Gemini-powered exterior study.
+                                        This sample is intentionally labeled as a representative session. It shows the B2B workflow Keystone is built for: a firm sends a guided client link, the client completes the brief, and the architect receives a generated plan, downloadable blueprint export, and optional Gemini-powered exterior study before the meeting.
                                     </p>
                                     <div className="grid sm:grid-cols-2 gap-3 mt-8 max-w-3xl">
                                         {caseFacts.map(([label, value]) => (
@@ -2616,7 +2891,7 @@ const CaseStudyPage = () => {
                                 <aside className="dream-panel p-6 md:p-7 overflow-hidden relative">
                                     <span className="section-label" style={{color:'rgba(245,240,233,0.58)'}}>What went in</span>
                                     <h2 className="cg text-white mt-5" style={{fontSize:'clamp(1.8rem,3vw,2.6rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        Enough specificity to feel architectural, not generic.
+                                        Enough specificity to help the architect before the meeting, not just during it.
                                     </h2>
                                     <div className="grid gap-3 mt-6">
                                         {intakeSignals.map((item) => (
@@ -2638,7 +2913,7 @@ const CaseStudyPage = () => {
                     </section>
 
                     <section className="py-10 md:py-14" style={{background:'linear-gradient(180deg, #FFFDFC 0%, #F5F0E9 100%)'}}>
-                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                        <div className="site-shell">
                             <div className="proof-frame p-4 md:p-6">
                                 <div className="grid lg:grid-cols-[1fr_1fr] gap-4">
                                     <div className="proof-browser">
@@ -2678,12 +2953,12 @@ const CaseStudyPage = () => {
                     </section>
 
                     <section className="py-16 md:py-20" style={{background:'var(--paper)'}}>
-                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                        <div className="site-shell">
                             <div className="grid lg:grid-cols-[320px_minmax(0,1fr)] gap-8 items-start">
                                 <div>
                                     <span className="section-label" style={{color:'rgba(10,10,12,0.42)'}}>Why it matters</span>
                                     <h2 className="cg mt-6" style={{fontSize:'clamp(2.4rem, 5vw, 4.3rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        The value is not more content. It is a better first conversation.
+                                        The value is not more content. It is a better first conversation for the firm and the client.
                                     </h2>
                                 </div>
                                 <div className="grid md:grid-cols-2 gap-4">
@@ -2708,23 +2983,31 @@ const FAQPage = () => {
     const faqItems = [
         {
             question: 'What is live in Keystone right now?',
-            answer: 'The live workflow today includes floor plan generation, high-resolution plan download, and Gemini-powered exterior study generation from the same project brief.',
+            answer: 'The live workflow today includes guided brief capture, floor plan generation, high-resolution plan download, and Gemini-powered exterior study generation from the same project brief.',
         },
         {
-            question: 'Who is Keystone actually for?',
-            answer: 'Keystone is aimed at residential architecture and design-led studios that want a stronger first discovery conversation with active leads.',
+            question: 'Who is Keystone actually sold to?',
+            answer: 'Keystone is a B2B product for residential architecture and design-led firms. The firm adopts it, then shares the guided workflow with clients before the first serious meeting.',
+        },
+        {
+            question: 'Can a firm send Keystone to a client before the first meeting?',
+            answer: 'Yes. That is the core workflow. The firm shares the link and access code, the client completes the guided brief, and the architect reviews the results before kickoff.',
+        },
+        {
+            question: 'What does the architect receive before the meeting?',
+            answer: 'The firm can review the completed brief, the generated floor plan, the downloadable blueprint image, and the Gemini exterior study if one was generated for that session.',
         },
         {
             question: 'Does Keystone replace the architect?',
             answer: 'No. Keystone is an early discovery tool. It helps generate an initial plan and visual anchor, but design judgment still belongs to the architect and project team.',
         },
         {
-            question: 'What do I receive after one session?',
-            answer: 'A generated floor plan, a downloadable plan image, and a Gemini exterior study that can be used to guide the next client conversation.',
-        },
-        {
             question: 'Are these outputs construction documents?',
             answer: 'No. Keystone outputs are concept aids only. They are not permit-ready drawings, stamped documents, engineering deliverables, or final construction instructions.',
+        },
+        {
+            question: 'Are CAD files, quantity takeoff, or cost estimates live today?',
+            answer: 'Not yet. Today the live workflow centers on guided intake, plan generation, PNG export, and Gemini study generation. DWG or CAD export plus quantity and cost-estimate layers are planned next, but they are not being marketed as live today.',
         },
         {
             question: 'Why is access private right now?',
@@ -2732,11 +3015,11 @@ const FAQPage = () => {
         },
         {
             question: 'How long does it take?',
-            answer: 'The first floor plan is designed to arrive quickly, often in under a minute. Gemini exterior studies take longer, but still fit comfortably inside an early-stage session.',
+            answer: 'The first floor plan is designed to arrive quickly, often in under a minute. Gemini exterior studies take longer, but still fit inside an early-stage pre-meeting session.',
         },
         {
             question: 'How should I think about data and privacy?',
-            answer: 'Project inputs and generated outputs are used to operate the service, support access requests, and improve product quality. The current privacy page explains the starter policy in more detail.',
+            answer: 'Project inputs and generated outputs are used to operate the service, support firm access, and improve product quality. The current privacy page explains the starter policy in more detail.',
         },
     ];
 
@@ -2745,7 +3028,7 @@ const FAQPage = () => {
             {({ openModal }) => (
                 <>
                     <section className="py-16 md:py-24" style={{background:'linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)'}}>
-                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                        <div className="site-shell">
                             <div className="grid xl:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start">
                                 <div>
                                     <span className="section-label">FAQ</span>
@@ -2753,7 +3036,7 @@ const FAQPage = () => {
                                         Questions serious firms ask before they open Keystone.
                                     </h1>
                                     <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
-                                        These answers stay anchored to what is actually live right now, not to a future roadmap version of the product.
+                                        These answers stay anchored to what is actually live right now, how firms use the workflow, and what is still on the roadmap.
                                     </p>
                                 </div>
                                 <aside className="paper-panel p-6 md:p-7">
@@ -2780,7 +3063,7 @@ const FAQPage = () => {
                     </section>
 
                     <section className="py-8 md:py-12" style={{background:'var(--paper)'}}>
-                        <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                        <div className="site-shell">
                             <div className="grid lg:grid-cols-2 gap-4">
                                 {faqItems.map((item, index) => (
                                     <details key={item.question} className="faq-card paper-panel p-5 md:p-6" open={index === 0}>
@@ -2805,7 +3088,7 @@ const LegalPage = ({ eyebrow, title, intro, sections }) => (
         {({ openModal }) => (
             <>
                 <section className="py-16 md:py-24" style={{background:'linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)'}}>
-                    <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                    <div className="site-shell">
                         <div className="grid xl:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start">
                             <div>
                                 <span className="section-label">{eyebrow}</span>
@@ -2835,7 +3118,7 @@ const LegalPage = ({ eyebrow, title, intro, sections }) => (
                 </section>
 
                 <section className="py-8 md:py-12" style={{background:'var(--paper)'}}>
-                    <div className="container mx-auto max-w-7xl px-5 md:px-10">
+                    <div className="site-shell">
                         <div className="grid lg:grid-cols-2 gap-4">
                             {sections.map((section) => (
                                 <article key={section.title} className="paper-panel p-5 md:p-6">
@@ -2860,14 +3143,14 @@ const PrivacyPage = () => {
         {
             title: 'Information we collect',
             body: [
-                'We may collect contact details you send through access forms, project brief information submitted through the product, and the outputs generated from those inputs.',
+                'We may collect contact details you send through access forms, firm details, client or project brief information submitted through the product, and the outputs generated from those inputs.',
                 'We may also collect limited technical data such as basic usage logs, browser information, and service diagnostics needed to keep the product working.',
             ],
         },
         {
             title: 'How the information is used',
             body: [
-                'We use information to operate Keystone, respond to access requests, improve output quality, maintain security, and understand whether the product is reliable for firms using it.',
+                'We use information to operate Keystone, respond to access requests, let firms review submitted briefs and outputs, improve output quality, maintain security, and understand whether the product is reliable for firms using it.',
                 'We do not treat your project data as public marketing material without permission.',
             ],
         },
@@ -2889,7 +3172,7 @@ const PrivacyPage = () => {
             title: 'Your choices',
             body: [
                 'You can choose not to submit forms or project details, though that may limit access to Keystone.',
-                'You may also contact us to ask questions about access, stored contact details, or deletion requests.',
+                'You may also contact us to ask questions about access, stored contact details, client-submitted project data, or deletion requests.',
             ],
         },
         {
@@ -2915,7 +3198,7 @@ const TermsPage = () => {
         {
             title: 'Nature of the service',
             body: [
-                'Keystone is a design-assist product for early residential discovery. It helps generate conceptual floor plans, downloadable images, and Gemini-powered exterior studies from project inputs.',
+                'Keystone is a B2B design-assist product for early residential discovery. It helps firms collect client inputs, generate conceptual floor plans, create downloadable images, and produce Gemini-powered exterior studies from project briefs.',
                 'The service is offered on an early-stage basis and may evolve, change, pause, or improve over time.',
             ],
         },
@@ -2937,7 +3220,7 @@ const TermsPage = () => {
             title: 'User responsibilities',
             body: [
                 'You agree to provide information you have the right to use and to avoid unlawful, infringing, or harmful inputs.',
-                'If Keystone access is private or code-based, you are responsible for safeguarding that access and using it only as intended.',
+                'If Keystone access is private or code-based, you are responsible for safeguarding that access, sharing it only as intended, and handling client access responsibly inside your own firm workflow.',
             ],
         },
         {
