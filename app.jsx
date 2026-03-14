@@ -200,13 +200,13 @@ const JoinModal = ({ isOpen, onClose }) => {
                         <div className="p-6 md:p-8 overflow-y-auto" style={{ maxHeight:'90vh' }}>
                             <span className="badge mb-3 inline-block">Request Access</span>
                             <h2 className="cg text-3xl mb-1 mt-2" style={{ letterSpacing:'-0.05em', textTransform:'uppercase' }}>Access the live studio.</h2>
-                            <p className="text-mid text-sm mt-2 mb-6 leading-relaxed">Qualified architectural firms get a guided live session with no credit card and no commitment.</p>
+                            <p className="text-mid text-sm mt-2 mb-6 leading-relaxed">Qualified residential architecture firms get a guided look at the live workflow with no credit card and no commitment.</p>
 
                             {status === 'success' ? (
                                 <motion.div initial={{ scale:0.9, opacity:0 }} animate={{ scale:1, opacity:1 }} className="flex flex-col items-center text-center py-10">
                                     <div className="w-16 h-16 rounded-full bg-blue flex items-center justify-center text-white text-xl mb-4">OK</div>
                                     <h3 className="cg text-2xl" style={{ letterSpacing:'-0.05em', textTransform:'uppercase' }}>You&apos;re in the queue.</h3>
-                                    <p className="text-mid text-sm mt-2">We will follow up with studio access details shortly.</p>
+                                    <p className="text-mid text-sm mt-2">We will follow up with studio access details and next steps shortly.</p>
                                 </motion.div>
                             ) : (
                                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -783,10 +783,24 @@ const SURVEY_STEPS = [
     { id:'style',     title:'Style & Materials',     subtitle:'Aesthetic and finishes',             fields:['materials','indoorOutdoor','naturalLight'] },
     { id:'extras',    title:'Special Features',      subtitle:'Additional rooms and preferences',   fields:['features','accessibilityNeeds','budgetTier','freeformWishes'] },
 ];
+const DEFAULT_FORM_DATA = {
+    location:'', totalArea:'2400', stories:'2 Stories', bedrooms:'3 Bed', bathrooms:'3 Bath',
+    privateBaths:'1',
+    shape:'Rectangular', garage:'1 Car Garage', materials:'Craftsman (Wood & Stone)',
+    openConcept:'Open Concept (Combined)', masterLocation:'Level 2 (Upper)', kitchenPlacement:'Rear of House',
+    features:'', frontFacing:'South', lotContext:'Suburban standard lot',
+    laundryLocation:'Level 1 (near garage/mud)', ceilingHeight:'Standard (9 ft)',
+    indoorOutdoor:'Moderate (some connection)', naturalLight:'Balanced windows',
+    accessibilityNeeds:'None', budgetTier:'Mid ($200-300/sqft)', freeformWishes:'',
+};
 
-const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
+const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => {
     const [step, setStep] = useState(0);
     const upd = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+    const handleReset = () => {
+        if (onReset) onReset();
+        setStep(0);
+    };
 
     const BtnGrid = ({ field, options, cols=2 }) => (
         <div className="grid gap-2" style={{gridTemplateColumns:`repeat(${cols},1fr)`}}>
@@ -796,7 +810,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                 const desc = typeof opt === 'object' ? opt.desc : null;
                 const sel = formData[field] === val;
                 return (
-                    <button key={val} type="button" onClick={() => upd(field, val)}
+                    <button key={val} type="button" aria-pressed={sel} onClick={() => upd(field, val)}
                         className={`py-3 px-3 border text-left rounded-sm transition-all ${sel ? 'bg-ink text-white border-ink' : 'border-black/10 bg-white hover:border-blue'}`}>
                         <div className="text-[11px] font-semibold leading-tight">{label}</div>
                         {desc && <div className={`text-[9px] mt-0.5 leading-tight ${sel?'opacity-50':'opacity-35'}`}>{desc}</div>}
@@ -822,7 +836,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
             }
         };
         return (
-            <button type="button" onClick={toggle}
+            <button type="button" aria-pressed={selected} onClick={toggle}
                 className="flex items-center gap-1.5 px-3 py-2 border rounded-sm transition-all text-[10px] font-semibold"
                 style={{
                     borderColor: selected ? 'var(--blue)' : 'rgba(0,0,0,0.1)',
@@ -844,7 +858,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
         // ratio: [w, h] proportional
         const [fw, fh] = ratio;
         return (
-            <button type="button" onClick={() => upd('shape', val)}
+            <button type="button" aria-pressed={sel} onClick={() => upd('shape', val)}
                 className={`p-3 border rounded-sm transition-all flex flex-col items-center gap-2 ${sel ? 'bg-ink text-white border-ink' : 'border-black/10 bg-white hover:border-blue'}`}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'36px'}}>
                     <div style={{
@@ -864,7 +878,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
     const LotOption = ({ val, label, svgContent }) => {
         const sel = formData.lotContext === val;
         return (
-            <button type="button" onClick={() => upd('lotContext', val)}
+            <button type="button" aria-pressed={sel} onClick={() => upd('lotContext', val)}
                 className={`p-2 border rounded-sm transition-all flex flex-col items-center gap-1.5 ${sel ? 'border-blue' : 'border-black/10 bg-white hover:border-blue'}`}
                 style={{background: sel ? 'rgba(27,79,130,0.05)' : 'white'}}>
                 <svg viewBox="0 0 60 40" width="60" height="40" style={{display:'block'}}>
@@ -883,13 +897,13 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
             case 'bedrooms': return (
                 <div key={field} className="space-y-1.5">
                     <Lbl>Bedrooms</Lbl>
-                    <div className="flex gap-2">{[1,2,3,4,5].map(n=><button key={n} type="button" onClick={()=>upd('bedrooms',`${n} Bed`)} className={`flex-1 h-11 border text-sm font-bold rounded-sm transition-all ${formData.bedrooms===`${n} Bed`?'bg-ink text-white border-ink':'border-black/10 bg-white hover:border-blue'}`}>{n}</button>)}</div>
+                    <div className="flex gap-2">{[1,2,3,4,5].map(n=><button key={n} type="button" aria-pressed={formData.bedrooms===`${n} Bed`} onClick={()=>upd('bedrooms',`${n} Bed`)} className={`flex-1 h-11 border text-sm font-bold rounded-sm transition-all ${formData.bedrooms===`${n} Bed`?'bg-ink text-white border-ink':'border-black/10 bg-white hover:border-blue'}`}>{n}</button>)}</div>
                 </div>
             );
             case 'bathrooms': return (
                 <div key={field} className="space-y-1.5">
                     <Lbl>Full Bathrooms</Lbl>
-                    <div className="flex gap-2">{[1,2,3,4,5].map(n=><button key={n} type="button" onClick={()=>upd('bathrooms',`${n} Bath`)} className={`flex-1 h-11 border text-sm font-bold rounded-sm transition-all ${formData.bathrooms===`${n} Bath`?'bg-ink text-white border-ink':'border-black/10 bg-white hover:border-blue'}`}>{n}</button>)}</div>
+                    <div className="flex gap-2">{[1,2,3,4,5].map(n=><button key={n} type="button" aria-pressed={formData.bathrooms===`${n} Bath`} onClick={()=>upd('bathrooms',`${n} Bath`)} className={`flex-1 h-11 border text-sm font-bold rounded-sm transition-all ${formData.bathrooms===`${n} Bath`?'bg-ink text-white border-ink':'border-black/10 bg-white hover:border-blue'}`}>{n}</button>)}</div>
                     <p className="text-[9px] text-mid/60">Half baths added automatically</p>
                 </div>
             );
@@ -897,7 +911,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                 <div key={field} className="space-y-1.5 p-3 bg-blue/4 border border-blue/15 rounded-sm">
                     <Lbl>Private En-Suite Bathrooms</Lbl>
                     <p className="text-[10px] text-mid mb-2">How many bedrooms should have their own private bathroom attached?</p>
-                    <div className="flex gap-2">{[0,1,2,3].filter(n => n <= bedCount).map(n=><button key={n} type="button" onClick={()=>upd('privateBaths',`${n}`)} className={`flex-1 h-10 border text-sm font-bold rounded-sm transition-all ${formData.privateBaths===`${n}`?'bg-blue text-white border-blue':'border-black/10 bg-white hover:border-blue'}`}>{n === 0 ? 'None' : n}</button>)}</div>
+                    <div className="flex gap-2">{[0,1,2,3].filter(n => n <= bedCount).map(n=><button key={n} type="button" aria-pressed={formData.privateBaths===`${n}`} onClick={()=>upd('privateBaths',`${n}`)} className={`flex-1 h-10 border text-sm font-bold rounded-sm transition-all ${formData.privateBaths===`${n}`?'bg-blue text-white border-blue':'border-black/10 bg-white hover:border-blue'}`}>{n === 0 ? 'None' : n}</button>)}</div>
                     <p className="text-[9px] text-mid/50">Primary bedroom always gets an en-suite. Remaining baths are shared.</p>
                 </div>
             );
@@ -956,7 +970,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
                             </div>
                             {[{dir:'North',x:77,y:0,w:56,h:34},{dir:'South',x:77,y:176,w:56,h:34},{dir:'West',x:0,y:77,w:34,h:56},{dir:'East',x:176,y:77,w:34,h:56}].map(({dir,x,y,w,h})=>{
                                 const sel = formData.frontFacing===dir;
-                                return <button key={dir} type="button" onClick={()=>upd('frontFacing',dir)}
+                                return <button key={dir} type="button" aria-pressed={sel} onClick={()=>upd('frontFacing',dir)}
                                     style={{position:'absolute',left:x,top:y,width:w,height:h,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',border:sel?'1.5px solid #1B4F82':'1px solid rgba(100,100,100,0.14)',borderRadius:'4px',background:sel?'#1B4F82':'rgba(246,244,239,0.95)',color:sel?'#fff':'#0A0A0C',cursor:'pointer',zIndex:10,transition:'all 0.12s',boxShadow:sel?'0 2px 10px rgba(27,79,130,0.3)':'none'}}>
                                     <span style={{fontSize:'13px',fontWeight:'800',lineHeight:1}}>{dir[0]}</span>
                                     <span style={{fontSize:'6px',fontWeight:'600',opacity:0.65,marginTop:'1px'}}>{dir}</span>
@@ -1099,10 +1113,33 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading }) => {
             <div className="flex gap-1 mb-5">
                 {SURVEY_STEPS.map((_,i) => <div key={i} className="flex-1 h-1 rounded-full transition-all duration-300" style={{background: i<=step ? 'var(--blue)' : 'rgba(0,0,0,0.07)'}}/>)}
             </div>
-            <div className="mb-4">
-                <span className="mono text-[7px] uppercase tracking-widest text-mid">Step {step+1} of {SURVEY_STEPS.length}</span>
-                <h3 className="cg text-2xl italic mt-0.5">{cur.title}</h3>
+            <div className="flex items-start justify-between gap-3 mb-4">
+                <div>
+                    <span className="mono text-[7px] uppercase tracking-widest text-mid">Step {step+1} of {SURVEY_STEPS.length}</span>
+                    <h3 className="cg text-2xl italic mt-0.5">{cur.title}</h3>
+                    <p className="text-[11px] mt-1" style={{color:'rgba(10,10,12,0.56)'}}>{cur.subtitle}</p>
+                </div>
+                <button type="button" onClick={handleReset} className="cta-secondary px-4 py-3 text-[9px]">
+                    Reset Sample
+                </button>
             </div>
+            <div className="survey-step-row mb-5" aria-label="Survey steps">
+                {SURVEY_STEPS.map((item, i) => (
+                    <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => setStep(i)}
+                        className={`survey-step-pill ${i === step ? 'active' : ''}`}
+                        aria-current={i === step ? 'step' : undefined}
+                    >
+                        <span className="mono text-[8px] uppercase tracking-[0.22em] opacity-55">0{i + 1}</span>
+                        <span>{item.title}</span>
+                    </button>
+                ))}
+            </div>
+            <p className="survey-quick-note">
+                The sample residential brief is already filled in, so you can move quickly and adjust only what matters.
+            </p>
             <div className="space-y-4 step-in" key={step}>
                 {cur.fields.map(f => renderField(f))}
             </div>
@@ -1126,21 +1163,48 @@ const Gallery = ({ onOpenModal }) => {
     const [loading, setLoading] = useState(true);
     const [selected, setSelected] = useState(null); // expanded entry
     const [zoomImg, setZoomImg] = useState(null);
+    const sectionRef = useRef(null);
+    const fetchControllerRef = useRef(null);
+    const isVisibleRef = useRef(true);
 
     const fetchGallery = async () => {
+        if (document.visibilityState === 'hidden' || !isVisibleRef.current) return;
+        if (fetchControllerRef.current) fetchControllerRef.current.abort();
+        const controller = new AbortController();
+        fetchControllerRef.current = controller;
         try {
-            const res = await fetch('/api/gallery');
+            const res = await fetch('/api/gallery', { signal: controller.signal });
             const data = await res.json();
             if (data.success) setEntries(data.gallery || []);
-        } catch(e) { console.warn('Gallery fetch failed:', e); }
-        finally { setLoading(false); }
+        } catch(e) {
+            if (e.name !== 'AbortError') console.warn('Gallery fetch failed:', e);
+        } finally {
+            if (fetchControllerRef.current === controller) fetchControllerRef.current = null;
+            setLoading(false);
+        }
     };
 
     useEffect(() => {
         fetchGallery();
-        // Auto-refresh every 30s so newly generated plans appear
-        const t = setInterval(fetchGallery, 30000);
-        return () => clearInterval(t);
+        const visibilityHandler = () => {
+            if (document.visibilityState === 'visible' && isVisibleRef.current) fetchGallery();
+        };
+        const observer = new IntersectionObserver(([entry]) => {
+            isVisibleRef.current = entry.isIntersecting;
+            if (entry.isIntersecting && document.visibilityState === 'visible') fetchGallery();
+        }, { threshold: 0.15 });
+        if (sectionRef.current) observer.observe(sectionRef.current);
+        document.addEventListener('visibilitychange', visibilityHandler);
+        // Refresh only while the section is visible and the tab is active.
+        const t = setInterval(() => {
+            if (document.visibilityState === 'visible' && isVisibleRef.current) fetchGallery();
+        }, 45000);
+        return () => {
+            observer.disconnect();
+            document.removeEventListener('visibilitychange', visibilityHandler);
+            clearInterval(t);
+            if (fetchControllerRef.current) fetchControllerRef.current.abort();
+        };
     }, []);
 
     const fmt = (ts) => {
@@ -1149,7 +1213,7 @@ const Gallery = ({ onOpenModal }) => {
     };
 
     return (
-        <section id="gallery" style={{background:'linear-gradient(180deg, #FFFDFC 0%, #F5F0E9 100%)', padding:'4.5rem 0 5.5rem'}}>
+        <section id="gallery" ref={sectionRef} style={{background:'linear-gradient(180deg, #FFFDFC 0%, #F5F0E9 100%)', padding:'4.5rem 0 5.5rem'}}>
             {/* Lightbox */}
             <AnimatePresence>
                 {zoomImg && (
@@ -1188,7 +1252,7 @@ const Gallery = ({ onOpenModal }) => {
                                     </button>
                                 </div>
                                 {/* Side-by-side at 50% scale each â€” both visible without scrolling */}
-                                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px'}}>
+                                <div className="gallery-detail-grid">
                                     {/* SVG blueprint â€” clipped to fixed height, scaled down */}
                                     <div className="border border-black/6 rounded-sm overflow-hidden cursor-zoom-in"
                                         style={{background:'white'}} onClick={() => setZoomImg(selected.svg)}>
@@ -1270,7 +1334,7 @@ const Gallery = ({ onOpenModal }) => {
                 </div>
 
                 {loading && (
-                    <div className="flex items-center justify-center py-20 gap-3 text-mid">
+                    <div className="flex items-center justify-center py-20 gap-3 text-mid" role="status" aria-live="polite">
                         <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"/>
                         <span className="mono text-[9px] uppercase tracking-widest">Loading gallery...</span>
                     </div>
@@ -1356,16 +1420,7 @@ const DesignGenerator = ({ onOpenModal }) => {
     const [passkeyInput, setPasskeyInput] = useState('');
     const [unlockStatus, setUnlockStatus] = useState('idle');
 
-    const [formData, setFormData] = useState({
-        location:'', totalArea:'2400', stories:'2 Stories', bedrooms:'3 Bed', bathrooms:'3 Bath',
-        privateBaths:'1',
-        shape:'Rectangular', garage:'1 Car Garage', materials:'Craftsman (Wood & Stone)',
-        openConcept:'Open Concept (Combined)', masterLocation:'Level 2 (Upper)', kitchenPlacement:'Rear of House',
-        features:'', frontFacing:'South', lotContext:'Suburban standard lot',
-        laundryLocation:'Level 1 (near garage/mud)', ceilingHeight:'Standard (9 ft)',
-        indoorOutdoor:'Moderate (some connection)', naturalLight:'Balanced windows',
-        accessibilityNeeds:'None', budgetTier:'Mid ($200-300/sqft)', freeformWishes:'',
-    });
+    const [formData, setFormData] = useState(() => ({ ...DEFAULT_FORM_DATA }));
 
     const [status, setStatus] = useState('idle');
     const [planSvg, setPlanSvg] = useState(null);
@@ -1476,9 +1531,10 @@ const DesignGenerator = ({ onOpenModal }) => {
         console.error('[downloadBlueprint]', err);
         alert('Download failed.');
     }
-};
+    };
 
     const isLoading = status === 'loading-plan' || status === 'refining';
+    const resetSampleBrief = () => setFormData({ ...DEFAULT_FORM_DATA });
 
     return (
         <section id="generator" className="py-16 md:py-24 px-4 md:px-10" style={{background:'linear-gradient(180deg, #ECE3D3 0%, #F7F2E9 58%, #F3EEE6 100%)'}}>
@@ -1498,11 +1554,11 @@ const DesignGenerator = ({ onOpenModal }) => {
                     )}
                 </AnimatePresence>
 
-                <div className="grid lg:grid-cols-[minmax(0,1fr)_290px] gap-8 items-end mb-10">
+                <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-end mb-10">
                     <div>
                         <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>Live studio</span>
                         <h2 className="cg mt-6" style={{fontSize:'clamp(2.8rem, 6vw, 5rem)',letterSpacing:'-0.06em',textTransform:'uppercase',lineHeight:0.9}}>Open the workflow your clients will actually feel.</h2>
-                        <p className="text-mid mt-4 text-base max-w-2xl leading-relaxed">Your live workflow today is simple and real: generate a floor plan, download it as a clean PNG, and create a Gemini-powered exterior study from the same brief.</p>
+                        <p className="text-mid mt-4 text-base max-w-2xl leading-relaxed">This is the real product: a guided residential brief becomes a scored floor plan, a downloadable PNG, and a Gemini-powered exterior study from the same inputs.</p>
                     </div>
                     <div className="dream-panel p-5 md:p-6">
                         <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.46)'}}>Live now</div>
@@ -1516,6 +1572,15 @@ const DesignGenerator = ({ onOpenModal }) => {
                                 <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>plan export</span>
                             </div>
                         </div>
+                        <div className="generator-step-grid mt-5">
+                            {GENERATOR_FLOW_STEPS.map((item, index) => (
+                                <div key={item.label} className="generator-step-card">
+                                    <div className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.38)'}}>0{index + 1}</div>
+                                    <strong>{item.label}</strong>
+                                    <p>{item.body}</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -1526,12 +1591,20 @@ const DesignGenerator = ({ onOpenModal }) => {
                             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         </div>
                         <h3 className="cg text-2xl mb-1 text-white" style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>Private beta access</h3>
-                        <p className="mono text-[8px] uppercase tracking-widest mb-5" style={{color:'rgba(244,239,230,0.46)'}}>Enter your access code</p>
+                        <p className="mono text-[8px] uppercase tracking-widest mb-5" style={{color:'rgba(244,239,230,0.46)'}}>Use your passkey or request a guided walkthrough</p>
                         <form onSubmit={handleUnlock} className="space-y-3">
                             <input type="password" placeholder="Enter access code" className="text-center tracking-[0.2em]" value={passkeyInput} onChange={e=>setPasskeyInput(e.target.value)} required style={{background:'rgba(255,255,255,0.92)',borderColor:'rgba(255,255,255,0.2)'}}/>
                             <button type="submit" disabled={unlockStatus==='loading'} className="cta-hero cta-glow w-full">{unlockStatus==='loading'?'Verifying...':'Unlock Live Studio'}</button>
                         </form>
                         {unlockStatus.startsWith('error:') && <p className="mt-3 mono text-[9px] uppercase font-bold text-red">{unlockStatus.replace('error:','')}</p>}
+                        <div className="unlock-preview-grid mt-6">
+                            {GENERATOR_UNLOCK_PREVIEW.map((item) => (
+                                <div key={item.label} className="unlock-preview-card">
+                                    <div className="mono text-[8px] uppercase tracking-[0.2em]" style={{color:'rgba(244,239,230,0.42)'}}>{item.label}</div>
+                                    <p>{item.body}</p>
+                                </div>
+                            ))}
+                        </div>
                         <div className="mt-5 pt-4 border-t border-white/10">
                             <p className="text-[11px]" style={{color:'rgba(244,239,230,0.6)'}}>Need guided access first?</p>
                             <button onClick={onOpenModal} className="mt-3 cta-hero cta-glow-soft">
@@ -1544,20 +1617,20 @@ const DesignGenerator = ({ onOpenModal }) => {
                 <div className={`grid lg:grid-cols-[380px_minmax(0,1fr)] gap-6 items-start transition-all ${!isUnlocked ? 'opacity-15 pointer-events-none blur-sm select-none' : ''}`}>
                     {/* LEFT */}
                     <div className="paper-panel w-full p-6 md:p-7">
-                        <SurveyForm formData={formData} setFormData={setFormData} onSubmit={handleGeneratePlan} isLoading={isLoading}/>
+                        <SurveyForm formData={formData} setFormData={setFormData} onSubmit={handleGeneratePlan} isLoading={isLoading} onReset={resetSampleBrief}/>
                     </div>
 
                     {/* RIGHT */}
                     <div className="dream-panel w-full flex flex-col overflow-hidden" style={{minHeight:'520px'}}>
                         {status === 'idle' && (
-                            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center" style={{color:'rgba(244,239,230,0.42)'}}>
+                            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center" style={{color:'rgba(244,239,230,0.42)'}} role="status" aria-live="polite">
                                 <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                 <p className="cg text-2xl text-white" style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>Awaiting your brief</p>
-                                <p className="mono text-[9px] uppercase tracking-widest mt-2">Complete the survey to generate the first plan</p>
+                                <p className="mono text-[9px] uppercase tracking-widest mt-2">Complete the five-step survey to generate the first plan</p>
                             </div>
                         )}
                         {isLoading && (
-                            <div className="flex-1 flex flex-col items-center justify-center p-12 text-white">
+                            <div className="flex-1 flex flex-col items-center justify-center p-12 text-white" role="status" aria-live="polite">
                                 <div className="w-12 h-12 border-[3px] border-blue border-t-transparent rounded-full animate-spin mb-6"/>
                                 <p className="mono text-[10px] uppercase tracking-widest animate-pulse text-blue">{status==='refining' ? 'Applying refinement...' : 'Generating floor plan...'}</p>
                                 <p className="text-[9px] mt-2" style={{color:'rgba(244,239,230,0.5)'}}>Usually under 5 seconds</p>
@@ -1566,7 +1639,9 @@ const DesignGenerator = ({ onOpenModal }) => {
                         {(status === 'plan-ready' || status === 'refining') && planSvg && (
                             <div className="flex flex-col">
                                 <div className="p-4 border-b border-white/8" style={{background:'rgba(255,255,255,0.04)'}}>
-                                    <div className="flex items-center gap-2 mb-2.5">
+                                    <div className="flex flex-wrap items-center gap-2 mb-2.5">
+                                        <span className="badge">{status === 'refining' ? 'Refining live plan' : 'Plan ready'}</span>
+                                        <span className="mono text-[7px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.42)'}}>{refinementsLeft} refinements left</span>
                                         <span className="mono text-[7px] uppercase tracking-widest bg-white border border-black/6 px-2 py-1 rounded-sm">2D Blueprint</span>
                                         <button onClick={downloadBlueprint} className="mono text-[7px] uppercase tracking-widest bg-blue text-white px-2 py-1 rounded-sm hover:bg-ink transition-colors">Download PNG</button>
                                         {alternatives.length > 0 && (
@@ -1696,6 +1771,39 @@ const LIVE_NOW_FEATURES = [
     'High-resolution plan download',
     'Gemini-powered exterior study',
 ];
+const SAMPLE_SESSION_STEPS = [
+    {
+        number: '01',
+        title: 'Brief captured',
+        body: 'Area target, room count, light preferences, and lot cues are gathered in a form that already feels more design-aware than a cold intake.',
+    },
+    {
+        number: '02',
+        title: 'Plan generated',
+        body: 'Keystone scores multiple footprint options, keeps the strongest one, and gives the studio a real blueprint to react to.',
+    },
+    {
+        number: '03',
+        title: 'Blueprint exported',
+        body: 'The chosen plan becomes a clean PNG your team can carry into the first meeting without additional cleanup.',
+    },
+    {
+        number: '04',
+        title: 'Mood visualized',
+        body: 'The same brief becomes a Gemini exterior study so the client can react emotionally while the architect stays spatially grounded.',
+    },
+];
+const GENERATOR_FLOW_STEPS = [
+    { label: 'Unlock', body: 'Enter a passkey or request access for a guided walkthrough.' },
+    { label: 'Answer', body: 'Move through five guided steps with a sample residential brief already loaded.' },
+    { label: 'Compare', body: 'Review the strongest plan, inspect alternatives, and refine what matters.' },
+    { label: 'Export', body: 'Download the blueprint and create a Gemini exterior study from the same brief.' },
+];
+const GENERATOR_UNLOCK_PREVIEW = [
+    { label: 'Generated plan', body: 'A scored floor plan appears first so the studio has something precise to discuss.' },
+    { label: 'PNG export', body: 'The live output can be downloaded as a clean blueprint image right away.' },
+    { label: 'Gemini study', body: 'The same plan brief can create an exterior atmosphere image from within the session.' },
+];
 const navHref = (item, home = false) => item.kind === 'section' ? (home ? `#${item.value}` : homeSectionHref(item.value)) : item.value;
 
 const SiteFooter = ({ home = false }) => (
@@ -1711,7 +1819,7 @@ const SiteFooter = ({ home = false }) => (
                         </div>
                     </div>
                     <p className="text-sm leading-relaxed mt-4" style={{color:'rgba(244,239,230,0.58)'}}>
-                        Keystone helps residential firms move from a vague intake to a generated floor plan, a downloadable blueprint, and a Gemini exterior study.
+                        Keystone helps residential firms move from vague intake notes to a generated floor plan, a downloadable blueprint, and a Gemini exterior study.
                     </p>
                 </div>
                 <div>
@@ -1778,7 +1886,7 @@ const PageNav = ({ onOpenModal }) => (
         </div>
         <div className="md:hidden flex items-center gap-2">
             <a href="/#generator" className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(9,9,9,0.56)'}}>Live Studio</a>
-            <button onClick={onOpenModal} className="cta-hero cta-glow-soft px-4 py-2 text-[10px]">Access</button>
+            <button onClick={onOpenModal} className="cta-hero cta-glow-soft px-4 py-2 text-[10px]">Request Access</button>
         </div>
     </nav>
 );
@@ -1824,6 +1932,23 @@ const DreamApp = () => {
             body: 'Light, taste, room priorities, and lot context arrive in a structure that feels more premium than a cold intake form.',
             image: ASSETS.phase3[4],
             alt: 'Keystone client experience preview',
+        },
+    ];
+    const trustCards = [
+        {
+            eyebrow: 'Live today',
+            title: 'Three live outputs. No inflated claims.',
+            body: 'Keystone currently covers floor plan generation, high-resolution PNG download, and Gemini exterior study generation from the same brief.',
+        },
+        {
+            eyebrow: 'Best fit',
+            title: 'Made for active residential leads.',
+            body: 'The strongest use case is the in-between moment when a serious client exists, but the architect still needs something concrete to react to.',
+        },
+        {
+            eyebrow: 'What it is not',
+            title: 'Not final documentation.',
+            body: 'Keystone is an architect-first discovery tool. It does not replace downstream drafting, code review, or professional design judgment.',
         },
     ];
     const outcomeCards = [
@@ -1913,14 +2038,14 @@ const DreamApp = () => {
     ];
     const quoteCards = [
         {
-            quote: 'The live product today is intentionally focused: generate the plan, export the blueprint, and create the Gemini exterior study from the same brief.',
-            name: 'Live now',
-            firm: 'Current product scope',
+            quote: 'Keystone is strongest when a residential firm wants one active lead to feel concrete before the first serious meeting.',
+            name: 'Best fit',
+            firm: 'Conversion signal',
         },
         {
-            quote: 'The next gain is not another marketing claim. It is helping one active residential lead feel more concrete before the kickoff meeting.',
-            name: 'Why it matters',
-            firm: 'Studio-facing outcome',
+            quote: 'The current workflow is intentionally narrow: generate the plan, export the blueprint, and create the Gemini exterior study. That focus is part of the trust.',
+            name: 'Live today',
+            firm: 'Product scope',
         },
     ];
     const pricingTiers = [
@@ -2036,7 +2161,7 @@ const DreamApp = () => {
                                     <motion.p initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.4}}
                                         className="mt-5 max-w-[46rem] leading-relaxed"
                                         style={{fontSize:'clamp(1rem, 1.9vw, 1.16rem)',color:'rgba(32,26,21,0.72)'}}>
-                                        Keystone turns an early client dream into a generated floor plan, a downloadable blueprint, and a Gemini exterior study so the first design conversation starts somewhere tangible.
+                                        Keystone helps residential firms turn an early client dream into a generated floor plan, a downloadable blueprint, and a Gemini exterior study so the first design conversation starts somewhere tangible.
                                     </motion.p>
                                     <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.72}}
                                         className="mt-5 flex flex-wrap gap-3">
@@ -2087,13 +2212,23 @@ const DreamApp = () => {
                                             Real output. No imagination tax.
                                         </h2>
                                         <p className="mt-4 text-sm md:text-base leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
-                                            The fastest way to trust Keystone is to watch one intake become two live outputs: a plan the studio can discuss and a Gemini study the client can feel.
+                                            The fastest way to trust Keystone is to watch one intake travel through the whole live sequence: brief, generated plan, export-ready blueprint, and Gemini study.
                                         </p>
+                                        <div className="proof-journey-rail mt-5">
+                                            {SAMPLE_SESSION_STEPS.map((item) => (
+                                                <article key={item.number} className="proof-journey-card">
+                                                    <div className="proof-journey-step">{item.number}</div>
+                                                    <h3>{item.title}</h3>
+                                                    <p>{item.body}</p>
+                                                </article>
+                                            ))}
+                                        </div>
                                         <div className="grid gap-3 mt-5">
-                                            {['One brief becomes a generated plan and an exterior study.', 'The architect starts with something spatial instead of conversational fog.', 'The client reacts to a picture and a plan, not just promises.'].map((item) => (
-                                                <div key={item} className="proof-mini-tile">
-                                                    <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>Why it lands</div>
-                                                    <p className="mt-2 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.78)'}}>{item}</p>
+                                            {trustCards.map((item) => (
+                                                <div key={item.title} className="proof-mini-tile">
+                                                    <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>{item.eyebrow}</div>
+                                                    <p className="cg mt-2 text-[1.15rem] leading-[1.02]" style={{color:'var(--ink)'}}>{item.title}</p>
+                                                    <p className="mt-2 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.78)'}}>{item.body}</p>
                                                 </div>
                                             ))}
                                         </div>
