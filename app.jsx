@@ -1554,7 +1554,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                     )}
                 </AnimatePresence>
 
-                <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-end mb-10">
+                <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start mb-10">
                     <div>
                         <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>Live studio</span>
                         <h2 className="cg mt-6" style={{fontSize:'clamp(2.8rem, 6vw, 5rem)',letterSpacing:'-0.06em',textTransform:'uppercase',lineHeight:0.9}}>Open the workflow your clients will actually feel.</h2>
