@@ -944,6 +944,37 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
         if (onReset) onReset();
         setStep(0);
     };
+    const choiceStyle = (selected, tone = 'ink') => {
+        if (selected) {
+            const isBlue = tone === 'blue';
+            return {
+                borderColor: isBlue ? 'rgba(27,79,130,0.92)' : 'rgba(10,10,12,0.94)',
+                background: isBlue
+                    ? 'linear-gradient(180deg, rgba(27,79,130,1) 0%, rgba(20,61,100,1) 100%)'
+                    : 'linear-gradient(180deg, rgba(24,24,24,1) 0%, rgba(9,9,9,1) 100%)',
+                color: 'rgba(255,252,248,0.98)',
+                boxShadow: isBlue
+                    ? '0 12px 28px rgba(27,79,130,0.18)'
+                    : '0 12px 28px rgba(10,10,12,0.14)',
+            };
+        }
+        return {
+            borderColor: 'rgba(10,10,12,0.1)',
+            background: 'rgba(255,255,255,0.96)',
+            color: 'var(--ink)',
+            boxShadow: 'none',
+        };
+    };
+    const actionStyle = (tone = 'blue') => ({
+        borderColor: tone === 'blue' ? 'rgba(27,79,130,0.92)' : 'rgba(10,10,12,0.94)',
+        background: tone === 'blue'
+            ? 'linear-gradient(180deg, rgba(27,79,130,1) 0%, rgba(20,61,100,1) 100%)'
+            : 'linear-gradient(180deg, rgba(24,24,24,1) 0%, rgba(9,9,9,1) 100%)',
+        color: 'rgba(255,252,248,0.98)',
+        boxShadow: tone === 'blue'
+            ? '0 14px 30px rgba(27,79,130,0.18)'
+            : '0 14px 30px rgba(10,10,12,0.14)',
+    });
 
     const BtnGrid = ({ field, options, cols=2 }) => (
         <div className="grid gap-2" style={{gridTemplateColumns:`repeat(${cols},1fr)`}}>
@@ -954,9 +985,10 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
                 const sel = formData[field] === val;
                 return (
                     <button key={val} type="button" aria-pressed={sel} onClick={() => upd(field, val)}
-                        className={`py-3 px-3 border text-left rounded-sm transition-all ${sel ? 'bg-ink text-white border-ink' : 'border-black/10 bg-white hover:border-blue'}`}>
+                        className="py-3 px-3 border text-left rounded-sm transition-all"
+                        style={choiceStyle(sel)}>
                         <div className="text-[11px] font-semibold leading-tight">{label}</div>
-                        {desc && <div className={`text-[9px] mt-0.5 leading-tight ${sel?'opacity-50':'opacity-35'}`}>{desc}</div>}
+                        {desc && <div className="text-[9px] mt-0.5 leading-tight" style={{opacity: sel ? 0.74 : 0.42}}>{desc}</div>}
                     </button>
                 );
             })}
@@ -981,14 +1013,10 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
         return (
             <button type="button" aria-pressed={selected} onClick={toggle}
                 className="flex items-center gap-1.5 px-3 py-2 border rounded-sm transition-all text-[10px] font-semibold"
-                style={{
-                    borderColor: selected ? 'var(--blue)' : 'rgba(0,0,0,0.1)',
-                    background: selected ? 'var(--ink)' : 'white',
-                    color: selected ? 'white' : 'var(--ink)',
-                }}>
-                {icon ? <span className="mono text-[9px] uppercase tracking-[0.18em]" style={{opacity:0.6}}>{icon}</span> : null}
+                style={choiceStyle(selected)}>
+                {icon ? <span className="mono text-[9px] uppercase tracking-[0.18em]" style={{opacity:selected ? 0.76 : 0.6}}>{icon}</span> : null}
                 {label}
-                {selected && <CheckIcon className="w-3 h-3 opacity-60"/>}
+                {selected && <CheckIcon className="w-3 h-3" style={{opacity:0.82}}/>}
             </button>
         );
     };
@@ -1002,7 +1030,8 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
         const [fw, fh] = ratio;
         return (
             <button type="button" aria-pressed={sel} onClick={() => upd('shape', val)}
-                className={`p-3 border rounded-sm transition-all flex flex-col items-center gap-2 ${sel ? 'bg-ink text-white border-ink' : 'border-black/10 bg-white hover:border-blue'}`}>
+                className="p-3 border rounded-sm transition-all flex flex-col items-center gap-2"
+                style={choiceStyle(sel)}>
                 <div style={{display:'flex',alignItems:'center',justifyContent:'center',height:'36px'}}>
                     <div style={{
                         width: `${fw * 28}px`, height: `${fh * 28}px`,
@@ -1040,13 +1069,13 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
             case 'bedrooms': return (
                 <div key={field} className="space-y-1.5">
                     <Lbl>Bedrooms</Lbl>
-                    <div className="flex gap-2">{[1,2,3,4,5].map(n=><button key={n} type="button" aria-pressed={formData.bedrooms===`${n} Bed`} onClick={()=>upd('bedrooms',`${n} Bed`)} className={`flex-1 h-11 border text-sm font-bold rounded-sm transition-all ${formData.bedrooms===`${n} Bed`?'bg-ink text-white border-ink':'border-black/10 bg-white hover:border-blue'}`}>{n}</button>)}</div>
+                    <div className="flex gap-2">{[1,2,3,4,5].map(n=>{ const selected = formData.bedrooms===`${n} Bed`; return <button key={n} type="button" aria-pressed={selected} onClick={()=>upd('bedrooms',`${n} Bed`)} className="flex-1 h-11 border text-sm font-bold rounded-sm transition-all" style={choiceStyle(selected)}>{n}</button>; })}</div>
                 </div>
             );
             case 'bathrooms': return (
                 <div key={field} className="space-y-1.5">
                     <Lbl>Full Bathrooms</Lbl>
-                    <div className="flex gap-2">{[1,2,3,4,5].map(n=><button key={n} type="button" aria-pressed={formData.bathrooms===`${n} Bath`} onClick={()=>upd('bathrooms',`${n} Bath`)} className={`flex-1 h-11 border text-sm font-bold rounded-sm transition-all ${formData.bathrooms===`${n} Bath`?'bg-ink text-white border-ink':'border-black/10 bg-white hover:border-blue'}`}>{n}</button>)}</div>
+                    <div className="flex gap-2">{[1,2,3,4,5].map(n=>{ const selected = formData.bathrooms===`${n} Bath`; return <button key={n} type="button" aria-pressed={selected} onClick={()=>upd('bathrooms',`${n} Bath`)} className="flex-1 h-11 border text-sm font-bold rounded-sm transition-all" style={choiceStyle(selected)}>{n}</button>; })}</div>
                     <p className="text-[9px] text-mid/60">Half baths added automatically</p>
                 </div>
             );
@@ -1054,7 +1083,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
                 <div key={field} className="space-y-1.5 p-3 bg-blue/4 border border-blue/15 rounded-sm">
                     <Lbl>Private En-Suite Bathrooms</Lbl>
                     <p className="text-[10px] text-mid mb-2">How many bedrooms should have their own private bathroom attached?</p>
-                    <div className="flex gap-2">{[0,1,2,3].filter(n => n <= bedCount).map(n=><button key={n} type="button" aria-pressed={formData.privateBaths===`${n}`} onClick={()=>upd('privateBaths',`${n}`)} className={`flex-1 h-10 border text-sm font-bold rounded-sm transition-all ${formData.privateBaths===`${n}`?'bg-blue text-white border-blue':'border-black/10 bg-white hover:border-blue'}`}>{n === 0 ? 'None' : n}</button>)}</div>
+                    <div className="flex gap-2">{[0,1,2,3].filter(n => n <= bedCount).map(n=>{ const selected = formData.privateBaths===`${n}`; return <button key={n} type="button" aria-pressed={selected} onClick={()=>upd('privateBaths',`${n}`)} className="flex-1 h-10 border text-sm font-bold rounded-sm transition-all" style={choiceStyle(selected, 'blue')}>{n === 0 ? 'None' : n}</button>; })}</div>
                     <p className="text-[9px] text-mid/50">Primary bedroom always gets an en-suite. Remaining baths are shared.</p>
                 </div>
             );
@@ -1289,8 +1318,8 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
             <div className="flex gap-2.5 mt-5">
                 {step > 0 && <button type="button" onClick={() => setStep(s=>s-1)} className="px-5 py-3 border border-black/10 text-[11px] font-semibold hover:border-ink transition-colors rounded-sm">Back</button>}
                 {!isLast
-                    ? <button type="button" onClick={() => setStep(s=>s+1)} className="flex-1 py-3 bg-blue text-white text-[11px] font-bold uppercase tracking-wider hover:bg-ink transition-colors rounded-sm">Continue</button>
-                    : <button type="button" onClick={onSubmit} disabled={isLoading} className="flex-1 py-3 bg-ink text-white text-[11px] font-bold uppercase tracking-wider hover:bg-blue transition-colors disabled:opacity-50 rounded-sm">
+                    ? <button type="button" onClick={() => setStep(s=>s+1)} className="flex-1 py-3 text-[11px] font-bold uppercase tracking-wider transition-colors rounded-sm border" style={actionStyle('blue')}>Continue</button>
+                    : <button type="button" onClick={onSubmit} disabled={isLoading} className="flex-1 py-3 text-[11px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50 rounded-sm border" style={actionStyle('ink')}>
                         {isLoading ? 'Generating...' : 'Generate Floor Plan'}
                       </button>
                 }
