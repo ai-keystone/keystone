@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Keystone — Floor Plan Training</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #e8e8e8;
+      min-height: 100vh;
+    }
+
+    /* ── Top bar ── */
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 24px;
+      background: #1a1a1a;
+      border-bottom: 1px solid #2a2a2a;
+      flex-wrap: wrap;
+    }
+    .topbar h1 { font-size: 16px; font-weight: 600; color: #fff; letter-spacing: 0.02em; }
+    .topbar .sep { color: #444; }
+
+    select, button {
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #252525;
+      color: #e8e8e8;
+      cursor: pointer;
+      outline: none;
+    }
+    select:hover, button:hover { border-color: #555; }
+    button:active { transform: scale(0.97); }
+
+    .btn-generate {
+      background: #1d4ed8;
+      border-color: #2563eb;
+      color: #fff;
+    }
+    .btn-generate:hover { background: #2563eb; }
+    .btn-generate:disabled { background: #334; opacity: 0.6; cursor: default; }
+
+    .stats-badge {
+      font-size: 12px;
+      color: #888;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 4px 10px;
+    }
+
+    /* ── Theme banner ── */
+    .theme-banner {
+      background: #1c2333;
+      border-bottom: 1px solid #243;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .theme-label { font-size: 13px; font-weight: 600; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.06em; }
+    .theme-desc { font-size: 13px; color: #94a3b8; }
+
+    /* ── Plans area ── */
+    .plans-area {
+      display: flex;
+      gap: 0;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .plan-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #2a2a2a;
+      min-width: 0;
+    }
+    .plan-panel:last-child { border-right: none; }
+
+    .plan-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: #161616;
+      border-bottom: 1px solid #2a2a2a;
+      font-size: 13px;
+    }
+    .plan-label .tag { font-weight: 700; color: #fbbf24; }
+    .plan-label .dims { color: #666; font-size: 11px; }
+
+    .plan-svg-wrap {
+      flex: 1;
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: #0f0f0f;
+      cursor: pointer;
+      transition: background 0.15s;
+      min-height: 400px;
+    }
+    .plan-svg-wrap:hover { background: #141414; }
+    .plan-svg-wrap.winner { background: #0f2010; outline: 2px solid #22c55e; outline-offset: -2px; }
+    .plan-svg-wrap.loser  { background: #1a0a0a; opacity: 0.55; }
+
+    .plan-svg-wrap svg { max-width: 100%; height: auto; }
+
+    /* ── Vote bar ── */
+    .vote-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 14px 24px;
+      background: #181818;
+      border-top: 1px solid #2a2a2a;
+      flex-wrap: wrap;
+    }
+
+    .btn-vote {
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 28px;
+      border-radius: 8px;
+      border: 2px solid #333;
+      background: #222;
+      color: #e8e8e8;
+      cursor: pointer;
+      transition: all 0.12s;
+      min-width: 120px;
+    }
+    .btn-vote:hover { border-color: #555; background: #2a2a2a; }
+
+    .btn-vote.vote-a { border-color: #1d4ed8; color: #60a5fa; }
+    .btn-vote.vote-a:hover { background: #1d4ed8; color: #fff; }
+
+    .btn-vote.vote-b { border-color: #7c3aed; color: #a78bfa; }
+    .btn-vote.vote-b:hover { background: #7c3aed; color: #fff; }
+
+    .btn-vote.vote-tie { border-color: #444; color: #888; }
+    .btn-vote.vote-tie:hover { background: #333; color: #ccc; }
+
+    .btn-vote.vote-skip { border-color: #333; color: #555; font-size: 12px; padding: 8px 16px; min-width: auto; }
+    .btn-vote.vote-skip:hover { background: #222; color: #888; border-color: #444; }
+
+    .kbd-hint { font-size: 11px; color: #444; text-align: center; padding: 4px 0 8px; }
+    .kbd-hint kbd {
+      font-size: 10px;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 3px;
+      padding: 1px 5px;
+      color: #666;
+    }
+
+    /* ── Progress ── */
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 24px 0;
+      background: #181818;
+    }
+    .progress-bar-wrap { flex: 1; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+    .progress-bar { height: 100%; background: #22c55e; transition: width 0.3s; }
+    .progress-text { font-size: 11px; color: #555; white-space: nowrap; }
+
+    /* ── Loading / error ── */
+    .placeholder {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: #444;
+      font-size: 14px;
+      min-height: 400px;
+    }
+    .placeholder .icon { font-size: 40px; }
+    .error-msg { color: #f87171; font-size: 13px; }
+    .spinner { animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Generate modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-overlay.hidden { display: none; }
+    .modal {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 28px;
+      width: 400px;
+      max-width: 90vw;
+    }
+    .modal h2 { font-size: 16px; margin-bottom: 16px; color: #fff; }
+    .modal label { font-size: 13px; color: #aaa; display: block; margin-bottom: 6px; }
+    .modal select { width: 100%; margin-bottom: 12px; }
+    .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+    .modal input[type=number] {
+      width: 100%; padding: 6px 10px; background: #252525;
+      border: 1px solid #333; border-radius: 6px; color: #e8e8e8; font-size: 13px;
+      margin-bottom: 12px; outline: none;
+    }
+    .modal-progress { font-size: 13px; color: #60a5fa; margin-top: 12px; }
+
+    .layout { display: flex; flex-direction: column; height: 100vh; }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <h1>Keystone Training</h1>
+    <span class="sep">|</span>
+
+    <label style="font-size:12px;color:#666">Theme</label>
+    <select id="themeSelect"></select>
+
+    <label style="font-size:12px;color:#666">Plan type</label>
+    <select id="briefSelect"><option value="">All types</option></select>
+
+    <button class="btn-generate" id="btnOpenGenerate">+ Generate Plans</button>
+
+    <span class="stats-badge" id="statsLabel">Loading…</span>
+  </div>
+
+  <!-- Theme description -->
+  <div class="theme-banner">
+    <span class="theme-label" id="themeLabel">—</span>
+    <span class="theme-desc" id="themeDesc">Select a theme above</span>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-row">
+    <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar" style="width:0%"></div></div>
+    <span class="progress-text" id="progressText">0 rated</span>
+  </div>
+
+  <!-- Plans -->
+  <div class="plans-area" id="plansArea">
+    <div class="placeholder" id="placeholder">
+      <span class="icon">🏠</span>
+      <span>Generate plans to start comparing</span>
+      <button class="btn-generate" onclick="openGenerateModal()" style="font-size:13px">Generate Plans</button>
+    </div>
+  </div>
+
+  <!-- Vote bar (hidden until plans loaded) -->
+  <div class="vote-bar" id="voteBar" style="display:none">
+    <button class="btn-vote vote-a" id="btnA" onclick="vote('a')">← Plan A  <small style="opacity:.6">[1]</small></button>
+    <button class="btn-vote vote-tie" onclick="vote('tie')">Tie  <small style="opacity:.6">[T]</small></button>
+    <button class="btn-vote vote-b" id="btnB" onclick="vote('b')">Plan B →  <small style="opacity:.6">[2]</small></button>
+    <button class="btn-vote vote-skip" onclick="vote('skip')">Skip [S]</button>
+  </div>
+  <div class="kbd-hint" id="kbdHint" style="display:none">
+    <kbd>1</kbd> or <kbd>←</kbd> = Plan A wins &nbsp;·&nbsp;
+    <kbd>2</kbd> or <kbd>→</kbd> = Plan B wins &nbsp;·&nbsp;
+    <kbd>T</kbd> = Tie &nbsp;·&nbsp;
+    <kbd>S</kbd> = Skip &nbsp;·&nbsp;
+    <kbd>Space</kbd> = Next pair
+  </div>
+
+</div>
+
+<!-- Generate modal -->
+<div class="modal-overlay hidden" id="generateModal">
+  <div class="modal">
+    <h2>Generate Floor Plans</h2>
+    <label>Plan type</label>
+    <select id="genBriefType"></select>
+    <label>How many to generate (max 50 per run)</label>
+    <input type="number" id="genCount" value="20" min="1" max="50">
+    <div class="modal-progress" id="genProgress"></div>
+    <div class="modal-btns">
+      <button onclick="closeGenerateModal()">Cancel</button>
+      <button class="btn-generate" id="btnGenerate" onclick="runGenerate()">Generate</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const API = (() => {
+  const host = window.location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:3000';
+  return 'https://keystone-api-00101-4nr-1003274175484.us-central1.run.app';
+})();
+
+// ── State ────────────────────────────────────────────────────────────────────
+let state = {
+  themes: {},
+  briefPresets: {},
+  currentPair: null,
+  stats: { totalPlans: 0, totalRatings: 0, ratingsByTheme: {}, plansByType: {} },
+  ratingCount: 0,    // for current session
+  isLoading: false,
+};
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+async function boot() {
+  try {
+    const meta = await apiFetch('GET', '/api/training/meta');
+    state.themes = meta.themes;
+    state.briefPresets = meta.briefPresets;
+    buildSelects();
+    await refreshStats();
+    loadNextPair();
+  } catch (e) {
+    showError('Could not reach API: ' + e.message);
+  }
+}
+
+function buildSelects() {
+  const themeSelect = document.getElementById('themeSelect');
+  const briefSelect = document.getElementById('briefSelect');
+  const genBriefType = document.getElementById('genBriefType');
+
+  // Theme select
+  for (const [key, val] of Object.entries(state.themes)) {
+    const opt = document.createElement('option');
+    opt.value = key; opt.textContent = val.label;
+    themeSelect.appendChild(opt);
+  }
+  themeSelect.value = 'overall';
+  themeSelect.addEventListener('change', () => { updateThemeBanner(); loadNextPair(); });
+  updateThemeBanner();
+
+  // Brief select
+  for (const [key] of Object.entries(state.briefPresets)) {
+    const opt = document.createElement('option');
+    opt.value = key; opt.textContent = formatBriefKey(key);
+    briefSelect.appendChild(opt);
+    const opt2 = opt.cloneNode(true);
+    genBriefType.appendChild(opt2);
+  }
+  briefSelect.addEventListener('change', loadNextPair);
+}
+
+function formatBriefKey(key) {
+  return key.replace(/_/g, ' ').replace(/p[Ll]\d/, (m) => ' · Primary ' + m.slice(1).toUpperCase());
+}
+
+function updateThemeBanner() {
+  const theme = document.getElementById('themeSelect').value;
+  const info  = state.themes[theme] || {};
+  document.getElementById('themeLabel').textContent = info.label || theme;
+  document.getElementById('themeDesc').textContent  = info.description || '';
+}
+
+// ── Stats ────────────────────────────────────────────────────────────────────
+async function refreshStats() {
+  try {
+    const s = await apiFetch('GET', '/api/training/stats');
+    state.stats = s;
+    const label = `${s.totalPlans} plans · ${s.totalRatings} ratings`;
+    document.getElementById('statsLabel').textContent = label;
+    updateProgress();
+  } catch { /* ignore */ }
+}
+
+function updateProgress() {
+  const theme = document.getElementById('themeSelect').value;
+  const rated = state.stats.ratingsByTheme?.[theme] || 0;
+  const total = 100; // target per theme
+  const pct   = Math.min(100, Math.round(rated / total * 100));
+  document.getElementById('progressBar').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${rated} rated for ${theme} (goal: ${total})`;
+}
+
+// ── Load pair ────────────────────────────────────────────────────────────────
+async function loadNextPair() {
+  const theme     = document.getElementById('themeSelect').value;
+  const briefType = document.getElementById('briefSelect').value;
+
+  if (state.isLoading) return;
+  state.isLoading = true;
+
+  const plansArea = document.getElementById('plansArea');
+  plansArea.innerHTML = `<div class="placeholder"><span class="spinner">⟳</span> Loading plans…</div>`;
+  document.getElementById('voteBar').style.display = 'none';
+  document.getElementById('kbdHint').style.display = 'none';
+
+  try {
+    const params = new URLSearchParams({ theme });
+    if (briefType) params.set('briefType', briefType);
+    const pair = await apiFetch('GET', `/api/training/pair?${params}`);
+    state.currentPair = pair;
+    renderPair(pair);
+  } catch (e) {
+    if (e.status === 404) {
+      plansArea.innerHTML = `
+        <div class="placeholder">
+          <span class="icon">📐</span>
+          <span>No plans yet for this selection</span>
+          <button class="btn-generate" onclick="openGenerateModal()">Generate Plans</button>
+        </div>`;
+    } else {
+      plansArea.innerHTML = `<div class="placeholder"><span class="error-msg">Error: ${e.message}</span></div>`;
+    }
+  } finally {
+    state.isLoading = false;
+  }
+}
+
+function renderPair(pair) {
+  const plansArea = document.getElementById('plansArea');
+
+  const makePanel = (plan, tag, tagClass) => {
+    const fp = plan.footprint || {};
+    const m  = plan.metrics  || {};
+    const hallPct = m.hallwayRatio ? (m.hallwayRatio * 100).toFixed(0) + '% hall' : '';
+    const dims = fp.widthFt ? `${fp.widthFt}′ × ${fp.heightFt}′ · ${fp.totalAreaSqFt || '?'} sqft ${hallPct}` : '';
+
+    return `
+      <div class="plan-panel">
+        <div class="plan-label">
+          <span class="tag">${tag}</span>
+          <span class="dims">${dims}</span>
+        </div>
+        <div class="plan-svg-wrap" id="wrap-${tag.toLowerCase()}" onclick="vote('${tag.toLowerCase()}')">
+          ${plan.svg || '<div class="placeholder"><span class="error-msg">No SVG</span></div>'}
+        </div>
+      </div>`;
+  };
+
+  plansArea.innerHTML = makePanel(pair.planA, 'A', 'vote-a') + makePanel(pair.planB, 'B', 'vote-b');
+  document.getElementById('voteBar').style.display = 'flex';
+  document.getElementById('kbdHint').style.display = 'block';
+}
+
+// ── Vote ─────────────────────────────────────────────────────────────────────
+async function vote(winner) {
+  if (!state.currentPair) return;
+  const { theme, briefType, planA, planB } = state.currentPair;
+
+  // Visual feedback
+  if (winner === 'a') {
+    document.getElementById('wrap-a')?.classList.add('winner');
+    document.getElementById('wrap-b')?.classList.add('loser');
+  } else if (winner === 'b') {
+    document.getElementById('wrap-b')?.classList.add('winner');
+    document.getElementById('wrap-a')?.classList.add('loser');
+  }
+
+  if (winner !== 'skip') {
+    try {
+      await apiFetch('POST', '/api/training/rate', {
+        theme, briefType, planAId: planA.id, planBId: planB.id, winner,
+      });
+      state.ratingCount++;
+      state.stats.totalRatings++;
+      state.stats.ratingsByTheme = state.stats.ratingsByTheme || {};
+      state.stats.ratingsByTheme[theme] = (state.stats.ratingsByTheme[theme] || 0) + 1;
+      document.getElementById('statsLabel').textContent =
+        `${state.stats.totalPlans} plans · ${state.stats.totalRatings} ratings`;
+      updateProgress();
+    } catch (e) {
+      console.error('Rate error:', e);
+    }
+  }
+
+  // Short delay then next pair
+  setTimeout(() => loadNextPair(), winner === 'skip' ? 0 : 350);
+}
+
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+  if (document.getElementById('generateModal').classList.contains('hidden') === false) return;
+
+  if (e.key === '1' || e.key === 'ArrowLeft')  { e.preventDefault(); vote('a'); }
+  else if (e.key === '2' || e.key === 'ArrowRight') { e.preventDefault(); vote('b'); }
+  else if (e.key === 't' || e.key === 'T')     { e.preventDefault(); vote('tie'); }
+  else if (e.key === 's' || e.key === 'S' || e.key === ' ') { e.preventDefault(); vote('skip'); }
+});
+
+// ── Generate modal ────────────────────────────────────────────────────────────
+function openGenerateModal() {
+  document.getElementById('genProgress').textContent = '';
+  document.getElementById('generateModal').classList.remove('hidden');
+}
+function closeGenerateModal() {
+  document.getElementById('generateModal').classList.add('hidden');
+}
+
+async function runGenerate() {
+  const briefType = document.getElementById('genBriefType').value;
+  const count     = parseInt(document.getElementById('genCount').value, 10) || 20;
+  const btn       = document.getElementById('btnGenerate');
+  const prog      = document.getElementById('genProgress');
+
+  if (!briefType) { prog.textContent = 'Select a plan type first.'; return; }
+
+  btn.disabled = true;
+  prog.textContent = '⟳ Generating… this may take 20-40 seconds';
+
+  try {
+    const result = await apiFetch('POST', '/api/training/batch', { briefType, count });
+    prog.textContent = `✓ Generated ${result.generated} plans (${result.errors} failed)`;
+    state.stats.totalPlans += result.generated;
+    state.stats.plansByType = state.stats.plansByType || {};
+    state.stats.plansByType[briefType] = (state.stats.plansByType[briefType] || 0) + result.generated;
+    document.getElementById('statsLabel').textContent =
+      `${state.stats.totalPlans} plans · ${state.stats.totalRatings} ratings`;
+    setTimeout(() => {
+      closeGenerateModal();
+      loadNextPair();
+    }, 1500);
+  } catch (e) {
+    prog.textContent = '✗ Error: ' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── API helper ───────────────────────────────────────────────────────────────
+async function apiFetch(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const res  = await fetch(API + path, opts);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err  = new Error(json.error || `HTTP ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
+  return json;
+}
+
+function showError(msg) {
+  document.getElementById('plansArea').innerHTML =
+    `<div class="placeholder"><span class="error-msg">${msg}</span></div>`;
+}
+
+// ── Go ───────────────────────────────────────────────────────────────────────
+boot();
+</script>
+</body>
+</html>
