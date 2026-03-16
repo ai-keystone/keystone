@@ -201,6 +201,72 @@ const Reveal = ({ children, delay = 0, y = 28, className = '', style = {} }) => 
     </motion.div>
 );
 
+const SurveySection = ({ onJoin }) => {
+    const [copied, setCopied] = useState(false);
+    const copyLink = () => {
+        const url = window.location.origin + window.location.pathname.replace(/\/$/, '') + '/#research';
+        navigator.clipboard.writeText(url).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2400); });
+    };
+    return (
+        <section id="research" className="defer-section py-16 md:py-24" style={{background:'var(--cream)'}}>
+            <div className="site-shell">
+                <div className="max-w-2xl mx-auto text-center">
+                    <Reveal y={12}>
+                        <span className="section-label justify-center">Research / Beta Program</span>
+                    </Reveal>
+                    <Reveal y={32} delay={0.08}>
+                        <h2 className="cg mt-5" style={{fontSize:'clamp(2.6rem,5.5vw,4.2rem)',lineHeight:0.88,letterSpacing:'-0.055em',textTransform:'uppercase',color:'var(--ink)'}}>
+                            Help us build<br/>the right tool.
+                        </h2>
+                    </Reveal>
+                    <Reveal y={16} delay={0.14}>
+                        <p className="mt-5 leading-relaxed mx-auto" style={{color:'rgba(9,9,9,0.58)',maxWidth:'30rem',fontSize:'1rem'}}>
+                            A brief study with residential architects and designers. Your responses directly shape Keystone's roadmap and pricing.
+                        </p>
+                    </Reveal>
+
+                    <Reveal y={24} delay={0.22}>
+                        <div className="mt-10 mx-auto inline-block survey-qr-frame" style={{padding:'2rem 2.4rem'}}>
+                            <div className="mono text-[10px] uppercase tracking-[0.28em] mb-4" style={{color:'rgba(9,9,9,0.36)'}}>Scan to participate</div>
+                            <div className="rounded-[18px] overflow-hidden mx-auto"
+                                style={{width:'220px',height:'220px',background:'white',padding:'12px',boxShadow:'0 0 0 1px rgba(9,9,9,0.06), 0 8px 24px rgba(9,9,9,0.06)'}}>
+                                <img src={ASSETS.qrCode} alt="Qualtrics research survey QR code"
+                                    style={{width:'100%',height:'100%',objectFit:'contain'}}/>
+                            </div>
+                            <p className="mt-4 text-[13px]" style={{color:'rgba(9,9,9,0.48)'}}>
+                                For residential architects &amp; designers
+                            </p>
+                        </div>
+                    </Reveal>
+
+                    <Reveal y={12} delay={0.30}>
+                        <div className="flex justify-center gap-3 flex-wrap mt-6">
+                            {[{val:'~3 min',lbl:'to complete'},{val:'10',lbl:'questions'},{val:'100%',lbl:'anonymous'}].map(item => (
+                                <div key={item.lbl} className="paper-panel px-5 py-3 flex items-center gap-2">
+                                    <span className="cg" style={{fontSize:'1.3rem',color:'var(--accent)',letterSpacing:'-0.03em'}}>{item.val}</span>
+                                    <span className="mono text-[10px] uppercase tracking-[0.18em]" style={{color:'rgba(9,9,9,0.44)'}}>{item.lbl}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </Reveal>
+
+                    <Reveal y={12} delay={0.38}>
+                        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
+                            <button onClick={copyLink} className="cta-secondary flex items-center gap-2">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                {copied ? 'Link copied!' : 'Copy share link'}
+                            </button>
+                            <button onClick={onJoin} className="cta-hero cta-glow-soft">
+                                Get Beta Access
+                            </button>
+                        </div>
+                    </Reveal>
+                </div>
+            </div>
+        </section>
+    );
+};
+
 const HeroFloatingBlueprint = () => {
     const { scrollY } = useScroll();
     const rawRotate = useTransform(scrollY, [0, 480], [0, 18]);
@@ -2950,63 +3016,7 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    {/* ── RESEARCH SURVEY ── */}
-                    <section className="defer-section py-16 md:py-24" style={{background:'var(--cream)'}}>
-                        <div className="site-shell">
-                            <div className="grid md:grid-cols-[1fr_auto] gap-10 md:gap-16 items-center">
-                                <div>
-                                    <Reveal y={12}>
-                                        <span className="section-label">Research / Beta Program</span>
-                                    </Reveal>
-                                    <Reveal y={32} delay={0.08}>
-                                        <h2 className="cg mt-5" style={{fontSize:'clamp(2.6rem,5.5vw,4.4rem)',lineHeight:0.88,letterSpacing:'-0.055em',textTransform:'uppercase',color:'var(--ink)'}}>
-                                            Help us build<br/>the right tool.
-                                        </h2>
-                                    </Reveal>
-                                    <Reveal y={16} delay={0.16}>
-                                        <p className="mt-5 leading-relaxed" style={{color:'rgba(9,9,9,0.62)',maxWidth:'34rem',fontSize:'1.02rem'}}>
-                                            We're running a brief research study with residential architects and designers. Your responses directly shape Keystone's feature roadmap and pricing model.
-                                        </p>
-                                    </Reveal>
-                                    <Reveal y={12} delay={0.24}>
-                                        <div className="flex flex-wrap gap-2 mt-6">
-                                            {['Pain points in intake', 'Tool evaluation habits', 'Pricing sensitivity', 'Beta access'].map(chip => (
-                                                <span key={chip} className="survey-theme-chip">{chip}</span>
-                                            ))}
-                                        </div>
-                                    </Reveal>
-                                    <Reveal y={12} delay={0.32}>
-                                        <div className="mt-8 grid sm:grid-cols-3 gap-4">
-                                            {[{val:'~3 min',lbl:'to complete'},{val:'10',lbl:'focused questions'},{val:'100%',lbl:'anonymous'}].map(item => (
-                                                <div key={item.lbl} className="paper-panel p-5">
-                                                    <div className="cg" style={{fontSize:'2.1rem',color:'var(--accent)',letterSpacing:'-0.04em',lineHeight:1}}>{item.val}</div>
-                                                    <div className="mono text-[10px] uppercase tracking-[0.22em] mt-2" style={{color:'rgba(9,9,9,0.48)'}}>{item.lbl}</div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </Reveal>
-                                </div>
-                                <Reveal y={28} delay={0.18}>
-                                    <div className="survey-qr-frame" style={{minWidth:'220px',maxWidth:'280px'}}>
-                                        <div className="mono text-[10px] uppercase tracking-[0.26em]" style={{color:'rgba(9,9,9,0.38)'}}>Scan to participate</div>
-                                        <div className="mt-4 rounded-[16px] overflow-hidden mx-auto"
-                                            style={{width:'180px',height:'180px',background:'white',padding:'10px',boxShadow:'inset 0 0 0 1px rgba(9,9,9,0.06)'}}>
-                                            <img src={ASSETS.qrCode} alt="Qualtrics research survey QR code"
-                                                style={{width:'100%',height:'100%',objectFit:'contain'}}/>
-                                        </div>
-                                        <p className="mt-4 text-[13px] leading-snug" style={{color:'rgba(9,9,9,0.54)'}}>
-                                            For residential architects &amp; designers
-                                        </p>
-                                        <div className="mt-4 pt-4" style={{borderTop:'1px solid rgba(9,9,9,0.07)'}}>
-                                            <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow-soft w-full" style={{fontSize:'0.72rem',padding:'0.7rem 1rem'}}>
-                                                Get Beta Access
-                                            </button>
-                                        </div>
-                                    </div>
-                                </Reveal>
-                            </div>
-                        </div>
-                    </section>
+                    <SurveySection onJoin={() => setModalOpen(true)}/>
 
                     <section className="defer-section py-16 md:py-20" style={{background:'linear-gradient(180deg, #FFFDFC 0%, #F5F0E9 100%)'}}>
                         <div className="container mx-auto max-w-5xl px-5 md:px-10 text-center">
