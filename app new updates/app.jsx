@@ -112,13 +112,13 @@ const JoinModal = ({ isOpen, onClose }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setStatus('loading');
-        const FORM = "https://docs.google.com/forms/d/e/1FAIpQLSeGuYIMrOkuJopGDt-TqRkqVeYrhRE7kIOrWGxEEvz1s4F9NA/formResponse";
+        const FORM = "https://docs.google.com/forms/d/e/1FAIpQLSfdIXdz_gGRYmmTLENeYdSV17dwoBZWravDtM9SstDW_qvZag/formResponse";
         const d = new URLSearchParams();
-        d.append("entry.564926659", formData.fullName);
-        d.append("entry.510477948", formData.firmName);
-        d.append("entry.1527142228", formData.email);
-        d.append("entry.623368817", formData.volume);
-        d.append("entry.1172849489", formData.questions);
+        d.append("entry.1860143009", formData.fullName);
+        d.append("entry.1129821900", formData.firmName);
+        d.append("entry.731896859",  formData.email);
+        d.append("entry.1778774872", formData.volume);
+        d.append("entry.617770287",  formData.questions);
         try {
             await fetch(FORM, { method:"POST", mode:"no-cors", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body: d.toString() });
             setStatus('success');
