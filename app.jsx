@@ -151,21 +151,18 @@ const SectionRail = () => {
     ];
 
     useEffect(() => {
-        const observer = new IntersectionObserver((entries) => {
-            const visible = entries
-                .filter((entry) => entry.isIntersecting)
-                .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-            if (visible[0]?.target?.id) setActiveId(visible[0].target.id);
-        }, {
-            threshold: [0.2, 0.45, 0.7],
-            rootMargin: '-28% 0px -48% 0px',
-        });
-
-        items.forEach(({ id }) => {
-            const node = document.getElementById(id);
-            if (node) observer.observe(node);
-        });
-        return () => observer.disconnect();
+        const TRIGGER = Math.round(window.innerHeight * 0.30);
+        const update = () => {
+            let current = items[0].id;
+            for (const { id } of items) {
+                const el = document.getElementById(id);
+                if (el && el.getBoundingClientRect().top <= TRIGGER) current = id;
+            }
+            setActiveId(current);
+        };
+        window.addEventListener('scroll', update, { passive: true });
+        update();
+        return () => window.removeEventListener('scroll', update);
     }, []);
 
     return (

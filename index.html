@@ -1223,6 +1223,67 @@
                 transform: none !important;
             }
         }
+
+        /* ── PAGE LOAD VEIL ── */
+        .page-veil {
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: var(--ink);
+            pointer-events: none;
+            animation: veilOut 0.72s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
+        }
+        @keyframes veilOut {
+            0%   { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .page-veil { animation-duration: 0.01ms !important; }
+        }
+
+        /* ── SCROLL PROGRESS BAR ── */
+        .scroll-progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 2px;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent) 0%, var(--accent-2) 100%);
+            z-index: 200;
+            transform-origin: left center;
+            transition: width 0.08s linear;
+            pointer-events: none;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .scroll-progress-bar { transition: none; }
+        }
+
+        /* ── TEXT SELECTION ── */
+        ::selection { background: rgba(255,106,55,0.18); color: var(--ink); }
+        ::-moz-selection { background: rgba(255,106,55,0.18); color: var(--ink); }
+
+        /* ── SURVEY SECTION ── */
+        .survey-qr-frame {
+            background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.72));
+            border: 1px solid rgba(10,10,12,0.08);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+        }
+        .survey-theme-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 0.9rem;
+            border-radius: 999px;
+            background: rgba(255,106,55,0.08);
+            border: 1px solid rgba(255,106,55,0.18);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.68rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: var(--accent-2);
+        }
     </style>
     <script>
         tailwind.config = {
@@ -1236,7 +1297,27 @@
 </head>
 <body>
 <a href="#generator" class="skip-link">Skip to live studio</a>
+<div class="page-veil" id="page-veil" aria-hidden="true"></div>
+<div class="scroll-progress-bar" id="scroll-progress" aria-hidden="true"></div>
 <div id="root"></div>
-<script defer src="app.js?v=20260314-uiux-pass"></script>
+<script>
+    // Scroll progress bar
+    (function() {
+        var bar = document.getElementById('scroll-progress');
+        if (!bar) return;
+        var ticking = false;
+        function updateBar() {
+            var scrollTop = window.scrollY || document.documentElement.scrollTop;
+            var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            var pct = docHeight > 0 ? Math.min(100, (scrollTop / docHeight) * 100) : 0;
+            bar.style.width = pct + '%';
+            ticking = false;
+        }
+        window.addEventListener('scroll', function() {
+            if (!ticking) { requestAnimationFrame(updateBar); ticking = true; }
+        }, { passive: true });
+    })();
+</script>
+<script defer src="app.js?v=20260315-animations"></script>
 </body>
 </html>
