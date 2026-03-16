@@ -25,6 +25,10 @@
       "destination": "https://keystone-api-97830102261.us-central1.run.app/api/gallery"
     },
     {
+      "source": "/api/training/:path*",
+      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/training/:path*"
+    },
+    {
       "source": "/case-study",
       "destination": "/index.html"
     },
