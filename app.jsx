@@ -1,6 +1,6 @@
 ﻿const { useState, useEffect, useRef } = React;
 const FM = window.framerMotion || window.Motion;
-const { motion, AnimatePresence } = FM;
+const { motion, AnimatePresence, useScroll, useTransform, useSpring } = FM;
 
 const ASSETS = {
     watermark:        "images/keystone-line-art.png",
@@ -186,7 +186,110 @@ const SectionRail = () => {
     );
 };
 
-// â”€â”€â”€ MOBILE NAV â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── SCROLL PROGRESS ────────────────────────────────────────────────────────
+// (handled by vanilla JS in index.html — no React overhead needed)
+
+// ─── REVEAL WRAPPER ─────────────────────────────────────────────────────────
+// Elegant scroll-triggered entrance. Use for headings, standalone cards, etc.
+const Reveal = ({ children, delay = 0, y = 28, className = '', style = {} }) => (
+    <motion.div
+        initial={{ opacity: 0, y }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-72px' }}
+        transition={{ duration: 0.62, delay, ease: [0.22, 1, 0.36, 1] }}
+        className={className}
+        style={style}
+    >
+        {children}
+    </motion.div>
+);
+
+const HeroFloatingBlueprint = () => {
+    const { scrollY } = useScroll();
+    const rawRotate = useTransform(scrollY, [0, 480], [0, 18]);
+    const rawOpacity = useTransform(scrollY, [0, 320], [1, 0]);
+    const rawY = useTransform(scrollY, [0, 480], [0, 56]);
+    const rotateX = useSpring(rawRotate, { stiffness: 60, damping: 22 });
+    const opacity = useSpring(rawOpacity, { stiffness: 60, damping: 22 });
+    const translateY = useSpring(rawY, { stiffness: 60, damping: 22 });
+    return (
+        <div className="absolute inset-0 hidden lg:block pointer-events-none overflow-hidden"
+            style={{ perspective: '900px', perspectiveOrigin: '72% 38%' }}>
+            <motion.div
+                initial={{ opacity: 0, rotateX: -6, y: 20 }}
+                animate={{ opacity: 0.28, rotateX: 0, y: 0 }}
+                transition={{ delay: 0.7, duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+                style={{ rotateX, opacity, translateY, transformStyle: 'preserve-3d' }}
+                className="absolute right-[-4%] top-[8%] w-[52%]">
+                <svg viewBox="0 0 520 460" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'auto'}}>
+                    <defs>
+                        <pattern id="bpDot" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse">
+                            <circle cx="12" cy="12" r="0.9" fill="rgba(27,79,130,0.18)"/>
+                        </pattern>
+                    </defs>
+                    <rect x="0" y="0" width="520" height="460" fill="url(#bpDot)"/>
+                    {/* outer walls */}
+                    <rect x="52" y="48" width="418" height="350" stroke="rgba(27,79,130,0.52)" strokeWidth="2.2" fill="rgba(27,79,130,0.018)"/>
+                    {/* living / great room */}
+                    <rect x="52" y="48" width="254" height="196" stroke="rgba(27,79,130,0.36)" strokeWidth="1.4" fill="rgba(27,79,130,0.022)"/>
+                    {/* kitchen */}
+                    <rect x="306" y="48" width="164" height="196" stroke="rgba(27,79,130,0.36)" strokeWidth="1.4" fill="rgba(27,79,130,0.022)"/>
+                    {/* hallway */}
+                    <rect x="52" y="244" width="104" height="154" stroke="rgba(27,79,130,0.28)" strokeWidth="1.2" fill="none"/>
+                    {/* primary bedroom */}
+                    <rect x="156" y="244" width="200" height="154" stroke="rgba(27,79,130,0.36)" strokeWidth="1.4" fill="rgba(27,79,130,0.022)"/>
+                    {/* bed 2 */}
+                    <rect x="356" y="244" width="114" height="154" stroke="rgba(27,79,130,0.36)" strokeWidth="1.4" fill="rgba(27,79,130,0.022)"/>
+                    {/* door arcs */}
+                    <path d="M52 196 Q82 196 82 226" stroke="rgba(27,79,130,0.3)" strokeWidth="1" fill="none" strokeDasharray="3,3"/>
+                    <path d="M156 310 Q186 310 186 340" stroke="rgba(27,79,130,0.3)" strokeWidth="1" fill="none" strokeDasharray="3,3"/>
+                    <path d="M306 196 Q306 166 336 166" stroke="rgba(27,79,130,0.3)" strokeWidth="1" fill="none" strokeDasharray="3,3"/>
+                    {/* window symbols */}
+                    <line x1="130" y1="48" x2="190" y2="48" stroke="rgba(27,79,130,0.5)" strokeWidth="2.8"/>
+                    <line x1="340" y1="48" x2="400" y2="48" stroke="rgba(27,79,130,0.5)" strokeWidth="2.8"/>
+                    <line x1="200" y1="398" x2="300" y2="398" stroke="rgba(27,79,130,0.5)" strokeWidth="2.8"/>
+                    {/* room labels */}
+                    <text x="178" y="154" fontSize="10" fill="rgba(27,79,130,0.45)" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" letterSpacing="2">LIVING</text>
+                    <text x="388" y="154" fontSize="10" fill="rgba(27,79,130,0.45)" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" letterSpacing="2">KITCHEN</text>
+                    <text x="256" y="328" fontSize="10" fill="rgba(27,79,130,0.45)" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" letterSpacing="2">PRIMARY</text>
+                    <text x="413" y="328" fontSize="10" fill="rgba(27,79,130,0.45)" textAnchor="middle" fontFamily="IBM Plex Mono, monospace" letterSpacing="2">BED 2</text>
+                    {/* dimension ticks */}
+                    <line x1="52" y1="30" x2="470" y2="30" stroke="rgba(27,79,130,0.22)" strokeWidth="0.7" strokeDasharray="4,5"/>
+                    <line x1="34" y1="48" x2="34" y2="398" stroke="rgba(27,79,130,0.22)" strokeWidth="0.7" strokeDasharray="4,5"/>
+                    <line x1="48" y1="30" x2="48" y2="42" stroke="rgba(27,79,130,0.3)" strokeWidth="0.8"/>
+                    <line x1="472" y1="30" x2="472" y2="42" stroke="rgba(27,79,130,0.3)" strokeWidth="0.8"/>
+                    <line x1="34" y1="44" x2="46" y2="44" stroke="rgba(27,79,130,0.3)" strokeWidth="0.8"/>
+                    <line x1="34" y1="400" x2="46" y2="400" stroke="rgba(27,79,130,0.3)" strokeWidth="0.8"/>
+                    {/* stair symbol */}
+                    <g transform="translate(68, 258)">
+                        {[0,1,2,3,4,5,6,7].map(i => (
+                            <line key={i} x1="0" y1={i*9} x2="72" y2={i*9} stroke="rgba(27,79,130,0.28)" strokeWidth="0.8"/>
+                        ))}
+                        <rect x="0" y="0" width="72" height="72" stroke="rgba(27,79,130,0.32)" strokeWidth="0.9" fill="none"/>
+                    </g>
+                    {/* north marker */}
+                    <g transform="translate(492, 28)">
+                        <circle cx="0" cy="0" r="11" stroke="rgba(27,79,130,0.28)" strokeWidth="0.9" fill="none"/>
+                        <text x="0" y="-14" fontSize="8" fill="rgba(27,79,130,0.42)" textAnchor="middle" fontFamily="IBM Plex Mono, monospace">N</text>
+                        <polygon points="0,-8 -4,4 0,1 4,4" fill="rgba(27,79,130,0.38)" stroke="none"/>
+                        <polygon points="0,8 -4,-4 0,-1 4,-4" fill="rgba(27,79,130,0.18)" stroke="none"/>
+                    </g>
+                    {/* scale bar */}
+                    <g transform="translate(52, 432)">
+                        <rect x="0" y="0" width="120" height="5" fill="rgba(27,79,130,0.22)"/>
+                        <rect x="0" y="0" width="30" height="5" fill="rgba(27,79,130,0.4)"/>
+                        <rect x="60" y="0" width="30" height="5" fill="rgba(27,79,130,0.4)"/>
+                        <text x="0" y="16" fontSize="8" fill="rgba(27,79,130,0.38)" fontFamily="IBM Plex Mono, monospace">0</text>
+                        <text x="58" y="16" fontSize="8" fill="rgba(27,79,130,0.38)" fontFamily="IBM Plex Mono, monospace">20</text>
+                        <text x="116" y="16" fontSize="8" fill="rgba(27,79,130,0.38)" fontFamily="IBM Plex Mono, monospace">40 ft</text>
+                    </g>
+                </svg>
+            </motion.div>
+        </div>
+    );
+};
+
+// ─── MOBILE NAV ──────────────────────────────────────────────────────────────
 const MobileNavBar = ({ onOpenMenu }) => (
     <div className="fixed bottom-0 left-0 w-full bottom-nav z-[90] md:hidden pb-safe">
         <div className="grid grid-cols-5 h-[60px] items-center">
@@ -2353,7 +2456,7 @@ const DreamApp = () => {
     }, []);
 
     return (
-        <div className="selection:bg-blue selection:text-white pb-[60px] md:pb-0">
+        <div className="pb-[60px] md:pb-0">
             <JoinModal isOpen={isModalOpen} onClose={() => setModalOpen(false)}/>
             <LaserCursor/>
             <MobileNavBar onOpenMenu={() => setMenuOpen(true)}/>
@@ -2372,7 +2475,11 @@ const DreamApp = () => {
             </AnimatePresence>
 
             <motion.main initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.45}}>
-                    <nav className="fixed top-0 w-full z-40 h-[64px] flex items-center justify-between px-5 md:px-10"
+                    <motion.nav
+                        initial={{ opacity: 0, y: -64 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.56, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
+                        className="fixed top-0 w-full z-40 h-[64px] flex items-center justify-between px-5 md:px-10"
                         style={{background:'rgba(245,240,233,0.84)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',borderBottom:'1px solid rgba(9,9,9,0.08)'}}>
                         <a href="#hero" className="flex items-center gap-3">
                             <SmartImage src={ASSETS.icon} alt="Keystone" eager style={{width:'30px',height:'30px'}}/>
@@ -2389,7 +2496,7 @@ const DreamApp = () => {
                                 Request Access
                             </button>
                         </div>
-                    </nav>
+                    </motion.nav>
 
                         <section id="hero" className="relative overflow-hidden" style={{minHeight:'min(84svh, 860px)',paddingTop:'74px',background:'linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)'}}>
                         <div className="hero-video-shell">
@@ -2403,6 +2510,7 @@ const DreamApp = () => {
                         <div className="dream-grid absolute inset-0 opacity-80"/>
                         <div className="hero-glow" style={{top:'-12%', width:'780px', height:'780px', background:'radial-gradient(circle, rgba(255,106,55,0.14), transparent 72%)'}}/>
                         <div className="hero-glow-red" style={{bottom:'10%', right:'4%', width:'520px', height:'520px', background:'radial-gradient(circle, rgba(216,208,196,0.52), transparent 72%)'}}/>
+                        <HeroFloatingBlueprint/>
                         <div className="site-shell relative z-10">
                             <div className="grid lg:grid-cols-[minmax(0,1.08fr)_380px] gap-8 lg:gap-10 items-start pt-3 pb-6 md:pt-5 md:pb-10" style={{minHeight:'min(calc(64svh - 64px), 640px)'}}>
                                 <div>
@@ -2494,10 +2602,15 @@ const DreamApp = () => {
                             <div className="proof-frame p-4 md:p-6">
                                 <div className="proof-top-grid">
                                     <div className="p-2 md:p-4">
+                                        <Reveal y={12}>
                                         <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>Sample session</span>
+                                        </Reveal>
+                                        <Reveal y={28} delay={0.08}>
                                         <h2 className="cg mt-5" style={{fontSize:'clamp(2.1rem, 4.6vw, 3.8rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
                                             Real output. <span className="serif proof-accent-word">No imagination tax.</span>
                                         </h2>
+                                        </Reveal>
+                                        <Reveal y={16} delay={0.16}>
                                         <p className="mt-4 text-sm md:text-base leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
                                             The fastest way to trust Keystone is to watch the whole firm workflow happen in sequence: client brief, generated plan, export-ready blueprint, and optional Gemini study before the first architect meeting.
                                         </p>
@@ -2507,14 +2620,20 @@ const DreamApp = () => {
                                             </button>
                                             <a href="/case-study" data-cursor-text="Open case study" className="cta-secondary">View Case Study</a>
                                         </div>
+                                        </Reveal>
                                     </div>
                                     <div className="proof-journey-rail mt-2 md:mt-0">
-                                        {SAMPLE_SESSION_STEPS.map((item) => (
-                                            <article key={item.number} className="proof-journey-card cursor-target" data-cursor-text={item.title}>
+                                        {SAMPLE_SESSION_STEPS.map((item, index) => (
+                                            <motion.article key={item.number}
+                                                initial={{opacity:0, y:20}}
+                                                whileInView={{opacity:1, y:0}}
+                                                viewport={{once:true, margin:'-48px'}}
+                                                transition={{duration:0.52, delay:index*0.07, ease:[0.22,1,0.36,1]}}
+                                                className="proof-journey-card cursor-target" data-cursor-text={item.title}>
                                                 <div className="proof-journey-step">{item.number}</div>
                                                 <h3>{item.title}</h3>
                                                 <p>{item.body}</p>
-                                            </article>
+                                            </motion.article>
                                         ))}
                                     </div>
                                 </div>
@@ -2555,12 +2674,17 @@ const DreamApp = () => {
                                     </motion.div>
                                 </div>
                                 <div className="proof-card-row mt-4">
-                                    {trustCards.map((item) => (
-                                        <div key={item.title} className="proof-mini-tile cursor-target" data-cursor-text={item.eyebrow}>
+                                    {trustCards.map((item, index) => (
+                                        <motion.div key={item.title}
+                                            initial={{opacity:0, y:18}}
+                                            whileInView={{opacity:1, y:0}}
+                                            viewport={{once:true, margin:'-48px'}}
+                                            transition={{duration:0.52, delay:index*0.06, ease:[0.22,1,0.36,1]}}
+                                            className="proof-mini-tile cursor-target" data-cursor-text={item.eyebrow}>
                                             <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>{item.eyebrow}</div>
                                             <p className="cg mt-2 text-[1.15rem] leading-[1.02]" style={{color:'var(--ink)'}}>{item.title}</p>
                                             <p className="mt-2 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.78)'}}>{item.body}</p>
-                                        </div>
+                                        </motion.div>
                                     ))}
                                 </div>
                                 <div className="proof-card-row mt-4">
@@ -2584,7 +2708,7 @@ const DreamApp = () => {
 
                     <section className="defer-section py-12 md:py-14" style={{background:'var(--paper)'}}>
                         <div className="site-shell">
-                            <div className="paper-panel p-7 md:p-10">
+                            <Reveal y={24} className="paper-panel p-7 md:p-10">
                                 <div className="grid lg:grid-cols-[minmax(0,1fr)_220px] gap-8 items-end">
                                     <div>
                                         <span className="section-label" style={{color:'rgba(9,9,9,0.42)'}}>Live studio</span>
@@ -2603,7 +2727,7 @@ const DreamApp = () => {
                                         </span>
                                     </button>
                                 </div>
-                            </div>
+                            </Reveal>
                         </div>
                     </section>
 
@@ -2624,14 +2748,18 @@ const DreamApp = () => {
                         <div className="site-shell">
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-10 items-end mb-10 md:mb-12">
                                 <div>
-                                    <span className="section-label">What changes</span>
+                                    <Reveal y={12}><span className="section-label">What changes</span></Reveal>
+                                    <Reveal y={32} delay={0.08}>
                                     <h2 className="cg mt-6" style={{fontSize:'clamp(2.8rem, 7vw, 5.8rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase',color:'var(--ink)'}}>
                                         The point is not more content. It is better-prepared first meetings.
                                     </h2>
+                                    </Reveal>
                                 </div>
+                                <Reveal y={16} delay={0.18}>
                                 <p className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.58)'}}>
                                     Keystone works when the client, the architect, and the next decision all feel less vague. These are the business-level shifts the workflow is built to create for firms.
                                 </p>
+                                </Reveal>
                             </div>
                             <div className="grid md:grid-cols-3 gap-4">
                                 {outcomeCards.map((item, index) => (
@@ -2656,14 +2784,18 @@ const DreamApp = () => {
                         <div className="site-shell">
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-12 items-end">
                                 <div>
-                                    <span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Firm workflow</span>
+                                    <Reveal y={12}><span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Firm workflow</span></Reveal>
+                                    <Reveal y={32} delay={0.08}>
                                     <h2 className="cg mt-6" style={{fontSize:'clamp(2.8rem, 7vw, 5.4rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
                                         A calmer way to move from first inquiry to architect-ready intent.
                                     </h2>
+                                    </Reveal>
                                 </div>
+                                <Reveal y={16} delay={0.18}>
                                 <p className="text-sm md:text-base leading-relaxed text-mid">
                                     Keystone is not trying to replace architectural judgment. It gives firms a better handoff from client curiosity to the first serious design conversation.
                                 </p>
+                                </Reveal>
                             </div>
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-6 mt-10 items-start">
                                 <div className="grid md:grid-cols-3 gap-5 self-start">
@@ -2719,13 +2851,17 @@ const DreamApp = () => {
                     <section id="pricing" className="defer-section py-14 md:py-[4.75rem]" style={{background:'var(--paper)',color:'var(--ink)'}}>
                         <div className="site-shell">
                             <div className="max-w-3xl">
-                                <span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Pricing</span>
+                                <Reveal y={12}><span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Pricing</span></Reveal>
+                                <Reveal y={32} delay={0.08}>
                                 <h2 className="cg mt-6" style={{fontSize:'clamp(2.4rem, 5.6vw, 4.5rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
                                     Clear pricing before your team commits the hours.
                                 </h2>
+                                </Reveal>
+                                <Reveal y={16} delay={0.18}>
                                 <p className="mt-5 text-base leading-relaxed" style={{color:'var(--mid)'}}>
                                     Start with a guided demo, try one live client session, or turn Keystone into a repeatable pre-meeting rhythm without a dead-month subscription.
                                 </p>
+                                </Reveal>
                             </div>
                             <div className="grid xl:grid-cols-[minmax(0,1fr)_300px] gap-6 mt-10 items-start">
                                 <div>
@@ -2771,7 +2907,7 @@ const DreamApp = () => {
                         <div className="hero-glow" style={{top:'12%', left:'18%', width:'540px', height:'540px', background:'radial-gradient(circle, rgba(255,106,55,0.1), transparent 70%)'}}/>
                         <div className="site-shell relative z-10">
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-10 items-start">
-                                <div className="dream-panel p-7 md:p-10">
+                                <Reveal y={28} className="dream-panel p-7 md:p-10">
                                     <span className="section-label" style={{color:'rgba(232,238,244,0.65)'}}>Studio</span>
                                     <h2 className="cg text-white mt-6" style={{fontSize:'clamp(2.8rem, 7vw, 5.2rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
                                         Built by people who have felt the discovery gap up close.
@@ -2788,13 +2924,14 @@ const DreamApp = () => {
                                         </p>
                                         <p className="mono mt-4 text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.5)'}}>Founder note / Keystone AI</p>
                                     </div>
-                                </div>
+                                </Reveal>
                                 <div className="grid gap-4">
-                                    {studioMetrics.map((metric) => (
-                                        <div key={metric.label} className="studio-metric">
+                                    {studioMetrics.map((metric, index) => (
+                                        <motion.div key={metric.label} initial={{opacity:0,x:20}} whileInView={{opacity:1,x:0}} viewport={{once:true,margin:'-48px'}} transition={{duration:0.5,delay:index*0.07,ease:[0.22,1,0.36,1]}}
+                                            className="studio-metric">
                                             <strong>{metric.value}</strong>
                                             <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>{metric.label}</span>
-                                        </div>
+                                        </motion.div>
                                     ))}
                                 </div>
                             </div>
@@ -2812,6 +2949,64 @@ const DreamApp = () => {
                                         </div>
                                     </motion.article>
                                 ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* ── RESEARCH SURVEY ── */}
+                    <section className="defer-section py-16 md:py-24" style={{background:'var(--cream)'}}>
+                        <div className="site-shell">
+                            <div className="grid md:grid-cols-[1fr_auto] gap-10 md:gap-16 items-center">
+                                <div>
+                                    <Reveal y={12}>
+                                        <span className="section-label">Research / Beta Program</span>
+                                    </Reveal>
+                                    <Reveal y={32} delay={0.08}>
+                                        <h2 className="cg mt-5" style={{fontSize:'clamp(2.6rem,5.5vw,4.4rem)',lineHeight:0.88,letterSpacing:'-0.055em',textTransform:'uppercase',color:'var(--ink)'}}>
+                                            Help us build<br/>the right tool.
+                                        </h2>
+                                    </Reveal>
+                                    <Reveal y={16} delay={0.16}>
+                                        <p className="mt-5 leading-relaxed" style={{color:'rgba(9,9,9,0.62)',maxWidth:'34rem',fontSize:'1.02rem'}}>
+                                            We're running a brief research study with residential architects and designers. Your responses directly shape Keystone's feature roadmap and pricing model.
+                                        </p>
+                                    </Reveal>
+                                    <Reveal y={12} delay={0.24}>
+                                        <div className="flex flex-wrap gap-2 mt-6">
+                                            {['Pain points in intake', 'Tool evaluation habits', 'Pricing sensitivity', 'Beta access'].map(chip => (
+                                                <span key={chip} className="survey-theme-chip">{chip}</span>
+                                            ))}
+                                        </div>
+                                    </Reveal>
+                                    <Reveal y={12} delay={0.32}>
+                                        <div className="mt-8 grid sm:grid-cols-3 gap-4">
+                                            {[{val:'~3 min',lbl:'to complete'},{val:'10',lbl:'focused questions'},{val:'100%',lbl:'anonymous'}].map(item => (
+                                                <div key={item.lbl} className="paper-panel p-5">
+                                                    <div className="cg" style={{fontSize:'2.1rem',color:'var(--accent)',letterSpacing:'-0.04em',lineHeight:1}}>{item.val}</div>
+                                                    <div className="mono text-[10px] uppercase tracking-[0.22em] mt-2" style={{color:'rgba(9,9,9,0.48)'}}>{item.lbl}</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </Reveal>
+                                </div>
+                                <Reveal y={28} delay={0.18}>
+                                    <div className="survey-qr-frame" style={{minWidth:'220px',maxWidth:'280px'}}>
+                                        <div className="mono text-[10px] uppercase tracking-[0.26em]" style={{color:'rgba(9,9,9,0.38)'}}>Scan to participate</div>
+                                        <div className="mt-4 rounded-[16px] overflow-hidden mx-auto"
+                                            style={{width:'180px',height:'180px',background:'white',padding:'10px',boxShadow:'inset 0 0 0 1px rgba(9,9,9,0.06)'}}>
+                                            <img src={ASSETS.qrCode} alt="Qualtrics research survey QR code"
+                                                style={{width:'100%',height:'100%',objectFit:'contain'}}/>
+                                        </div>
+                                        <p className="mt-4 text-[13px] leading-snug" style={{color:'rgba(9,9,9,0.54)'}}>
+                                            For residential architects &amp; designers
+                                        </p>
+                                        <div className="mt-4 pt-4" style={{borderTop:'1px solid rgba(9,9,9,0.07)'}}>
+                                            <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow-soft w-full" style={{fontSize:'0.72rem',padding:'0.7rem 1rem'}}>
+                                                Get Beta Access
+                                            </button>
+                                        </div>
+                                    </div>
+                                </Reveal>
                             </div>
                         </div>
                     </section>
