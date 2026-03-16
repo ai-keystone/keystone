@@ -1301,6 +1301,9 @@
 <div class="scroll-progress-bar" id="scroll-progress" aria-hidden="true"></div>
 <div id="root"></div>
 <script>
+    // Disable browser scroll restoration so refresh always starts at top
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
     // Scroll progress bar
     (function() {
         var bar = document.getElementById('scroll-progress');
