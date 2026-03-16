@@ -6,104 +6,219 @@
   <title>Keystone — Floor Plan Training</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f0f0f; color: #e8e8e8; min-height: 100vh; }
 
-    /* ── Key overlay ── */
-    .key-overlay {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.92);
-      display: flex; align-items: center; justify-content: center; z-index: 200;
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #e8e8e8;
+      min-height: 100vh;
     }
-    .key-overlay.hidden { display: none; }
-    .key-box {
-      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 14px;
-      padding: 36px; width: 360px; max-width: 90vw; text-align: center;
-    }
-    .key-box h2 { font-size: 18px; color: #fff; margin-bottom: 8px; }
-    .key-box p  { font-size: 13px; color: #666; margin-bottom: 20px; }
-    .key-box input {
-      width: 100%; padding: 10px 14px; background: #252525; border: 1px solid #333;
-      border-radius: 8px; color: #e8e8e8; font-size: 14px; outline: none;
-      margin-bottom: 12px; letter-spacing: 0.06em;
-    }
-    .key-box input:focus { border-color: #555; }
-    .key-box .btn-unlock {
-      width: 100%; padding: 10px; background: #1d4ed8; border: none; border-radius: 8px;
-      color: #fff; font-size: 14px; font-weight: 600; cursor: pointer;
-    }
-    .key-box .btn-unlock:hover { background: #2563eb; }
-    .key-error { color: #f87171; font-size: 13px; margin-top: 10px; min-height: 18px; }
 
     /* ── Top bar ── */
-    .topbar { display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: #1a1a1a; border-bottom: 1px solid #2a2a2a; flex-wrap: wrap; }
-    .topbar h1 { font-size: 15px; font-weight: 600; color: #fff; letter-spacing: 0.02em; white-space: nowrap; }
-    .topbar .sep { color: #333; }
-    select, button { font-size: 12px; padding: 5px 10px; border-radius: 6px; border: 1px solid #333; background: #252525; color: #e8e8e8; cursor: pointer; outline: none; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 12px 24px;
+      background: #1a1a1a;
+      border-bottom: 1px solid #2a2a2a;
+      flex-wrap: wrap;
+    }
+    .topbar h1 { font-size: 16px; font-weight: 600; color: #fff; letter-spacing: 0.02em; }
+    .topbar .sep { color: #444; }
+
+    select, button {
+      font-size: 13px;
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #252525;
+      color: #e8e8e8;
+      cursor: pointer;
+      outline: none;
+    }
     select:hover, button:hover { border-color: #555; }
     button:active { transform: scale(0.97); }
-    .btn-generate { background: #1d4ed8; border-color: #2563eb; color: #fff; }
+
+    .btn-generate {
+      background: #1d4ed8;
+      border-color: #2563eb;
+      color: #fff;
+    }
     .btn-generate:hover { background: #2563eb; }
-    .btn-generate:disabled { opacity: 0.5; cursor: default; }
-    .btn-export { background: #166534; border-color: #16a34a; color: #86efac; font-size: 12px; }
-    .btn-export:hover { background: #15803d; }
-    .stats-badge { font-size: 11px; color: #777; background: #1e1e1e; border: 1px solid #2a2a2a; border-radius: 4px; padding: 4px 9px; white-space: nowrap; }
-    .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .btn-generate:disabled { background: #334; opacity: 0.6; cursor: default; }
+
+    .stats-badge {
+      font-size: 12px;
+      color: #888;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 4px 10px;
+    }
 
     /* ── Theme banner ── */
-    .theme-banner { background: #111827; border-bottom: 1px solid #1f2937; padding: 8px 20px; display: flex; align-items: center; gap: 10px; }
-    .theme-label { font-size: 12px; font-weight: 700; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
-    .theme-desc  { font-size: 12px; color: #6b7280; }
-
-    /* ── Progress ── */
-    .progress-row { display: flex; align-items: center; gap: 10px; padding: 6px 20px; background: #181818; border-bottom: 1px solid #222; }
-    .progress-bar-wrap { flex: 1; height: 3px; background: #222; border-radius: 2px; overflow: hidden; }
-    .progress-bar { height: 100%; background: #22c55e; transition: width 0.3s; border-radius: 2px; }
-    .progress-text { font-size: 11px; color: #4b5563; white-space: nowrap; }
+    .theme-banner {
+      background: #1c2333;
+      border-bottom: 1px solid #243;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .theme-label { font-size: 13px; font-weight: 600; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.06em; }
+    .theme-desc { font-size: 13px; color: #94a3b8; }
 
     /* ── Plans area ── */
-    .plans-area { display: flex; flex: 1; min-height: 0; }
-    .plan-panel { flex: 1; display: flex; flex-direction: column; border-right: 1px solid #1f1f1f; min-width: 0; }
+    .plans-area {
+      display: flex;
+      gap: 0;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .plan-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #2a2a2a;
+      min-width: 0;
+    }
     .plan-panel:last-child { border-right: none; }
-    .plan-label { display: flex; align-items: center; justify-content: space-between; padding: 7px 14px; background: #141414; border-bottom: 1px solid #222; font-size: 12px; }
+
+    .plan-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: #161616;
+      border-bottom: 1px solid #2a2a2a;
+      font-size: 13px;
+    }
     .plan-label .tag { font-weight: 700; color: #fbbf24; }
-    .plan-label .dims { color: #4b5563; font-size: 10px; }
-    .plan-svg-wrap { flex: 1; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 14px; background: #0f0f0f; cursor: pointer; transition: background 0.12s; min-height: 360px; }
-    .plan-svg-wrap:hover { background: #131313; }
-    .plan-svg-wrap.winner { background: #052e16; outline: 2px solid #22c55e; outline-offset: -2px; }
-    .plan-svg-wrap.loser  { background: #160a0a; opacity: 0.48; }
+    .plan-label .dims { color: #666; font-size: 11px; }
+
+    .plan-svg-wrap {
+      flex: 1;
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: #0f0f0f;
+      cursor: pointer;
+      transition: background 0.15s;
+      min-height: 400px;
+    }
+    .plan-svg-wrap:hover { background: #141414; }
+    .plan-svg-wrap.winner { background: #0f2010; outline: 2px solid #22c55e; outline-offset: -2px; }
+    .plan-svg-wrap.loser  { background: #1a0a0a; opacity: 0.55; }
+
     .plan-svg-wrap svg { max-width: 100%; height: auto; }
 
     /* ── Vote bar ── */
-    .vote-bar { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 12px 20px; background: #161616; border-top: 1px solid #222; flex-wrap: wrap; }
-    .btn-vote { font-size: 13px; font-weight: 600; padding: 9px 24px; border-radius: 8px; border: 2px solid #2a2a2a; background: #1c1c1c; color: #d1d5db; cursor: pointer; transition: all 0.1s; min-width: 110px; }
-    .btn-vote:hover { border-color: #444; background: #242424; }
-    .btn-vote.vote-a { border-color: #1e3a8a; color: #93c5fd; }
-    .btn-vote.vote-a:hover { background: #1d4ed8; color: #fff; border-color: #3b82f6; }
-    .btn-vote.vote-b { border-color: #4c1d95; color: #c4b5fd; }
-    .btn-vote.vote-b:hover { background: #7c3aed; color: #fff; border-color: #8b5cf6; }
-    .btn-vote.vote-tie { border-color: #374151; color: #6b7280; }
-    .btn-vote.vote-tie:hover { background: #2d2d2d; color: #9ca3af; }
-    .btn-vote.vote-skip { border-color: #1f2937; color: #374151; font-size: 11px; padding: 7px 14px; min-width: auto; }
-    .btn-vote.vote-skip:hover { background: #1a1a1a; color: #6b7280; border-color: #2a2a2a; }
-    .kbd-hint { font-size: 11px; color: #374151; text-align: center; padding: 3px 0 6px; background: #161616; }
-    .kbd-hint kbd { font-size: 10px; background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 3px; padding: 1px 5px; color: #4b5563; }
+    .vote-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 14px 24px;
+      background: #181818;
+      border-top: 1px solid #2a2a2a;
+      flex-wrap: wrap;
+    }
 
-    /* ── Placeholder / error ── */
-    .placeholder { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; color: #374151; font-size: 14px; min-height: 360px; }
-    .placeholder .icon { font-size: 36px; }
-    .error-msg { color: #ef4444; font-size: 13px; }
-    .spinner { animation: spin 0.9s linear infinite; display: inline-block; }
+    .btn-vote {
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 28px;
+      border-radius: 8px;
+      border: 2px solid #333;
+      background: #222;
+      color: #e8e8e8;
+      cursor: pointer;
+      transition: all 0.12s;
+      min-width: 120px;
+    }
+    .btn-vote:hover { border-color: #555; background: #2a2a2a; }
+
+    .btn-vote.vote-a { border-color: #1d4ed8; color: #60a5fa; }
+    .btn-vote.vote-a:hover { background: #1d4ed8; color: #fff; }
+
+    .btn-vote.vote-b { border-color: #7c3aed; color: #a78bfa; }
+    .btn-vote.vote-b:hover { background: #7c3aed; color: #fff; }
+
+    .btn-vote.vote-tie { border-color: #444; color: #888; }
+    .btn-vote.vote-tie:hover { background: #333; color: #ccc; }
+
+    .btn-vote.vote-skip { border-color: #333; color: #555; font-size: 12px; padding: 8px 16px; min-width: auto; }
+    .btn-vote.vote-skip:hover { background: #222; color: #888; border-color: #444; }
+
+    .kbd-hint { font-size: 11px; color: #444; text-align: center; padding: 4px 0 8px; }
+    .kbd-hint kbd {
+      font-size: 10px;
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 3px;
+      padding: 1px 5px;
+      color: #666;
+    }
+
+    /* ── Progress ── */
+    .progress-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 24px 0;
+      background: #181818;
+    }
+    .progress-bar-wrap { flex: 1; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+    .progress-bar { height: 100%; background: #22c55e; transition: width 0.3s; }
+    .progress-text { font-size: 11px; color: #555; white-space: nowrap; }
+
+    /* ── Loading / error ── */
+    .placeholder {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      color: #444;
+      font-size: 14px;
+      min-height: 400px;
+    }
+    .placeholder .icon { font-size: 40px; }
+    .error-msg { color: #f87171; font-size: 13px; }
+    .spinner { animation: spin 1s linear infinite; display: inline-block; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── Generate modal ── */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
     .modal-overlay.hidden { display: none; }
-    .modal { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 12px; padding: 26px; width: 380px; max-width: 90vw; }
-    .modal h2 { font-size: 15px; margin-bottom: 14px; color: #fff; }
-    .modal label { font-size: 12px; color: #9ca3af; display: block; margin-bottom: 5px; }
-    .modal select { width: 100%; margin-bottom: 10px; }
-    .modal input[type=number] { width: 100%; padding: 6px 10px; background: #252525; border: 1px solid #333; border-radius: 6px; color: #e8e8e8; font-size: 13px; margin-bottom: 10px; outline: none; }
-    .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
-    .modal-progress { font-size: 12px; color: #60a5fa; margin-top: 10px; min-height: 18px; }
+    .modal {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 28px;
+      width: 400px;
+      max-width: 90vw;
+    }
+    .modal h2 { font-size: 16px; margin-bottom: 16px; color: #fff; }
+    .modal label { font-size: 13px; color: #aaa; display: block; margin-bottom: 6px; }
+    .modal select { width: 100%; margin-bottom: 12px; }
+    .modal-btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+    .modal input[type=number] {
+      width: 100%; padding: 6px 10px; background: #252525;
+      border: 1px solid #333; border-radius: 6px; color: #e8e8e8; font-size: 13px;
+      margin-bottom: 12px; outline: none;
+    }
+    .modal-progress { font-size: 13px; color: #60a5fa; margin-top: 12px; }
 
     .layout { display: flex; flex-direction: column; height: 100vh; }
   </style>
@@ -111,33 +226,20 @@
 <body>
 <div class="layout">
 
-  <!-- Key overlay -->
-  <div class="key-overlay" id="keyOverlay">
-    <div class="key-box">
-      <div style="font-size:28px;margin-bottom:12px">🔑</div>
-      <h2>Training Access</h2>
-      <p>Enter your training key to access the rating tool.</p>
-      <input type="password" id="keyInput" placeholder="Training key…" autocomplete="off" onkeydown="if(event.key==='Enter')submitKey()">
-      <button class="btn-unlock" onclick="submitKey()">Unlock</button>
-      <div class="key-error" id="keyError"></div>
-    </div>
-  </div>
-
   <!-- Top bar -->
   <div class="topbar">
     <h1>Keystone Training</h1>
     <span class="sep">|</span>
-    <label style="font-size:11px;color:#555">Theme</label>
+
+    <label style="font-size:12px;color:#666">Theme</label>
     <select id="themeSelect"></select>
-    <label style="font-size:11px;color:#555">Type</label>
+
+    <label style="font-size:12px;color:#666">Plan type</label>
     <select id="briefSelect"><option value="">All types</option></select>
-    <button class="btn-generate" id="btnOpenGenerate" onclick="openGenerateModal()">+ Generate</button>
-    <span class="stats-badge" id="statsLabel">—</span>
-    <div class="topbar-right">
-      <button class="btn-export" onclick="exportData('dataset')" title="Download joined dataset (best for ML)">⬇ Dataset</button>
-      <button class="btn-export" onclick="exportData('ratings')" title="Download raw ratings JSONL">⬇ Ratings</button>
-      <button class="btn-export" onclick="exportData('plans')" title="Download plans (no SVG)">⬇ Plans</button>
-    </div>
+
+    <button class="btn-generate" id="btnOpenGenerate">+ Generate Plans</button>
+
+    <span class="stats-badge" id="statsLabel">Loading…</span>
   </div>
 
   <!-- Theme description -->
@@ -157,22 +259,23 @@
     <div class="placeholder" id="placeholder">
       <span class="icon">🏠</span>
       <span>Generate plans to start comparing</span>
-      <button class="btn-generate" onclick="openGenerateModal()">Generate Plans</button>
+      <button class="btn-generate" onclick="openGenerateModal()" style="font-size:13px">Generate Plans</button>
     </div>
   </div>
 
-  <!-- Vote bar -->
+  <!-- Vote bar (hidden until plans loaded) -->
   <div class="vote-bar" id="voteBar" style="display:none">
-    <button class="btn-vote vote-a" onclick="vote('a')">← Plan A &nbsp;<small style="opacity:.5">[1]</small></button>
-    <button class="btn-vote vote-tie" onclick="vote('tie')">Tie &nbsp;<small style="opacity:.5">[T]</small></button>
-    <button class="btn-vote vote-b" onclick="vote('b')">Plan B → &nbsp;<small style="opacity:.5">[2]</small></button>
+    <button class="btn-vote vote-a" id="btnA" onclick="vote('a')">← Plan A  <small style="opacity:.6">[1]</small></button>
+    <button class="btn-vote vote-tie" onclick="vote('tie')">Tie  <small style="opacity:.6">[T]</small></button>
+    <button class="btn-vote vote-b" id="btnB" onclick="vote('b')">Plan B →  <small style="opacity:.6">[2]</small></button>
     <button class="btn-vote vote-skip" onclick="vote('skip')">Skip [S]</button>
   </div>
   <div class="kbd-hint" id="kbdHint" style="display:none">
-    <kbd>1</kbd> / <kbd>←</kbd> = Plan A &nbsp;·&nbsp;
-    <kbd>2</kbd> / <kbd>→</kbd> = Plan B &nbsp;·&nbsp;
+    <kbd>1</kbd> or <kbd>←</kbd> = Plan A wins &nbsp;·&nbsp;
+    <kbd>2</kbd> or <kbd>→</kbd> = Plan B wins &nbsp;·&nbsp;
     <kbd>T</kbd> = Tie &nbsp;·&nbsp;
-    <kbd>S</kbd> / <kbd>Space</kbd> = Skip
+    <kbd>S</kbd> = Skip &nbsp;·&nbsp;
+    <kbd>Space</kbd> = Next pair
   </div>
 
 </div>
@@ -183,8 +286,8 @@
     <h2>Generate Floor Plans</h2>
     <label>Plan type</label>
     <select id="genBriefType"></select>
-    <label>How many (max 100 per run)</label>
-    <input type="number" id="genCount" value="20" min="1" max="100">
+    <label>How many to generate (max 50 per run)</label>
+    <input type="number" id="genCount" value="20" min="1" max="50">
     <div class="modal-progress" id="genProgress"></div>
     <div class="modal-btns">
       <button onclick="closeGenerateModal()">Cancel</button>
@@ -194,45 +297,11 @@
 </div>
 
 <script>
-// ── Config ───────────────────────────────────────────────────────────────────
-// Relative URL — works via Vercel proxy on production, and direct on localhost
-// when backend is running at the same origin.
-const API = '';
+// ── Config ──────────────────────────────────────────────────────────────────
+// Training always runs against the LOCAL backend (file storage won't work on cloud).
+const API = 'http://localhost:8080';
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
-function getKey() { return sessionStorage.getItem('trainingKey') || ''; }
-
-function showKeyOverlay(err) {
-  document.getElementById('keyOverlay').classList.remove('hidden');
-  document.getElementById('keyError').textContent = err || '';
-  document.getElementById('keyInput').focus();
-}
-function hideKeyOverlay() {
-  document.getElementById('keyOverlay').classList.add('hidden');
-}
-
-async function submitKey() {
-  const key = document.getElementById('keyInput').value.trim();
-  if (!key) return;
-  sessionStorage.setItem('trainingKey', key);
-  document.getElementById('keyError').textContent = '';
-  // Verify immediately by hitting stats
-  try {
-    await apiFetch('GET', '/api/training/stats');
-    hideKeyOverlay();
-    boot();
-  } catch (e) {
-    if (e.status === 401) {
-      sessionStorage.removeItem('trainingKey');
-      document.getElementById('keyError').textContent = 'Wrong key — try again.';
-    } else {
-      hideKeyOverlay();
-      boot();
-    }
-  }
-}
-
-// ── Static data (matches backend) ────────────────────────────────────────────
+// ── Static data (matches backend BRIEF_PRESETS / THEMES) ────────────────────
 const BRIEF_PRESETS = {
   '2bed_1car_pL2': '2 Bed · 1-Car Garage · Primary L2',
   '3bed_1car_pL1': '3 Bed · 1-Car Garage · Primary L1',
@@ -240,25 +309,31 @@ const BRIEF_PRESETS = {
   '2bed_no_garage': '2 Bed · No Garage · Primary L2',
   '4bed_2car_pL1': '4 Bed · 2-Car Garage · Primary L1',
 };
+
 const THEMES = {
-  overall:     { label: 'Overall Quality',    description: 'Which plan would you rather live in? Consider layout, flow, proportions, and usability.' },
-  stairs:      { label: 'Stair Quality',       description: 'Which plan has better stairs? Look for: single-sided access, proper labels, natural flow.' },
-  doors:       { label: 'Door Placement',      description: 'Which plan has better doors? Look for: no phantom stair doors, logical swing, all rooms accessible.' },
-  hallways:    { label: 'Hallway Efficiency',  description: 'Minimal wasted corridor, no oversized hallways, good flow without dead ends.' },
-  proportions: { label: 'Room Proportions',    description: 'Rooms that aren\'t too narrow, good bedroom & bathroom sizing, logical adjacency.' },
+  overall:     { label: 'Overall Quality',      description: 'Which plan would you rather live in? Consider everything: layout, flow, proportions, and usability.' },
+  stairs:      { label: 'Stair Quality',         description: 'Which plan has better stairs? Look for: single-sided access, proper UP/DN label, natural flow between floors, reasonably sized landing.' },
+  doors:       { label: 'Door Placement',        description: 'Which plan has better doors? Look for: no phantom stair doors, logical swing directions, all rooms accessible, no missing entries.' },
+  hallways:    { label: 'Hallway Efficiency',    description: 'Which plan uses hallways more efficiently? Look for: minimal wasted corridor, no oversized hallways, good flow without dead ends.' },
+  proportions: { label: 'Room Proportions',      description: 'Which plan has better room proportions? Look for: rooms that aren\'t too narrow, good bedroom & bathroom sizing, logical adjacency.' },
 };
 
 // ── State ────────────────────────────────────────────────────────────────────
-let state = { currentPair: null, stats: { totalPlans: 0, totalRatings: 0, ratingsByTheme: {}, plansByType: {} }, isLoading: false };
+let state = {
+  currentPair: null,
+  stats: { totalPlans: 0, totalRatings: 0, ratingsByTheme: {}, plansByType: {} },
+  ratingCount: 0,
+  isLoading: false,
+};
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
+  // Populate dropdowns immediately from hardcoded data — no API needed
   buildSelects();
   try {
     await refreshStats();
     loadNextPair();
   } catch (e) {
-    if (e.status === 401) { showKeyOverlay(); return; }
     showError('Could not reach API: ' + e.message);
   }
 }
@@ -267,7 +342,8 @@ function buildSelects() {
   const themeSelect  = document.getElementById('themeSelect');
   const briefSelect  = document.getElementById('briefSelect');
   const genBriefType = document.getElementById('genBriefType');
-  themeSelect.innerHTML = '';
+
+  // Theme select
   for (const [key, val] of Object.entries(THEMES)) {
     const opt = document.createElement('option');
     opt.value = key; opt.textContent = val.label;
@@ -276,8 +352,8 @@ function buildSelects() {
   themeSelect.value = 'overall';
   themeSelect.addEventListener('change', () => { updateThemeBanner(); loadNextPair(); });
   updateThemeBanner();
-  briefSelect.innerHTML = '<option value="">All types</option>';
-  genBriefType.innerHTML = '';
+
+  // Brief selects (topbar filter + generate modal)
   for (const [key, label] of Object.entries(BRIEF_PRESETS)) {
     const makeOpt = () => { const o = document.createElement('option'); o.value = key; o.textContent = label; return o; };
     briefSelect.appendChild(makeOpt());
@@ -286,6 +362,7 @@ function buildSelects() {
   briefSelect.addEventListener('change', loadNextPair);
 }
 
+
 function updateThemeBanner() {
   const theme = document.getElementById('themeSelect').value;
   const info  = THEMES[theme] || {};
@@ -293,32 +370,39 @@ function updateThemeBanner() {
   document.getElementById('themeDesc').textContent  = info.description || '';
 }
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
+// ── Stats ────────────────────────────────────────────────────────────────────
 async function refreshStats() {
-  const s = await apiFetch('GET', '/api/training/stats');
-  state.stats = s;
-  document.getElementById('statsLabel').textContent = `${s.totalPlans} plans · ${s.totalRatings} ratings`;
-  updateProgress();
+  try {
+    const s = await apiFetch('GET', '/api/training/stats');
+    state.stats = s;
+    const label = `${s.totalPlans} plans · ${s.totalRatings} ratings`;
+    document.getElementById('statsLabel').textContent = label;
+    updateProgress();
+  } catch { /* ignore */ }
 }
+
 function updateProgress() {
   const theme = document.getElementById('themeSelect').value;
   const rated = state.stats.ratingsByTheme?.[theme] || 0;
-  const total = 100;
+  const total = 100; // target per theme
   const pct   = Math.min(100, Math.round(rated / total * 100));
   document.getElementById('progressBar').style.width = pct + '%';
-  document.getElementById('progressText').textContent = `${rated} / ${total} rated for "${THEMES[theme]?.label || theme}"`;
+  document.getElementById('progressText').textContent = `${rated} rated for ${theme} (goal: ${total})`;
 }
 
-// ── Pair loading ──────────────────────────────────────────────────────────────
+// ── Load pair ────────────────────────────────────────────────────────────────
 async function loadNextPair() {
-  if (state.isLoading) return;
-  state.isLoading = true;
   const theme     = document.getElementById('themeSelect').value;
   const briefType = document.getElementById('briefSelect').value;
+
+  if (state.isLoading) return;
+  state.isLoading = true;
+
   const plansArea = document.getElementById('plansArea');
-  plansArea.innerHTML = `<div class="placeholder"><span class="spinner">⟳</span>&nbsp; Loading pair…</div>`;
+  plansArea.innerHTML = `<div class="placeholder"><span class="spinner">⟳</span> Loading plans…</div>`;
   document.getElementById('voteBar').style.display = 'none';
   document.getElementById('kbdHint').style.display = 'none';
+
   try {
     const params = new URLSearchParams({ theme });
     if (briefType) params.set('briefType', briefType);
@@ -326,56 +410,87 @@ async function loadNextPair() {
     state.currentPair = pair;
     renderPair(pair);
   } catch (e) {
-    if (e.status === 401) { showKeyOverlay('Session expired — re-enter key.'); return; }
     if (e.status === 404) {
-      plansArea.innerHTML = `<div class="placeholder"><span class="icon">📐</span><span>No plans yet — generate some first.</span><button class="btn-generate" onclick="openGenerateModal()">Generate Plans</button></div>`;
+      plansArea.innerHTML = `
+        <div class="placeholder">
+          <span class="icon">📐</span>
+          <span>No plans yet for this selection</span>
+          <button class="btn-generate" onclick="openGenerateModal()">Generate Plans</button>
+        </div>`;
     } else {
       plansArea.innerHTML = `<div class="placeholder"><span class="error-msg">Error: ${e.message}</span></div>`;
     }
-  } finally { state.isLoading = false; }
+  } finally {
+    state.isLoading = false;
+  }
 }
 
 function renderPair(pair) {
   const plansArea = document.getElementById('plansArea');
-  const makePanel = (plan, tag) => {
-    const fp = plan.footprint || {}, m = plan.metrics || {};
+
+  const makePanel = (plan, tag, tagClass) => {
+    const fp = plan.footprint || {};
+    const m  = plan.metrics  || {};
     const hallPct = m.hallwayRatio ? (m.hallwayRatio * 100).toFixed(0) + '% hall' : '';
-    const dims = fp.widthFt ? `${fp.widthFt}′×${fp.heightFt}′ · ${fp.totalAreaSqFt || '?'} sqft ${hallPct}` : '';
-    return `<div class="plan-panel">
-      <div class="plan-label"><span class="tag">Plan ${tag}</span><span class="dims">${dims}</span></div>
-      <div class="plan-svg-wrap" id="wrap-${tag.toLowerCase()}" onclick="vote('${tag.toLowerCase()}')">
-        ${plan.svg || '<div class="placeholder"><span class="error-msg">No SVG</span></div>'}
-      </div></div>`;
+    const dims = fp.widthFt ? `${fp.widthFt}′ × ${fp.heightFt}′ · ${fp.totalAreaSqFt || '?'} sqft ${hallPct}` : '';
+
+    return `
+      <div class="plan-panel">
+        <div class="plan-label">
+          <span class="tag">${tag}</span>
+          <span class="dims">${dims}</span>
+        </div>
+        <div class="plan-svg-wrap" id="wrap-${tag.toLowerCase()}" onclick="vote('${tag.toLowerCase()}')">
+          ${plan.svg || '<div class="placeholder"><span class="error-msg">No SVG</span></div>'}
+        </div>
+      </div>`;
   };
-  plansArea.innerHTML = makePanel(pair.planA, 'A') + makePanel(pair.planB, 'B');
+
+  plansArea.innerHTML = makePanel(pair.planA, 'A', 'vote-a') + makePanel(pair.planB, 'B', 'vote-b');
   document.getElementById('voteBar').style.display = 'flex';
   document.getElementById('kbdHint').style.display = 'block';
 }
 
-// ── Vote ──────────────────────────────────────────────────────────────────────
+// ── Vote ─────────────────────────────────────────────────────────────────────
 async function vote(winner) {
   if (!state.currentPair) return;
   const { theme, briefType, planA, planB } = state.currentPair;
-  if (winner === 'a') { document.getElementById('wrap-a')?.classList.add('winner'); document.getElementById('wrap-b')?.classList.add('loser'); }
-  else if (winner === 'b') { document.getElementById('wrap-b')?.classList.add('winner'); document.getElementById('wrap-a')?.classList.add('loser'); }
+
+  // Visual feedback
+  if (winner === 'a') {
+    document.getElementById('wrap-a')?.classList.add('winner');
+    document.getElementById('wrap-b')?.classList.add('loser');
+  } else if (winner === 'b') {
+    document.getElementById('wrap-b')?.classList.add('winner');
+    document.getElementById('wrap-a')?.classList.add('loser');
+  }
+
   if (winner !== 'skip') {
     try {
-      await apiFetch('POST', '/api/training/rate', { theme, briefType, planAId: planA.id, planBId: planB.id, winner });
+      await apiFetch('POST', '/api/training/rate', {
+        theme, briefType, planAId: planA.id, planBId: planB.id, winner,
+      });
+      state.ratingCount++;
       state.stats.totalRatings++;
       state.stats.ratingsByTheme = state.stats.ratingsByTheme || {};
       state.stats.ratingsByTheme[theme] = (state.stats.ratingsByTheme[theme] || 0) + 1;
-      document.getElementById('statsLabel').textContent = `${state.stats.totalPlans} plans · ${state.stats.totalRatings} ratings`;
+      document.getElementById('statsLabel').textContent =
+        `${state.stats.totalPlans} plans · ${state.stats.totalRatings} ratings`;
       updateProgress();
-    } catch (e) { console.error('rate error:', e); }
+    } catch (e) {
+      console.error('Rate error:', e);
+    }
   }
-  setTimeout(() => loadNextPair(), winner === 'skip' ? 0 : 300);
+
+  // Short delay then next pair
+  setTimeout(() => loadNextPair(), winner === 'skip' ? 0 : 350);
 }
 
-// ── Keyboard ──────────────────────────────────────────────────────────────────
+// ── Keyboard shortcuts ────────────────────────────────────────────────────────
 document.addEventListener('keydown', (e) => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
-  if (!document.getElementById('generateModal').classList.contains('hidden')) return;
-  if (!document.getElementById('keyOverlay').classList.contains('hidden')) return;
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+  if (document.getElementById('generateModal').classList.contains('hidden') === false) return;
+
   if (e.key === '1' || e.key === 'ArrowLeft')  { e.preventDefault(); vote('a'); }
   else if (e.key === '2' || e.key === 'ArrowRight') { e.preventDefault(); vote('b'); }
   else if (e.key === 't' || e.key === 'T')     { e.preventDefault(); vote('tie'); }
@@ -383,79 +498,119 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ── Generate modal ────────────────────────────────────────────────────────────
-function openGenerateModal() { document.getElementById('genProgress').textContent = ''; document.getElementById('generateModal').classList.remove('hidden'); }
-function closeGenerateModal() { document.getElementById('generateModal').classList.add('hidden'); }
+function openGenerateModal() {
+  document.getElementById('genProgress').textContent = '';
+  document.getElementById('generateModal').classList.remove('hidden');
+}
+function closeGenerateModal() {
+  document.getElementById('generateModal').classList.add('hidden');
+}
 
 async function runGenerate() {
   const briefType = document.getElementById('genBriefType').value;
   const count     = parseInt(document.getElementById('genCount').value, 10) || 20;
   const btn       = document.getElementById('btnGenerate');
   const prog      = document.getElementById('genProgress');
+
   if (!briefType) { prog.textContent = 'Select a plan type first.'; return; }
+
   btn.disabled = true;
-  prog.textContent = '⟳ Generating… this takes 20–40 seconds';
+  prog.textContent = '⟳ Generating… this may take 20-40 seconds';
+
   try {
     const result = await apiFetch('POST', '/api/training/batch', { briefType, count });
     prog.textContent = `✓ Generated ${result.generated} plans (${result.errors} failed)`;
     state.stats.totalPlans += result.generated;
-    document.getElementById('statsLabel').textContent = `${state.stats.totalPlans} plans · ${state.stats.totalRatings} ratings`;
-    setTimeout(() => { closeGenerateModal(); loadNextPair(); }, 1200);
+    state.stats.plansByType = state.stats.plansByType || {};
+    state.stats.plansByType[briefType] = (state.stats.plansByType[briefType] || 0) + result.generated;
+    document.getElementById('statsLabel').textContent =
+      `${state.stats.totalPlans} plans · ${state.stats.totalRatings} ratings`;
+    setTimeout(() => {
+      closeGenerateModal();
+      loadNextPair();
+    }, 1500);
   } catch (e) {
     prog.textContent = '✗ Error: ' + e.message;
-  } finally { btn.disabled = false; }
+  } finally {
+    btn.disabled = false;
+  }
 }
 
-// ── Export / download ─────────────────────────────────────────────────────────
-function exportData(type) {
-  const key = getKey();
-  const url = API + `/api/training/export/${type}`;
-  // Open in new tab with Authorization via fetch → blob download
-  apiFetch('GET', `/api/training/export/${type}`)
-    .then(data => {
-      const isJsonl = type !== 'dataset';
-      const content = isJsonl
-        ? (typeof data === 'string' ? data : data) // raw text handled below
-        : JSON.stringify(data, null, 2);
-      const blob = new Blob([content], { type: isJsonl ? 'application/x-ndjson' : 'application/json' });
-      const a    = document.createElement('a');
-      a.href     = URL.createObjectURL(blob);
-      a.download = `keystone_${type}_${new Date().toISOString().slice(0,10)}.${isJsonl ? 'jsonl' : 'json'}`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-    })
-    .catch(e => alert('Export failed: ' + e.message));
-}
-
-// ── API helper ────────────────────────────────────────────────────────────────
+// ── API helper ───────────────────────────────────────────────────────────────
 async function apiFetch(method, path, body) {
-  const key  = getKey();
-  const opts = { method, headers: { 'Content-Type': 'application/json', ...(key ? { 'Authorization': 'Bearer ' + key } : {}) } };
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
   if (body) opts.body = JSON.stringify(body);
   const res  = await fetch(API + path, opts);
-  if (res.status === 401) {
-    sessionStorage.removeItem('trainingKey');
-    showKeyOverlay('Session expired — re-enter your key.');
-    const err = new Error('Unauthorized'); err.status = 401; throw err;
-  }
-  // For export endpoints, return raw text if content-type is ndjson
-  const ct = res.headers.get('content-type') || '';
-  if (ct.includes('ndjson') || ct.includes('octet-stream')) return res.text();
   const json = await res.json().catch(() => ({}));
-  if (!res.ok) { const err = new Error(json.error || `HTTP ${res.status}`); err.status = res.status; throw err; }
+  if (!res.ok) {
+    const err  = new Error(json.error || `HTTP ${res.status}`);
+    err.status = res.status;
+    throw err;
+  }
   return json;
 }
 
 function showError(msg) {
+  const isConnErr = msg.includes('fetch') || msg.includes('NetworkError') || msg.includes('reach');
+  const hint = isConnErr
+    ? '<br><small style="color:#666">Make sure the local backend is running: <code style="color:#aaa">node server.js</code> in the backend folder</small>'
+    : '';
   document.getElementById('plansArea').innerHTML =
-    `<div class="placeholder"><span class="error-msg">${msg}</span></div>`;
+    `<div class="placeholder"><span class="error-msg">${msg}${hint}</span></div>`;
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-if (!getKey()) {
-  showKeyOverlay();
-} else {
-  boot();
-}
+// ── Go ───────────────────────────────────────────────────────────────────────
+boot();
 </script>
+
+  <!-- Room Editor Module -->
+  <script src="/room-editor.js"></script>
+  <script>
+    // Add "Edit Plan" button to each plan panel
+    function addEditButton(planPanel, planSpec) {
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn-edit-plan';
+      editBtn.textContent = '✎ Edit Rooms';
+      editBtn.style.cssText = `
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        padding: 6px 12px;
+        background: #1d4ed8;
+        border: 1px solid #2563eb;
+        color: #fff;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        z-index: 10;
+      `;
+      editBtn.addEventListener('click', () => {
+        const svgWrap = planPanel.querySelector('.plan-svg-wrap');
+        if (svgWrap) {
+          // Create a temporary container for the editor
+          const editorContainer = document.createElement('div');
+          editorContainer.style.cssText = 'position: relative; width: 100%; height: 100%;';
+          svgWrap.innerHTML = '';
+          svgWrap.appendChild(editorContainer);
+          
+          // Initialize the room editor
+          const editor = new RoomEditor(editorContainer, planSpec);
+        }
+      });
+      planPanel.style.position = 'relative';
+      planPanel.appendChild(editBtn);
+    }
+    
+    // Hook into renderPair to add edit buttons
+    const originalRenderPair = window.renderPair;
+    window.renderPair = function(pair) {
+      originalRenderPair(pair);
+      const panelA = document.getElementById('wrap-a')?.parentElement;
+      const panelB = document.getElementById('wrap-b')?.parentElement;
+      if (panelA) addEditButton(panelA, pair.planA);
+      if (panelB) addEditButton(panelB, pair.planB);
+    };
+  </script>
+
 </body>
 </html>
