@@ -144,6 +144,7 @@ const SectionRail = () => {
     const items = [
         { id: 'hero', label: 'Intro' },
         { id: 'proof', label: 'Proof' },
+        { id: 'work', label: 'Work' },
         { id: 'generator', label: 'Live' },
         { id: 'services', label: 'Services' },
         { id: 'pricing', label: 'Pricing' },
@@ -513,7 +514,7 @@ const JoinModal = ({ isOpen, onClose }) => {
 
                             {status === 'success' ? (
                                 <motion.div initial={{ scale:0.9, opacity:0 }} animate={{ scale:1, opacity:1 }} className="flex flex-col items-center text-center py-10">
-                                    <div className="w-16 h-16 rounded-full bg-blue flex items-center justify-center text-white text-xl mb-4">OK</div>
+                                    <div className="w-16 h-16 rounded-full bg-blue flex items-center justify-center mb-4"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
                                     <h3 className="cg text-2xl" style={{ letterSpacing:'-0.05em', textTransform:'uppercase' }}>You&apos;re in the queue.</h3>
                                     <p className="text-mid text-sm mt-2">We will follow up with studio access details and next steps for your firm shortly.</p>
                                 </motion.div>
@@ -1680,7 +1681,7 @@ const Gallery = ({ onOpenModal }) => {
 
                 {!loading && entries.length === 0 && (
                     <div className="paper-panel text-center py-20 px-6">
-                        <div style={{fontSize:'2.5rem',marginBottom:'1rem',opacity:0.3}}>+</div>
+                        <div style={{marginBottom:'1rem',opacity:0.3,display:'flex',justifyContent:'center'}}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg></div>
                         <p className="cg text-2xl opacity-50" style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>No recent sessions yet.</p>
                         <p className="mono text-[9px] uppercase tracking-widest text-mid mt-2 opacity-50">Be the first - generate a plan above.</p>
                         <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow mt-5 px-6 py-3">
@@ -1773,7 +1774,7 @@ const DesignGenerator = ({ onOpenModal }) => {
     const [showAlternatives, setShowAlternatives] = useState(false);
 
     useEffect(() => {
-        try { const s = JSON.parse(localStorage.getItem('keystone_unlock')||'null'); if (s?.unlocked) setIsUnlocked(true); } catch {}
+        try { const s = JSON.parse(localStorage.getItem('keystone_unlock')||'null'); if (s?.unlocked && s?.ts && (Date.now() - s.ts < 30 * 24 * 60 * 60 * 1000)) setIsUnlocked(true); else if (s?.unlocked && (!s?.ts || Date.now() - s.ts >= 30 * 24 * 60 * 60 * 1000)) localStorage.removeItem('keystone_unlock'); } catch {}
     }, []);
 
     const handleUnlock = async (e) => {
@@ -1856,7 +1857,7 @@ const DesignGenerator = ({ onOpenModal }) => {
     try {
         const pngUrl = await svgToPngDataUrl(planSvg, {
             background: '#F6F4EF',
-            exportWidth: 4096,
+            pixelRatio: 3,
         });
 
         const l = document.createElement('a');
@@ -2328,7 +2329,7 @@ const SubpageChrome = ({ children }) => {
     const [isModalOpen, setModalOpen] = useState(false);
 
     return (
-        <div className="selection:bg-blue selection:text-white">
+        <div>
             <JoinModal isOpen={isModalOpen} onClose={() => setModalOpen(false)}/>
             <PageNav onOpenModal={() => setModalOpen(true)}/>
             <main style={{paddingTop:'74px'}}>
@@ -2537,7 +2538,7 @@ const DreamApp = () => {
                 )}
             </AnimatePresence>
 
-            <motion.main initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.45}}>
+            <main>
                     <motion.nav
                         initial={{ opacity: 0, y: -64 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -3043,7 +3044,7 @@ const DreamApp = () => {
                     </section>
 
                     <SiteFooter home/>
-            </motion.main>
+            </main>
         </div>
     );
 };
