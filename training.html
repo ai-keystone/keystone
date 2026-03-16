@@ -298,29 +298,39 @@
 
 <script>
 // ── Config ──────────────────────────────────────────────────────────────────
-const API = (() => {
-  const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') return 'http://localhost:3000';
-  return 'https://keystone-api-00101-4nr-1003274175484.us-central1.run.app';
-})();
+// Training always runs against the LOCAL backend (file storage won't work on cloud).
+const API = 'http://localhost:8080';
+
+// ── Static data (matches backend BRIEF_PRESETS / THEMES) ────────────────────
+const BRIEF_PRESETS = {
+  '2bed_1car_pL2': '2 Bed · 1-Car Garage · Primary L2',
+  '3bed_1car_pL1': '3 Bed · 1-Car Garage · Primary L1',
+  '3bed_2car_pL2': '3 Bed · 2-Car Garage · Primary L2',
+  '2bed_no_garage': '2 Bed · No Garage · Primary L2',
+  '4bed_2car_pL1': '4 Bed · 2-Car Garage · Primary L1',
+};
+
+const THEMES = {
+  overall:     { label: 'Overall Quality',      description: 'Which plan would you rather live in? Consider everything: layout, flow, proportions, and usability.' },
+  stairs:      { label: 'Stair Quality',         description: 'Which plan has better stairs? Look for: single-sided access, proper UP/DN label, natural flow between floors, reasonably sized landing.' },
+  doors:       { label: 'Door Placement',        description: 'Which plan has better doors? Look for: no phantom stair doors, logical swing directions, all rooms accessible, no missing entries.' },
+  hallways:    { label: 'Hallway Efficiency',    description: 'Which plan uses hallways more efficiently? Look for: minimal wasted corridor, no oversized hallways, good flow without dead ends.' },
+  proportions: { label: 'Room Proportions',      description: 'Which plan has better room proportions? Look for: rooms that aren\'t too narrow, good bedroom & bathroom sizing, logical adjacency.' },
+};
 
 // ── State ────────────────────────────────────────────────────────────────────
 let state = {
-  themes: {},
-  briefPresets: {},
   currentPair: null,
   stats: { totalPlans: 0, totalRatings: 0, ratingsByTheme: {}, plansByType: {} },
-  ratingCount: 0,    // for current session
+  ratingCount: 0,
   isLoading: false,
 };
 
 // ── Boot ─────────────────────────────────────────────────────────────────────
 async function boot() {
+  // Populate dropdowns immediately from hardcoded data — no API needed
+  buildSelects();
   try {
-    const meta = await apiFetch('GET', '/api/training/meta');
-    state.themes = meta.themes;
-    state.briefPresets = meta.briefPresets;
-    buildSelects();
     await refreshStats();
     loadNextPair();
   } catch (e) {
@@ -329,12 +339,12 @@ async function boot() {
 }
 
 function buildSelects() {
-  const themeSelect = document.getElementById('themeSelect');
-  const briefSelect = document.getElementById('briefSelect');
+  const themeSelect  = document.getElementById('themeSelect');
+  const briefSelect  = document.getElementById('briefSelect');
   const genBriefType = document.getElementById('genBriefType');
 
   // Theme select
-  for (const [key, val] of Object.entries(state.themes)) {
+  for (const [key, val] of Object.entries(THEMES)) {
     const opt = document.createElement('option');
     opt.value = key; opt.textContent = val.label;
     themeSelect.appendChild(opt);
@@ -343,24 +353,19 @@ function buildSelects() {
   themeSelect.addEventListener('change', () => { updateThemeBanner(); loadNextPair(); });
   updateThemeBanner();
 
-  // Brief select
-  for (const [key] of Object.entries(state.briefPresets)) {
-    const opt = document.createElement('option');
-    opt.value = key; opt.textContent = formatBriefKey(key);
-    briefSelect.appendChild(opt);
-    const opt2 = opt.cloneNode(true);
-    genBriefType.appendChild(opt2);
+  // Brief selects (topbar filter + generate modal)
+  for (const [key, label] of Object.entries(BRIEF_PRESETS)) {
+    const makeOpt = () => { const o = document.createElement('option'); o.value = key; o.textContent = label; return o; };
+    briefSelect.appendChild(makeOpt());
+    genBriefType.appendChild(makeOpt());
   }
   briefSelect.addEventListener('change', loadNextPair);
 }
 
-function formatBriefKey(key) {
-  return key.replace(/_/g, ' ').replace(/p[Ll]\d/, (m) => ' · Primary ' + m.slice(1).toUpperCase());
-}
 
 function updateThemeBanner() {
   const theme = document.getElementById('themeSelect').value;
-  const info  = state.themes[theme] || {};
+  const info  = THEMES[theme] || {};
   document.getElementById('themeLabel').textContent = info.label || theme;
   document.getElementById('themeDesc').textContent  = info.description || '';
 }
@@ -546,8 +551,12 @@ async function apiFetch(method, path, body) {
 }
 
 function showError(msg) {
+  const isConnErr = msg.includes('fetch') || msg.includes('NetworkError') || msg.includes('reach');
+  const hint = isConnErr
+    ? '<br><small style="color:#666">Make sure the local backend is running: <code style="color:#aaa">node server.js</code> in the backend folder</small>'
+    : '';
   document.getElementById('plansArea').innerHTML =
-    `<div class="placeholder"><span class="error-msg">${msg}</span></div>`;
+    `<div class="placeholder"><span class="error-msg">${msg}${hint}</span></div>`;
 }
 
 // ── Go ───────────────────────────────────────────────────────────────────────
