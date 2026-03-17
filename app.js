@@ -1,4 +1,4 @@
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, useMemo } = React;
 const FM = window.framerMotion || window.Motion;
 const { motion, AnimatePresence, useScroll, useTransform, useSpring } = FM;
 const ASSETS = {
@@ -32,6 +32,202 @@ const SmartImage = ({ eager = false, ...props }) => /* @__PURE__ */ React.create
 );
 const CloseIcon = ({ className = "w-4 h-4" }) => /* @__PURE__ */ React.createElement("svg", { className, fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "1.8", d: "M6 18L18 6M6 6l12 12" }));
 const CheckIcon = ({ className = "w-3 h-3" }) => /* @__PURE__ */ React.createElement("svg", { className, fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2.2", d: "M5 13l4 4L19 7" }));
+const ClickSparkGlobal = ({
+  sparkColor = "#fd9608",
+  sparkSize = 16,
+  sparkRadius = 34,
+  sparkCount = 14,
+  duration = 900
+}) => {
+  const layerRef = useRef(null);
+  useEffect(() => {
+    const layer = layerRef.current;
+    if (!layer) return void 0;
+    const spawn = (event) => {
+      if (event.target.closest('[data-no-clickspark="true"]')) return;
+      const rect = layer.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      for (let i = 0; i < sparkCount; i += 1) {
+        const spark = document.createElement("span");
+        const angle = Math.PI * 2 * i / sparkCount + (Math.random() - 0.5) * 0.28;
+        const radius = sparkRadius * (0.72 + Math.random() * 0.5);
+        const tx = Math.cos(angle) * radius;
+        const ty = Math.sin(angle) * radius;
+        spark.className = "click-spark";
+        spark.style.left = `${x}px`;
+        spark.style.top = `${y}px`;
+        spark.style.width = `${sparkSize}px`;
+        spark.style.height = `${Math.max(4, sparkSize * 0.2)}px`;
+        spark.style.background = `linear-gradient(90deg, rgba(255,255,255,0.95), ${sparkColor})`;
+        spark.style.setProperty("--spark-x", `${tx}px`);
+        spark.style.setProperty("--spark-y", `${ty}px`);
+        spark.style.setProperty("--spark-rotate", `${(angle * 180 / Math.PI).toFixed(2)}deg`);
+        spark.style.animationDuration = `${duration}ms`;
+        layer.appendChild(spark);
+        window.setTimeout(() => spark.remove(), duration + 80);
+      }
+      const core = document.createElement("span");
+      core.className = "click-spark-core";
+      core.style.left = `${x}px`;
+      core.style.top = `${y}px`;
+      core.style.background = sparkColor;
+      core.style.animationDuration = `${Math.max(520, duration * 0.92)}ms`;
+      layer.appendChild(core);
+      window.setTimeout(() => core.remove(), duration + 60);
+    };
+    window.addEventListener("pointerdown", spawn, { passive: true });
+    return () => window.removeEventListener("pointerdown", spawn);
+  }, [sparkColor, sparkCount, sparkRadius, sparkSize, duration]);
+  return /* @__PURE__ */ React.createElement("div", { ref: layerRef, className: "click-spark-layer", "aria-hidden": "true" });
+};
+const DotGridHero = ({
+  dotSize = 3.1,
+  gap = 28,
+  baseColor = "249, 123, 6",
+  activeColor = "255, 106, 55",
+  proximity = 150
+}) => {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return void 0;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return void 0;
+    let raf = 0;
+    let width = 0;
+    let height = 0;
+    const pointer = { x: 0, y: 0, active: false };
+    const resize = () => {
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      width = parent.clientWidth;
+      height = parent.clientHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.max(1, Math.round(width * dpr));
+      canvas.height = Math.max(1, Math.round(height * dpr));
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    const render = (time) => {
+      ctx.clearRect(0, 0, width, height);
+      const offsetX = Math.sin(time * 16e-5) * 10;
+      const offsetY = Math.cos(time * 12e-5) * 6;
+      for (let y = gap * 0.5; y < height + gap; y += gap) {
+        for (let x = gap * 0.5; x < width + gap; x += gap) {
+          const px = x + offsetX * (y / Math.max(height, 1) - 0.5);
+          const py = y + offsetY * (x / Math.max(width, 1) - 0.5);
+          let intensity = 0;
+          if (pointer.active) {
+            const dist = Math.hypot(pointer.x - px, pointer.y - py);
+            intensity = Math.max(0, 1 - dist / proximity);
+          }
+          const pulse = 0.22 + (Math.sin((x + y) * 0.02 + time * 14e-4) + 1) * 0.14;
+          const radius = dotSize + intensity * 2.7 + pulse;
+          const alpha = 0.16 + pulse * 0.4 + intensity * 0.38;
+          const color = intensity > 0.04 ? activeColor : baseColor;
+          ctx.beginPath();
+          ctx.arc(px, py, radius, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${color}, ${Math.min(0.92, alpha)})`;
+          ctx.shadowBlur = intensity > 0.08 ? 18 : 0;
+          ctx.shadowColor = `rgba(255, 106, 55, ${Math.min(0.45, intensity * 0.55)})`;
+          ctx.fill();
+        }
+      }
+      ctx.shadowBlur = 0;
+      raf = window.requestAnimationFrame(render);
+    };
+    const onMove = (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const nextX = event.clientX - rect.left;
+      const nextY = event.clientY - rect.top;
+      pointer.active = nextX >= 0 && nextX <= rect.width && nextY >= 0 && nextY <= rect.height;
+      pointer.x = nextX;
+      pointer.y = nextY;
+    };
+    const onLeave = () => {
+      pointer.active = false;
+    };
+    resize();
+    raf = window.requestAnimationFrame(render);
+    window.addEventListener("resize", resize);
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerleave", onLeave);
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerleave", onLeave);
+    };
+  }, [activeColor, baseColor, dotSize, gap, proximity]);
+  return /* @__PURE__ */ React.createElement("div", { className: "hero-dot-grid", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("canvas", { ref: canvasRef, className: "hero-dot-grid-canvas" }), /* @__PURE__ */ React.createElement("div", { className: "hero-dot-grid-vignette" }));
+};
+const GradualBlur = ({
+  target = "parent",
+  position = "bottom",
+  height = "7rem",
+  strength = 2,
+  divCount = 5,
+  curve = "bezier",
+  exponential = true,
+  opacity = 1,
+  zIndex = 12,
+  className = ""
+}) => {
+  const curveFunctions = {
+    linear: (p) => p,
+    bezier: (p) => p * p * (3 - 2 * p),
+    "ease-in": (p) => p * p,
+    "ease-out": (p) => 1 - Math.pow(1 - p, 2),
+    "ease-in-out": (p) => p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2
+  };
+  const directionMap = { top: "to top", bottom: "to bottom", left: "to left", right: "to right" };
+  const divs = useMemo(() => {
+    const items = [];
+    const increment = 100 / divCount;
+    const curveFunc = curveFunctions[curve] || curveFunctions.linear;
+    for (let i = 1; i <= divCount; i += 1) {
+      let progress = curveFunc(i / divCount);
+      const blurValue = exponential ? Math.pow(2, progress * 4) * 0.0625 * strength : 0.0625 * (progress * divCount + 1) * strength;
+      const p1 = Math.round((increment * i - increment) * 10) / 10;
+      const p2 = Math.round(increment * i * 10) / 10;
+      const p3 = Math.round((increment * i + increment) * 10) / 10;
+      const p4 = Math.round((increment * i + increment * 2) * 10) / 10;
+      let gradient = `transparent ${p1}%, black ${p2}%`;
+      if (p3 <= 100) gradient += `, black ${p3}%`;
+      if (p4 <= 100) gradient += `, transparent ${p4}%`;
+      items.push(
+        /* @__PURE__ */ React.createElement(
+          "div",
+          {
+            key: i,
+            style: {
+              position: "absolute",
+              inset: 0,
+              maskImage: `linear-gradient(${directionMap[position] || "to bottom"}, ${gradient})`,
+              WebkitMaskImage: `linear-gradient(${directionMap[position] || "to bottom"}, ${gradient})`,
+              backdropFilter: `blur(${blurValue.toFixed(3)}rem)`,
+              WebkitBackdropFilter: `blur(${blurValue.toFixed(3)}rem)`,
+              opacity
+            }
+          }
+        )
+      );
+    }
+    return items;
+  }, [curve, divCount, exponential, opacity, position, strength]);
+  const style = {
+    position: target === "page" ? "fixed" : "absolute",
+    left: 0,
+    right: 0,
+    height,
+    pointerEvents: "none",
+    zIndex
+  };
+  style[position] = 0;
+  return /* @__PURE__ */ React.createElement("div", { className: `gradual-blur ${className}`, style, "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("div", { className: "gradual-blur-inner", style: { position: "relative", width: "100%", height: "100%" } }, divs));
+};
 const LaserCursor = () => {
   const cursorRef = useRef(null);
   const beamRef = useRef(null);
@@ -168,7 +364,7 @@ const SurveySection = ({ onJoin }) => {
       setTimeout(() => setCopied(false), 2400);
     });
   };
-  return /* @__PURE__ */ React.createElement("section", { id: "research", className: "defer-section py-16 md:py-24", style: { background: "var(--cream)" } }, /* @__PURE__ */ React.createElement("div", { className: "site-shell" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-2xl mx-auto text-center" }, /* @__PURE__ */ React.createElement(Reveal, { y: 12 }, /* @__PURE__ */ React.createElement("span", { className: "section-label justify-center" }, "Research / Beta Program")), /* @__PURE__ */ React.createElement(Reveal, { y: 32, delay: 0.08 }, /* @__PURE__ */ React.createElement("h2", { className: "cg mt-5", style: { fontSize: "clamp(2.6rem,5.5vw,4.2rem)", lineHeight: 0.88, letterSpacing: "-0.055em", textTransform: "uppercase", color: "var(--ink)" } }, "Help us build", /* @__PURE__ */ React.createElement("br", null), "the right tool.")), /* @__PURE__ */ React.createElement(Reveal, { y: 16, delay: 0.14 }, /* @__PURE__ */ React.createElement("p", { className: "mt-5 leading-relaxed mx-auto", style: { color: "rgba(9,9,9,0.58)", maxWidth: "30rem", fontSize: "1rem" } }, "A brief study with residential architects and designers. Your responses directly shape Keystone's roadmap and pricing.")), /* @__PURE__ */ React.createElement(Reveal, { y: 24, delay: 0.22 }, /* @__PURE__ */ React.createElement("div", { className: "mt-10 mx-auto inline-block survey-qr-frame", style: { padding: "2rem 2.4rem" } }, /* @__PURE__ */ React.createElement("div", { className: "mono text-[10px] uppercase tracking-[0.28em] mb-4", style: { color: "rgba(9,9,9,0.36)" } }, "Scan to participate"), /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("section", { id: "research", className: "defer-section py-16 md:py-24", style: { background: "var(--cream)" } }, /* @__PURE__ */ React.createElement("div", { className: "site-shell" }, /* @__PURE__ */ React.createElement("div", { className: "max-w-2xl mx-auto text-center" }, /* @__PURE__ */ React.createElement(Reveal, { y: 12 }, /* @__PURE__ */ React.createElement("span", { className: "section-label justify-center" }, "Research / Beta Program")), /* @__PURE__ */ React.createElement(Reveal, { y: 32, delay: 0.08 }, /* @__PURE__ */ React.createElement("h2", { className: "cg mt-5 magic-gradient-text", style: { fontSize: "clamp(2.6rem,5.5vw,4.2rem)", lineHeight: 0.88, letterSpacing: "-0.055em", textTransform: "uppercase", color: "var(--ink)" } }, "Help us build", /* @__PURE__ */ React.createElement("br", null), "the right tool.")), /* @__PURE__ */ React.createElement(Reveal, { y: 16, delay: 0.14 }, /* @__PURE__ */ React.createElement("p", { className: "mt-5 leading-relaxed mx-auto", style: { color: "rgba(9,9,9,0.58)", maxWidth: "30rem", fontSize: "1rem" } }, "A brief study with residential architects and designers. Your responses directly shape Keystone's roadmap and pricing.")), /* @__PURE__ */ React.createElement(Reveal, { y: 24, delay: 0.22 }, /* @__PURE__ */ React.createElement("div", { className: "mt-10 mx-auto inline-block survey-qr-frame", style: { padding: "2rem 2.4rem" } }, /* @__PURE__ */ React.createElement("div", { className: "mono text-[10px] uppercase tracking-[0.28em] mb-4", style: { color: "rgba(9,9,9,0.36)" } }, "Scan to participate"), /* @__PURE__ */ React.createElement(
     "div",
     {
       className: "rounded-[18px] overflow-hidden mx-auto",
@@ -246,7 +442,7 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => /* @__PURE__ */ React
     exit: { opacity: 0, y: "100%" },
     transition: { type: "spring", damping: 28, stiffness: 220 },
     className: "fixed inset-0 z-[100] text-paper flex flex-col pb-safe",
-    style: { background: "linear-gradient(180deg, rgba(10,10,10,0.98), rgba(23,23,23,0.98))" }
+    style: { background: "linear-gradient(180deg, rgba(10,10,10,0.995), rgba(18,18,18,0.995))" }
   },
   /* @__PURE__ */ React.createElement("div", { className: "flex justify-between items-center px-6 py-5 border-b border-white/8" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "cg text-[1.35rem] uppercase tracking-[-0.05em] text-white" }, "Keystone"), /* @__PURE__ */ React.createElement("p", { className: "mono text-[8px] uppercase tracking-[0.24em] mt-1", style: { color: "rgba(244,239,230,0.4)" } }, "AI studio")), /* @__PURE__ */ React.createElement("button", { onClick: onClose, className: "w-9 h-9 bg-white/10 rounded-full flex items-center justify-center" }, /* @__PURE__ */ React.createElement("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, /* @__PURE__ */ React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2", d: "M6 18L18 6M6 6l12 12" })))),
   /* @__PURE__ */ React.createElement("div", { className: "flex-1 px-6 py-6 flex flex-col gap-0" }, [["Work", "work"], ["Services", "services"], ["Pricing", "pricing"], ["Live Studio", "generator"], ["Studio", "studio"], ["Sessions", "gallery"]].map(([label, id], i) => /* @__PURE__ */ React.createElement(
@@ -326,7 +522,7 @@ const JoinModal = ({ isOpen, onClose }) => {
       animate: { opacity: 1 },
       exit: { opacity: 0 },
       onClick: onClose,
-      className: "fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-ink/65 backdrop-blur-lg p-0 md:p-6"
+      className: "fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/85 backdrop-blur-sm p-0 md:p-6"
     },
     /* @__PURE__ */ React.createElement(
       motion.div,
@@ -336,7 +532,7 @@ const JoinModal = ({ isOpen, onClose }) => {
         exit: { y: 50, opacity: 0 },
         transition: { type: "spring", damping: 26 },
         onClick: (event) => event.stopPropagation(),
-        className: "bg-paper w-full md:max-w-md rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden"
+        className: "bg-paper electric-border w-full md:max-w-md rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden"
       },
       /* @__PURE__ */ React.createElement("div", { style: { height: "3px", background: "linear-gradient(90deg, var(--accent), var(--accent-2))" } }),
       /* @__PURE__ */ React.createElement(
@@ -469,7 +665,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
       exit: { opacity: 0 },
-      className: "fixed inset-0 z-[150] flex items-end md:items-center justify-center bg-ink/70 backdrop-blur-lg p-0 md:p-6"
+      className: "fixed inset-0 z-[150] flex items-end md:items-center justify-center bg-black/88 backdrop-blur-sm p-0 md:p-6"
     },
     /* @__PURE__ */ React.createElement(
       motion.div,
@@ -478,7 +674,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         animate: { y: 0, opacity: 1 },
         exit: { y: 40, opacity: 0 },
         transition: { type: "spring", damping: 26 },
-        className: "bg-paper w-full md:max-w-lg rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden"
+        className: "bg-paper electric-border w-full md:max-w-lg rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden"
       },
       /* @__PURE__ */ React.createElement("div", { style: { height: "3px", background: "linear-gradient(90deg,var(--blue),var(--red))" } }),
       /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onClose, "aria-label": "Close render options", className: "absolute top-4 right-4 w-8 h-8 bg-black/6 hover:bg-black/12 rounded-full flex items-center justify-center z-10" }, /* @__PURE__ */ React.createElement(CloseIcon, { className: "w-4 h-4" })),
@@ -1616,7 +1812,7 @@ const DreamApp = () => {
     obs.observe(hero);
     return () => obs.disconnect();
   }, []);
-  return /* @__PURE__ */ React.createElement("div", { className: "pb-[60px] md:pb-0" }, /* @__PURE__ */ React.createElement(JoinModal, { isOpen: isModalOpen, onClose: () => setModalOpen(false) }), /* @__PURE__ */ React.createElement(LaserCursor, null), /* @__PURE__ */ React.createElement(MobileNavBar, { onOpenMenu: () => setMenuOpen(true) }), /* @__PURE__ */ React.createElement(MobileMenuOverlay, { isOpen: isMenuOpen, onClose: () => setMenuOpen(false), onJoin: () => setModalOpen(true) }), /* @__PURE__ */ React.createElement(SectionRail, null), /* @__PURE__ */ React.createElement(AnimatePresence, null, !heroVisible && /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "pb-[60px] md:pb-0" }, /* @__PURE__ */ React.createElement(JoinModal, { isOpen: isModalOpen, onClose: () => setModalOpen(false) }), /* @__PURE__ */ React.createElement(ClickSparkGlobal, null), /* @__PURE__ */ React.createElement(LaserCursor, null), /* @__PURE__ */ React.createElement(MobileNavBar, { onOpenMenu: () => setMenuOpen(true) }), /* @__PURE__ */ React.createElement(MobileMenuOverlay, { isOpen: isMenuOpen, onClose: () => setMenuOpen(false), onJoin: () => setModalOpen(true) }), /* @__PURE__ */ React.createElement(SectionRail, null), /* @__PURE__ */ React.createElement(AnimatePresence, null, !heroVisible && /* @__PURE__ */ React.createElement(
     motion.div,
     {
       initial: { opacity: 0, y: 20 },
@@ -1636,7 +1832,7 @@ const DreamApp = () => {
     },
     /* @__PURE__ */ React.createElement("a", { href: "#hero", className: "flex items-center gap-3" }, /* @__PURE__ */ React.createElement(SmartImage, { src: ASSETS.icon, alt: "Keystone", eager: true, style: { width: "30px", height: "30px" } }), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "cg text-[1.2rem] leading-none uppercase tracking-[-0.05em]", style: { color: "var(--ink)" } }, "Keystone"), /* @__PURE__ */ React.createElement("div", { className: "mono text-[8px] uppercase tracking-[0.22em] mt-1", style: { color: "rgba(9,9,9,0.42)" } }, "AI studio"))),
     /* @__PURE__ */ React.createElement("div", { className: "hidden md:flex items-center gap-8 mono text-[11px] uppercase tracking-[0.26em]", style: { color: "rgba(9,9,9,0.54)" } }, HOME_NAV_ITEMS.map((item) => /* @__PURE__ */ React.createElement("a", { key: item.label, href: navHref(item, true), className: "transition-colors hover:text-black" }, item.label)), /* @__PURE__ */ React.createElement("button", { onClick: () => setModalOpen(true), className: "cta-hero cta-glow-soft px-5 py-3 text-[11px]" }, "Request Access"))
-  ), /* @__PURE__ */ React.createElement("section", { id: "hero", className: "relative overflow-hidden", style: { minHeight: "min(84svh, 860px)", paddingTop: "74px", background: "linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)" } }, /* @__PURE__ */ React.createElement("div", { className: "hero-video-shell" }, /* @__PURE__ */ React.createElement("div", { className: "hero-video-base" }), /* @__PURE__ */ React.createElement("div", { className: "hero-video-wave orange" }), /* @__PURE__ */ React.createElement("div", { className: "hero-video-wave soft" }), /* @__PURE__ */ React.createElement("div", { className: "hero-video-wave sand" }), /* @__PURE__ */ React.createElement("div", { className: "hero-video-mesh" }), /* @__PURE__ */ React.createElement("div", { className: "hero-video-scan" })), /* @__PURE__ */ React.createElement("div", { className: "dream-grid absolute inset-0 opacity-80" }), /* @__PURE__ */ React.createElement("div", { className: "hero-glow", style: { top: "-12%", width: "780px", height: "780px", background: "radial-gradient(circle, rgba(255,106,55,0.14), transparent 72%)" } }), /* @__PURE__ */ React.createElement("div", { className: "hero-glow-red", style: { bottom: "10%", right: "4%", width: "520px", height: "520px", background: "radial-gradient(circle, rgba(216,208,196,0.52), transparent 72%)" } }), /* @__PURE__ */ React.createElement(HeroFloatingBlueprint, null), /* @__PURE__ */ React.createElement("div", { className: "site-shell relative z-10" }, /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-[minmax(0,1.08fr)_380px] gap-8 lg:gap-10 items-start pt-3 pb-6 md:pt-5 md:pb-10", style: { minHeight: "min(calc(64svh - 64px), 640px)" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(motion.span, { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.15 }, className: "section-label" }, "Keystone AI Studio / architect-first discovery"), /* @__PURE__ */ React.createElement(
+  ), /* @__PURE__ */ React.createElement("section", { id: "hero", className: "relative overflow-hidden", style: { minHeight: "min(84svh, 860px)", paddingTop: "74px", background: "linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)" } }, /* @__PURE__ */ React.createElement(DotGridHero, null), /* @__PURE__ */ React.createElement("div", { className: "hero-video-shell hero-ambient-shell" }, /* @__PURE__ */ React.createElement("div", { className: "hero-video-base" }), /* @__PURE__ */ React.createElement("div", { className: "hero-video-wave orange" }), /* @__PURE__ */ React.createElement("div", { className: "hero-video-wave soft" }), /* @__PURE__ */ React.createElement("div", { className: "hero-video-wave sand" }), /* @__PURE__ */ React.createElement("div", { className: "hero-video-mesh" }), /* @__PURE__ */ React.createElement("div", { className: "hero-video-scan" })), /* @__PURE__ */ React.createElement("div", { className: "dream-grid absolute inset-0 opacity-45" }), /* @__PURE__ */ React.createElement("div", { className: "hero-glow", style: { top: "-12%", width: "780px", height: "780px", background: "radial-gradient(circle, rgba(255,106,55,0.12), transparent 72%)" } }), /* @__PURE__ */ React.createElement("div", { className: "hero-glow-red", style: { bottom: "10%", right: "4%", width: "520px", height: "520px", background: "radial-gradient(circle, rgba(255,239,228,0.66), transparent 72%)" } }), /* @__PURE__ */ React.createElement(GradualBlur, { target: "parent", position: "bottom", height: "7rem", strength: 2.1, divCount: 6, curve: "bezier", exponential: true, opacity: 1 }), /* @__PURE__ */ React.createElement("div", { className: "site-shell relative z-10" }, /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-[minmax(0,1.08fr)_380px] gap-8 lg:gap-10 items-start pt-3 pb-6 md:pt-5 md:pb-10", style: { minHeight: "min(calc(64svh - 64px), 640px)" } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(motion.span, { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.15 }, className: "section-label" }, "Keystone AI Studio / architect-first discovery"), /* @__PURE__ */ React.createElement(
     motion.h1,
     {
       initial: { opacity: 0, y: 24 },
@@ -1646,7 +1842,7 @@ const DreamApp = () => {
       style: { fontSize: "clamp(3.45rem, 8vw, 7.2rem)", letterSpacing: "-0.06em", textTransform: "uppercase", color: "var(--ink)" }
     },
     /* @__PURE__ */ React.createElement("span", { className: "block" }, "Build the"),
-    /* @__PURE__ */ React.createElement("span", { className: "block", style: { color: "var(--ink)" } }, /* @__PURE__ */ React.createElement("span", { className: "serif hero-accent-word" }, "feeling of home")),
+    /* @__PURE__ */ React.createElement("span", { className: "block", style: { color: "var(--ink)" } }, /* @__PURE__ */ React.createElement("span", { className: "serif hero-accent-word magic-gradient-text" }, "feeling of home")),
     /* @__PURE__ */ React.createElement("span", { className: "block", style: { color: "rgba(78,69,61,0.62)" } }, "before the first meeting.")
   ), /* @__PURE__ */ React.createElement(
     motion.div,
@@ -1656,7 +1852,7 @@ const DreamApp = () => {
       transition: { delay: 0.56 },
       className: "mt-7 flex flex-col sm:flex-row gap-3 items-start"
     },
-    /* @__PURE__ */ React.createElement("button", { onClick: () => scrollTo("generator"), "data-cursor-text": "Open studio", className: "cta-hero cta-glow cta-live" }, /* @__PURE__ */ React.createElement("span", null, "Open Live Studio"), /* @__PURE__ */ React.createElement("span", { className: "cta-live-mark" }, /* @__PURE__ */ React.createElement("span", { className: "cta-live-dot" }), "Try it now")),
+    /* @__PURE__ */ React.createElement("button", { onClick: () => scrollTo("generator"), "data-cursor-text": "Open studio", className: "cta-hero cta-glow cta-live electric-border" }, /* @__PURE__ */ React.createElement("span", null, "Open Live Studio"), /* @__PURE__ */ React.createElement("span", { className: "cta-live-mark" }, /* @__PURE__ */ React.createElement("span", { className: "cta-live-dot" }), "Try it now")),
     /* @__PURE__ */ React.createElement("button", { onClick: () => setModalOpen(true), "data-cursor-text": "Request access", className: "cta-hero cta-glow-soft" }, "Request Access")
   ), /* @__PURE__ */ React.createElement(
     motion.p,
@@ -1685,7 +1881,7 @@ const DreamApp = () => {
       transition: { delay: 0.82 },
       className: "hero-proof-grid mt-8"
     },
-    HERO_SIGNAL_CARDS.map((item) => /* @__PURE__ */ React.createElement("article", { key: item.label, className: "hero-proof-card cursor-target", "data-cursor-text": item.label }, /* @__PURE__ */ React.createElement("div", { className: "mono text-[9px] uppercase tracking-[0.22em]", style: { color: "rgba(10,10,12,0.42)" } }, item.label), /* @__PURE__ */ React.createElement("h3", { className: "hero-proof-value" }, item.value), /* @__PURE__ */ React.createElement("p", { className: "hero-proof-note" }, item.note)))
+    HERO_SIGNAL_CARDS.map((item) => /* @__PURE__ */ React.createElement("article", { key: item.label, className: "hero-proof-card cursor-target electric-border", "data-cursor-text": item.label }, /* @__PURE__ */ React.createElement("div", { className: "mono text-[9px] uppercase tracking-[0.22em]", style: { color: "rgba(10,10,12,0.42)" } }, item.label), /* @__PURE__ */ React.createElement("h3", { className: "hero-proof-value" }, item.value), /* @__PURE__ */ React.createElement("p", { className: "hero-proof-note" }, item.note)))
   )), /* @__PURE__ */ React.createElement(
     motion.aside,
     {

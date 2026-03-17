@@ -1,4 +1,4 @@
-﻿const { useState, useEffect, useRef } = React;
+﻿const { useState, useEffect, useRef, useMemo } = React;
 const FM = window.framerMotion || window.Motion;
 const { motion, AnimatePresence, useScroll, useTransform, useSpring } = FM;
 
@@ -42,6 +42,229 @@ const CheckIcon = ({ className = 'w-3 h-3' }) => (
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M5 13l4 4L19 7"/>
     </svg>
 );
+
+
+
+const ClickSparkGlobal = ({
+    sparkColor = '#fd9608',
+    sparkSize = 16,
+    sparkRadius = 34,
+    sparkCount = 14,
+    duration = 900,
+}) => {
+    const layerRef = useRef(null);
+
+    useEffect(() => {
+        const layer = layerRef.current;
+        if (!layer) return undefined;
+
+        const spawn = (event) => {
+            if (event.target.closest('[data-no-clickspark="true"]')) return;
+            const rect = layer.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            for (let i = 0; i < sparkCount; i += 1) {
+                const spark = document.createElement('span');
+                const angle = (Math.PI * 2 * i) / sparkCount + (Math.random() - 0.5) * 0.28;
+                const radius = sparkRadius * (0.72 + Math.random() * 0.5);
+                const tx = Math.cos(angle) * radius;
+                const ty = Math.sin(angle) * radius;
+                spark.className = 'click-spark';
+                spark.style.left = `${x}px`;
+                spark.style.top = `${y}px`;
+                spark.style.width = `${sparkSize}px`;
+                spark.style.height = `${Math.max(4, sparkSize * 0.2)}px`;
+                spark.style.background = `linear-gradient(90deg, rgba(255,255,255,0.95), ${sparkColor})`;
+                spark.style.setProperty('--spark-x', `${tx}px`);
+                spark.style.setProperty('--spark-y', `${ty}px`);
+                spark.style.setProperty('--spark-rotate', `${(angle * 180 / Math.PI).toFixed(2)}deg`);
+                spark.style.animationDuration = `${duration}ms`;
+                layer.appendChild(spark);
+                window.setTimeout(() => spark.remove(), duration + 80);
+            }
+            const core = document.createElement('span');
+            core.className = 'click-spark-core';
+            core.style.left = `${x}px`;
+            core.style.top = `${y}px`;
+            core.style.background = sparkColor;
+            core.style.animationDuration = `${Math.max(520, duration * 0.92)}ms`;
+            layer.appendChild(core);
+            window.setTimeout(() => core.remove(), duration + 60);
+        };
+
+        window.addEventListener('pointerdown', spawn, { passive: true });
+        return () => window.removeEventListener('pointerdown', spawn);
+    }, [sparkColor, sparkCount, sparkRadius, sparkSize, duration]);
+
+    return <div ref={layerRef} className="click-spark-layer" aria-hidden="true"/>;
+};
+
+const DotGridHero = ({
+    dotSize = 3.1,
+    gap = 28,
+    baseColor = '249, 123, 6',
+    activeColor = '255, 106, 55',
+    proximity = 150,
+}) => {
+    const canvasRef = useRef(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return undefined;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return undefined;
+
+        let raf = 0;
+        let width = 0;
+        let height = 0;
+        const pointer = { x: 0, y: 0, active: false };
+
+        const resize = () => {
+            const parent = canvas.parentElement;
+            if (!parent) return;
+            width = parent.clientWidth;
+            height = parent.clientHeight;
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            canvas.width = Math.max(1, Math.round(width * dpr));
+            canvas.height = Math.max(1, Math.round(height * dpr));
+            canvas.style.width = `${width}px`;
+            canvas.style.height = `${height}px`;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        };
+
+        const render = (time) => {
+            ctx.clearRect(0, 0, width, height);
+            const offsetX = Math.sin(time * 0.00016) * 10;
+            const offsetY = Math.cos(time * 0.00012) * 6;
+            for (let y = gap * 0.5; y < height + gap; y += gap) {
+                for (let x = gap * 0.5; x < width + gap; x += gap) {
+                    const px = x + offsetX * ((y / Math.max(height, 1)) - 0.5);
+                    const py = y + offsetY * ((x / Math.max(width, 1)) - 0.5);
+                    let intensity = 0;
+                    if (pointer.active) {
+                        const dist = Math.hypot(pointer.x - px, pointer.y - py);
+                        intensity = Math.max(0, 1 - dist / proximity);
+                    }
+                    const pulse = 0.22 + (Math.sin((x + y) * 0.02 + time * 0.0014) + 1) * 0.14;
+                    const radius = dotSize + intensity * 2.7 + pulse;
+                    const alpha = 0.16 + pulse * 0.4 + intensity * 0.38;
+                    const color = intensity > 0.04 ? activeColor : baseColor;
+                    ctx.beginPath();
+                    ctx.arc(px, py, radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${color}, ${Math.min(0.92, alpha)})`;
+                    ctx.shadowBlur = intensity > 0.08 ? 18 : 0;
+                    ctx.shadowColor = `rgba(255, 106, 55, ${Math.min(0.45, intensity * 0.55)})`;
+                    ctx.fill();
+                }
+            }
+            ctx.shadowBlur = 0;
+            raf = window.requestAnimationFrame(render);
+        };
+
+        const onMove = (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const nextX = event.clientX - rect.left;
+            const nextY = event.clientY - rect.top;
+            pointer.active = nextX >= 0 && nextX <= rect.width && nextY >= 0 && nextY <= rect.height;
+            pointer.x = nextX;
+            pointer.y = nextY;
+        };
+        const onLeave = () => { pointer.active = false; };
+
+        resize();
+        raf = window.requestAnimationFrame(render);
+        window.addEventListener('resize', resize);
+        window.addEventListener('pointermove', onMove, { passive: true });
+        window.addEventListener('pointerleave', onLeave);
+
+        return () => {
+            window.cancelAnimationFrame(raf);
+            window.removeEventListener('resize', resize);
+            window.removeEventListener('pointermove', onMove);
+            window.removeEventListener('pointerleave', onLeave);
+        };
+    }, [activeColor, baseColor, dotSize, gap, proximity]);
+
+    return (
+        <div className="hero-dot-grid" aria-hidden="true">
+            <canvas ref={canvasRef} className="hero-dot-grid-canvas"/>
+            <div className="hero-dot-grid-vignette"/>
+        </div>
+    );
+};
+
+const GradualBlur = ({
+    target = 'parent',
+    position = 'bottom',
+    height = '7rem',
+    strength = 2,
+    divCount = 5,
+    curve = 'bezier',
+    exponential = true,
+    opacity = 1,
+    zIndex = 12,
+    className = '',
+}) => {
+    const curveFunctions = {
+        linear: (p) => p,
+        bezier: (p) => p * p * (3 - 2 * p),
+        'ease-in': (p) => p * p,
+        'ease-out': (p) => 1 - Math.pow(1 - p, 2),
+        'ease-in-out': (p) => (p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2),
+    };
+    const directionMap = { top: 'to top', bottom: 'to bottom', left: 'to left', right: 'to right' };
+    const divs = useMemo(() => {
+        const items = [];
+        const increment = 100 / divCount;
+        const curveFunc = curveFunctions[curve] || curveFunctions.linear;
+        for (let i = 1; i <= divCount; i += 1) {
+            let progress = curveFunc(i / divCount);
+            const blurValue = exponential
+                ? Math.pow(2, progress * 4) * 0.0625 * strength
+                : 0.0625 * (progress * divCount + 1) * strength;
+            const p1 = Math.round((increment * i - increment) * 10) / 10;
+            const p2 = Math.round(increment * i * 10) / 10;
+            const p3 = Math.round((increment * i + increment) * 10) / 10;
+            const p4 = Math.round((increment * i + increment * 2) * 10) / 10;
+            let gradient = `transparent ${p1}%, black ${p2}%`;
+            if (p3 <= 100) gradient += `, black ${p3}%`;
+            if (p4 <= 100) gradient += `, transparent ${p4}%`;
+            items.push(
+                <div
+                    key={i}
+                    style={{
+                        position: 'absolute',
+                        inset: 0,
+                        maskImage: `linear-gradient(${directionMap[position] || 'to bottom'}, ${gradient})`,
+                        WebkitMaskImage: `linear-gradient(${directionMap[position] || 'to bottom'}, ${gradient})`,
+                        backdropFilter: `blur(${blurValue.toFixed(3)}rem)`,
+                        WebkitBackdropFilter: `blur(${blurValue.toFixed(3)}rem)`,
+                        opacity,
+                    }}
+                />
+            );
+        }
+        return items;
+    }, [curve, divCount, exponential, opacity, position, strength]);
+
+    const style = {
+        position: target === 'page' ? 'fixed' : 'absolute',
+        left: 0,
+        right: 0,
+        height,
+        pointerEvents: 'none',
+        zIndex,
+    };
+    style[position] = 0;
+
+    return (
+        <div className={`gradual-blur ${className}`} style={style} aria-hidden="true">
+            <div className="gradual-blur-inner" style={{ position: 'relative', width: '100%', height: '100%' }}>
+                {divs}
+            </div>
+        </div>
+    );
+};
 
 const LaserCursor = () => {
     const cursorRef = useRef(null);
@@ -202,6 +425,617 @@ const Reveal = ({ children, delay = 0, y = 28, className = '', style = {} }) => 
     </motion.div>
 );
 
+// ─── REACT-BITS ADAPTED COMPONENTS ──────────────────────────────────────────
+
+// SpotlightCard — mouse-tracking radial spotlight
+const SpotlightCard = ({ children, className = '', spotlightColor = 'rgba(255,106,55,0.15)', style = {} }) => {
+    const ref = useRef(null);
+    const handleMove = (e) => {
+        if (!ref.current) return;
+        const r = ref.current.getBoundingClientRect();
+        ref.current.style.setProperty('--mouse-x', `${e.clientX - r.left}px`);
+        ref.current.style.setProperty('--mouse-y', `${e.clientY - r.top}px`);
+        ref.current.style.setProperty('--spotlight-color', spotlightColor);
+    };
+    return (
+        <div ref={ref} onMouseMove={handleMove} className={`spotlight-card ${className}`} style={style}>
+            {children}
+        </div>
+    );
+};
+
+// TiltCard — 3D perspective tilt on hover
+const TiltCard = ({ children, className = '', style = {}, maxTilt = 7 }) => {
+    const ref = useRef(null);
+    const reset = () => { if (ref.current) ref.current.style.transform = 'perspective(860px) rotateX(0deg) rotateY(0deg) scale(1)'; };
+    const tilt = (e) => {
+        if (!ref.current) return;
+        const r = ref.current.getBoundingClientRect();
+        const rx = ((e.clientY - r.top - r.height / 2) / (r.height / 2)) * -maxTilt;
+        const ry = ((e.clientX - r.left - r.width / 2) / (r.width / 2)) * maxTilt;
+        ref.current.style.transform = `perspective(860px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(1.015)`;
+    };
+    return (
+        <div ref={ref} className={`tilt-wrap ${className}`} style={{ ...style }}
+            onMouseMove={tilt} onMouseLeave={reset}>
+            {children}
+        </div>
+    );
+};
+
+// BlurText — scroll-triggered word-by-word blur reveal
+const BlurText = ({ text = '', delay = 65, className = '', direction = 'bottom', tag: Tag = 'span' }) => {
+    const [inView, setInView] = useState(false);
+    const ref = useRef(null);
+    useEffect(() => {
+        if (!ref.current) return;
+        const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setInView(true); obs.disconnect(); } }, { threshold: 0.05 });
+        obs.observe(ref.current);
+        return () => obs.disconnect();
+    }, []);
+    const words = text.split(' ');
+    const yFrom = direction === 'bottom' ? 28 : -28;
+    return (
+        <Tag ref={ref} className={`blur-text-wrap ${className}`}>
+            {words.map((word, i) => (
+                <motion.span key={i} className="blur-word"
+                    initial={{ filter: 'blur(10px)', opacity: 0, y: yFrom }}
+                    animate={inView ? { filter: 'blur(0px)', opacity: 1, y: 0 } : {}}
+                    transition={{ duration: 0.58, delay: i * (delay / 1000), ease: [0.22, 1, 0.36, 1] }}>
+                    {word}
+                </motion.span>
+            ))}
+        </Tag>
+    );
+};
+
+// GradientText — animated orange gradient text wrapper
+const GradientText = ({ children, className = '' }) => (
+    <span className={`gradient-text-anim ${className}`}>{children}</span>
+);
+
+// StarBorderBtn — CTA button with animated rotating glow ring
+const StarBorderBtn = ({ children, onClick, className = '' }) => (
+    <div className={`star-border-wrap ${className}`}>
+        <div className="star-border-ring" aria-hidden="true"/>
+        <button type="button" onClick={onClick} className="cta-hero cta-glow cta-live" style={{ position: 'relative', zIndex: 1 }}>
+            {children}
+        </button>
+    </div>
+);
+
+// OrbBackground — CSS animated floating orb blobs
+const OrbBackground = () => (
+    <div className="orb-bg" aria-hidden="true">
+        <div className="orb orb-1"/>
+        <div className="orb orb-2"/>
+        <div className="orb orb-3"/>
+    </div>
+);
+
+// FloatingParticles — canvas-based drifting particle field
+const FloatingParticles = ({ count = 55, color = '255,106,55', className = '' }) => {
+    const canvasRef = useRef(null);
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        let raf;
+        let pts = [];
+        const resize = () => { canvas.width = canvas.offsetWidth; canvas.height = canvas.offsetHeight; };
+        const init = () => {
+            pts = Array.from({ length: count }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                r: Math.random() * 2.2 + 0.4,
+                vx: (Math.random() - 0.5) * 0.22,
+                vy: (Math.random() - 0.5) * 0.22,
+                a: Math.random() * 0.45 + 0.08,
+            }));
+        };
+        const draw = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            pts.forEach(p => {
+                p.x += p.vx; p.y += p.vy;
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${color}, ${p.a})`;
+                ctx.fill();
+            });
+            raf = requestAnimationFrame(draw);
+        };
+        resize(); init(); draw();
+        const onResize = () => { resize(); init(); };
+        window.addEventListener('resize', onResize);
+        return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', onResize); };
+    }, [count, color]);
+    return <canvas ref={canvasRef} className={`particle-canvas ${className}`}/>;
+};
+
+// CountUp — scroll-triggered animated number counter
+const CountUp = ({ to, duration = 1600, suffix = '', className = '' }) => {
+    const [n, setN] = useState(0);
+    const ref = useRef(null);
+    const started = useRef(false);
+    useEffect(() => {
+        const obs = new IntersectionObserver(([e]) => {
+            if (e.isIntersecting && !started.current) {
+                started.current = true;
+                let t0 = null;
+                const step = (ts) => {
+                    if (!t0) t0 = ts;
+                    const p = Math.min((ts - t0) / duration, 1);
+                    const ease = 1 - Math.pow(1 - p, 3);
+                    setN(Math.floor(ease * to));
+                    if (p < 1) requestAnimationFrame(step);
+                };
+                requestAnimationFrame(step);
+                obs.disconnect();
+            }
+        }, { threshold: 0.3 });
+        if (ref.current) obs.observe(ref.current);
+        return () => obs.disconnect();
+    }, [to, duration]);
+    return <span ref={ref} className={className}>{n}{suffix}</span>;
+};
+
+// ─── SPLASH CURSOR (WebGL fluid simulation) ─────────────────────────────────
+const SplashCursor = ({
+    SIM_RESOLUTION = 32,
+    DYE_RESOLUTION = 1440,
+    CAPTURE_RESOLUTION = 512,
+    DENSITY_DISSIPATION = 8,
+    VELOCITY_DISSIPATION = 0.6,
+    PRESSURE = 0.1,
+    PRESSURE_ITERATIONS = 20,
+    CURL = 2,
+    SPLAT_RADIUS = 0.12,
+    SPLAT_FORCE = 3000,
+    SHADING = true,
+    COLOR_UPDATE_SPEED = 8,
+    BACK_COLOR = { r: 0, g: 0, b: 0 },
+    TRANSPARENT = true,
+}) => {
+    const canvasRef = useRef(null);
+    const animationFrameId = useRef(null);
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        let isActive = true;
+        function pointerPrototype() {
+            this.id = -1; this.texcoordX = 0; this.texcoordY = 0;
+            this.prevTexcoordX = 0; this.prevTexcoordY = 0;
+            this.deltaX = 0; this.deltaY = 0;
+            this.down = false; this.moved = false; this.color = [0,0,0];
+        }
+        let config = { SIM_RESOLUTION, DYE_RESOLUTION, CAPTURE_RESOLUTION, DENSITY_DISSIPATION, VELOCITY_DISSIPATION, PRESSURE, PRESSURE_ITERATIONS, CURL, SPLAT_RADIUS, SPLAT_FORCE, SHADING, COLOR_UPDATE_SPEED, PAUSED: false, BACK_COLOR, TRANSPARENT };
+        let pointers = [new pointerPrototype()];
+        const { gl, ext } = getWebGLContext(canvas);
+        if (!ext.supportLinearFiltering) { config.DYE_RESOLUTION = 256; config.SHADING = false; }
+        function getWebGLContext(canvas) {
+            const params = { alpha: true, depth: false, stencil: false, antialias: false, preserveDrawingBuffer: false };
+            let gl = canvas.getContext('webgl2', params);
+            const isWebGL2 = !!gl;
+            if (!isWebGL2) gl = canvas.getContext('webgl', params) || canvas.getContext('experimental-webgl', params);
+            let halfFloat, supportLinearFiltering;
+            if (isWebGL2) { gl.getExtension('EXT_color_buffer_float'); supportLinearFiltering = gl.getExtension('OES_texture_float_linear'); }
+            else { halfFloat = gl.getExtension('OES_texture_half_float'); supportLinearFiltering = gl.getExtension('OES_texture_half_float_linear'); }
+            gl.clearColor(0,0,0,1);
+            const halfFloatTexType = isWebGL2 ? gl.HALF_FLOAT : halfFloat && halfFloat.HALF_FLOAT_OES;
+            let formatRGBA, formatRG, formatR;
+            if (isWebGL2) {
+                formatRGBA = getSupportedFormat(gl, gl.RGBA16F, gl.RGBA, halfFloatTexType);
+                formatRG = getSupportedFormat(gl, gl.RG16F, gl.RG, halfFloatTexType);
+                formatR = getSupportedFormat(gl, gl.R16F, gl.RED, halfFloatTexType);
+            } else {
+                formatRGBA = getSupportedFormat(gl, gl.RGBA, gl.RGBA, halfFloatTexType);
+                formatRG = getSupportedFormat(gl, gl.RGBA, gl.RGBA, halfFloatTexType);
+                formatR = getSupportedFormat(gl, gl.RGBA, gl.RGBA, halfFloatTexType);
+            }
+            return { gl, ext: { formatRGBA, formatRG, formatR, halfFloatTexType, supportLinearFiltering } };
+        }
+        function getSupportedFormat(gl, internalFormat, format, type) {
+            if (!supportRenderTextureFormat(gl, internalFormat, format, type)) {
+                switch (internalFormat) {
+                    case gl.R16F: return getSupportedFormat(gl, gl.RG16F, gl.RG, type);
+                    case gl.RG16F: return getSupportedFormat(gl, gl.RGBA16F, gl.RGBA, type);
+                    default: return null;
+                }
+            }
+            return { internalFormat, format };
+        }
+        function supportRenderTextureFormat(gl, internalFormat, format, type) {
+            const texture = gl.createTexture();
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texImage2D(gl.TEXTURE_2D, 0, internalFormat, 4, 4, 0, format, type, null);
+            const fbo = gl.createFramebuffer();
+            gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
+            return gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+        }
+        class Material {
+            constructor(vs, fsSrc) { this.vertexShader=vs; this.fragmentShaderSource=fsSrc; this.programs=[]; this.activeProgram=null; this.uniforms=[]; }
+            setKeywords(keywords) {
+                let hash=0; for (let i=0;i<keywords.length;i++) hash+=hashCode(keywords[i]);
+                let program=this.programs[hash];
+                if (program==null) { program=createProgram(this.vertexShader,compileShader(gl.FRAGMENT_SHADER,this.fragmentShaderSource,keywords)); this.programs[hash]=program; }
+                if (program===this.activeProgram) return;
+                this.uniforms=getUniforms(program); this.activeProgram=program;
+            }
+            bind() { gl.useProgram(this.activeProgram); }
+        }
+        class Program {
+            constructor(vs,fs) { this.uniforms={}; this.program=createProgram(vs,fs); this.uniforms=getUniforms(this.program); }
+            bind() { gl.useProgram(this.program); }
+        }
+        function createProgram(vs,fs) { let p=gl.createProgram(); gl.attachShader(p,vs); gl.attachShader(p,fs); gl.linkProgram(p); return p; }
+        function getUniforms(program) { let u=[],n=gl.getProgramParameter(program,gl.ACTIVE_UNIFORMS); for(let i=0;i<n;i++){let nm=gl.getActiveUniform(program,i).name; u[nm]=gl.getUniformLocation(program,nm);} return u; }
+        function compileShader(type,source,keywords) {
+            if(keywords){let s=''; keywords.forEach(k=>{s+='#define '+k+'\n';}); source=s+source;}
+            const shader=gl.createShader(type); gl.shaderSource(shader,source); gl.compileShader(shader); return shader;
+        }
+        const baseVS=compileShader(gl.VERTEX_SHADER,`precision highp float;attribute vec2 aPosition;varying vec2 vUv;varying vec2 vL;varying vec2 vR;varying vec2 vT;varying vec2 vB;uniform vec2 texelSize;void main(){vUv=aPosition*0.5+0.5;vL=vUv-vec2(texelSize.x,0.0);vR=vUv+vec2(texelSize.x,0.0);vT=vUv+vec2(0.0,texelSize.y);vB=vUv-vec2(0.0,texelSize.y);gl_Position=vec4(aPosition,0.0,1.0);}`);
+        const copyShader=compileShader(gl.FRAGMENT_SHADER,`precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;uniform sampler2D uTexture;void main(){gl_FragColor=texture2D(uTexture,vUv);}`);
+        const clearShader=compileShader(gl.FRAGMENT_SHADER,`precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;uniform sampler2D uTexture;uniform float value;void main(){gl_FragColor=value*texture2D(uTexture,vUv);}`);
+        const displayShaderSrc=`precision highp float;precision highp sampler2D;varying vec2 vUv;varying vec2 vL;varying vec2 vR;varying vec2 vT;varying vec2 vB;uniform sampler2D uTexture;uniform vec2 texelSize;void main(){vec3 c=texture2D(uTexture,vUv).rgb;#ifdef SHADING vec3 lc=texture2D(uTexture,vL).rgb;vec3 rc=texture2D(uTexture,vR).rgb;vec3 tc=texture2D(uTexture,vT).rgb;vec3 bc=texture2D(uTexture,vB).rgb;float dx=length(rc)-length(lc);float dy=length(tc)-length(bc);vec3 n=normalize(vec3(dx,dy,length(texelSize)));float diffuse=clamp(dot(n,vec3(0,0,1))+0.7,0.7,1.0);c*=diffuse;#endif float a=max(c.r,max(c.g,c.b));gl_FragColor=vec4(c,a);}`;
+        const splatShader=compileShader(gl.FRAGMENT_SHADER,`precision highp float;precision highp sampler2D;varying vec2 vUv;uniform sampler2D uTarget;uniform float aspectRatio;uniform vec3 color;uniform vec2 point;uniform float radius;void main(){vec2 p=vUv-point.xy;p.x*=aspectRatio;vec3 splat=exp(-dot(p,p)/radius)*color;gl_FragColor=vec4(texture2D(uTarget,vUv).xyz+splat,1.0);}`);
+        const advectionShader=compileShader(gl.FRAGMENT_SHADER,`precision highp float;precision highp sampler2D;varying vec2 vUv;uniform sampler2D uVelocity;uniform sampler2D uSource;uniform vec2 texelSize;uniform vec2 dyeTexelSize;uniform float dt;uniform float dissipation;vec4 bilerp(sampler2D sam,vec2 uv,vec2 tsize){vec2 st=uv/tsize-0.5;vec2 iuv=floor(st);vec2 fuv=fract(st);vec4 a=texture2D(sam,(iuv+vec2(0.5,0.5))*tsize);vec4 b=texture2D(sam,(iuv+vec2(1.5,0.5))*tsize);vec4 c=texture2D(sam,(iuv+vec2(0.5,1.5))*tsize);vec4 d=texture2D(sam,(iuv+vec2(1.5,1.5))*tsize);return mix(mix(a,b,fuv.x),mix(c,d,fuv.x),fuv.y);}void main(){#ifdef MANUAL_FILTERING vec2 coord=vUv-dt*bilerp(uVelocity,vUv,texelSize).xy*texelSize;vec4 result=bilerp(uSource,coord,dyeTexelSize);#else vec2 coord=vUv-dt*texture2D(uVelocity,vUv).xy*texelSize;vec4 result=texture2D(uSource,coord);#endif gl_FragColor=result/(1.0+dissipation*dt);}`, ext.supportLinearFiltering?null:['MANUAL_FILTERING']);
+        const divergenceShader=compileShader(gl.FRAGMENT_SHADER,`precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;varying highp vec2 vL;varying highp vec2 vR;varying highp vec2 vT;varying highp vec2 vB;uniform sampler2D uVelocity;void main(){float L=texture2D(uVelocity,vL).x;float R=texture2D(uVelocity,vR).x;float T=texture2D(uVelocity,vT).y;float B=texture2D(uVelocity,vB).y;vec2 C=texture2D(uVelocity,vUv).xy;if(vL.x<0.0)L=-C.x;if(vR.x>1.0)R=-C.x;if(vT.y>1.0)T=-C.y;if(vB.y<0.0)B=-C.y;gl_FragColor=vec4(0.5*(R-L+T-B),0.0,0.0,1.0);}`);
+        const curlShader=compileShader(gl.FRAGMENT_SHADER,`precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;varying highp vec2 vL;varying highp vec2 vR;varying highp vec2 vT;varying highp vec2 vB;uniform sampler2D uVelocity;void main(){gl_FragColor=vec4(0.5*(texture2D(uVelocity,vR).y-texture2D(uVelocity,vL).y-texture2D(uVelocity,vT).x+texture2D(uVelocity,vB).x),0.0,0.0,1.0);}`);
+        const vorticityShader=compileShader(gl.FRAGMENT_SHADER,`precision highp float;precision highp sampler2D;varying vec2 vUv;varying vec2 vL;varying vec2 vR;varying vec2 vT;varying vec2 vB;uniform sampler2D uVelocity;uniform sampler2D uCurl;uniform float curl;uniform float dt;void main(){float L=texture2D(uCurl,vL).x;float R=texture2D(uCurl,vR).x;float T=texture2D(uCurl,vT).x;float B=texture2D(uCurl,vB).x;float C=texture2D(uCurl,vUv).x;vec2 force=0.5*vec2(abs(T)-abs(B),abs(R)-abs(L));force/=length(force)+0.0001;force*=curl*C;force.y*=-1.0;vec2 velocity=texture2D(uVelocity,vUv).xy+force*dt;velocity=min(max(velocity,-1000.0),1000.0);gl_FragColor=vec4(velocity,0.0,1.0);}`);
+        const pressureShader=compileShader(gl.FRAGMENT_SHADER,`precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;varying highp vec2 vL;varying highp vec2 vR;varying highp vec2 vT;varying highp vec2 vB;uniform sampler2D uPressure;uniform sampler2D uDivergence;void main(){gl_FragColor=vec4(0.25*(texture2D(uPressure,vL).x+texture2D(uPressure,vR).x+texture2D(uPressure,vB).x+texture2D(uPressure,vT).x-texture2D(uDivergence,vUv).x),0.0,0.0,1.0);}`);
+        const gradSubShader=compileShader(gl.FRAGMENT_SHADER,`precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;varying highp vec2 vL;varying highp vec2 vR;varying highp vec2 vT;varying highp vec2 vB;uniform sampler2D uPressure;uniform sampler2D uVelocity;void main(){float L=texture2D(uPressure,vL).x;float R=texture2D(uPressure,vR).x;float T=texture2D(uPressure,vT).x;float B=texture2D(uPressure,vB).x;vec2 velocity=texture2D(uVelocity,vUv).xy;velocity.xy-=vec2(R-L,T-B);gl_FragColor=vec4(velocity,0.0,1.0);}`);
+        const blit = (() => {
+            gl.bindBuffer(gl.ARRAY_BUFFER,gl.createBuffer()); gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,-1,1,1,1,1,-1]),gl.STATIC_DRAW);
+            gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,gl.createBuffer()); gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array([0,1,2,0,2,3]),gl.STATIC_DRAW);
+            gl.vertexAttribPointer(0,2,gl.FLOAT,false,0,0); gl.enableVertexAttribArray(0);
+            return (target,clear=false)=>{
+                if(target==null){gl.viewport(0,0,gl.drawingBufferWidth,gl.drawingBufferHeight);gl.bindFramebuffer(gl.FRAMEBUFFER,null);}
+                else{gl.viewport(0,0,target.width,target.height);gl.bindFramebuffer(gl.FRAMEBUFFER,target.fbo);}
+                if(clear){gl.clearColor(0,0,0,1);gl.clear(gl.COLOR_BUFFER_BIT);}
+                gl.drawElements(gl.TRIANGLES,6,gl.UNSIGNED_SHORT,0);
+            };
+        })();
+        function createFBO(w,h,internalFormat,format,type,param){
+            gl.activeTexture(gl.TEXTURE0); let tex=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,tex);
+            gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,param); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,param);
+            gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+            gl.texImage2D(gl.TEXTURE_2D,0,internalFormat,w,h,0,format,type,null);
+            let fbo=gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER,fbo);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,tex,0);
+            gl.viewport(0,0,w,h); gl.clear(gl.COLOR_BUFFER_BIT);
+            return {texture:tex,fbo,width:w,height:h,texelSizeX:1/w,texelSizeY:1/h,attach(id){gl.activeTexture(gl.TEXTURE0+id);gl.bindTexture(gl.TEXTURE_2D,tex);return id;}};
+        }
+        function createDoubleFBO(w,h,internalFormat,format,type,param){
+            let fbo1=createFBO(w,h,internalFormat,format,type,param),fbo2=createFBO(w,h,internalFormat,format,type,param);
+            return {width:w,height:h,texelSizeX:fbo1.texelSizeX,texelSizeY:fbo1.texelSizeY,get read(){return fbo1;},set read(v){fbo1=v;},get write(){return fbo2;},set write(v){fbo2=v;},swap(){let t=fbo1;fbo1=fbo2;fbo2=t;}};
+        }
+        function resizeFBO(t,w,h,internalFormat,format,type,param){let n=createFBO(w,h,internalFormat,format,type,param);copyP.bind();gl.uniform1i(copyP.uniforms.uTexture,t.attach(0));blit(n);return n;}
+        function resizeDoubleFBO(t,w,h,internalFormat,format,type,param){if(t.width===w&&t.height===h)return t;t.read=resizeFBO(t.read,w,h,internalFormat,format,type,param);t.write=createFBO(w,h,internalFormat,format,type,param);t.width=w;t.height=h;t.texelSizeX=1/w;t.texelSizeY=1/h;return t;}
+        const copyP=new Program(baseVS,copyShader),clearP=new Program(baseVS,clearShader),splatP=new Program(baseVS,splatShader);
+        const advectionP=new Program(baseVS,advectionShader),divergenceP=new Program(baseVS,divergenceShader),curlP=new Program(baseVS,curlShader);
+        const vorticityP=new Program(baseVS,vorticityShader),pressureP=new Program(baseVS,pressureShader),gradSubP=new Program(baseVS,gradSubShader);
+        const displayMat=new Material(baseVS,displayShaderSrc);
+        let dye,velocity,divergence,curl,pressure;
+        function initFBOs(){
+            let simRes=getRes(config.SIM_RESOLUTION),dyeRes=getRes(config.DYE_RESOLUTION);
+            const texType=ext.halfFloatTexType,rgba=ext.formatRGBA,rg=ext.formatRG,r=ext.formatR,flt=ext.supportLinearFiltering?gl.LINEAR:gl.NEAREST;
+            gl.disable(gl.BLEND);
+            if(!dye) dye=createDoubleFBO(dyeRes.width,dyeRes.height,rgba.internalFormat,rgba.format,texType,flt);
+            else dye=resizeDoubleFBO(dye,dyeRes.width,dyeRes.height,rgba.internalFormat,rgba.format,texType,flt);
+            if(!velocity) velocity=createDoubleFBO(simRes.width,simRes.height,rg.internalFormat,rg.format,texType,flt);
+            else velocity=resizeDoubleFBO(velocity,simRes.width,simRes.height,rg.internalFormat,rg.format,texType,flt);
+            divergence=createFBO(simRes.width,simRes.height,r.internalFormat,r.format,texType,gl.NEAREST);
+            curl=createFBO(simRes.width,simRes.height,r.internalFormat,r.format,texType,gl.NEAREST);
+            pressure=createDoubleFBO(simRes.width,simRes.height,r.internalFormat,r.format,texType,gl.NEAREST);
+        }
+        function getRes(res){let ar=gl.drawingBufferWidth/gl.drawingBufferHeight;if(ar<1)ar=1/ar;const mn=Math.round(res),mx=Math.round(res*ar);return gl.drawingBufferWidth>gl.drawingBufferHeight?{width:mx,height:mn}:{width:mn,height:mx};}
+        function updateKeys(){let k=[];if(config.SHADING)k.push('SHADING');displayMat.setKeywords(k);}
+        function scaleByDPR(x){return Math.floor(x*(window.devicePixelRatio||1));}
+        function hashCode(s){let h=0;for(let i=0;i<s.length;i++){h=(h<<5)-h+s.charCodeAt(i);h|=0;}return h;}
+        updateKeys(); initFBOs();
+        let lastTime=Date.now(),colorTimer=0;
+        function frame(){
+            if(!isActive)return;
+            const now=Date.now();let dt=Math.min((now-lastTime)/1000,0.016666);lastTime=now;
+            if(resizeCanvas())initFBOs();
+            colorTimer+=dt*config.COLOR_UPDATE_SPEED;
+            if(colorTimer>=1){colorTimer=((colorTimer%1)+1)%1;pointers.forEach(p=>{p.color=genColor();});}
+            pointers.forEach(p=>{if(p.moved){p.moved=false;splatPtr(p);}});
+            step(dt); renderFluid(null);
+            animationFrameId.current=requestAnimationFrame(frame);
+        }
+        function resizeCanvas(){let w=scaleByDPR(canvas.clientWidth),h=scaleByDPR(canvas.clientHeight);if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;return true;}return false;}
+        function step(dt){
+            gl.disable(gl.BLEND);
+            curlP.bind();gl.uniform2f(curlP.uniforms.texelSize,velocity.texelSizeX,velocity.texelSizeY);gl.uniform1i(curlP.uniforms.uVelocity,velocity.read.attach(0));blit(curl);
+            vorticityP.bind();gl.uniform2f(vorticityP.uniforms.texelSize,velocity.texelSizeX,velocity.texelSizeY);gl.uniform1i(vorticityP.uniforms.uVelocity,velocity.read.attach(0));gl.uniform1i(vorticityP.uniforms.uCurl,curl.attach(1));gl.uniform1f(vorticityP.uniforms.curl,config.CURL);gl.uniform1f(vorticityP.uniforms.dt,dt);blit(velocity.write);velocity.swap();
+            divergenceP.bind();gl.uniform2f(divergenceP.uniforms.texelSize,velocity.texelSizeX,velocity.texelSizeY);gl.uniform1i(divergenceP.uniforms.uVelocity,velocity.read.attach(0));blit(divergence);
+            clearP.bind();gl.uniform1i(clearP.uniforms.uTexture,pressure.read.attach(0));gl.uniform1f(clearP.uniforms.value,config.PRESSURE);blit(pressure.write);pressure.swap();
+            pressureP.bind();gl.uniform2f(pressureP.uniforms.texelSize,velocity.texelSizeX,velocity.texelSizeY);gl.uniform1i(pressureP.uniforms.uDivergence,divergence.attach(0));
+            for(let i=0;i<config.PRESSURE_ITERATIONS;i++){gl.uniform1i(pressureP.uniforms.uPressure,pressure.read.attach(1));blit(pressure.write);pressure.swap();}
+            gradSubP.bind();gl.uniform2f(gradSubP.uniforms.texelSize,velocity.texelSizeX,velocity.texelSizeY);gl.uniform1i(gradSubP.uniforms.uPressure,pressure.read.attach(0));gl.uniform1i(gradSubP.uniforms.uVelocity,velocity.read.attach(1));blit(velocity.write);velocity.swap();
+            advectionP.bind();gl.uniform2f(advectionP.uniforms.texelSize,velocity.texelSizeX,velocity.texelSizeY);if(!ext.supportLinearFiltering)gl.uniform2f(advectionP.uniforms.dyeTexelSize,velocity.texelSizeX,velocity.texelSizeY);let vid=velocity.read.attach(0);gl.uniform1i(advectionP.uniforms.uVelocity,vid);gl.uniform1i(advectionP.uniforms.uSource,vid);gl.uniform1f(advectionP.uniforms.dt,dt);gl.uniform1f(advectionP.uniforms.dissipation,config.VELOCITY_DISSIPATION);blit(velocity.write);velocity.swap();
+            if(!ext.supportLinearFiltering)gl.uniform2f(advectionP.uniforms.dyeTexelSize,dye.texelSizeX,dye.texelSizeY);gl.uniform1i(advectionP.uniforms.uVelocity,velocity.read.attach(0));gl.uniform1i(advectionP.uniforms.uSource,dye.read.attach(1));gl.uniform1f(advectionP.uniforms.dissipation,config.DENSITY_DISSIPATION);blit(dye.write);dye.swap();
+        }
+        function renderFluid(target){gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);gl.enable(gl.BLEND);displayMat.bind();if(config.SHADING)gl.uniform2f(displayMat.uniforms.texelSize,1/(target==null?gl.drawingBufferWidth:target.width),1/(target==null?gl.drawingBufferHeight:target.height));gl.uniform1i(displayMat.uniforms.uTexture,dye.read.attach(0));blit(target);}
+        function splatPtr(p){let dx=p.deltaX*config.SPLAT_FORCE,dy=p.deltaY*config.SPLAT_FORCE;splat(p.texcoordX,p.texcoordY,dx,dy,p.color);}
+        function clickSplat(p){const c=genColor();c.r*=10;c.g*=10;c.b*=10;splat(p.texcoordX,p.texcoordY,10*(Math.random()-0.5),30*(Math.random()-0.5),c);}
+        function splat(x,y,dx,dy,color){
+            splatP.bind();gl.uniform1i(splatP.uniforms.uTarget,velocity.read.attach(0));gl.uniform1f(splatP.uniforms.aspectRatio,canvas.width/canvas.height);gl.uniform2f(splatP.uniforms.point,x,y);gl.uniform3f(splatP.uniforms.color,dx,dy,0);gl.uniform1f(splatP.uniforms.radius,correctRad(config.SPLAT_RADIUS/100));blit(velocity.write);velocity.swap();
+            gl.uniform1i(splatP.uniforms.uTarget,dye.read.attach(0));gl.uniform3f(splatP.uniforms.color,color.r,color.g,color.b);blit(dye.write);dye.swap();
+        }
+        function correctRad(r){let ar=canvas.width/canvas.height;if(ar>1)r*=ar;return r;}
+        function genColor(){
+            // Orange/amber biased palette
+            const hue=0.04+Math.random()*0.08;
+            const {r,g,b}=HSVtoRGB(hue,0.85+Math.random()*0.15,1.0);
+            return {r:r*0.22,g:g*0.08,b:b*0.02};
+        }
+        function HSVtoRGB(h,s,v){let r,g,b,i=Math.floor(h*6),f=h*6-i,p=v*(1-s),q=v*(1-f*s),t=v*(1-(1-f)*s);switch(i%6){case 0:r=v,g=t,b=p;break;case 1:r=q,g=v,b=p;break;case 2:r=p,g=v,b=t;break;case 3:r=p,g=q,b=v;break;case 4:r=t,g=p,b=v;break;case 5:r=v,g=p,b=q;break;}return {r,g,b};}
+        function corrDX(d){let ar=canvas.width/canvas.height;if(ar<1)d*=ar;return d;}
+        function corrDY(d){let ar=canvas.width/canvas.height;if(ar>1)d/=ar;return d;}
+        function downPtr(p,id,px,py){p.id=id;p.down=true;p.moved=false;p.texcoordX=px/canvas.width;p.texcoordY=1-(py/canvas.height);p.prevTexcoordX=p.texcoordX;p.prevTexcoordY=p.texcoordY;p.deltaX=0;p.deltaY=0;p.color=genColor();}
+        function movePtr(p,px,py,color){p.prevTexcoordX=p.texcoordX;p.prevTexcoordY=p.texcoordY;p.texcoordX=px/canvas.width;p.texcoordY=1-(py/canvas.height);p.deltaX=corrDX(p.texcoordX-p.prevTexcoordX);p.deltaY=corrDY(p.texcoordY-p.prevTexcoordY);p.moved=Math.abs(p.deltaX)>0||Math.abs(p.deltaY)>0;p.color=color;}
+        let firstMove=false;
+        function handleMouseDown(e){let p=pointers[0];let px=scaleByDPR(e.clientX),py=scaleByDPR(e.clientY);downPtr(p,-1,px,py);clickSplat(p);}
+        function handleMouseMove(e){let p=pointers[0];let px=scaleByDPR(e.clientX),py=scaleByDPR(e.clientY);if(!firstMove){movePtr(p,px,py,genColor());firstMove=true;}else{movePtr(p,px,py,p.color);}}
+        function handleTouchStart(e){const touches=e.targetTouches;let p=pointers[0];for(let i=0;i<touches.length;i++){let px=scaleByDPR(touches[i].clientX),py=scaleByDPR(touches[i].clientY);downPtr(p,touches[i].identifier,px,py);}}
+        function handleTouchMove(e){const touches=e.targetTouches;let p=pointers[0];for(let i=0;i<touches.length;i++){let px=scaleByDPR(touches[i].clientX),py=scaleByDPR(touches[i].clientY);movePtr(p,px,py,p.color);}}
+        function handleTouchEnd(e){const touches=e.changedTouches;let p=pointers[0];for(let i=0;i<touches.length;i++){p.down=false;}}
+        window.addEventListener('mousedown',handleMouseDown);
+        window.addEventListener('mousemove',handleMouseMove);
+        window.addEventListener('touchstart',handleTouchStart);
+        window.addEventListener('touchmove',handleTouchMove,false);
+        window.addEventListener('touchend',handleTouchEnd);
+        frame();
+        return ()=>{
+            isActive=false;
+            if(animationFrameId.current){cancelAnimationFrame(animationFrameId.current);animationFrameId.current=null;}
+            window.removeEventListener('mousedown',handleMouseDown);
+            window.removeEventListener('mousemove',handleMouseMove);
+            window.removeEventListener('touchstart',handleTouchStart);
+            window.removeEventListener('touchmove',handleTouchMove);
+            window.removeEventListener('touchend',handleTouchEnd);
+        };
+    }, []);
+    return (
+        <div style={{position:'fixed',top:0,left:0,zIndex:50,pointerEvents:'none',width:'100%',height:'100%'}} aria-hidden="true">
+            <canvas ref={canvasRef} style={{width:'100%',height:'100%'}}/>
+        </div>
+    );
+};
+
+// ─── WAVES (Perlin noise animated wave lines) ────────────────────────────────
+const Waves = ({
+    lineColor = 'rgba(255,106,55,0.35)',
+    waveSpeedX = 0.015,
+    waveSpeedY = 0.015,
+    waveAmpX = 35,
+    waveAmpY = 8,
+    friction = 0.59,
+    tension = 0.025,
+    maxCursorMove = 80,
+    xGap = 10,
+    yGap = 34,
+    className = '',
+    style = {},
+}) => {
+    const containerRef = useRef(null);
+    const canvasRef = useRef(null);
+    const frameIdRef = useRef(null);
+    const linesRef = useRef([]);
+    const mouseRef = useRef({ x:-10,y:0,lx:0,ly:0,sx:0,sy:0,v:0,vs:0,a:0,set:false });
+    const configRef = useRef({ lineColor,waveSpeedX,waveSpeedY,waveAmpX,waveAmpY,friction,tension,maxCursorMove,xGap,yGap });
+    useEffect(()=>{configRef.current={lineColor,waveSpeedX,waveSpeedY,waveAmpX,waveAmpY,friction,tension,maxCursorMove,xGap,yGap};},[lineColor,waveSpeedX,waveSpeedY,waveAmpX,waveAmpY,friction,tension,maxCursorMove,xGap,yGap]);
+    useEffect(()=>{
+        const canvas=canvasRef.current,container=containerRef.current;
+        if(!canvas||!container)return;
+        const ctx=canvas.getContext('2d');
+        let bounding={width:0,height:0,left:0,top:0};
+        // Perlin noise
+        const grad3=[{x:1,y:1,z:0},{x:-1,y:1,z:0},{x:1,y:-1,z:0},{x:-1,y:-1,z:0},{x:1,y:0,z:1},{x:-1,y:0,z:1},{x:1,y:0,z:-1},{x:-1,y:0,z:-1},{x:0,y:1,z:1},{x:0,y:-1,z:1},{x:0,y:1,z:-1},{x:0,y:-1,z:-1}];
+        const pArr=[151,160,137,91,90,15,131,13,201,95,96,53,194,233,7,225,140,36,103,30,69,142,8,99,37,240,21,10,23,190,6,148,247,120,234,75,0,26,197,62,94,252,219,203,117,35,11,32,57,177,33,88,237,149,56,87,174,20,125,136,171,168,68,175,74,165,71,134,139,48,27,166,77,146,158,231,83,111,229,122,60,211,133,230,220,105,92,41,55,46,245,40,244,102,143,54,65,25,63,161,1,216,80,73,209,76,132,187,208,89,18,169,200,196,135,130,116,188,159,86,164,100,109,198,173,186,3,64,52,217,226,250,124,123,5,202,38,147,118,126,255,82,85,212,207,206,59,227,47,16,58,17,182,189,28,42,223,183,170,213,119,248,152,2,44,154,163,70,221,153,101,155,167,43,172,9,129,22,39,253,19,98,108,110,79,113,224,232,178,185,112,104,218,246,97,228,251,34,242,193,238,210,144,12,191,179,162,241,81,51,145,235,249,14,239,107,49,192,214,31,181,199,106,157,184,84,204,176,115,121,50,45,127,4,150,254,138,236,205,93,222,114,67,29,24,72,243,141,128,195,78,66,215,61,156,180];
+        const perm=new Array(512),gradP=new Array(512);
+        const seed=Math.random()*65536|0;
+        for(let i=0;i<256;i++){let v=i&1?pArr[i]^(seed&255):pArr[i]^((seed>>8)&255);perm[i]=perm[i+256]=v;gradP[i]=gradP[i+256]=grad3[v%12];}
+        function fade(t){return t*t*t*(t*(t*6-15)+10);}
+        function lerp(a,b,t){return (1-t)*a+t*b;}
+        function perlin2(x,y){let X=Math.floor(x)&255,Y=Math.floor(y)&255;x-=Math.floor(x);y-=Math.floor(y);const n00=gradP[X+perm[Y]];const n01=gradP[X+perm[Y+1]];const n10=gradP[X+1+perm[Y]];const n11=gradP[X+1+perm[Y+1]];const u=fade(x);return lerp(lerp(n00.x*x+n00.y*y,n10.x*(x-1)+n10.y*y,u),lerp(n01.x*x+n01.y*(y-1),n11.x*(x-1)+n11.y*(y-1),u),fade(y));}
+        function setSize(){bounding=container.getBoundingClientRect();canvas.width=bounding.width;canvas.height=bounding.height;}
+        function setLines(){
+            linesRef.current=[];
+            const {width,height}=bounding,{xGap,yGap}=configRef.current;
+            const oW=width+200,oH=height+30;
+            const tL=Math.ceil(oW/xGap),tP=Math.ceil(oH/yGap);
+            const xStart=(width-xGap*tL)/2,yStart=(height-yGap*tP)/2;
+            for(let i=0;i<=tL;i++){const pts=[];for(let j=0;j<=tP;j++){pts.push({x:xStart+xGap*i,y:yStart+yGap*j,wave:{x:0,y:0},cursor:{x:0,y:0,vx:0,vy:0}});}linesRef.current.push(pts);}
+        }
+        function movePoints(time){
+            const {waveSpeedX,waveSpeedY,waveAmpX,waveAmpY,friction,tension,maxCursorMove}=configRef.current;
+            const mouse=mouseRef.current;
+            linesRef.current.forEach(pts=>{pts.forEach(p=>{
+                const move=perlin2((p.x+time*waveSpeedX)*0.002,(p.y+time*waveSpeedY)*0.0015)*12;
+                p.wave.x=Math.cos(move)*waveAmpX;p.wave.y=Math.sin(move)*waveAmpY;
+                const dx=p.x-mouse.sx,dy=p.y-mouse.sy,dist=Math.hypot(dx,dy),l=Math.max(175,mouse.vs);
+                if(dist<l){const s=1-dist/l;const f=Math.cos(dist*0.001)*s;p.cursor.vx+=Math.cos(mouse.a)*f*l*mouse.vs*0.00065;p.cursor.vy+=Math.sin(mouse.a)*f*l*mouse.vs*0.00065;}
+                p.cursor.vx+=(0-p.cursor.x)*tension;p.cursor.vy+=(0-p.cursor.y)*tension;
+                p.cursor.vx*=friction;p.cursor.vy*=friction;
+                p.cursor.x+=p.cursor.vx*2;p.cursor.y+=p.cursor.vy*2;
+                p.cursor.x=Math.min(maxCursorMove,Math.max(-maxCursorMove,p.cursor.x));
+                p.cursor.y=Math.min(maxCursorMove,Math.max(-maxCursorMove,p.cursor.y));
+            });});
+        }
+        function moved(point,withCursor=true){const x=point.x+point.wave.x+(withCursor?point.cursor.x:0);const y=point.y+point.wave.y+(withCursor?point.cursor.y:0);return{x:Math.round(x*10)/10,y:Math.round(y*10)/10};}
+        function drawLines(){
+            const {width,height}=bounding;ctx.clearRect(0,0,width,height);ctx.beginPath();ctx.strokeStyle=configRef.current.lineColor;ctx.lineWidth=0.8;
+            linesRef.current.forEach(points=>{
+                let p1=moved(points[0],false);ctx.moveTo(p1.x,p1.y);
+                points.forEach((p,idx)=>{const isLast=idx===points.length-1;p1=moved(p,!isLast);const p2=moved(points[idx+1]||points[points.length-1],!isLast);ctx.lineTo(p1.x,p1.y);if(isLast)ctx.moveTo(p2.x,p2.y);});
+            });
+            ctx.stroke();
+        }
+        function tick(t){
+            const mouse=mouseRef.current;
+            mouse.sx+=(mouse.x-mouse.sx)*0.1;mouse.sy+=(mouse.y-mouse.sy)*0.1;
+            const dx=mouse.x-mouse.lx,dy=mouse.y-mouse.ly;mouse.v=Math.hypot(dx,dy);mouse.vs+=(mouse.v-mouse.vs)*0.1;mouse.vs=Math.min(100,mouse.vs);mouse.lx=mouse.x;mouse.ly=mouse.y;mouse.a=Math.atan2(dy,dx);
+            movePoints(t);drawLines();
+            frameIdRef.current=requestAnimationFrame(tick);
+        }
+        function onResize(){setSize();setLines();}
+        function onMouseMove(e){const mouse=mouseRef.current,b=bounding;mouse.x=e.clientX-b.left;mouse.y=e.clientY-b.top;if(!mouse.set){mouse.sx=mouse.x;mouse.sy=mouse.y;mouse.lx=mouse.x;mouse.ly=mouse.y;mouse.set=true;}}
+        function onTouchMove(e){const t=e.touches[0],mouse=mouseRef.current,b=bounding;mouse.x=t.clientX-b.left;mouse.y=t.clientY-b.top;}
+        setSize();setLines();frameIdRef.current=requestAnimationFrame(tick);
+        window.addEventListener('resize',onResize);window.addEventListener('mousemove',onMouseMove);window.addEventListener('touchmove',onTouchMove,{passive:false});
+        return ()=>{cancelAnimationFrame(frameIdRef.current);window.removeEventListener('resize',onResize);window.removeEventListener('mousemove',onMouseMove);window.removeEventListener('touchmove',onTouchMove);};
+    },[]);
+    return (
+        <div ref={containerRef} className={className} style={{position:'absolute',inset:0,overflow:'hidden',pointerEvents:'none',...style}} aria-hidden="true">
+            <canvas ref={canvasRef} className="waves-canvas"/>
+        </div>
+    );
+};
+
+// ─── MAGIC BENTO (interactive particle bento grid) ───────────────────────────
+const keystoneBentoCards = [
+    { color:'#0D0806', title:'Floor Plans in <60s', description:'From guided client brief to architect-ready layout, instantly', label:'Speed' },
+    { color:'#0D0806', title:'Gemini Exterior', description:'Atmosphere visualized from the same brief', label:'Vision' },
+    { color:'#0D0806', title:'Guided Intake', description:'Structured discovery before the meeting starts', label:'Discovery' },
+    { color:'#0D0806', title:'4K PNG Export', description:'High-res blueprint download, architect-ready', label:'Export' },
+    { color:'#0D0806', title:'Passkey Access', description:'Firm-controlled client link with secure entry', label:'Security' },
+    { color:'#0D0806', title:'Session History', description:'Firm-visible pipeline for every active lead', label:'Pipeline' },
+];
+const BentoParticleCard = ({ children, className='', style, particleCount=10, glowColor='255,106,55', clickEffect=true }) => {
+    const cardRef = useRef(null);
+    const particlesRef = useRef([]);
+    const isHoveredRef = useRef(false);
+    const timeoutsRef = useRef([]);
+    const gsap = window.gsap;
+    const clearParticles = () => {
+        timeoutsRef.current.forEach(clearTimeout); timeoutsRef.current=[];
+        particlesRef.current.forEach(p=>{
+            if(!gsap){p.remove();return;}
+            gsap.to(p,{scale:0,opacity:0,duration:0.3,ease:'back.in(1.7)',onComplete:()=>p.parentNode?.removeChild(p)});
+        });
+        particlesRef.current=[];
+    };
+    const spawnParticles = () => {
+        if(!cardRef.current||!isHoveredRef.current)return;
+        const {width,height}=cardRef.current.getBoundingClientRect();
+        for(let i=0;i<particleCount;i++){
+            const tid=setTimeout(()=>{
+                if(!isHoveredRef.current||!cardRef.current)return;
+                const el=document.createElement('div');
+                el.style.cssText=`position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(${glowColor},1);box-shadow:0 0 6px rgba(${glowColor},0.6);pointer-events:none;z-index:100;left:${Math.random()*width}px;top:${Math.random()*height}px;`;
+                cardRef.current.appendChild(el);
+                particlesRef.current.push(el);
+                if(gsap){
+                    gsap.fromTo(el,{scale:0,opacity:0},{scale:1,opacity:1,duration:0.3,ease:'back.out(1.7)'});
+                    gsap.to(el,{x:(Math.random()-0.5)*100,y:(Math.random()-0.5)*100,rotation:Math.random()*360,duration:2+Math.random()*2,ease:'none',repeat:-1,yoyo:true});
+                    gsap.to(el,{opacity:0.3,duration:1.5,ease:'power2.inOut',repeat:-1,yoyo:true});
+                }
+            },i*100);
+            timeoutsRef.current.push(tid);
+        }
+    };
+    useEffect(()=>{
+        const el=cardRef.current;if(!el)return;
+        const onEnter=()=>{isHoveredRef.current=true;spawnParticles();};
+        const onLeave=()=>{isHoveredRef.current=false;clearParticles();};
+        const onClick=(e)=>{
+            if(!clickEffect||!gsap)return;
+            const rect=el.getBoundingClientRect();const x=e.clientX-rect.left;const y=e.clientY-rect.top;
+            const maxD=Math.max(Math.hypot(x,y),Math.hypot(x-rect.width,y),Math.hypot(x,y-rect.height),Math.hypot(x-rect.width,y-rect.height));
+            const ripple=document.createElement('div');
+            ripple.style.cssText=`position:absolute;width:${maxD*2}px;height:${maxD*2}px;border-radius:50%;background:radial-gradient(circle,rgba(${glowColor},0.4)0%,rgba(${glowColor},0.2)30%,transparent 70%);left:${x-maxD}px;top:${y-maxD}px;pointer-events:none;z-index:1000;`;
+            el.appendChild(ripple);
+            gsap.fromTo(ripple,{scale:0,opacity:1},{scale:1,opacity:0,duration:0.8,ease:'power2.out',onComplete:()=>ripple.remove()});
+        };
+        el.addEventListener('mouseenter',onEnter);el.addEventListener('mouseleave',onLeave);el.addEventListener('click',onClick);
+        return ()=>{isHoveredRef.current=false;el.removeEventListener('mouseenter',onEnter);el.removeEventListener('mouseleave',onLeave);el.removeEventListener('click',onClick);clearParticles();};
+    },[]);
+    return (
+        <div ref={cardRef} className={`${className} particle-container`} style={{...style,position:'relative',overflow:'hidden'}}>
+            {children}
+        </div>
+    );
+};
+const BentoGlobalSpotlight = ({ gridRef, spotlightRadius=400, glowColor='255,106,55' }) => {
+    const spotRef = useRef(null);
+    useEffect(()=>{
+        if(!gridRef?.current)return;
+        const gsap=window.gsap;
+        const spotlight=document.createElement('div');
+        spotlight.className='global-spotlight';
+        spotlight.style.cssText=`position:fixed;width:600px;height:600px;border-radius:50%;pointer-events:none;background:radial-gradient(circle,rgba(${glowColor},0.12)0%,rgba(${glowColor},0.06)20%,rgba(${glowColor},0.02)40%,transparent 65%);z-index:200;opacity:0;transform:translate(-50%,-50%);mix-blend-mode:screen;`;
+        document.body.appendChild(spotlight);
+        spotRef.current=spotlight;
+        const { proximity, fadeDistance } = { proximity: spotlightRadius*0.5, fadeDistance: spotlightRadius*0.75 };
+        const onMove=(e)=>{
+            if(!spotRef.current||!gridRef.current)return;
+            const section=gridRef.current.closest('.bento-section');
+            const rect=section?.getBoundingClientRect();
+            const inside=rect&&e.clientX>=rect.left&&e.clientX<=rect.right&&e.clientY>=rect.top&&e.clientY<=rect.bottom;
+            const cards=gridRef.current.querySelectorAll('.magic-bento-card');
+            if(!inside){if(gsap)gsap.to(spotlight,{opacity:0,duration:0.3});else spotlight.style.opacity='0';cards.forEach(c=>c.style.setProperty('--glow-intensity','0'));return;}
+            let minDist=Infinity;
+            cards.forEach(card=>{
+                const cr=card.getBoundingClientRect();const cx=cr.left+cr.width/2,cy=cr.top+cr.height/2;
+                const dist=Math.max(0,Math.hypot(e.clientX-cx,e.clientY-cy)-Math.max(cr.width,cr.height)/2);
+                minDist=Math.min(minDist,dist);
+                const glow=dist<=proximity?1:dist<=fadeDistance?(fadeDistance-dist)/(fadeDistance-proximity):0;
+                card.style.setProperty('--glow-x',`${((e.clientX-cr.left)/cr.width)*100}%`);
+                card.style.setProperty('--glow-y',`${((e.clientY-cr.top)/cr.height)*100}%`);
+                card.style.setProperty('--glow-intensity',glow.toString());
+                card.style.setProperty('--glow-radius',`${spotlightRadius}px`);
+            });
+            if(gsap){gsap.to(spotlight,{left:e.clientX,top:e.clientY,duration:0.1,ease:'power2.out'});const op=minDist<=proximity?0.7:minDist<=fadeDistance?((fadeDistance-minDist)/(fadeDistance-proximity))*0.7:0;gsap.to(spotlight,{opacity:op,duration:0.2,ease:'power2.out'});}
+            else{spotlight.style.left=e.clientX+'px';spotlight.style.top=e.clientY+'px';}
+        };
+        const onLeave=()=>{gridRef.current?.querySelectorAll('.magic-bento-card').forEach(c=>c.style.setProperty('--glow-intensity','0'));if(gsap)gsap.to(spotlight,{opacity:0,duration:0.3});else spotlight.style.opacity='0';};
+        document.addEventListener('mousemove',onMove);
+        document.addEventListener('mouseleave',onLeave);
+        return ()=>{document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseleave',onLeave);spotlight.parentNode?.removeChild(spotlight);};
+    },[gridRef,spotlightRadius,glowColor]);
+    return null;
+};
+const MagicBento = ({ cards=keystoneBentoCards, glowColor='255,106,55', spotlightRadius=400, particleCount=10, clickEffect=true }) => {
+    const gridRef=useRef(null);
+    const [isMobile,setIsMobile]=useState(false);
+    useEffect(()=>{const check=()=>setIsMobile(window.innerWidth<=768);check();window.addEventListener('resize',check);return()=>window.removeEventListener('resize',check);},[]);
+    return (
+        <>
+            {!isMobile&&<BentoGlobalSpotlight gridRef={gridRef} spotlightRadius={spotlightRadius} glowColor={glowColor}/>}
+            <div className="card-grid bento-section" ref={gridRef}>
+                {cards.map((card,i)=>(
+                    <BentoParticleCard key={i}
+                        className={`magic-bento-card magic-bento-card--text-autohide magic-bento-card--border-glow`}
+                        style={{backgroundColor:card.color}}
+                        particleCount={isMobile?0:particleCount}
+                        glowColor={glowColor}
+                        clickEffect={!isMobile&&clickEffect}>
+                        <div className="magic-bento-card__header">
+                            <div className="magic-bento-card__label">{card.label}</div>
+                        </div>
+                        <div className="magic-bento-card__content">
+                            <h2 className="magic-bento-card__title">{card.title}</h2>
+                            <p className="magic-bento-card__description">{card.description}</p>
+                        </div>
+                    </BentoParticleCard>
+                ))}
+            </div>
+        </>
+    );
+};
+
 const SurveySection = ({ onJoin }) => {
     const [copied, setCopied] = useState(false);
     const copyLink = () => {
@@ -216,7 +1050,7 @@ const SurveySection = ({ onJoin }) => {
                         <span className="section-label justify-center">Research / Beta Program</span>
                     </Reveal>
                     <Reveal y={32} delay={0.08}>
-                        <h2 className="cg mt-5" style={{fontSize:'clamp(2.6rem,5.5vw,4.2rem)',lineHeight:0.88,letterSpacing:'-0.055em',textTransform:'uppercase',color:'var(--ink)'}}>
+                        <h2 className="cg mt-5 magic-gradient-text" style={{fontSize:'clamp(2.6rem,5.5vw,4.2rem)',lineHeight:0.88,letterSpacing:'-0.055em',textTransform:'uppercase',color:'var(--ink)'}}>
                             Help us build<br/>the right tool.
                         </h2>
                     </Reveal>
@@ -395,7 +1229,7 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
             <motion.div initial={{ opacity:0, y:"100%" }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:"100%" }}
                 transition={{ type:"spring", damping:28, stiffness:220 }}
                 className="fixed inset-0 z-[100] text-paper flex flex-col pb-safe"
-                style={{background:'linear-gradient(180deg, rgba(10,10,10,0.98), rgba(23,23,23,0.98))'}}>
+                style={{background:'linear-gradient(180deg, rgba(10,10,10,0.995), rgba(18,18,18,0.995))'}}>
                 <div className="flex justify-between items-center px-6 py-5 border-b border-white/8">
                     <div>
                         <span className="cg text-[1.35rem] uppercase tracking-[-0.05em] text-white">Keystone</span>
@@ -485,7 +1319,7 @@ const JoinModal = ({ isOpen, onClose }) => {
                     animate={{ opacity:1 }}
                     exit={{ opacity:0 }}
                     onClick={onClose}
-                    className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-ink/65 backdrop-blur-lg p-0 md:p-6"
+                    className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/85 backdrop-blur-sm p-0 md:p-6"
                 >
                     <motion.div
                         initial={{ y:50, opacity:0 }}
@@ -493,7 +1327,7 @@ const JoinModal = ({ isOpen, onClose }) => {
                         exit={{ y:50, opacity:0 }}
                         transition={{ type:"spring", damping:26 }}
                         onClick={(event) => event.stopPropagation()}
-                        className="bg-paper w-full md:max-w-md rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden"
+                        className="bg-paper electric-border w-full md:max-w-md rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden"
                     >
                         <div style={{ height:'3px', background:'linear-gradient(90deg, var(--accent), var(--accent-2))' }}/>
 
@@ -750,10 +1584,10 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         <AnimatePresence>
             {isOpen && (
                 <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
-                    className="fixed inset-0 z-[150] flex items-end md:items-center justify-center bg-ink/70 backdrop-blur-lg p-0 md:p-6">
+                    className="fixed inset-0 z-[150] flex items-end md:items-center justify-center bg-black/88 backdrop-blur-sm p-0 md:p-6">
                     <motion.div initial={{y:40,opacity:0}} animate={{y:0,opacity:1}} exit={{y:40,opacity:0}}
                         transition={{type:'spring',damping:26}}
-                        className="bg-paper w-full md:max-w-lg rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden">
+                        className="bg-paper electric-border w-full md:max-w-lg rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden">
                         <div style={{height:'3px',background:'linear-gradient(90deg,var(--blue),var(--red))'}}/>
                         <button type="button" onClick={onClose} aria-label="Close render options" className="absolute top-4 right-4 w-8 h-8 bg-black/6 hover:bg-black/12 rounded-full flex items-center justify-center z-10">
                             <CloseIcon className="w-4 h-4"/>
@@ -2241,7 +3075,7 @@ const SERVICE_BENEFITS = [
 const navHref = (item, home = false) => item.kind === 'section' ? (home ? `#${item.value}` : homeSectionHref(item.value)) : item.value;
 
 const SiteFooter = ({ home = false }) => (
-    <footer style={{background:'var(--night)',padding:'3.75rem 0',borderTop:'1px solid rgba(255,255,255,0.08)'}}>
+    <footer style={{background:'var(--night)',padding:'3.75rem 0',borderTop:'1px solid rgba(255,106,55,0.18)'}}>
         <div className="site-shell">
             <div className="grid md:grid-cols-[1.15fr_0.9fr_0.9fr_1fr] gap-8 items-start">
                 <div>
@@ -2249,7 +3083,7 @@ const SiteFooter = ({ home = false }) => (
                         <SmartImage src={ASSETS.icon} alt="Keystone" eager style={{width:'30px',height:'30px',filter:'brightness(0) invert(1)'}}/>
                         <div>
                             <span className="cg text-[1.1rem] uppercase tracking-[-0.05em] text-white">Keystone AI</span>
-                            <p className="mono text-[10px] uppercase tracking-[0.22em] mt-1" style={{color:'rgba(244,239,230,0.36)'}}>Architect-first discovery</p>
+                            <p className="mono text-[10px] uppercase tracking-[0.22em] mt-1 nav-subtitle-orange">Architect-first discovery</p>
                         </div>
                     </div>
                     <p className="text-sm leading-relaxed mt-4" style={{color:'rgba(244,239,230,0.58)'}}>
@@ -2522,7 +3356,8 @@ const DreamApp = () => {
     return (
         <div className="pb-[60px] md:pb-0">
             <JoinModal isOpen={isModalOpen} onClose={() => setModalOpen(false)}/>
-            <LaserCursor/>
+            <ClickSparkGlobal/>
+            <SplashCursor SIM_RESOLUTION={32} DYE_RESOLUTION={1440} DENSITY_DISSIPATION={8} VELOCITY_DISSIPATION={0.6} PRESSURE={0.1} CURL={2} SPLAT_RADIUS={0.12} SPLAT_FORCE={3000} COLOR_UPDATE_SPEED={8} TRANSPARENT={true}/>
             <MobileNavBar onOpenMenu={() => setMenuOpen(true)}/>
             <MobileMenuOverlay isOpen={isMenuOpen} onClose={() => setMenuOpen(false)} onJoin={() => setModalOpen(true)}/>
             <SectionRail/>
@@ -2531,147 +3366,163 @@ const DreamApp = () => {
                 {!heroVisible && (
                     <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} exit={{opacity:0,y:20}}
                         className="mobile-cta-float md:hidden">
-                        <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow px-6 py-3 text-sm">
-                            Open Live Studio
-                        </button>
+                        <StarBorderBtn onClick={() => scrollTo('generator')}>
+                            <span>Open Live Studio</span>
+                            <span className="cta-live-mark"><span className="cta-live-dot"/>Now</span>
+                        </StarBorderBtn>
                     </motion.div>
                 )}
             </AnimatePresence>
 
             <main>
+                    {/* ─── NAV ─────────────────────────────────────────── */}
                     <motion.nav
                         initial={{ opacity: 0, y: -64 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.56, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
                         className="fixed top-0 w-full z-40 h-[64px] flex items-center justify-between px-5 md:px-10"
-                        style={{background:'rgba(245,240,233,0.84)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',borderBottom:'1px solid rgba(9,9,9,0.08)'}}>
+                        style={{background:'rgba(255,253,249,0.92)',backdropFilter:'blur(22px)',WebkitBackdropFilter:'blur(22px)',borderBottom:'1px solid rgba(255,106,55,0.1)'}}>
                         <a href="#hero" className="flex items-center gap-3">
                             <SmartImage src={ASSETS.icon} alt="Keystone" eager style={{width:'30px',height:'30px'}}/>
                             <div>
                                 <span className="cg text-[1.2rem] leading-none uppercase tracking-[-0.05em]" style={{color:'var(--ink)'}}>Keystone</span>
-                                <div className="mono text-[8px] uppercase tracking-[0.22em] mt-1" style={{color:'rgba(9,9,9,0.42)'}}>AI studio</div>
+                                <div className="mono text-[8px] uppercase tracking-[0.22em] mt-0.5 nav-subtitle-orange">AI studio</div>
                             </div>
                         </a>
-                        <div className="hidden md:flex items-center gap-8 mono text-[11px] uppercase tracking-[0.26em]" style={{color:'rgba(9,9,9,0.54)'}}>
+                        <div className="hidden md:flex items-center gap-8 mono text-[11px] uppercase tracking-[0.26em]" style={{color:'rgba(9,9,9,0.52)'}}>
                             {HOME_NAV_ITEMS.map((item) => (
                                 <a key={item.label} href={navHref(item, true)} className="transition-colors hover:text-black">{item.label}</a>
                             ))}
-                            <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow-soft px-5 py-3 text-[11px]">
+                            <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow px-5 py-3 text-[11px]">
                                 Request Access
                             </button>
                         </div>
                     </motion.nav>
 
-                        <section id="hero" className="relative overflow-hidden" style={{minHeight:'min(84svh, 860px)',paddingTop:'74px',background:'linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)'}}>
-                        <div className="hero-video-shell">
-                            <div className="hero-video-base"/>
-                            <div className="hero-video-wave orange"/>
-                            <div className="hero-video-wave soft"/>
-                            <div className="hero-video-wave sand"/>
-                            <div className="hero-video-mesh"/>
-                            <div className="hero-video-scan"/>
-                        </div>
-                        <div className="dream-grid absolute inset-0 opacity-80"/>
-                        <div className="hero-glow" style={{top:'-12%', width:'780px', height:'780px', background:'radial-gradient(circle, rgba(255,106,55,0.14), transparent 72%)'}}/>
-                        <div className="hero-glow-red" style={{bottom:'10%', right:'4%', width:'520px', height:'520px', background:'radial-gradient(circle, rgba(216,208,196,0.52), transparent 72%)'}}/>
-                        <HeroFloatingBlueprint/>
-                        <div className="site-shell relative z-10">
-                            <div className="grid lg:grid-cols-[minmax(0,1.08fr)_380px] gap-8 lg:gap-10 items-start pt-3 pb-6 md:pt-5 md:pb-10" style={{minHeight:'min(calc(64svh - 64px), 640px)'}}>
-                                <div>
-                                    <motion.span initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:0.15}} className="section-label">
-                                        Keystone AI Studio / architect-first discovery
-                                    </motion.span>
-                                    <motion.h1 initial={{opacity:0,y:24}} animate={{opacity:1,y:0}} transition={{delay:0.24}}
-                                        className="cg mt-5 leading-[0.84]"
-                                        style={{fontSize:'clamp(3.45rem, 8vw, 7.2rem)',letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
-                                        <span className="block">Build the</span>
-                                        <span className="block" style={{color:'var(--ink)'}}>
-                                            <span className="serif hero-accent-word">feeling of home</span>
-                                        </span>
-                                        <span className="block" style={{color:'rgba(78,69,61,0.62)'}}>before the first meeting.</span>
-                                    </motion.h1>
-                                    <motion.div initial={{opacity:0,y:16}} animate={{opacity:1,y:0}} transition={{delay:0.56}}
-                                        className="mt-7 flex flex-col sm:flex-row gap-3 items-start">
-                                        <button onClick={() => scrollTo('generator')} data-cursor-text="Open studio" className="cta-hero cta-glow cta-live">
-                                            <span>Open Live Studio</span>
-                                            <span className="cta-live-mark">
-                                                <span className="cta-live-dot"/>
-                                                Try it now
+                        {/* ─── HERO ──────────────────────────────────────── */}
+                        <section id="hero" className="relative overflow-hidden hero-v2-bg"
+                            style={{minHeight:'min(90svh, 920px)',paddingTop:'64px'}}>
+                            <OrbBackground/>
+                            <Waves lineColor="rgba(255,106,55,0.18)" waveSpeedX={0.012} waveSpeedY={0.012} waveAmpX={40} waveAmpY={10} friction={0.62} tension={0.022} maxCursorMove={90} xGap={12} yGap={36}/>
+                            <FloatingParticles count={55} color="255,106,55" className="opacity-50"/>
+                            <DotGridHero/>
+                            <GradualBlur target="parent" position="bottom" height="7rem" strength={2.2} divCount={6} curve="bezier" exponential opacity={1}/>
+
+                            <div className="site-shell relative z-10">
+                                <div className="grid lg:grid-cols-[minmax(0,1.08fr)_400px] gap-8 lg:gap-12 items-center pt-10 pb-12 md:pt-14 md:pb-18"
+                                    style={{minHeight:'min(calc(86svh - 64px), 740px)'}}>
+
+                                    {/* LEFT COLUMN */}
+                                    <div>
+                                        <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:0.12}} className="mb-6">
+                                            <span className="hero-badge">
+                                                <span className="hero-badge-dot"/>
+                                                Architect-first discovery
                                             </span>
-                                        </button>
-                                        <button onClick={() => setModalOpen(true)} data-cursor-text="Request access" className="cta-hero cta-glow-soft">
-                                            Request Access
-                                        </button>
-                                    </motion.div>
-                                    <motion.p initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.4}}
-                                        className="mt-5 max-w-[46rem] leading-relaxed"
-                                        style={{fontSize:'clamp(1rem, 1.9vw, 1.16rem)',color:'rgba(32,26,21,0.72)'}}>
-                                        Keystone helps residential firms send a guided client link before kickoff, then open the first design conversation with a structured brief, a generated floor plan, a downloadable blueprint, and an optional Gemini study.
-                                    </motion.p>
-                                    <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.72}}
-                                        className="mt-5 flex flex-wrap gap-3">
-                                        {LIVE_NOW_FEATURES.map((item) => (
-                                            <span key={item} className="marquee-pill" style={{animation:'none',background:'rgba(255,255,255,0.68)',borderColor:'rgba(10,10,12,0.08)',color:'rgba(10,10,12,0.72)'}}>
-                                                {item}
+                                        </motion.div>
+
+                                        <motion.h1 initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.18}}
+                                            className="cg leading-[0.84]"
+                                            style={{fontSize:'clamp(3.2rem,7.4vw,6.8rem)',letterSpacing:'-0.065em',textTransform:'uppercase',color:'var(--ink)'}}>
+                                            <span className="block">Build the</span>
+                                            <span className="block">
+                                                <BlurText text="feeling of home" delay={55} direction="bottom" tag="span"
+                                                    className="serif hero-accent-word magic-gradient-text"/>
                                             </span>
-                                        ))}
-                                    </motion.div>
-                                    <motion.div
-                                        initial={{opacity:0,y:14}}
-                                        animate={{opacity:1,y:0}}
-                                        transition={{delay:0.82}}
-                                        className="hero-proof-grid mt-8"
-                                    >
-                                        {HERO_SIGNAL_CARDS.map((item) => (
-                                            <article key={item.label} className="hero-proof-card cursor-target" data-cursor-text={item.label}>
-                                                <div className="mono text-[9px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>{item.label}</div>
-                                                <h3 className="hero-proof-value">{item.value}</h3>
-                                                <p className="hero-proof-note">{item.note}</p>
-                                            </article>
-                                        ))}
-                                    </motion.div>
+                                            <span className="block" style={{color:'rgba(78,69,61,0.52)'}}>before the meeting.</span>
+                                        </motion.h1>
+
+                                        <motion.p initial={{opacity:0,y:14}} animate={{opacity:1,y:0}} transition={{delay:0.48}}
+                                            className="mt-6 max-w-[46rem] leading-relaxed"
+                                            style={{fontSize:'clamp(1rem,1.8vw,1.12rem)',color:'rgba(32,26,21,0.68)'}}>
+                                            Keystone helps residential firms send a guided client link before kickoff, then open the first design conversation with a structured brief, a generated floor plan, and an optional Gemini study.
+                                        </motion.p>
+
+                                        <motion.div initial={{opacity:0,y:14}} animate={{opacity:1,y:0}} transition={{delay:0.62}}
+                                            className="mt-8 flex flex-col sm:flex-row gap-3 items-start">
+                                            <StarBorderBtn onClick={() => scrollTo('generator')} data-cursor-text="Open studio">
+                                                <span>Open Live Studio</span>
+                                                <span className="cta-live-mark">
+                                                    <span className="cta-live-dot"/>
+                                                    Try it now
+                                                </span>
+                                            </StarBorderBtn>
+                                            <button onClick={() => setModalOpen(true)} data-cursor-text="Request access" className="cta-hero cta-glow-soft">
+                                                Request Access
+                                            </button>
+                                        </motion.div>
+
+                                        <motion.div initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.76}}
+                                            className="mt-6 flex flex-wrap gap-2">
+                                            {LIVE_NOW_FEATURES.map((item) => (
+                                                <span key={item} className="marquee-pill marquee-pill-orange" style={{animation:'none'}}>
+                                                    {item}
+                                                </span>
+                                            ))}
+                                        </motion.div>
+
+                                        <motion.div initial={{opacity:0,y:14}} animate={{opacity:1,y:0}} transition={{delay:0.88}}
+                                            className="hero-proof-grid mt-8">
+                                            {HERO_SIGNAL_CARDS.map((item) => (
+                                                <TiltCard key={item.label} maxTilt={5}>
+                                                    <SpotlightCard spotlightColor="rgba(255,106,55,0.16)"
+                                                        className="hero-proof-card cursor-target electric-border h-full"
+                                                        data-cursor-text={item.label}>
+                                                        <div className="mono text-[9px] uppercase tracking-[0.22em]" style={{color:'var(--accent)',opacity:0.7}}>{item.label}</div>
+                                                        <h3 className="hero-proof-value">{item.value}</h3>
+                                                        <p className="hero-proof-note">{item.note}</p>
+                                                    </SpotlightCard>
+                                                </TiltCard>
+                                            ))}
+                                        </motion.div>
+                                    </div>
+
+                                    {/* RIGHT PANEL */}
+                                    <motion.aside initial={{opacity:0,x:28}} animate={{opacity:1,x:0}} transition={{delay:0.44}}
+                                        className="dream-panel p-6 md:p-7 relative overflow-hidden animated-border">
+                                        <div className="absolute inset-x-0 top-0 h-px" style={{background:'rgba(255,255,255,0.12)'}}/>
+                                        <div className="absolute right-0 bottom-0 w-64 h-64 pointer-events-none" style={{
+                                            background:'radial-gradient(circle at 80% 80%, rgba(255,106,55,0.12), transparent 60%)'
+                                        }}/>
+                                        <span className="section-label" style={{color:'rgba(245,240,233,0.55)'}}>Inside the room</span>
+                                        <h2 className="cg text-white mt-4" style={{fontSize:'clamp(1.7rem,3.1vw,2.6rem)',lineHeight:0.92,textTransform:'uppercase',letterSpacing:'-0.055em'}}>
+                                            A first pass that already feels worth discussing.
+                                        </h2>
+                                        <p className="mt-3 text-sm leading-relaxed" style={{color:'rgba(244,239,230,0.6)'}}>
+                                            Clients arrive with something they can point to. Your team arrives with something they can shape.
+                                        </p>
+                                        <div className="grid grid-cols-2 gap-3 mt-6">
+                                            {studioMetrics.map((metric) => (
+                                                <div key={metric.label} className="studio-metric">
+                                                    <strong>{metric.value}</strong>
+                                                    <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.46)'}}>{metric.label}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="mt-5 pt-4 border-t border-white/10">
+                                            <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.46)'}}>Proof before pitch</p>
+                                            <a href="/case-study" data-cursor-text="Open case study" className="inline-block mt-3 text-sm transition-colors hover:text-orange-300" style={{color:'rgba(255,255,255,0.88)'}}>
+                                                View the representative case study →
+                                            </a>
+                                        </div>
+                                    </motion.aside>
                                 </div>
-
-                                <motion.aside initial={{opacity:0,x:24}} animate={{opacity:1,x:0}} transition={{delay:0.42}}
-                                    className="dream-panel p-5 md:p-6 relative overflow-hidden">
-                                    <div className="absolute inset-x-0 top-0 h-px" style={{background:'rgba(255,255,255,0.12)'}}/>
-                                    <span className="section-label" style={{color:'rgba(245,240,233,0.58)'}}>Inside the room</span>
-                                    <h2 className="cg text-white mt-4" style={{fontSize:'clamp(1.9rem,3.4vw,2.8rem)',lineHeight:0.92,textTransform:'uppercase',letterSpacing:'-0.05em'}}>
-                                        A first pass that already feels worth discussing.
-                                    </h2>
-                                    <p className="mt-3 text-sm leading-relaxed" style={{color:'rgba(244,239,230,0.64)'}}>
-                                        Clients arrive with something they can point to. Your team arrives with something they can shape.
-                                    </p>
-                                    <div className="grid grid-cols-2 gap-3 mt-6">
-                                        {studioMetrics.map((metric) => (
-                                            <div key={metric.label} className="studio-metric">
-                                                <strong>{metric.value}</strong>
-                                                <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>{metric.label}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="mt-5 pt-4 border-t border-white/10">
-                                        <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.5)'}}>Proof before pitch</p>
-                                        <a href="/case-study" data-cursor-text="Open case study" className="inline-block mt-3 text-sm" style={{color:'rgba(255,255,255,0.9)'}}>
-                                            View the representative sample case study
-                                        </a>
-                                    </div>
-                                </motion.aside>
                             </div>
-                        </div>
-                    </section>
+                        </section>
 
-                    <section id="proof" className="proof-shelf">
-                        <div className="site-shell">
+                    <section id="proof" className="proof-shelf relative overflow-hidden">
+                        <OrbBackground/>
+                        <div className="site-shell relative z-10">
                             <div className="proof-frame p-4 md:p-6">
                                 <div className="proof-top-grid">
                                     <div className="p-2 md:p-4">
                                         <Reveal y={12}>
                                         <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>Sample session</span>
+                                        <div className="orange-line mt-3"/>
                                         </Reveal>
                                         <Reveal y={28} delay={0.08}>
                                         <h2 className="cg mt-5" style={{fontSize:'clamp(2.1rem, 4.6vw, 3.8rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                            Real output. <span className="serif proof-accent-word">No imagination tax.</span>
+                                            Real output. <GradientText className="serif">No imagination tax.</GradientText>
                                         </h2>
                                         </Reveal>
                                         <Reveal y={16} delay={0.16}>
@@ -2679,9 +3530,10 @@ const DreamApp = () => {
                                             The fastest way to trust Keystone is to watch the whole firm workflow happen in sequence: client brief, generated plan, export-ready blueprint, and optional Gemini study before the first architect meeting.
                                         </p>
                                         <div className="mt-6 flex flex-wrap gap-3">
-                                            <button onClick={() => scrollTo('generator')} data-cursor-text="Open studio" className="cta-hero cta-glow">
-                                                Open Live Studio
-                                            </button>
+                                            <StarBorderBtn onClick={() => scrollTo('generator')}>
+                                                <span>Open Live Studio</span>
+                                                <span className="cta-live-mark"><span className="cta-live-dot"/>Now</span>
+                                            </StarBorderBtn>
                                             <a href="/case-study" data-cursor-text="Open case study" className="cta-secondary">View Case Study</a>
                                         </div>
                                         </Reveal>
@@ -2692,50 +3544,58 @@ const DreamApp = () => {
                                                 initial={{opacity:0, y:20}}
                                                 whileInView={{opacity:1, y:0}}
                                                 viewport={{once:true, margin:'-48px'}}
-                                                transition={{duration:0.52, delay:index*0.07, ease:[0.22,1,0.36,1]}}
-                                                className="proof-journey-card cursor-target" data-cursor-text={item.title}>
-                                                <div className="proof-journey-step">{item.number}</div>
-                                                <h3>{item.title}</h3>
-                                                <p>{item.body}</p>
+                                                transition={{duration:0.52, delay:index*0.07, ease:[0.22,1,0.36,1]}}>
+                                                <TiltCard maxTilt={4}>
+                                                    <SpotlightCard spotlightColor="rgba(255,106,55,0.13)"
+                                                        className="proof-journey-card cursor-target h-full" data-cursor-text={item.title}>
+                                                        <div className="proof-journey-step" style={{background:'var(--accent)',color:'white'}}>{item.number}</div>
+                                                        <h3>{item.title}</h3>
+                                                        <p>{item.body}</p>
+                                                    </SpotlightCard>
+                                                </TiltCard>
                                             </motion.article>
                                         ))}
                                     </div>
                                 </div>
                                 <div className="proof-browsers-grid mt-5">
-                                    <motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}}
-                                        className="proof-browser cursor-target" data-cursor-text="Preview plan">
-                                        <div className="proof-browser-top">
-                                            <div className="bc-dot" style={{background:'#FF5F57'}}/>
-                                            <div className="bc-dot" style={{background:'#FFBD2E'}}/>
-                                            <div className="bc-dot" style={{background:'#28C840'}}/>
-                                            <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / 2D FLOOR PLAN</span>
-                                        </div>
-                                        <div className="proof-browser-screen plan">
-                                            <div className="diagonal-accent"/>
-                                            <SmartImage src={ASSETS.exampleBlueprint} alt="Keystone sample floor plan" style={{width:'100%',display:'block',objectFit:'contain'}}/>
-                                        </div>
-                                        <div className="proof-caption">
-                                            <span className="proof-dot" style={{background:'var(--blue)'}}/>
-                                            Client footprint translated into a working blueprint
-                                        </div>
-                                    </motion.div>
-                                    <motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:0.08}}
-                                        className="proof-browser cursor-target" data-cursor-text="Preview study">
-                                        <div className="proof-browser-top">
-                                            <div className="bc-dot" style={{background:'#FF5F57'}}/>
-                                            <div className="bc-dot" style={{background:'#FFBD2E'}}/>
-                                            <div className="bc-dot" style={{background:'#28C840'}}/>
-                                            <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / 3D EXTERIOR STUDY</span>
-                                        </div>
-                                        <div className="proof-browser-screen" style={{minHeight:'100%'}}>
-                                            <SmartImage src={ASSETS.exampleRender} alt="Keystone sample exterior study" style={{width:'100%',height:'100%',minHeight:'320px',objectFit:'cover',display:'block'}}/>
-                                            <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, rgba(9,9,9,0.02) 0%, rgba(9,9,9,0.48) 100%)'}}/>
-                                            <div className="proof-caption" style={{position:'absolute',left:0,right:0,bottom:0,borderTop:'none',color:'rgba(255,255,255,0.72)',background:'linear-gradient(180deg, transparent, rgba(9,9,9,0.58))'}}>
-                                                <span className="proof-dot" style={{background:'var(--gold)'}}/>
-                                                The same brief, now felt as atmosphere
+                                    <TiltCard maxTilt={3}>
+                                        <motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}}
+                                            className="proof-browser cursor-target h-full" data-cursor-text="Preview plan">
+                                            <div className="proof-browser-top">
+                                                <div className="bc-dot" style={{background:'#FF5F57'}}/>
+                                                <div className="bc-dot" style={{background:'#FFBD2E'}}/>
+                                                <div className="bc-dot" style={{background:'#28C840'}}/>
+                                                <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / 2D FLOOR PLAN</span>
                                             </div>
-                                        </div>
-                                    </motion.div>
+                                            <div className="proof-browser-screen plan">
+                                                <div className="diagonal-accent"/>
+                                                <SmartImage src={ASSETS.exampleBlueprint} alt="Keystone sample floor plan" style={{width:'100%',display:'block',objectFit:'contain'}}/>
+                                            </div>
+                                            <div className="proof-caption">
+                                                <span className="proof-dot" style={{background:'var(--accent)'}}/>
+                                                Client footprint translated into a working blueprint
+                                            </div>
+                                        </motion.div>
+                                    </TiltCard>
+                                    <TiltCard maxTilt={3}>
+                                        <motion.div initial={{opacity:0,y:20}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:0.08}}
+                                            className="proof-browser cursor-target h-full" data-cursor-text="Preview study">
+                                            <div className="proof-browser-top">
+                                                <div className="bc-dot" style={{background:'#FF5F57'}}/>
+                                                <div className="bc-dot" style={{background:'#FFBD2E'}}/>
+                                                <div className="bc-dot" style={{background:'#28C840'}}/>
+                                                <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / 3D EXTERIOR STUDY</span>
+                                            </div>
+                                            <div className="proof-browser-screen" style={{minHeight:'100%'}}>
+                                                <SmartImage src={ASSETS.exampleRender} alt="Keystone sample exterior study" style={{width:'100%',height:'100%',minHeight:'320px',objectFit:'cover',display:'block'}}/>
+                                                <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, rgba(9,9,9,0.02) 0%, rgba(9,9,9,0.48) 100%)'}}/>
+                                                <div className="proof-caption" style={{position:'absolute',left:0,right:0,bottom:0,borderTop:'none',color:'rgba(255,255,255,0.72)',background:'linear-gradient(180deg, transparent, rgba(9,9,9,0.58))'}}>
+                                                    <span className="proof-dot" style={{background:'var(--accent)'}}/>
+                                                    The same brief, now felt as atmosphere
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    </TiltCard>
                                 </div>
                                 <div className="proof-card-row mt-4">
                                     {trustCards.map((item, index) => (
@@ -2743,11 +3603,13 @@ const DreamApp = () => {
                                             initial={{opacity:0, y:18}}
                                             whileInView={{opacity:1, y:0}}
                                             viewport={{once:true, margin:'-48px'}}
-                                            transition={{duration:0.52, delay:index*0.06, ease:[0.22,1,0.36,1]}}
-                                            className="proof-mini-tile cursor-target" data-cursor-text={item.eyebrow}>
-                                            <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>{item.eyebrow}</div>
-                                            <p className="cg mt-2 text-[1.15rem] leading-[1.02]" style={{color:'var(--ink)'}}>{item.title}</p>
-                                            <p className="mt-2 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.78)'}}>{item.body}</p>
+                                            transition={{duration:0.52, delay:index*0.06, ease:[0.22,1,0.36,1]}}>
+                                            <SpotlightCard spotlightColor="rgba(255,106,55,0.1)"
+                                                className="proof-mini-tile cursor-target h-full" data-cursor-text={item.eyebrow}>
+                                                <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'var(--accent)',opacity:0.8}}>{item.eyebrow}</div>
+                                                <p className="cg mt-2 text-[1.15rem] leading-[1.02]" style={{color:'var(--ink)'}}>{item.title}</p>
+                                                <p className="mt-2 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.78)'}}>{item.body}</p>
+                                            </SpotlightCard>
                                         </motion.div>
                                     ))}
                                 </div>
@@ -2759,7 +3621,7 @@ const DreamApp = () => {
                                                 <SmartImage src={item.image} alt={item.alt} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
                                             </div>
                                             <div className="proof-feature-copy">
-                                                <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>{item.eyebrow}</div>
+                                                <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'var(--accent)',opacity:0.8}}>{item.eyebrow}</div>
                                                 <h3 className="cg mt-3 text-[1.3rem] leading-[0.98]" style={{color:'var(--ink)'}}>{item.title}</h3>
                                                 <p className="mt-3 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>{item.body}</p>
                                             </div>
@@ -2770,27 +3632,35 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    <section className="defer-section py-12 md:py-14" style={{background:'var(--paper)'}}>
-                        <div className="site-shell">
-                            <Reveal y={24} className="paper-panel p-7 md:p-10">
-                                <div className="grid lg:grid-cols-[minmax(0,1fr)_220px] gap-8 items-end">
-                                    <div>
-                                        <span className="section-label" style={{color:'rgba(9,9,9,0.42)'}}>Live studio</span>
-                                        <h2 className="cg mt-6" style={{fontSize:'clamp(2.6rem, 6vw, 4.8rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase',color:'var(--ink)'}}>
-                                            Try the real workflow, not a teaser.
-                                        </h2>
-                                        <p className="mt-5 max-w-2xl text-base leading-relaxed" style={{color:'rgba(9,9,9,0.62)'}}>
-                                            The same client-to-studio logic behind the hero is right below. Open the live studio, walk through the guided intake, shape a plan, and see what the architect gets back before kickoff.
-                                        </p>
-                                    </div>
-                                    <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow cta-live w-full lg:w-auto justify-self-start lg:justify-self-end">
-                                        <span>Open Live Studio</span>
-                                        <span className="cta-live-mark">
-                                            <span className="cta-live-dot"/>
-                                            Try it now
-                                        </span>
-                                    </button>
-                                </div>
+                    <section className="defer-section py-12 md:py-14 relative overflow-hidden" style={{background:'var(--paper)'}}>
+                        <FloatingParticles count={30} color="255,106,55" className="opacity-30"/>
+                        <div className="site-shell relative z-10">
+                            <Reveal y={24}>
+                                <TiltCard maxTilt={2}>
+                                    <SpotlightCard spotlightColor="rgba(255,106,55,0.12)" className="paper-panel p-7 md:p-10">
+                                        <div className="grid lg:grid-cols-[minmax(0,1fr)_260px] gap-8 items-end">
+                                            <div>
+                                                <span className="section-label" style={{color:'rgba(9,9,9,0.42)'}}>Live studio</span>
+                                                <div className="orange-line mt-3 mb-5"/>
+                                                <h2 className="cg mt-6" style={{fontSize:'clamp(2.6rem, 6vw, 4.8rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase',color:'var(--ink)'}}>
+                                                    Try the real workflow, not a teaser.
+                                                </h2>
+                                                <p className="mt-5 max-w-2xl text-base leading-relaxed" style={{color:'rgba(9,9,9,0.62)'}}>
+                                                    The same client-to-studio logic behind the hero is right below. Open the live studio, walk through the guided intake, shape a plan, and see what the architect gets back before kickoff.
+                                                </p>
+                                            </div>
+                                            <div className="flex justify-start lg:justify-end">
+                                                <StarBorderBtn onClick={() => scrollTo('generator')}>
+                                                    <span>Open Live Studio</span>
+                                                    <span className="cta-live-mark">
+                                                        <span className="cta-live-dot"/>
+                                                        Try it now
+                                                    </span>
+                                                </StarBorderBtn>
+                                            </div>
+                                        </div>
+                                    </SpotlightCard>
+                                </TiltCard>
                             </Reveal>
                         </div>
                     </section>
@@ -2798,12 +3668,28 @@ const DreamApp = () => {
                     <DesignGenerator onOpenModal={() => setModalOpen(true)}/>
                     <Gallery onOpenModal={() => setModalOpen(true)}/>
 
-                    <section className="relative py-5 border-y" style={{background:'var(--paper)',borderColor:'rgba(9,9,9,0.08)'}}>
+                    <section className="relative py-5 border-y overflow-hidden" style={{background:'linear-gradient(90deg,#FFF8F5,#FFF3ED,#FFF8F5)',borderColor:'rgba(255,106,55,0.15)'}}>
                         <div className="marquee-wrap">
                             <div className="marquee-track px-5 md:px-10">
                                 {[...marqueeItems, ...marqueeItems].map((item, index) => (
-                                    <span key={`${item}-${index}`} className="marquee-pill">{item}</span>
+                                    <span key={`${item}-${index}`} className="marquee-pill marquee-pill-orange">{item}</span>
                                 ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="defer-section py-12 md:py-16 relative overflow-hidden" style={{background:'linear-gradient(180deg,#0A0806 0%,#130B05 100%)'}}>
+                        <FloatingParticles count={30} color="255,106,55" className="opacity-20"/>
+                        <div className="site-shell relative z-10">
+                            <Reveal y={16}>
+                                <span className="section-label" style={{color:'rgba(255,106,55,0.7)'}}>What's inside</span>
+                                <div className="orange-line mt-3 mb-2"/>
+                                <h2 className="cg text-white mt-5" style={{fontSize:'clamp(2rem,4.5vw,3.6rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase',maxWidth:'32rem'}}>
+                                    Every session. <GradientText>Six capabilities.</GradientText>
+                                </h2>
+                            </Reveal>
+                            <div className="mt-8">
+                                <MagicBento glowColor="255,106,55" spotlightRadius={420} particleCount={10} clickEffect={true}/>
                             </div>
                         </div>
                     </section>
@@ -2812,10 +3698,13 @@ const DreamApp = () => {
                         <div className="site-shell">
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-10 items-end mb-10 md:mb-12">
                                 <div>
-                                    <Reveal y={12}><span className="section-label">What changes</span></Reveal>
+                                    <Reveal y={12}>
+                                        <span className="section-label">What changes</span>
+                                        <div className="orange-line mt-3"/>
+                                    </Reveal>
                                     <Reveal y={32} delay={0.08}>
                                     <h2 className="cg mt-6" style={{fontSize:'clamp(2.8rem, 7vw, 5.8rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase',color:'var(--ink)'}}>
-                                        The point is not more content. It is better-prepared first meetings.
+                                        The point is not more content. <GradientText>Better-prepared</GradientText> first meetings.
                                     </h2>
                                     </Reveal>
                                 </div>
@@ -2827,31 +3716,39 @@ const DreamApp = () => {
                             </div>
                             <div className="grid md:grid-cols-3 gap-4">
                                 {outcomeCards.map((item, index) => (
-                                    <motion.article key={item.eyebrow} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
-                                        className="paper-panel p-6 md:p-7 flex flex-col justify-between min-h-[300px]">
-                                        <div>
-                                            <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.44)'}}>{item.eyebrow}</div>
-                                            <h3 className="cg mt-5 text-[2rem] leading-[0.94]" style={{color:'var(--ink)'}}>{item.title}</h3>
-                                            <p className="mt-5 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.66)'}}>{item.body}</p>
-                                        </div>
-                                        <div className="mt-10 pt-5" style={{borderTop:'1px solid rgba(10,10,12,0.08)'}}>
-                                            <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(27,79,130,0.72)'}}>Keystone signal</div>
-                                            <div className="cg mt-3 text-[2.4rem] leading-none" style={{letterSpacing:'-0.06em',color:'var(--ink)'}}>{item.stat}</div>
-                                        </div>
+                                    <motion.article key={item.eyebrow} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}>
+                                        <TiltCard maxTilt={5} style={{height:'100%'}}>
+                                            <SpotlightCard spotlightColor="rgba(255,106,55,0.12)"
+                                                className="outcome-card p-6 md:p-7 flex flex-col justify-between min-h-[300px] h-full">
+                                                <div>
+                                                    <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'var(--accent)',opacity:0.8}}>{item.eyebrow}</div>
+                                                    <h3 className="cg mt-5 text-[2rem] leading-[0.94]" style={{color:'var(--ink)'}}>{item.title}</h3>
+                                                    <p className="mt-5 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.66)'}}>{item.body}</p>
+                                                </div>
+                                                <div className="mt-10 pt-5" style={{borderTop:'1px solid rgba(255,106,55,0.15)'}}>
+                                                    <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'var(--accent)',opacity:0.7}}>Keystone signal</div>
+                                                    <div className="cg mt-3 text-[2.4rem] leading-none gradient-text-anim" style={{letterSpacing:'-0.06em'}}>{item.stat}</div>
+                                                </div>
+                                            </SpotlightCard>
+                                        </TiltCard>
                                     </motion.article>
                                 ))}
                             </div>
                         </div>
                     </section>
 
-                    <section id="services" className="defer-section py-14 md:py-[4.75rem]" style={{background:'linear-gradient(180deg, #ECE3D3 0%, #F7F2E9 60%, #F0EBE1 100%)',color:'var(--ink)'}}>
-                        <div className="site-shell">
+                    <section id="services" className="defer-section py-14 md:py-[4.75rem] relative overflow-hidden" style={{background:'linear-gradient(180deg, #ECE3D3 0%, #F7F2E9 60%, #F0EBE1 100%)',color:'var(--ink)'}}>
+                        <OrbBackground/>
+                        <div className="site-shell relative z-10">
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-12 items-end">
                                 <div>
-                                    <Reveal y={12}><span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Firm workflow</span></Reveal>
+                                    <Reveal y={12}>
+                                        <span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Firm workflow</span>
+                                        <div className="orange-line mt-3"/>
+                                    </Reveal>
                                     <Reveal y={32} delay={0.08}>
                                     <h2 className="cg mt-6" style={{fontSize:'clamp(2.8rem, 7vw, 5.4rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        A calmer way to move from first inquiry to architect-ready intent.
+                                        A <GradientText>calmer way</GradientText> to move from first inquiry to architect-ready intent.
                                     </h2>
                                     </Reveal>
                                 </div>
@@ -2864,34 +3761,39 @@ const DreamApp = () => {
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-6 mt-10 items-start">
                                 <div className="grid md:grid-cols-3 gap-5 self-start">
                                     {serviceCards.map((card, index) => (
-                                        <motion.div key={card.number} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
-                                            className="service-card-dream p-6 md:p-7 self-start">
-                                            <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.7)'}}>{card.number}</div>
-                                            <h3 className="cg mt-5 text-[2rem] leading-[0.96]">{card.title}</h3>
-                                            <p className="mt-4 text-sm leading-relaxed" style={{color:'var(--mid)'}}>{card.body}</p>
+                                        <motion.div key={card.number} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}>
+                                            <TiltCard maxTilt={6} style={{height:'100%'}}>
+                                                <SpotlightCard spotlightColor="rgba(255,106,55,0.14)"
+                                                    className="service-card-v2 p-6 md:p-7 self-start h-full">
+                                                    <div className="service-number">{card.number}</div>
+                                                    <h3 className="cg mt-5 text-[2rem] leading-[0.96]">{card.title}</h3>
+                                                    <p className="mt-4 text-sm leading-relaxed" style={{color:'var(--mid)'}}>{card.body}</p>
+                                                </SpotlightCard>
+                                            </TiltCard>
                                         </motion.div>
                                     ))}
                                 </div>
-                                <div className="paper-panel p-6 md:p-7 self-start">
-                                    <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.7)'}}>Inside every session</div>
+                                <SpotlightCard spotlightColor="rgba(255,106,55,0.1)" className="paper-panel p-6 md:p-7 self-start">
+                                    <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'var(--accent)',opacity:0.8}}>Inside every session</div>
+                                    <div className="orange-line mt-3 mb-4"/>
                                     <h3 className="cg mt-5 text-[2.1rem] leading-[0.95]">The studio stack clients never see, but your team will feel.</h3>
                                     <div className="flex flex-wrap gap-2 mt-6">
                                         {sessionStack.map((item) => (
-                                            <span key={item} className="px-4 py-3 rounded-full text-sm" style={{border:'1px solid rgba(10,10,12,0.08)',background:'rgba(255,255,255,0.7)',color:'var(--mid)',borderRadius:'999px'}}>{item}</span>
+                                            <span key={item} className="session-stack-pill">{item}</span>
                                         ))}
                                     </div>
-                                    <div className="mt-8 pt-6" style={{borderTop:'1px solid rgba(10,10,12,0.08)'}}>
-                                        <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(110,106,102,0.68)'}}>Coming next</div>
+                                    <div className="mt-8 pt-6" style={{borderTop:'1px solid rgba(255,106,55,0.12)'}}>
+                                        <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'var(--accent)',opacity:0.6}}>Coming next</div>
                                         <div className="grid gap-3 mt-4">
                                             {roadmapCards.map((item) => (
                                                 <div key={item} className="flex items-center gap-3 text-sm" style={{color:'var(--mid)'}}>
-                                                    <span className="w-2 h-2 rounded-full bg-blue flex-shrink-0"/>
+                                                    <span className="w-2 h-2 rounded-full flex-shrink-0" style={{background:'var(--accent)'}}/>
                                                     <span>{item}</span>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
-                                </div>
+                                </SpotlightCard>
                             </div>
                             <div className="service-summary-grid mt-8">
                                 {SERVICE_BENEFITS.map((item, index) => (
@@ -2912,13 +3814,17 @@ const DreamApp = () => {
                         </div>
                     </section>
 
-                    <section id="pricing" className="defer-section py-14 md:py-[4.75rem]" style={{background:'var(--paper)',color:'var(--ink)'}}>
-                        <div className="site-shell">
+                    <section id="pricing" className="defer-section py-14 md:py-[4.75rem] relative overflow-hidden" style={{background:'var(--paper)',color:'var(--ink)'}}>
+                        <FloatingParticles count={25} color="255,106,55" className="opacity-20"/>
+                        <div className="site-shell relative z-10">
                             <div className="max-w-3xl">
-                                <Reveal y={12}><span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Pricing</span></Reveal>
+                                <Reveal y={12}>
+                                    <span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Pricing</span>
+                                    <div className="orange-line mt-3"/>
+                                </Reveal>
                                 <Reveal y={32} delay={0.08}>
                                 <h2 className="cg mt-6" style={{fontSize:'clamp(2.4rem, 5.6vw, 4.5rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                    Clear pricing before your team commits the hours.
+                                    <GradientText>Clear pricing</GradientText> before your team commits the hours.
                                 </h2>
                                 </Reveal>
                                 <Reveal y={16} delay={0.18}>
@@ -2931,35 +3837,51 @@ const DreamApp = () => {
                                 <div>
                                     <div className="grid md:grid-cols-3 gap-4">
                                         {pricingTiers.map((tier, index) => (
-                                            <motion.div key={tier.tag} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
-                                                className="p-6 md:p-7 rounded-[14px] flex flex-col min-h-[360px]"
-                                                style={tier.featured
-                                                    ? {background:'linear-gradient(180deg, #171717 0%, #0A0A0A 100%)',border:'1px solid rgba(255,255,255,0.06)',color:'white'}
-                                                    : {background:'rgba(255,255,255,0.62)',border:'1px solid rgba(10,10,12,0.08)',color:'var(--ink)'}
-                                                }>
-                                                <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:tier.featured ? 'rgba(232,238,244,0.58)' : 'rgba(10,10,12,0.4)'}}>{tier.tag}</div>
-                                                <div className="cg mt-5" style={{fontSize:'3rem',lineHeight:0.88,letterSpacing:'-0.06em'}}>{tier.price}</div>
-                                                <div className="mono text-[10px] uppercase tracking-[0.22em] mt-2" style={{color:tier.featured ? 'rgba(232,238,244,0.46)' : 'rgba(10,10,12,0.42)'}}>{tier.unit}</div>
-                                                <p className="mt-5 text-sm leading-relaxed flex-1" style={{color:tier.featured ? 'rgba(244,239,230,0.72)' : 'var(--mid)'}}>{tier.desc}</p>
-                                                <button onClick={() => tier.featured ? scrollTo('generator') : setModalOpen(true)}
-                                                    className={`cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.featured ? 'cta-glow' : tier.tag === 'Guided demo' ? 'cta-glow-soft' : ''}`}>
-                                                    {tier.cta}
-                                                </button>
+                                            <motion.div key={tier.tag} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}>
+                                                {tier.featured ? (
+                                                    <TiltCard maxTilt={5} style={{height:'100%'}}>
+                                                        <SpotlightCard spotlightColor="rgba(255,106,55,0.2)"
+                                                            className="pricing-featured p-6 md:p-7 flex flex-col min-h-[360px] h-full">
+                                                            <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(255,255,255,0.6)'}}>{tier.tag}</div>
+                                                            <div className="cg mt-5 text-white" style={{fontSize:'3rem',lineHeight:0.88,letterSpacing:'-0.06em'}}>{tier.price}</div>
+                                                            <div className="mono text-[10px] uppercase tracking-[0.22em] mt-2" style={{color:'rgba(255,255,255,0.46)'}}>{tier.unit}</div>
+                                                            <p className="mt-5 text-sm leading-relaxed flex-1" style={{color:'rgba(255,255,255,0.72)'}}>{tier.desc}</p>
+                                                            <StarBorderBtn onClick={() => scrollTo('generator')} className="w-full mt-6">
+                                                                <span>{tier.cta}</span>
+                                                                <span className="cta-live-mark"><span className="cta-live-dot"/>Now</span>
+                                                            </StarBorderBtn>
+                                                        </SpotlightCard>
+                                                    </TiltCard>
+                                                ) : (
+                                                    <SpotlightCard spotlightColor="rgba(255,106,55,0.1)"
+                                                        className="p-6 md:p-7 rounded-[14px] flex flex-col min-h-[360px] h-full"
+                                                        style={{background:'rgba(255,255,255,0.62)',border:'1px solid rgba(255,106,55,0.1)',color:'var(--ink)'}}>
+                                                        <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.4)'}}>{tier.tag}</div>
+                                                        <div className="cg mt-5" style={{fontSize:'3rem',lineHeight:0.88,letterSpacing:'-0.06em'}}>{tier.price}</div>
+                                                        <div className="mono text-[10px] uppercase tracking-[0.22em] mt-2" style={{color:'rgba(10,10,12,0.42)'}}>{tier.unit}</div>
+                                                        <p className="mt-5 text-sm leading-relaxed flex-1" style={{color:'var(--mid)'}}>{tier.desc}</p>
+                                                        <button onClick={() => setModalOpen(true)}
+                                                            className={`cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.tag === 'Guided demo' ? 'cta-glow-soft' : ''}`}>
+                                                            {tier.cta}
+                                                        </button>
+                                                    </SpotlightCard>
+                                                )}
                                             </motion.div>
                                         ))}
                                     </div>
                                 </div>
                                 <div className="grid gap-4">
                                     {quoteCards.map((quote, index) => (
-                                        <motion.div key={quote.name} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}
-                                            className="quote-card p-5">
-                                            <p className="cg text-[1.2rem] leading-[1.1]" style={{color:'var(--ink)'}}>
-                                                {quote.quote}
-                                            </p>
-                                            <div className="mt-4 pt-4" style={{borderTop:'1px solid rgba(10,10,12,0.08)'}}>
-                                                <p className="font-semibold text-sm">{quote.name}</p>
-                                                <p className="mono text-[10px] uppercase tracking-[0.2em] mt-2" style={{color:'var(--mid)'}}>{quote.firm}</p>
-                                            </div>
+                                        <motion.div key={quote.name} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}>
+                                            <SpotlightCard spotlightColor="rgba(255,106,55,0.08)" className="quote-card p-5 h-full">
+                                                <p className="cg text-[1.2rem] leading-[1.1]" style={{color:'var(--ink)'}}>
+                                                    {quote.quote}
+                                                </p>
+                                                <div className="mt-4 pt-4" style={{borderTop:'1px solid rgba(255,106,55,0.12)'}}>
+                                                    <p className="font-semibold text-sm">{quote.name}</p>
+                                                    <p className="mono text-[10px] uppercase tracking-[0.2em] mt-2" style={{color:'var(--mid)'}}>{quote.firm}</p>
+                                                </div>
+                                            </SpotlightCard>
                                         </motion.div>
                                     ))}
                                 </div>
@@ -2968,49 +3890,60 @@ const DreamApp = () => {
                     </section>
 
                     <section id="studio" className="defer-section py-16 md:py-20 relative overflow-hidden" style={{background:'linear-gradient(180deg, rgba(10,10,10,1) 0%, rgba(23,23,23,1) 100%)'}}>
-                        <div className="hero-glow" style={{top:'12%', left:'18%', width:'540px', height:'540px', background:'radial-gradient(circle, rgba(255,106,55,0.1), transparent 70%)'}}/>
+                        <FloatingParticles count={40} color="255,106,55" className="opacity-25"/>
+                        <div className="hero-glow" style={{top:'12%', left:'18%', width:'540px', height:'540px', background:'radial-gradient(circle, rgba(255,106,55,0.12), transparent 70%)'}}/>
                         <div className="site-shell relative z-10">
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] gap-10 items-start">
-                                <Reveal y={28} className="dream-panel p-7 md:p-10">
-                                    <span className="section-label" style={{color:'rgba(232,238,244,0.65)'}}>Studio</span>
-                                    <h2 className="cg text-white mt-6" style={{fontSize:'clamp(2.8rem, 7vw, 5.2rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        Built by people who have felt the discovery gap up close.
-                                    </h2>
-                                    <p className="mt-6 max-w-2xl text-base leading-relaxed" style={{color:'rgba(244,239,230,0.72)'}}>
-                                        Keystone began from a simple frustration: talented architects were burning unpaid hours trying to pull clarity out of clients who had not yet learned how to describe what they wanted.
-                                    </p>
-                                    <p className="mt-4 max-w-2xl text-base leading-relaxed" style={{color:'rgba(244,239,230,0.72)'}}>
-                                        The product is designed to let the client do some of that thinking before the meeting so the architect can spend the kickoff shaping ideas instead of extracting basics.
-                                    </p>
-                                    <div className="mt-8 pt-6 border-t border-white/10">
-                                        <p className="cg text-white" style={{fontSize:'clamp(1.6rem, 3vw, 2.6rem)',lineHeight:1.08}}>
-                                            "Architects should spend their energy shaping ideas, not extracting them one exhausted question at a time."
+                                <Reveal y={28}>
+                                    <SpotlightCard spotlightColor="rgba(255,106,55,0.1)" className="dream-panel p-7 md:p-10 animated-border">
+                                        <span className="section-label" style={{color:'rgba(232,238,244,0.65)'}}>Studio</span>
+                                        <div className="orange-line mt-3"/>
+                                        <h2 className="cg text-white mt-6" style={{fontSize:'clamp(2.8rem, 7vw, 5.2rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
+                                            Built by people who have felt the discovery gap up close.
+                                        </h2>
+                                        <p className="mt-6 max-w-2xl text-base leading-relaxed" style={{color:'rgba(244,239,230,0.72)'}}>
+                                            Keystone began from a simple frustration: talented architects were burning unpaid hours trying to pull clarity out of clients who had not yet learned how to describe what they wanted.
                                         </p>
-                                        <p className="mono mt-4 text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.5)'}}>Founder note / Keystone AI</p>
-                                    </div>
+                                        <p className="mt-4 max-w-2xl text-base leading-relaxed" style={{color:'rgba(244,239,230,0.72)'}}>
+                                            The product is designed to let the client do some of that thinking before the meeting so the architect can spend the kickoff shaping ideas instead of extracting basics.
+                                        </p>
+                                        <div className="mt-8 pt-6 border-t border-white/10">
+                                            <p className="cg text-white" style={{fontSize:'clamp(1.6rem, 3vw, 2.6rem)',lineHeight:1.08}}>
+                                                "Architects should spend their energy shaping ideas, not extracting them one exhausted question at a time."
+                                            </p>
+                                            <p className="mono mt-4 text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.5)'}}>Founder note / Keystone AI</p>
+                                        </div>
+                                    </SpotlightCard>
                                 </Reveal>
                                 <div className="grid gap-4">
                                     {studioMetrics.map((metric, index) => (
-                                        <motion.div key={metric.label} initial={{opacity:0,x:20}} whileInView={{opacity:1,x:0}} viewport={{once:true,margin:'-48px'}} transition={{duration:0.5,delay:index*0.07,ease:[0.22,1,0.36,1]}}
-                                            className="studio-metric">
-                                            <strong>{metric.value}</strong>
-                                            <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>{metric.label}</span>
+                                        <motion.div key={metric.label} initial={{opacity:0,x:20}} whileInView={{opacity:1,x:0}} viewport={{once:true,margin:'-48px'}} transition={{duration:0.5,delay:index*0.07,ease:[0.22,1,0.36,1]}}>
+                                            <TiltCard maxTilt={4}>
+                                                <SpotlightCard spotlightColor="rgba(255,106,55,0.15)" className="studio-metric h-full">
+                                                    <strong className="gradient-text-anim">{metric.value}</strong>
+                                                    <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>{metric.label}</span>
+                                                </SpotlightCard>
+                                            </TiltCard>
                                         </motion.div>
                                     ))}
                                 </div>
                             </div>
                             <div className="grid md:grid-cols-3 gap-4 mt-8">
                                 {studioTeam.map((member, index) => (
-                                    <motion.article key={member.name} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.25}} transition={{delay:index * 0.08}}
-                                        className="dream-panel p-4 md:p-5 flex items-start gap-4">
-                                        <div className="rounded-[20px] overflow-hidden flex-shrink-0" style={{width:'88px',height:'104px',background:'rgba(255,255,255,0.03)'}}>
-                                            <SmartImage src={member.image} alt={member.name} style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
-                                        </div>
-                                        <div>
-                                            <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.46)'}}>{member.role}</div>
-                                            <h3 className="cg text-white text-[1.6rem] mt-2 leading-[0.96]">{member.name}</h3>
-                                            <p className="mt-2 text-[13px] leading-relaxed" style={{color:'rgba(244,239,230,0.68)'}}>{member.bio}</p>
-                                        </div>
+                                    <motion.article key={member.name} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.25}} transition={{delay:index * 0.08}}>
+                                        <TiltCard maxTilt={4} style={{height:'100%'}}>
+                                            <SpotlightCard spotlightColor="rgba(255,106,55,0.12)"
+                                                className="dream-panel p-4 md:p-5 flex items-start gap-4 h-full">
+                                                <div className="rounded-[20px] overflow-hidden flex-shrink-0" style={{width:'88px',height:'104px',background:'rgba(255,255,255,0.03)',border:'1px solid rgba(255,106,55,0.15)'}}>
+                                                    <SmartImage src={member.image} alt={member.name} style={{width:'100%',height:'100%',objectFit:'cover',objectPosition:'top'}}/>
+                                                </div>
+                                                <div>
+                                                    <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'var(--accent)',opacity:0.7}}>{member.role}</div>
+                                                    <h3 className="cg text-white text-[1.6rem] mt-2 leading-[0.96]">{member.name}</h3>
+                                                    <p className="mt-2 text-[13px] leading-relaxed" style={{color:'rgba(244,239,230,0.68)'}}>{member.bio}</p>
+                                                </div>
+                                            </SpotlightCard>
+                                        </TiltCard>
                                     </motion.article>
                                 ))}
                             </div>
@@ -3019,27 +3952,42 @@ const DreamApp = () => {
 
                     <SurveySection onJoin={() => setModalOpen(true)}/>
 
-                    <section className="defer-section py-16 md:py-20" style={{background:'linear-gradient(180deg, #FFFDFC 0%, #F5F0E9 100%)'}}>
-                        <div className="container mx-auto max-w-5xl px-5 md:px-10 text-center">
-                            <span className="section-label justify-center" style={{color:'rgba(9,9,9,0.42)'}}>Final invitation</span>
-                            <h2 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 5.8rem)',lineHeight:0.88,letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
-                                Give the first meeting a stronger starting point.
-                            </h2>
-                            <p className="mt-5 max-w-2xl mx-auto text-base md:text-lg leading-relaxed" style={{color:'rgba(9,9,9,0.62)'}}>
-                                If the goal is to help residential clients arrive better prepared while protecting your studio's time, Keystone is ready for a real conversation.
-                            </p>
-                            <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
-                                <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow cta-live">
-                                    <span>Open Live Studio</span>
-                                    <span className="cta-live-mark">
-                                        <span className="cta-live-dot"/>
-                                        Try it now
+                    <section className="defer-section py-20 md:py-28 relative overflow-hidden" style={{background:'linear-gradient(180deg, #FFFDFC 0%, #FFF4EE 60%, #F5F0E9 100%)'}}>
+                        <Waves lineColor="rgba(255,106,55,0.22)" waveSpeedX={0.01} waveSpeedY={0.008} waveAmpX={30} waveAmpY={6} friction={0.7} tension={0.018} xGap={14} yGap={40}/>
+                        <OrbBackground/>
+                        <FloatingParticles count={45} color="255,106,55" className="opacity-35"/>
+                        <div className="container mx-auto max-w-5xl px-5 md:px-10 text-center relative z-10">
+                            <Reveal y={12}>
+                                <span className="section-label justify-center" style={{color:'rgba(9,9,9,0.42)'}}>Final invitation</span>
+                                <div className="flex justify-center mt-3"><div className="orange-line"/></div>
+                            </Reveal>
+                            <Reveal y={28} delay={0.08}>
+                                <h2 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 5.8rem)',lineHeight:0.88,letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
+                                    <BlurText text="Give the first meeting" delay={50} direction="bottom" tag="span" className="block"/>
+                                    <span className="block" style={{color:'var(--accent)'}}>
+                                        <BlurText text="a stronger starting point." delay={50} direction="bottom" tag="span"/>
                                     </span>
-                                </button>
-                                <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow-soft">
-                                    Request Access
-                                </button>
-                            </div>
+                                </h2>
+                            </Reveal>
+                            <Reveal y={16} delay={0.22}>
+                                <p className="mt-5 max-w-2xl mx-auto text-base md:text-lg leading-relaxed" style={{color:'rgba(9,9,9,0.62)'}}>
+                                    If the goal is to help residential clients arrive better prepared while protecting your studio's time, Keystone is ready for a real conversation.
+                                </p>
+                            </Reveal>
+                            <Reveal y={20} delay={0.34}>
+                                <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
+                                    <StarBorderBtn onClick={() => scrollTo('generator')}>
+                                        <span>Open Live Studio</span>
+                                        <span className="cta-live-mark">
+                                            <span className="cta-live-dot"/>
+                                            Try it now
+                                        </span>
+                                    </StarBorderBtn>
+                                    <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow-soft">
+                                        Request Access
+                                    </button>
+                                </div>
+                            </Reveal>
                         </div>
                     </section>
 
