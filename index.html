@@ -243,44 +243,6 @@
                 linear-gradient(180deg, rgba(255,253,249,0.72), rgba(245,240,233,0.32) 46%, rgba(245,240,233,0.72));
             mix-blend-mode: screen;
         }
-        .click-spark-layer {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 160;
-            overflow: hidden;
-        }
-        .click-spark,
-        .click-spark-core {
-            position: absolute;
-            left: 0;
-            top: 0;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-        }
-        .click-spark {
-            border-radius: 999px;
-            box-shadow: 0 0 10px rgba(255,106,55,0.48), 0 0 22px rgba(255,106,55,0.24);
-            animation: clickSparkFlight 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-            will-change: transform, opacity;
-        }
-        .click-spark-core {
-            width: 10px;
-            height: 10px;
-            border-radius: 999px;
-            box-shadow: 0 0 0 0 rgba(255,106,55,0.36);
-            animation: clickSparkCore 760ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
-        @keyframes clickSparkFlight {
-            0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--spark-rotate)) scale(0.72); }
-            20% { opacity: 1; }
-            100% { opacity: 0; transform: translate(calc(-50% + var(--spark-x)), calc(-50% + var(--spark-y))) rotate(var(--spark-rotate)) scale(1.08); }
-        }
-        @keyframes clickSparkCore {
-            0% { opacity: 0.95; transform: translate(-50%, -50%) scale(0.4); box-shadow: 0 0 0 0 rgba(255,106,55,0.42); }
-            70% { opacity: 0.22; box-shadow: 0 0 0 18px rgba(255,106,55,0); }
-            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.9); box-shadow: 0 0 0 24px rgba(255,106,55,0); }
-        }
         @keyframes heroDriftOne {
             0% { transform: translate3d(0, 0, 0) scale(1); }
             100% { transform: translate3d(18%, 11%, 0) scale(1.14); }

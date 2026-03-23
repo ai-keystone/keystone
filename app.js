@@ -32,55 +32,6 @@ const SmartImage = ({ eager = false, ...props }) => /* @__PURE__ */ React.create
 );
 const CloseIcon = ({ className = "w-4 h-4" }) => /* @__PURE__ */ React.createElement("svg", { className, fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "1.8", d: "M6 18L18 6M6 6l12 12" }));
 const CheckIcon = ({ className = "w-3 h-3" }) => /* @__PURE__ */ React.createElement("svg", { className, fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", "aria-hidden": "true" }, /* @__PURE__ */ React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2.2", d: "M5 13l4 4L19 7" }));
-const ClickSparkGlobal = ({
-  sparkColor = "#fd9608",
-  sparkSize = 16,
-  sparkRadius = 34,
-  sparkCount = 14,
-  duration = 900
-}) => {
-  const layerRef = useRef(null);
-  useEffect(() => {
-    const layer = layerRef.current;
-    if (!layer) return void 0;
-    const spawn = (event) => {
-      if (event.target.closest('[data-no-clickspark="true"]')) return;
-      const rect = layer.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-      for (let i = 0; i < sparkCount; i += 1) {
-        const spark = document.createElement("span");
-        const angle = Math.PI * 2 * i / sparkCount + (Math.random() - 0.5) * 0.28;
-        const radius = sparkRadius * (0.72 + Math.random() * 0.5);
-        const tx = Math.cos(angle) * radius;
-        const ty = Math.sin(angle) * radius;
-        spark.className = "click-spark";
-        spark.style.left = `${x}px`;
-        spark.style.top = `${y}px`;
-        spark.style.width = `${sparkSize}px`;
-        spark.style.height = `${Math.max(4, sparkSize * 0.2)}px`;
-        spark.style.background = `linear-gradient(90deg, rgba(255,255,255,0.95), ${sparkColor})`;
-        spark.style.setProperty("--spark-x", `${tx}px`);
-        spark.style.setProperty("--spark-y", `${ty}px`);
-        spark.style.setProperty("--spark-rotate", `${(angle * 180 / Math.PI).toFixed(2)}deg`);
-        spark.style.animationDuration = `${duration}ms`;
-        layer.appendChild(spark);
-        window.setTimeout(() => spark.remove(), duration + 80);
-      }
-      const core = document.createElement("span");
-      core.className = "click-spark-core";
-      core.style.left = `${x}px`;
-      core.style.top = `${y}px`;
-      core.style.background = sparkColor;
-      core.style.animationDuration = `${Math.max(520, duration * 0.92)}ms`;
-      layer.appendChild(core);
-      window.setTimeout(() => core.remove(), duration + 60);
-    };
-    window.addEventListener("pointerdown", spawn, { passive: true });
-    return () => window.removeEventListener("pointerdown", spawn);
-  }, [sparkColor, sparkCount, sparkRadius, sparkSize, duration]);
-  return /* @__PURE__ */ React.createElement("div", { ref: layerRef, className: "click-spark-layer", "aria-hidden": "true" });
-};
 const DotGridHero = ({
   dotSize = 3.1,
   gap = 28,
@@ -1864,7 +1815,7 @@ const DreamApp = () => {
     obs.observe(hero);
     return () => obs.disconnect();
   }, []);
-  return /* @__PURE__ */ React.createElement("div", { className: "pb-[60px] md:pb-0" }, /* @__PURE__ */ React.createElement(JoinModal, { isOpen: isModalOpen, onClose: () => setModalOpen(false) }), /* @__PURE__ */ React.createElement(ClickSparkGlobal, null), /* @__PURE__ */ React.createElement(LaserCursor, null), /* @__PURE__ */ React.createElement(MobileNavBar, { onOpenMenu: () => setMenuOpen(true) }), /* @__PURE__ */ React.createElement(MobileMenuOverlay, { isOpen: isMenuOpen, onClose: () => setMenuOpen(false), onJoin: () => setModalOpen(true) }), /* @__PURE__ */ React.createElement(SectionRail, null), /* @__PURE__ */ React.createElement(AnimatePresence, null, !heroVisible && /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { className: "pb-[60px] md:pb-0" }, /* @__PURE__ */ React.createElement(JoinModal, { isOpen: isModalOpen, onClose: () => setModalOpen(false) }), /* @__PURE__ */ React.createElement(LaserCursor, null), /* @__PURE__ */ React.createElement(MobileNavBar, { onOpenMenu: () => setMenuOpen(true) }), /* @__PURE__ */ React.createElement(MobileMenuOverlay, { isOpen: isMenuOpen, onClose: () => setMenuOpen(false), onJoin: () => setModalOpen(true) }), /* @__PURE__ */ React.createElement(SectionRail, null), /* @__PURE__ */ React.createElement(AnimatePresence, null, !heroVisible && /* @__PURE__ */ React.createElement(
     motion.div,
     {
       initial: { opacity: 0, y: 20 },
