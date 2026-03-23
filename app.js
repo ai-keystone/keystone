@@ -557,7 +557,7 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
       style: { borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "rgba(244,239,230,0.74)" }
     },
     s
-  )),
+  ))),
   /* Precise room resize section */
   planSpec && /* @__PURE__ */ React.createElement("div", { className: "px-4 md:px-5 mb-3" },
     /* @__PURE__ */ React.createElement("p", { className: "mono text-[8px] uppercase tracking-[0.2em] mb-2 font-bold", style: { color: "rgba(244,239,230,0.38)" } }, "Set exact size"),
