@@ -1,5 +1,5 @@
 const { useState, useEffect, useRef, useMemo } = React;
-const FM = window.framerMotion || window.Motion;
+const FM = window.framerMotion || window.Motion || {};
 const { motion, AnimatePresence, useScroll, useTransform, useSpring } = FM;
 const ASSETS = {
   watermark: "images/keystone-line-art.png",
