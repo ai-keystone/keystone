@@ -571,6 +571,9 @@ const REFINEMENT_SUGGESTIONS = [
 ];
 const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistory, onRefine, isLoading }) => {
   const [custom, setCustom] = React.useState("");
+  const [exactRoom, setExactRoom] = React.useState(null);
+  const [exactW, setExactW] = React.useState("");
+  const [exactH, setExactH] = React.useState("");
   const historyRef = React.useRef(null);
   React.useEffect(() => {
     if (historyRef.current) historyRef.current.scrollTop = historyRef.current.scrollHeight;
@@ -603,7 +606,56 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
       style: { borderColor: "rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)", color: "rgba(244,239,230,0.74)" }
     },
     s
-  ))), /* @__PURE__ */ React.createElement("form", { onSubmit: handleCustom, className: "flex gap-2 px-4 md:px-5 pb-5" }, /* @__PURE__ */ React.createElement(
+  )),
+  /* Precise room resize section */
+  planSpec && /* @__PURE__ */ React.createElement("div", { className: "px-4 md:px-5 mb-3" },
+    /* @__PURE__ */ React.createElement("p", { className: "mono text-[8px] uppercase tracking-[0.2em] mb-2 font-bold", style: { color: "rgba(244,239,230,0.38)" } }, "Set exact size"),
+    /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-1 mb-2" },
+      ...(planSpec.levels || []).flatMap((l) => (l.rooms || []).filter((r) => !r.protected && r.type !== "stairs" && r.type !== "hallway").map((r) =>
+        /* @__PURE__ */ React.createElement("button", {
+          key: r.id,
+          disabled,
+          onClick: () => { setExactRoom(r); setExactW(String(r.w)); setExactH(String(r.h)); },
+          className: "text-[8px] px-2 py-1 rounded-full border transition-opacity disabled:opacity-30",
+          style: {
+            borderColor: exactRoom && exactRoom.id === r.id ? "rgba(255,255,255,0.55)" : "rgba(255,255,255,0.12)",
+            background: exactRoom && exactRoom.id === r.id ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.04)",
+            color: exactRoom && exactRoom.id === r.id ? "rgba(244,239,230,0.95)" : "rgba(244,239,230,0.62)"
+          }
+        }, (r.label || r.type.replace(/_/g, " ")), " ", /* @__PURE__ */ React.createElement("span", { style: { opacity: 0.55 } }, r.w, "\xD7", r.h))
+      ))
+    ),
+    exactRoom && /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 mt-1 flex-wrap" },
+      /* @__PURE__ */ React.createElement("span", { className: "text-[10px]", style: { color: "rgba(244,239,230,0.55)" } }, exactRoom.label || exactRoom.type.replace(/_/g, " ")),
+      /* @__PURE__ */ React.createElement("input", {
+        type: "number", value: exactW, min: 4, step: 2,
+        onChange: (e) => setExactW(e.target.value),
+        className: "w-14 text-xs px-2 py-1 border rounded-lg text-center focus:outline-none",
+        style: { background: "rgba(255,255,255,0.92)", borderColor: "rgba(255,255,255,0.18)" }
+      }),
+      /* @__PURE__ */ React.createElement("span", { style: { color: "rgba(244,239,230,0.45)", fontSize: "11px" } }, "\xD7"),
+      /* @__PURE__ */ React.createElement("input", {
+        type: "number", value: exactH, min: 4, step: 2,
+        onChange: (e) => setExactH(e.target.value),
+        className: "w-14 text-xs px-2 py-1 border rounded-lg text-center focus:outline-none",
+        style: { background: "rgba(255,255,255,0.92)", borderColor: "rgba(255,255,255,0.18)" }
+      }),
+      /* @__PURE__ */ React.createElement("span", { className: "text-[10px]", style: { color: "rgba(244,239,230,0.45)" } }, "ft"),
+      /* @__PURE__ */ React.createElement("button", {
+        disabled: disabled || !exactW || !exactH,
+        onClick: () => {
+          const w = Math.round(parseInt(exactW, 10) / 2) * 2;
+          const h = Math.round(parseInt(exactH, 10) / 2) * 2;
+          if (w >= 4 && h >= 4) {
+            onRefine("Resize " + (exactRoom.label || exactRoom.type.replace(/_/g, " ")) + " to " + w + "ft \xD7 " + h + "ft");
+            setExactRoom(null);
+          }
+        },
+        className: "px-3 py-1 cta-hero text-[9px] disabled:opacity-30 rounded-[10px]"
+      }, "Set")
+    )
+  ),
+  /* @__PURE__ */ React.createElement("form", { onSubmit: handleCustom, className: "flex gap-2 px-4 md:px-5 pb-5" }, /* @__PURE__ */ React.createElement(
     "input",
     {
       type: "text",
