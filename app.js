@@ -1191,7 +1191,33 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
           { val: "2 Car Garage", label: "2 Car", desc: "Double attached garage" }
         ] }));
       case "shape":
-        return /* @__PURE__ */ React.createElement("div", { key: field, className: "space-y-2" }, /* @__PURE__ */ React.createElement(Lbl, null, "Building Footprint Shape"), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-4 gap-1.5" }, /* @__PURE__ */ React.createElement(ShapeOption, { val: "Rectangular", label: "Rectangle", path: "M3,4 L29,4 L29,28 L3,28 Z" }), /* @__PURE__ */ React.createElement(ShapeOption, { val: "L-Shape", label: "L-Shape", path: "M3,4 L18,4 L18,16 L29,16 L29,28 L3,28 Z" }), /* @__PURE__ */ React.createElement(ShapeOption, { val: "U-Shape", label: "U-Shape", path: "M3,4 L11,4 L11,17 L21,17 L21,4 L29,4 L29,28 L3,28 Z" }), /* @__PURE__ */ React.createElement(ShapeOption, { val: "H-Shape", label: "H-Shape", path: "M3,4 L11,4 L11,13 L21,13 L21,4 L29,4 L29,28 L21,28 L21,19 L11,19 L11,28 L3,28 Z" }), /* @__PURE__ */ React.createElement(ShapeOption, { val: "T-Shape", label: "T-Shape", path: "M3,4 L29,4 L29,13 L20,13 L20,28 L12,28 L12,13 L3,13 Z" }), /* @__PURE__ */ React.createElement(ShapeOption, { val: "Plus", label: "Plus", path: "M12,4 L20,4 L20,12 L29,12 L29,20 L20,20 L20,28 L12,28 L12,20 L3,20 L3,12 L12,12 Z" }), /* @__PURE__ */ React.createElement(ShapeOption, { val: "I-Shape", label: "I-Shape", path: "M3,4 L29,4 L29,11 L21,11 L21,21 L29,21 L29,28 L3,28 L3,21 L11,21 L11,11 L3,11 Z" }), /* @__PURE__ */ React.createElement(ShapeOption, { val: "C-Shape", label: "C-Shape", path: "M3,4 L29,4 L29,12 L11,12 L11,20 L29,20 L29,28 L3,28 Z" })), /* @__PURE__ */ React.createElement("p", { className: "text-[9px] text-mid/60" }, "Complex shapes (L, U, H, T) generate the closest rectangular approximation \u2014 full non-rectangular layout support coming soon."));
+        return /* @__PURE__ */ React.createElement("div", { key: field, className: "space-y-2" },
+          /* @__PURE__ */ React.createElement(Lbl, null, "Building Footprint Shape"),
+          /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-4 gap-1.5" },
+            /* @__PURE__ */ React.createElement(ShapeOption, { val: "Rectangular", label: "Rectangle", path: "M3,4 L29,4 L29,28 L3,28 Z" }),
+            /* @__PURE__ */ React.createElement(ShapeOption, { val: "Wide Rectangle", label: "Wide", path: "M2,10 L30,10 L30,22 L2,22 Z" }),
+            /* @__PURE__ */ React.createElement(ShapeOption, { val: "Deep Rectangle", label: "Deep", path: "M10,2 L22,2 L22,30 L10,30 Z" }),
+            /* @__PURE__ */ React.createElement(ShapeOption, { val: "Square", label: "Square", path: "M5,5 L27,5 L27,27 L5,27 Z" })
+          ),
+          /* @__PURE__ */ React.createElement("p", { className: "mono text-[7px] uppercase tracking-widest text-mid/35 mt-2 mb-1" }, "Non-rectangular \u2014 coming soon"),
+          /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-4 gap-1.5" },
+            [
+              { label: "L-Shape", path: "M3,4 L18,4 L18,16 L29,16 L29,28 L3,28 Z" },
+              { label: "U-Shape", path: "M3,4 L11,4 L11,17 L21,17 L21,4 L29,4 L29,28 L3,28 Z" },
+              { label: "H-Shape", path: "M3,4 L11,4 L11,13 L21,13 L21,4 L29,4 L29,28 L21,28 L21,19 L11,19 L11,28 L3,28 Z" },
+              { label: "T-Shape", path: "M3,4 L29,4 L29,13 L20,13 L20,28 L12,28 L12,13 L3,13 Z" }
+            ].map(({ label, path }) => /* @__PURE__ */ React.createElement("div", {
+              key: label,
+              className: "p-2 border rounded-sm flex flex-col items-center gap-1.5",
+              style: { borderColor: "rgba(0,0,0,0.06)", background: "rgba(0,0,0,0.015)", opacity: 0.38, cursor: "not-allowed", userSelect: "none" }
+            },
+              /* @__PURE__ */ React.createElement("svg", { viewBox: "0 0 32 32", width: "32", height: "32" },
+                /* @__PURE__ */ React.createElement("path", { d: path, fill: "rgba(27,79,130,0.06)", stroke: "rgba(27,79,130,0.28)", strokeWidth: "1.8", strokeLinejoin: "round", strokeLinecap: "round" })
+              ),
+              /* @__PURE__ */ React.createElement("div", { className: "text-[9px] font-semibold leading-tight text-center text-mid/60" }, label)
+            ))
+          )
+        );
       case "lotDimensions":
         return /* @__PURE__ */ React.createElement("div", { key: field, className: "space-y-1.5" }, /* @__PURE__ */ React.createElement(Lbl, null, "Lot Dimensions (optional)"), /* @__PURE__ */ React.createElement("p", { className: "text-[9px] text-mid/70 mb-2" }, "Constrains the footprint to fit your lot. Leave blank to let Keystone choose."), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2 items-center" }, /* @__PURE__ */ React.createElement("div", { className: "flex-1 space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: "mono text-[8px] uppercase tracking-widest text-mid" }, "Width (ft)"), /* @__PURE__ */ React.createElement("input", { type: "number", placeholder: "e.g. 60", value: formData.lotWidth, onChange: (e) => upd("lotWidth", e.target.value), min: "20", max: "300", step: "1" })), /* @__PURE__ */ React.createElement("span", { className: "text-mid text-sm mt-4" }, "\xD7"), /* @__PURE__ */ React.createElement("div", { className: "flex-1 space-y-1" }, /* @__PURE__ */ React.createElement("label", { className: "mono text-[8px] uppercase tracking-widest text-mid" }, "Depth (ft)"), /* @__PURE__ */ React.createElement("input", { type: "number", placeholder: "e.g. 100", value: formData.lotDepth, onChange: (e) => upd("lotDepth", e.target.value), min: "20", max: "500", step: "1" }))));
       case "frontFacing":
@@ -1668,38 +1694,43 @@ const DesignGenerator = ({ onOpenModal }) => {
   };
   const exportDxf = () => {
     if (!planSpec) return;
-    const lines = [];
-    const push = (...args) => args.forEach(a => lines.push(String(a)));
-    push("0","SECTION","2","HEADER","9","$ACADVER","1","AC1015","9","$INSUNITS","70","2","0","ENDSEC");
-    push("0","SECTION","2","TABLES","0","TABLE","2","LAYER","70","5");
-    [["ROOMS","7"],["LABELS","3"],["DOORS","1"],["WINDOWS","4"],["DIMS","2"]].forEach(([n,c])=>{
-      push("0","LAYER","2",n,"70","0","62",c,"6","CONTINUOUS");
-    });
-    push("0","ENDTABLE","0","ENDSEC","0","SECTION","2","ENTITIES");
-    (planSpec.levels||[]).forEach((level,li)=>{
-      const offsetY = li*(planSpec.levels[0]?.height||0)*1.3;
-      (level.rooms||[]).forEach(room=>{
-        const x=room.x,y=offsetY+room.y,x2=x+room.w,y2=y+room.h;
-        push("0","LWPOLYLINE","8","ROOMS","66","1","70","1","90","4");
-        push("10",x.toFixed(2),"20",y.toFixed(2));
-        push("10",x2.toFixed(2),"20",y.toFixed(2));
-        push("10",x2.toFixed(2),"20",y2.toFixed(2));
-        push("10",x.toFixed(2),"20",y2.toFixed(2));
-        const cx=((x+x2)/2).toFixed(2),cy=((y+y2)/2).toFixed(2);
+    const p = [];
+    const e = (code, val) => { p.push(String(code)); p.push(String(val)); };
+    const line3d = (layer, ax, ay, bx, by) => {
+      e(0,"LINE"); e(8,layer);
+      e(10,ax.toFixed(3)); e(20,ay.toFixed(3)); e(30,"0.0");
+      e(11,bx.toFixed(3)); e(21,by.toFixed(3)); e(31,"0.0");
+    };
+    // R12 header — most compatible, opens in all AutoCAD versions and DXF viewers
+    e(0,"SECTION"); e(2,"HEADER");
+    e(9,"$ACADVER"); e(1,"AC1009");
+    e(9,"$INSUNITS"); e(70,2);
+    e(0,"ENDSEC");
+    e(0,"SECTION"); e(2,"ENTITIES");
+    (planSpec.levels||[]).forEach((level, li) => {
+      const yOff = li * ((Number(planSpec.levels[0]?.height)||40) + 10);
+      (level.rooms||[]).forEach(room => {
+        const x1=Number(room.x)||0, y1=yOff+(Number(room.y)||0);
+        const x2=x1+(Number(room.w)||0), y2=y1+(Number(room.h)||0);
+        line3d("ROOMS",x1,y1,x2,y1);
+        line3d("ROOMS",x2,y1,x2,y2);
+        line3d("ROOMS",x2,y2,x1,y2);
+        line3d("ROOMS",x1,y2,x1,y1);
+        const cx=((x1+x2)/2).toFixed(3), cy=((y1+y2)/2).toFixed(3);
         const lbl=(room.label||room.type||"").replace(/_/g," ");
-        push("0","TEXT","8","LABELS","10",cx,"20",cy,"30","0","40","1.5","72","1","73","2","11",cx,"21",cy,"31","0","1",lbl);
-        push("0","TEXT","8","DIMS","10",cx,"20",(parseFloat(cy)-1.8).toFixed(2),"30","0","40","0.75","72","1","73","2","11",cx,"21",(parseFloat(cy)-1.8).toFixed(2),"31","0","1",room.w+"'x"+room.h+"'");
+        e(0,"TEXT"); e(8,"LABELS");
+        e(10,cx); e(20,cy); e(30,"0.0"); e(40,"1.5"); e(1,lbl);
+        e(0,"TEXT"); e(8,"DIMS");
+        e(10,cx); e(20,(parseFloat(cy)-2).toFixed(3)); e(30,"0.0"); e(40,"0.8"); e(1,room.w+"'x"+room.h+"'");
       });
-      (level.doors||[]).forEach(door=>{
-        const dx=door.x,dy=offsetY+door.y;
+      (level.doors||[]).forEach(door => {
+        const dx=Number(door.x)||0, dy=yOff+(Number(door.y)||0);
         const isH=door.dir==="horizontal";
-        push("0","LINE","8","DOORS");
-        push("10",dx.toFixed(2),"20",dy.toFixed(2),"30","0");
-        push("11",(dx+(isH?3:0)).toFixed(2),"21",(dy+(isH?0:3)).toFixed(2),"31","0");
+        line3d("DOORS", dx-(isH?1.5:0), dy-(isH?0:1.5), dx+(isH?1.5:0), dy+(isH?0:1.5));
       });
     });
-    push("0","ENDSEC","0","EOF");
-    const blob=new Blob([lines.join("\n")],{type:"application/dxf"});
+    e(0,"ENDSEC"); e(0,"EOF");
+    const blob=new Blob([p.join("\n")+"\n"],{type:"application/octet-stream"});
     const url=URL.createObjectURL(blob);
     const a=document.createElement("a");
     a.href=url; a.download="Keystone_Blueprint.dxf";
