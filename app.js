@@ -638,9 +638,14 @@ const WallEditor = ({ planSpec, planSvg, onUpdatePlan, onRoomSelect, externalSel
       const dxFt = Math.round((e.clientX - dragState.startClientX) / PX_FT / SNAP) * SNAP;
       const dyFt = Math.round((e.clientY - dragState.startClientY) / PX_FT / SNAP) * SNAP;
       if (Math.abs(dxFt) >= SNAP || Math.abs(dyFt) >= SNAP) {
-        onUpdatePlan(applyDrag(planSpec, dragState, dxFt, dyFt));
+        // Keep preview visible until the server re-render finishes, then clear it.
+        // Without this, setPreviewSpec(null) fires immediately and the stale planSvg
+        // shows briefly (looks like a revert).
+        const result = onUpdatePlan(applyDrag(planSpec, dragState, dxFt, dyFt));
+        Promise.resolve(result).then(() => setPreviewSpec(null)).catch(() => setPreviewSpec(null));
+      } else {
+        setPreviewSpec(null);
       }
-      setPreviewSpec(null);
       setDragState(null);
     };
     window.addEventListener('mousemove', onMove);
