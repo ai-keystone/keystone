@@ -520,6 +520,177 @@ const REFINEMENT_SUGGESTIONS = [
   "Make the garage wider",
   "Expand the dining room"
 ];
+// ── WALL EDITOR ──────────────────────────────────────────────────────────────
+// Interactive wall-movement overlay. Renders transparent room highlight divs
+// over the plan SVG at 1:1 pixel scale. Click a room to select it; drag any
+// of its four wall handles to resize (snaps to 2 ft grid). The adjacent room
+// on the same wall shrinks/grows to compensate. On mouseup, calls onUpdatePlan.
+const WallEditor = ({ planSpec, planSvg, onUpdatePlan }) => {
+  const [selectedKey, setSelectedKey] = React.useState(null);
+  const [dragState, setDragState] = React.useState(null);
+  const [previewSpec, setPreviewSpec] = React.useState(null);
+
+  // These must match renderPlanSvg.js constants exactly
+  const PX_FT = 18;     // pixels per foot
+  const PAD   = 100;    // outer padding
+  const LGAP  = 130;    // gap between levels
+  const SNAP  = 2;      // snap grid in feet
+  const MINFT = 6;      // minimum room dimension in feet
+
+  const getLevelStartY = (levelIdx) => {
+    let y = PAD;
+    for (let i = 0; i < levelIdx; i++) {
+      y += ((planSpec.levels[i] || {}).height || 0) * PX_FT + PAD + LGAP;
+    }
+    return y;
+  };
+
+  const roomRect = (room, li) => ({
+    left:   PAD + room.x * PX_FT,
+    top:    getLevelStartY(li) + room.y * PX_FT,
+    width:  room.w * PX_FT,
+    height: room.h * PX_FT,
+  });
+
+  const findAdj = (level, room, wall) => {
+    const EPS = 0.5;
+    const overlaps = (a1, a2, b1, b2) => Math.min(a2, b2) - Math.max(a1, b1) > EPS;
+    return (level.rooms || []).find(o => {
+      if (o.id === room.id) return false;
+      if (wall === 'right')  return Math.abs(o.x - (room.x + room.w)) < EPS && overlaps(room.y, room.y+room.h, o.y, o.y+o.h);
+      if (wall === 'left')   return Math.abs((o.x+o.w) - room.x) < EPS      && overlaps(room.y, room.y+room.h, o.y, o.y+o.h);
+      if (wall === 'bottom') return Math.abs(o.y - (room.y + room.h)) < EPS && overlaps(room.x, room.x+room.w, o.x, o.x+o.w);
+      if (wall === 'top')    return Math.abs((o.y+o.h) - room.y) < EPS       && overlaps(room.x, room.x+room.w, o.x, o.x+o.w);
+      return false;
+    });
+  };
+
+  const applyDrag = (spec, ds, dxFt, dyFt) => {
+    const newLevels = spec.levels.map((lvl, li) => {
+      if (li !== ds.levelIdx) return lvl;
+      const newRooms = (lvl.rooms || []).map(r => {
+        if (r.id === ds.roomId) {
+          const o = ds.origRoom;
+          if (ds.wall === 'right')  return { ...r, w: Math.max(MINFT, o.w + dxFt) };
+          if (ds.wall === 'left')   return { ...r, x: o.x + dxFt, w: Math.max(MINFT, o.w - dxFt) };
+          if (ds.wall === 'bottom') return { ...r, h: Math.max(MINFT, o.h + dyFt) };
+          if (ds.wall === 'top')    return { ...r, y: o.y + dyFt, h: Math.max(MINFT, o.h - dyFt) };
+        }
+        if (ds.adjId && r.id === ds.adjId && ds.origAdj) {
+          const o = ds.origAdj;
+          if (ds.wall === 'right')  return { ...r, x: o.x + dxFt, w: Math.max(MINFT, o.w - dxFt) };
+          if (ds.wall === 'left')   return { ...r, w: Math.max(MINFT, o.w + dxFt) };
+          if (ds.wall === 'bottom') return { ...r, y: o.y + dyFt, h: Math.max(MINFT, o.h - dyFt) };
+          if (ds.wall === 'top')    return { ...r, h: Math.max(MINFT, o.h + dyFt) };
+        }
+        return r;
+      });
+      const maxX = newRooms.reduce((m, r) => Math.max(m, r.x + r.w), 0);
+      const maxY = newRooms.reduce((m, r) => Math.max(m, r.y + r.h), 0);
+      return { ...lvl, rooms: newRooms, width: maxX, height: maxY };
+    });
+    return { ...spec, levels: newLevels };
+  };
+
+  React.useEffect(() => {
+    if (!dragState) return;
+    const onMove = (e) => {
+      const dxFt = Math.round((e.clientX - dragState.startClientX) / PX_FT / SNAP) * SNAP;
+      const dyFt = Math.round((e.clientY - dragState.startClientY) / PX_FT / SNAP) * SNAP;
+      if (dxFt !== dragState.lastDx || dyFt !== dragState.lastDy) {
+        setDragState(ds => ({ ...ds, lastDx: dxFt, lastDy: dyFt }));
+        setPreviewSpec(applyDrag(planSpec, dragState, dxFt, dyFt));
+      }
+    };
+    const onUp = (e) => {
+      const dxFt = Math.round((e.clientX - dragState.startClientX) / PX_FT / SNAP) * SNAP;
+      const dyFt = Math.round((e.clientY - dragState.startClientY) / PX_FT / SNAP) * SNAP;
+      if (Math.abs(dxFt) >= SNAP || Math.abs(dyFt) >= SNAP) {
+        onUpdatePlan(applyDrag(planSpec, dragState, dxFt, dyFt));
+      }
+      setPreviewSpec(null);
+      setDragState(null);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => { window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+  }, [dragState, planSpec]);
+
+  if (!planSpec || !planSvg) return null;
+
+  const vbMatch = planSvg.match(/viewBox="0 0 ([0-9.]+) ([0-9.]+)"/);
+  const svgW = vbMatch ? parseFloat(vbMatch[1]) : 1200;
+  const svgH = vbMatch ? parseFloat(vbMatch[2]) : 1000;
+  const activeSpec = previewSpec || planSpec;
+
+  const HANDLE_W = 10;
+
+  return /* @__PURE__ */ React.createElement("div", {
+    style: { position: 'absolute', top: 0, left: 0, width: svgW, height: svgH, pointerEvents: 'none' },
+    onClick: () => setSelectedKey(null),
+  },
+    (activeSpec.levels || []).flatMap((lvl, li) =>
+      (lvl.rooms || []).flatMap(room => {
+        const key = `${li}_${room.id}`;
+        const isSel = selectedKey === key && !dragState;
+        const r = roomRect(room, li);
+        const HL = Math.min(r.height * 0.35, 26);
+        const HLW = Math.min(r.width * 0.35, 26);
+
+        const roomEl = /* @__PURE__ */ React.createElement("div", {
+          key,
+          style: {
+            position: 'absolute', left: r.left, top: r.top, width: r.width, height: r.height,
+            pointerEvents: 'all', cursor: 'pointer', boxSizing: 'border-box',
+            border: isSel ? '2px solid rgba(27,79,130,0.85)' : '1.5px solid transparent',
+            borderRadius: 2, background: isSel ? 'rgba(27,79,130,0.07)' : 'transparent',
+          },
+          onClick: (e) => { e.stopPropagation(); setSelectedKey(isSel ? null : key); }
+        });
+
+        if (!isSel) return [roomEl];
+
+        // Label tooltip above selected room
+        const labelEl = /* @__PURE__ */ React.createElement("div", {
+          key: key + '_lbl',
+          style: {
+            position: 'absolute', left: r.left + r.width / 2, top: r.top - 22,
+            transform: 'translateX(-50%)', pointerEvents: 'none', whiteSpace: 'nowrap',
+            background: 'rgba(27,79,130,0.92)', color: '#fff', fontSize: 9,
+            padding: '2px 7px', borderRadius: 3, fontFamily: 'monospace', zIndex: 99,
+          }
+        }, (room.label || room.type || room.id).replace(/_/g, ' '), ' \u2014 ', room.w, "\u2019\u00D7", room.h, "\u2019");
+
+        const hBase = { position: 'absolute', pointerEvents: 'all', background: '#1B4F82', borderRadius: 3, opacity: 0.88, zIndex: 10 };
+        const handles = [
+          { wall: 'right',  style: { ...hBase, width: HANDLE_W, height: HL,     left: r.left + r.width  - HANDLE_W/2, top: r.top  + r.height/2 - HL/2,  cursor: 'ew-resize' } },
+          { wall: 'left',   style: { ...hBase, width: HANDLE_W, height: HL,     left: r.left            - HANDLE_W/2, top: r.top  + r.height/2 - HL/2,  cursor: 'ew-resize' } },
+          { wall: 'bottom', style: { ...hBase, height: HANDLE_W, width: HLW,    top:  r.top  + r.height - HANDLE_W/2, left: r.left + r.width/2 - HLW/2,  cursor: 'ns-resize' } },
+          { wall: 'top',    style: { ...hBase, height: HANDLE_W, width: HLW,    top:  r.top             - HANDLE_W/2, left: r.left + r.width/2 - HLW/2,  cursor: 'ns-resize' } },
+        ].map(({ wall, style }) => /* @__PURE__ */ React.createElement("div", {
+          key: key + '_h_' + wall,
+          style,
+          onMouseDown: (e) => {
+            e.preventDefault(); e.stopPropagation();
+            const level = planSpec.levels[li];
+            const origRoom = (level.rooms || []).find(rx => rx.id === room.id);
+            const adjRoom  = findAdj(level, origRoom, wall);
+            setDragState({
+              levelIdx: li, roomId: room.id, adjId: adjRoom?.id || null, wall,
+              startClientX: e.clientX, startClientY: e.clientY,
+              origRoom: { ...origRoom }, origAdj: adjRoom ? { ...adjRoom } : null,
+              lastDx: 0, lastDy: 0,
+            });
+          }
+        }));
+
+        return [roomEl, labelEl, ...handles];
+      })
+    )
+  );
+};
+// ── END WALL EDITOR ───────────────────────────────────────────────────────────
+
 const DoorEditor = ({ planSpec, onUpdateDoors }) => {
   const [open, setOpen] = React.useState(false);
   const [selectedLevel, setSelectedLevel] = React.useState(0);
@@ -1659,6 +1830,23 @@ const DesignGenerator = ({ onOpenModal }) => {
       setStatus("plan-ready");
     }
   };
+  // Re-render SVG server-side from any planSpec (used by door editor + wall editor)
+  const rerenderSvg = async (newSpec) => {
+    try {
+      const r = await fetch('/api/plan/svg', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planSpec: newSpec }),
+      });
+      const d = await r.json();
+      if (d.success && d.svg) setPlanSvg(d.svg);
+    } catch {}
+  };
+  const handleUpdatePlan = async (newSpec) => {
+    pushToHistory(planSvg, planSpec);
+    setPlanSpec(newSpec);
+    await rerenderSvg(newSpec);
+  };
   const downloadBlueprint = async () => {
     try {
       const pngUrl = await svgToPngDataUrl(planSvg, {
@@ -1775,7 +1963,10 @@ const DesignGenerator = ({ onOpenModal }) => {
     "See Other Generations (",
     alternatives.length,
     ")"
-  ), /* @__PURE__ */ React.createElement("button", { onClick: () => setZoomImage(planSvg), className: "ml-auto mono text-[7px] uppercase tracking-widest text-mid hover:text-ink" }, "Expand")), footprintInfo && /* @__PURE__ */ React.createElement("div", { className: "flex gap-3 mb-2" }, /* @__PURE__ */ React.createElement("span", { className: "mono text-[7px] text-mid" }, "Best of ", 1 + alternatives.length, " - ", footprintInfo.widthFt, " x ", footprintInfo.heightFt, " ft - ratio ", footprintInfo.aspectRatio.toFixed(2), planScore !== null && /* @__PURE__ */ React.createElement("span", { className: "ml-2 text-blue" }, "score ", planScore, "/100"))), /* @__PURE__ */ React.createElement("div", { className: "w-full overflow-auto cursor-zoom-in bg-white rounded-[14px]", onClick: () => setZoomImage(planSvg), dangerouslySetInnerHTML: { __html: planSvg } })), /* @__PURE__ */ React.createElement("div", { className: "px-5" }, /* @__PURE__ */ React.createElement(PlanSummaryPanel, { planSpec })), /* @__PURE__ */ React.createElement(DoorEditor, { planSpec, onUpdateDoors: (levelIdx, newDoors) => { setPlanSpec(prev => { const newLevels = (prev.levels||[]).map((l,i) => i===levelIdx ? {...l, doors: newDoors} : l); return {...prev, levels: newLevels}; }); } }), /* @__PURE__ */ React.createElement(RefinementPanel, { planSpec, formData, refinementsLeft, refinementHistory, onRefine: handleRefine, isLoading, isUnlocked, onRequirePasskey: () => setShowGate(true) }), /* @__PURE__ */ React.createElement("div", { className: "p-5 border-t border-white/8", style: { background: "rgba(255,255,255,0.04)" } }, /* @__PURE__ */ React.createElement(Render3DPanel, { planSpec, formData, planSvg, galleryId, onRenderReady: (img) => setZoomImage(img), isUnlocked, onRequirePasskey: () => setShowGate(true) }))), showAlternatives && /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[200] flex items-center justify-center p-4", style: { background: "rgba(0,0,0,0.7)" } }, /* @__PURE__ */ React.createElement("div", { className: "bg-paper rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between p-4 border-b border-black/10" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "font-semibold text-sm" }, "Other Generated Plans"), /* @__PURE__ */ React.createElement("p", { className: "mono text-[8px] text-mid mt-0.5 uppercase tracking-widest" }, alternatives.length, " alternative footprints - click any to use it")), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowAlternatives(false), className: "w-8 h-8 flex items-center justify-center rounded hover:bg-black/8 text-mid hover:text-ink transition-colors" }, /* @__PURE__ */ React.createElement("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, /* @__PURE__ */ React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2", d: "M6 18L18 6M6 6l12 12" })))), /* @__PURE__ */ React.createElement("div", { className: "overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4" }, alternatives.map((alt, i) => /* @__PURE__ */ React.createElement(
+  ), /* @__PURE__ */ React.createElement("button", { onClick: () => setZoomImage(planSvg), className: "ml-auto mono text-[7px] uppercase tracking-widest text-mid hover:text-ink" }, "Expand")), footprintInfo && /* @__PURE__ */ React.createElement("div", { className: "flex gap-3 mb-2" }, /* @__PURE__ */ React.createElement("span", { className: "mono text-[7px] text-mid" }, "Best of ", 1 + alternatives.length, " - ", footprintInfo.widthFt, " x ", footprintInfo.heightFt, " ft - ratio ", footprintInfo.aspectRatio.toFixed(2), planScore !== null && /* @__PURE__ */ React.createElement("span", { className: "ml-2 text-blue" }, "score ", planScore, "/100"))), /* @__PURE__ */ React.createElement("div", { className: "w-full overflow-auto bg-white rounded-[14px]", style: { position: "relative" } },
+  /* @__PURE__ */ React.createElement("div", { className: "cursor-zoom-in", onClick: () => setZoomImage(planSvg), dangerouslySetInnerHTML: { __html: planSvg } }),
+  /* @__PURE__ */ React.createElement(WallEditor, { planSpec, planSvg, onUpdatePlan: handleUpdatePlan })
+)), /* @__PURE__ */ React.createElement("div", { className: "px-5" }, /* @__PURE__ */ React.createElement(PlanSummaryPanel, { planSpec })), /* @__PURE__ */ React.createElement(DoorEditor, { planSpec, onUpdateDoors: (levelIdx, newDoors) => { const newSpec = { ...planSpec, levels: (planSpec.levels||[]).map((l,i) => i===levelIdx ? {...l, doors: newDoors} : l) }; handleUpdatePlan(newSpec); } }), /* @__PURE__ */ React.createElement(RefinementPanel, { planSpec, formData, refinementsLeft, refinementHistory, onRefine: handleRefine, isLoading, isUnlocked, onRequirePasskey: () => setShowGate(true) }), /* @__PURE__ */ React.createElement("div", { className: "p-5 border-t border-white/8", style: { background: "rgba(255,255,255,0.04)" } }, /* @__PURE__ */ React.createElement(Render3DPanel, { planSpec, formData, planSvg, galleryId, onRenderReady: (img) => setZoomImage(img), isUnlocked, onRequirePasskey: () => setShowGate(true) }))), showAlternatives && /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[200] flex items-center justify-center p-4", style: { background: "rgba(0,0,0,0.7)" } }, /* @__PURE__ */ React.createElement("div", { className: "bg-paper rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between p-4 border-b border-black/10" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "font-semibold text-sm" }, "Other Generated Plans"), /* @__PURE__ */ React.createElement("p", { className: "mono text-[8px] text-mid mt-0.5 uppercase tracking-widest" }, alternatives.length, " alternative footprints - click any to use it")), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowAlternatives(false), className: "w-8 h-8 flex items-center justify-center rounded hover:bg-black/8 text-mid hover:text-ink transition-colors" }, /* @__PURE__ */ React.createElement("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, /* @__PURE__ */ React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2", d: "M6 18L18 6M6 6l12 12" })))), /* @__PURE__ */ React.createElement("div", { className: "overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4" }, alternatives.map((alt, i) => /* @__PURE__ */ React.createElement(
     "div",
     {
       key: i,
