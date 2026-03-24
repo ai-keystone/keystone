@@ -1063,19 +1063,25 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         type: "button",
         onClick: () => upd(field, val),
         className: "px-3 py-1.5 border rounded-sm text-[10px] font-semibold transition-all",
-        style: { borderColor: sel ? "var(--blue)" : "rgba(0,0,0,0.1)", background: sel ? "var(--ink)" : "white", color: sel ? "white" : "var(--ink)" }
+        style: {
+          borderColor: sel ? "var(--blue)" : "rgba(10,10,12,0.22)",
+          background: sel ? "var(--blue)" : "#fff",
+          color: sel ? "#fff" : "rgba(10,10,12,0.82)",
+          boxShadow: sel ? "none" : "inset 0 1px 0 rgba(255,255,255,0.7)"
+        }
       },
       label
     );
   }));
-  const Lbl = ({ children }) => /* @__PURE__ */ React.createElement("label", { className: "mono text-[7px] uppercase tracking-widest text-mid block mb-1.5" }, children);
+  const Lbl = ({ children }) => /* @__PURE__ */ React.createElement("label", { style: { fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: "0.2em", textTransform: "uppercase", color: "rgba(10,10,12,0.6)", display: "block", marginBottom: 6 } }, children);
   return /* @__PURE__ */ React.createElement(AnimatePresence, null, isOpen && /* @__PURE__ */ React.createElement(
     motion.div,
     {
       initial: { opacity: 0 },
       animate: { opacity: 1 },
       exit: { opacity: 0 },
-      className: "fixed inset-0 z-[150] flex items-end md:items-center justify-center bg-black/88 backdrop-blur-sm p-0 md:p-6"
+      className: "fixed inset-0 z-[150] flex items-end md:items-center justify-center p-0 md:p-6",
+      style: { background: "rgba(10,10,12,0.82)", backdropFilter: "blur(6px)" }
     },
     /* @__PURE__ */ React.createElement(
       motion.div,
@@ -1084,49 +1090,50 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         animate: { y: 0, opacity: 1 },
         exit: { y: 40, opacity: 0 },
         transition: { type: "spring", damping: 26 },
-        className: "bg-paper electric-border w-full md:max-w-lg rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden"
+        className: "w-full md:max-w-lg rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden",
+        style: { background: "#fff" }
       },
-      /* @__PURE__ */ React.createElement("div", { style: { height: "3px", background: "linear-gradient(90deg,var(--blue),var(--red))" } }),
-      /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onClose, "aria-label": "Close render options", className: "absolute top-4 right-4 w-8 h-8 bg-black/6 hover:bg-black/12 rounded-full flex items-center justify-center z-10" }, /* @__PURE__ */ React.createElement(CloseIcon, { className: "w-4 h-4" })),
-      /* @__PURE__ */ React.createElement("div", { className: "p-6 overflow-y-auto", style: { maxHeight: "85vh" } }, /* @__PURE__ */ React.createElement("span", { className: "badge mb-3 inline-block" }, "3D Render Options"), /* @__PURE__ */ React.createElement("h2", { className: "cg text-2xl italic mb-1" }, "Customize Your Render."), /* @__PURE__ */ React.createElement("p", { className: "text-mid text-[11px] mb-5 leading-relaxed" }, "These details help Gemini AI generate a more accurate and context-aware exterior render."), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Project ZIP Code"), /* @__PURE__ */ React.createElement(
-        "input",
-        {
-          type: "text",
-          placeholder: "e.g. 78701",
-          maxLength: "10",
-          value: data.zipCode,
-          onChange: (e) => upd("zipCode", e.target.value),
-          style: { maxWidth: "180px" }
-        }
-      ), /* @__PURE__ */ React.createElement("p", { className: "text-[9px] text-mid/60 mt-1" }, "Helps set regional context - climate, terrain, neighborhood character")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Exterior Style"), /* @__PURE__ */ React.createElement(BtnRow, { field: "exteriorStyle", options: [
-        { val: "Craftsman (Wood & Stone)", label: "Craftsman" },
-        { val: "Modern Farmhouse (Board & Batten)", label: "Farmhouse" },
-        { val: "Traditional Colonial (Brick)", label: "Colonial" },
-        { val: "Contemporary Modern (Concrete)", label: "Modern" },
-        { val: "Mediterranean (Stucco & Tile)", label: "Mediterranean" },
-        { val: "Rustic Cabin (Log & Stone)", label: "Rustic" }
-      ] }), /* @__PURE__ */ React.createElement("p", { className: "text-[9px] text-mid/60 mt-1" }, "Leave blank to use your plan survey style")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Roof Style"), /* @__PURE__ */ React.createElement(BtnRow, { field: "roofStyle", options: ["Gabled", "Hip Roof", "Flat Roof", "Metal Standing Seam", "Terracotta Tile", "Cathedral / Vaulted"] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Season / Vegetation"), /* @__PURE__ */ React.createElement(BtnRow, { field: "season", options: ["Spring", "Summer", "Fall", "Winter (Snow)"] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Time of Day / Lighting"), /* @__PURE__ */ React.createElement(BtnRow, { field: "timeOfDay", options: ["Sunrise", "Midday", "Golden Hour", "Overcast", "Night"] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Surrounding Environment"), /* @__PURE__ */ React.createElement(BtnRow, { field: "surroundings", options: [
-        { val: "Suburban neighborhood", label: "Suburban" },
-        { val: "Wooded forest", label: "Wooded" },
-        { val: "Desert arid landscape", label: "Desert" },
-        { val: "Tropical lush", label: "Tropical" },
-        { val: "Snow and mountains", label: "Mountain" },
-        { val: "Ocean or lake waterfront", label: "Waterfront" }
-      ] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Landscaping"), /* @__PURE__ */ React.createElement(BtnRow, { field: "landscaping", options: [
-        "Manicured lawn",
-        "Native plantings",
-        "Desert xeriscaping",
-        "Formal hedges",
-        "Wildflower meadow",
-        "Minimal / gravel"
-      ] }))), /* @__PURE__ */ React.createElement(
-        "button",
-        {
-          onClick: () => onSubmit(data),
-          className: "w-full mt-6 py-3.5 bg-ink text-white mono text-[10px] uppercase tracking-[0.18em] font-bold hover:bg-blue transition-colors rounded-sm"
-        },
-        "Generate Exterior Study"
-      ))
+      /* @__PURE__ */ React.createElement("div", { style: { height: "3px", background: "linear-gradient(90deg,var(--blue),var(--red))", flexShrink: 0 } }),
+      /* @__PURE__ */ React.createElement("button", { type: "button", onClick: onClose, "aria-label": "Close render options", style: { position: "absolute", top: 14, right: 14, width: 32, height: 32, background: "rgba(10,10,12,0.08)", border: "none", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", zIndex: 10 } }, /* @__PURE__ */ React.createElement(CloseIcon, { className: "w-4 h-4" })),
+      /* @__PURE__ */ React.createElement("div", { className: "p-6 overflow-y-auto", style: { maxHeight: "85vh" } },
+        /* @__PURE__ */ React.createElement("span", { style: { display: "inline-block", padding: "4px 10px", background: "rgba(27,79,130,0.1)", border: "1px solid rgba(27,79,130,0.22)", borderRadius: 100, fontFamily: "'Space Mono',monospace", fontSize: 8, letterSpacing: "0.22em", textTransform: "uppercase", color: "var(--blue)", marginBottom: 12 } }, "3D Render Options"),
+        /* @__PURE__ */ React.createElement("h2", { className: "cg text-2xl italic mb-1", style: { color: "var(--ink)" } }, "Customize Your Render."),
+        /* @__PURE__ */ React.createElement("p", { style: { fontSize: 12, color: "rgba(10,10,12,0.55)", marginBottom: 20, lineHeight: 1.6 } }, "These details help Gemini AI generate a more accurate exterior render."),
+        /* @__PURE__ */ React.createElement("div", { className: "space-y-4" },
+          /* @__PURE__ */ React.createElement("div", null,
+            /* @__PURE__ */ React.createElement(Lbl, null, "Project ZIP Code"),
+            /* @__PURE__ */ React.createElement("input", { type: "text", placeholder: "e.g. 78701", maxLength: "10", value: data.zipCode, onChange: (e) => upd("zipCode", e.target.value), style: { maxWidth: "180px", background: "#fff", color: "var(--ink)", borderColor: "rgba(10,10,12,0.22)" } }),
+            /* @__PURE__ */ React.createElement("p", { style: { fontSize: 10, color: "rgba(10,10,12,0.45)", marginTop: 4 } }, "Helps set regional context — climate, terrain, neighborhood character")
+          ),
+          /* @__PURE__ */ React.createElement("div", null,
+            /* @__PURE__ */ React.createElement(Lbl, null, "Exterior Style"),
+            /* @__PURE__ */ React.createElement(BtnRow, { field: "exteriorStyle", options: [
+              { val: "Craftsman (Wood & Stone)", label: "Craftsman" },
+              { val: "Modern Farmhouse (Board & Batten)", label: "Farmhouse" },
+              { val: "Traditional Colonial (Brick)", label: "Colonial" },
+              { val: "Contemporary Modern (Concrete)", label: "Modern" },
+              { val: "Mediterranean (Stucco & Tile)", label: "Mediterranean" },
+              { val: "Rustic Cabin (Log & Stone)", label: "Rustic" }
+            ] }),
+            /* @__PURE__ */ React.createElement("p", { style: { fontSize: 10, color: "rgba(10,10,12,0.45)", marginTop: 4 } }, "Leave blank to use your plan survey style")
+          ),
+          /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Roof Style"), /* @__PURE__ */ React.createElement(BtnRow, { field: "roofStyle", options: ["Gabled", "Hip Roof", "Flat Roof", "Metal Standing Seam", "Terracotta Tile", "Cathedral / Vaulted"] })),
+          /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Season / Vegetation"), /* @__PURE__ */ React.createElement(BtnRow, { field: "season", options: ["Spring", "Summer", "Fall", "Winter (Snow)"] })),
+          /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Time of Day / Lighting"), /* @__PURE__ */ React.createElement(BtnRow, { field: "timeOfDay", options: ["Sunrise", "Midday", "Golden Hour", "Overcast", "Night"] })),
+          /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Surrounding Environment"), /* @__PURE__ */ React.createElement(BtnRow, { field: "surroundings", options: [
+            { val: "Suburban neighborhood", label: "Suburban" },
+            { val: "Wooded forest", label: "Wooded" },
+            { val: "Desert arid landscape", label: "Desert" },
+            { val: "Tropical lush", label: "Tropical" },
+            { val: "Snow and mountains", label: "Mountain" },
+            { val: "Ocean or lake waterfront", label: "Waterfront" }
+          ] })),
+          /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Landscaping"), /* @__PURE__ */ React.createElement(BtnRow, { field: "landscaping", options: [
+            "Manicured lawn", "Native plantings", "Desert xeriscaping", "Formal hedges", "Wildflower meadow", "Minimal / gravel"
+          ] }))
+        ),
+        /* @__PURE__ */ React.createElement("button", { onClick: () => onSubmit(data), style: { width: "100%", marginTop: 24, padding: "14px 0", background: "var(--blue)", color: "#fff", border: "none", borderRadius: 4, fontFamily: "'Space Mono',monospace", fontSize: 10, textTransform: "uppercase", letterSpacing: "0.18em", fontWeight: 700, cursor: "pointer" }, onMouseOver: (e) => e.currentTarget.style.background = "var(--ink)", onMouseOut: (e) => e.currentTarget.style.background = "var(--blue)" }, "Generate Exterior Study")
+      )
     )
   ));
 };
