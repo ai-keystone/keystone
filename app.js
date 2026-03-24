@@ -520,13 +520,45 @@ const REFINEMENT_SUGGESTIONS = [
   "Make the garage wider",
   "Expand the dining room"
 ];
+// ── SHARED CONSTANTS (used by WallEditor, PlanEditorModal, exportDxf) ────────
+const PLAN_ROOM_COLORS = {
+  living_room:'#EEF4FB',dining_room:'#F0F8EE',kitchen:'#FFF8EE',
+  primary_bedroom:'#F8F0F8',primary_bathroom:'#EEF8FB',bedroom:'#F5F0FB',
+  guest_bedroom:'#F5F0FB',bathroom:'#EEF8FB',powder_room:'#EEF8FB',
+  garage:'#F0F0F0',stairs:'#F5F5DC',hallway:'#F9F9F9',entry:'#FFFEF0',
+  mudroom:'#F2EDE4',laundry:'#EDF5F0',study:'#FFF5F0',gaming_room:'#F0F0FF',
+  gym:'#F0FFF0',library:'#FFF8EE',movie_room:'#F0EEF8',storage:'#F5F5F5',
+  music_room:'#FFF0F8',wine_cellar:'#F5F0E8',office:'#F0F5FF',
+};
+const ROOM_TYPE_OPTIONS = [
+  {type:'living_room',label:'Living Room'},{type:'dining_room',label:'Dining Room'},
+  {type:'kitchen',label:'Kitchen'},{type:'bedroom',label:'Bedroom'},
+  {type:'primary_bedroom',label:'Primary Bedroom'},{type:'guest_bedroom',label:'Guest Bedroom'},
+  {type:'bathroom',label:'Bathroom'},{type:'primary_bathroom',label:'Primary Bath'},
+  {type:'powder_room',label:'Powder Room'},{type:'hallway',label:'Hallway'},
+  {type:'entry',label:'Entry'},{type:'study',label:'Study'},
+  {type:'office',label:'Office'},{type:'gym',label:'Gym'},
+  {type:'library',label:'Library'},{type:'gaming_room',label:'Gaming Room'},
+  {type:'movie_room',label:'Home Theater'},{type:'mudroom',label:'Mudroom'},
+  {type:'laundry',label:'Laundry'},{type:'storage',label:'Storage'},
+  {type:'wine_cellar',label:'Wine Cellar'},{type:'music_room',label:'Music Room'},
+];
 // ── WALL EDITOR ──────────────────────────────────────────────────────────────
-// Interactive wall-movement overlay. Renders transparent room highlight divs
-// over the plan SVG at 1:1 pixel scale. Click a room to select it; drag any
-// of its four wall handles to resize (snaps to 2 ft grid). The adjacent room
-// on the same wall shrinks/grows to compensate. On mouseup, calls onUpdatePlan.
-const WallEditor = ({ planSpec, planSvg, onUpdatePlan }) => {
-  const [selectedKey, setSelectedKey] = React.useState(null);
+const WallEditor = ({ planSpec, planSvg, onUpdatePlan, onRoomSelect, externalSelectedKey }) => {
+  const [internalKey, setInternalKey] = React.useState(null);
+  const selectedKey = externalSelectedKey !== undefined ? externalSelectedKey : internalKey;
+  const setSelectedKey = (k) => {
+    setInternalKey(k);
+    if (onRoomSelect) {
+      if (!k) { onRoomSelect(null, null, null); return; }
+      const [li, ...rest] = k.split('_');
+      const roomId = rest.join('_');
+      const lvl = (planSpec.levels || [])[parseInt(li)];
+      const room = (lvl?.rooms || []).find(r => r.id === roomId);
+      onRoomSelect(k, parseInt(li), room);
+    }
+  };
+  const [typePickerKey, setTypePickerKey] = React.useState(null);
   const [dragState, setDragState] = React.useState(null);
   const [previewSpec, setPreviewSpec] = React.useState(null);
 
@@ -623,12 +655,40 @@ const WallEditor = ({ planSpec, planSvg, onUpdatePlan }) => {
   const svgH = vbMatch ? parseFloat(vbMatch[2]) : 1000;
   const activeSpec = previewSpec || planSpec;
 
+  // Build preview SVG string showing all rooms during drag (instant client-side feedback)
+  const buildPreviewSvg = (spec) => {
+    const parts = [`<rect width="${svgW}" height="${svgH}" fill="#F9F8F4"/>`];
+    (spec.levels || []).forEach((lvl, li) => {
+      const startY = getLevelStartY(li);
+      (lvl.rooms || []).forEach(room => {
+        const rx = PAD + room.x * PX_FT, ry = startY + room.y * PX_FT;
+        const rw = room.w * PX_FT, rh = room.h * PX_FT;
+        const fill = PLAN_ROOM_COLORS[room.type] || '#fff';
+        const lbl = (room.label || room.type || '').replace(/_/g,' ').toUpperCase();
+        const fs = Math.min(11, Math.max(7, Math.min(rw, rh) * 0.08));
+        parts.push(`<rect x="${rx}" y="${ry}" width="${rw}" height="${rh}" fill="${fill}" stroke="#2c2c2e" stroke-width="3"/>`);
+        parts.push(`<text x="${rx+rw/2}" y="${ry+rh/2-5}" text-anchor="middle" dominant-baseline="middle" font-size="${fs}" fill="#444" font-family="Arial,sans-serif">${lbl}</text>`);
+        parts.push(`<text x="${rx+rw/2}" y="${ry+rh/2+fs}" text-anchor="middle" dominant-baseline="middle" font-size="${fs*0.75}" fill="#888" font-family="monospace">${room.w}'\xD7${room.h}'</text>`);
+      });
+    });
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">${parts.join('')}</svg>`;
+  };
+
   const HANDLE_W = 10;
 
   return /* @__PURE__ */ React.createElement("div", {
     style: { position: 'absolute', top: 0, left: 0, width: svgW, height: svgH, pointerEvents: 'none' },
-    onClick: () => setSelectedKey(null),
+    onClick: () => { setSelectedKey(null); setTypePickerKey(null); },
   },
+
+    // ── Live preview SVG (shown during drag) ──────────────────────────────
+    dragState && previewSpec && /* @__PURE__ */ React.createElement("div", {
+      key: '__preview__',
+      style: { position: 'absolute', top: 0, left: 0, width: svgW, height: svgH, pointerEvents: 'none' },
+      dangerouslySetInnerHTML: { __html: buildPreviewSvg(previewSpec) },
+    }),
+
+    // ── Room overlays, handles, labels ────────────────────────────────────
     (activeSpec.levels || []).flatMap((lvl, li) =>
       (lvl.rooms || []).flatMap(room => {
         const key = `${li}_${room.id}`;
@@ -641,25 +701,61 @@ const WallEditor = ({ planSpec, planSvg, onUpdatePlan }) => {
           key,
           style: {
             position: 'absolute', left: r.left, top: r.top, width: r.width, height: r.height,
-            pointerEvents: 'all', cursor: 'pointer', boxSizing: 'border-box',
+            pointerEvents: dragState ? 'none' : 'all', cursor: 'pointer', boxSizing: 'border-box',
             border: isSel ? '2px solid rgba(27,79,130,0.85)' : '1.5px solid transparent',
             borderRadius: 2, background: isSel ? 'rgba(27,79,130,0.07)' : 'transparent',
           },
-          onClick: (e) => { e.stopPropagation(); setSelectedKey(isSel ? null : key); }
+          onClick: (e) => { e.stopPropagation(); if (!dragState) { setSelectedKey(isSel ? null : key); setTypePickerKey(null); } }
         });
 
         if (!isSel) return [roomEl];
 
-        // Label tooltip above selected room
+        // Label tooltip + "Change Type" toggle
+        const showPicker = typePickerKey === key;
         const labelEl = /* @__PURE__ */ React.createElement("div", {
           key: key + '_lbl',
           style: {
-            position: 'absolute', left: r.left + r.width / 2, top: r.top - 22,
-            transform: 'translateX(-50%)', pointerEvents: 'none', whiteSpace: 'nowrap',
-            background: 'rgba(27,79,130,0.92)', color: '#fff', fontSize: 9,
-            padding: '2px 7px', borderRadius: 3, fontFamily: 'monospace', zIndex: 99,
-          }
-        }, (room.label || room.type || room.id).replace(/_/g, ' '), ' \u2014 ', room.w, "\u2019\u00D7", room.h, "\u2019");
+            position: 'absolute', left: r.left + r.width / 2, top: r.top - (showPicker ? 200 : 28),
+            transform: 'translateX(-50%)', pointerEvents: 'all', zIndex: 120,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+          },
+          onClick: (e) => e.stopPropagation(),
+        },
+          // Info badge
+          /* @__PURE__ */ React.createElement("div", {
+            style: { display:'flex', alignItems:'center', gap:6, background:'rgba(27,79,130,0.92)', color:'#fff', fontSize:9, padding:'2px 8px 2px 6px', borderRadius:3, fontFamily:'monospace', whiteSpace:'nowrap' }
+          },
+            (room.label || room.type || room.id).replace(/_/g,' '), ' \u2014 ', room.w, "\u2019\xD7", room.h, "\u2019",
+            /* @__PURE__ */ React.createElement("button", {
+              type:'button',
+              style:{ background:'rgba(255,255,255,0.18)', border:'none', color:'#fff', fontSize:8, cursor:'pointer', borderRadius:2, padding:'1px 5px', marginLeft:4 },
+              onClick:(e)=>{ e.stopPropagation(); setTypePickerKey(showPicker ? null : key); }
+            }, showPicker ? '\u25B2 Close' : 'Change Type')
+          ),
+          // Type picker grid
+          showPicker && /* @__PURE__ */ React.createElement("div", {
+            style:{ background:'rgba(10,10,12,0.96)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:6, padding:'8px', display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:3, width:260 }
+          },
+            ROOM_TYPE_OPTIONS.map(opt => /* @__PURE__ */ React.createElement("button", {
+              key: opt.type, type:'button',
+              style:{
+                background: room.type === opt.type ? 'rgba(27,79,130,0.85)' : 'rgba(255,255,255,0.07)',
+                border: '1px solid rgba(255,255,255,0.1)', color:'#f4efe6', fontSize:7,
+                cursor:'pointer', borderRadius:3, padding:'3px 4px', textAlign:'center', lineHeight:1.2,
+              },
+              onClick:(e)=>{
+                e.stopPropagation();
+                if (onUpdatePlan) {
+                  const newSpec = { ...planSpec, levels: planSpec.levels.map((lv,lx) =>
+                    lx !== li ? lv : { ...lv, rooms: lv.rooms.map(rx => rx.id===room.id ? {...rx, type:opt.type, label:opt.label} : rx) }
+                  )};
+                  onUpdatePlan(newSpec);
+                }
+                setTypePickerKey(null);
+              }
+            }, opt.label))
+          )
+        );
 
         const hBase = { position: 'absolute', pointerEvents: 'all', background: '#1B4F82', borderRadius: 3, opacity: 0.88, zIndex: 10 };
         const handles = [
@@ -668,8 +764,7 @@ const WallEditor = ({ planSpec, planSvg, onUpdatePlan }) => {
           { wall: 'bottom', style: { ...hBase, height: HANDLE_W, width: HLW,    top:  r.top  + r.height - HANDLE_W/2, left: r.left + r.width/2 - HLW/2,  cursor: 'ns-resize' } },
           { wall: 'top',    style: { ...hBase, height: HANDLE_W, width: HLW,    top:  r.top             - HANDLE_W/2, left: r.left + r.width/2 - HLW/2,  cursor: 'ns-resize' } },
         ].map(({ wall, style }) => /* @__PURE__ */ React.createElement("div", {
-          key: key + '_h_' + wall,
-          style,
+          key: key + '_h_' + wall, style,
           onMouseDown: (e) => {
             e.preventDefault(); e.stopPropagation();
             const level = planSpec.levels[li];
@@ -778,6 +873,45 @@ const DoorEditor = ({ planSpec, onUpdateDoors }) => {
     )
   );
 };
+// ── PLAN EDITOR MODAL ─────────────────────────────────────────────────────────
+const PlanEditorModal = ({ planSpec, planSvg, onUpdatePlan, onClose }) => {
+  if (!planSpec || !planSvg) return null;
+  return React.createElement("div", {
+    style: { position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(10,10,12,0.97)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }
+  },
+    // Header bar
+    React.createElement("div", {
+      style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)', flexShrink: 0, background: 'rgba(255,255,255,0.03)' }
+    },
+      React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 14 } },
+        React.createElement("span", { style: { color: '#F4EFE6', fontFamily: '"Cormorant Garamond",serif', fontSize: 20, letterSpacing: '-0.04em', textTransform: 'uppercase', fontStyle: 'italic' } }, "Plan Editor"),
+        React.createElement("span", { style: { color: 'rgba(244,239,230,0.35)', fontFamily: 'monospace', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.18em' } }, "Click room to select \u00B7 Drag handles to resize \u00B7 Change type from tooltip")
+      ),
+      React.createElement("button", {
+        type: 'button', onClick: onClose,
+        style: { display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(244,239,230,0.7)', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.14)', borderRadius: 6, padding: '5px 14px', cursor: 'pointer', fontFamily: 'monospace', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.15em' }
+      }, "Close \u2715")
+    ),
+    // Scrollable plan area with WallEditor overlay
+    React.createElement("div", { style: { flex: 1, overflow: 'auto', padding: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start' } },
+      React.createElement("div", { style: { background: '#fff', borderRadius: 10, display: 'inline-block', position: 'relative', boxShadow: '0 8px 40px rgba(0,0,0,0.5)', flexShrink: 0 } },
+        React.createElement("div", { dangerouslySetInnerHTML: { __html: planSvg } }),
+        React.createElement(WallEditor, { planSpec, planSvg, onUpdatePlan })
+      )
+    ),
+    // Door editor panel fixed at bottom
+    React.createElement("div", { style: { borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(10,10,12,0.6)', flexShrink: 0, maxHeight: 280, overflow: 'auto' } },
+      React.createElement(DoorEditor, {
+        planSpec,
+        onUpdateDoors: (levelIdx, newDoors) => {
+          const newSpec = { ...planSpec, levels: (planSpec.levels||[]).map((l,i) => i===levelIdx ? {...l, doors: newDoors} : l) };
+          onUpdatePlan(newSpec);
+        }
+      })
+    )
+  );
+};
+// ── END PLAN EDITOR MODAL ─────────────────────────────────────────────────────
 const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistory, onRefine, isLoading, isUnlocked, onRequirePasskey }) => {
   const [custom, setCustom] = React.useState("");
   const debounceRef = React.useRef(null);
@@ -1695,6 +1829,7 @@ const DesignGenerator = ({ onOpenModal }) => {
   const historyIdxRef = useRef(-1);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  const [showEditor, setShowEditor] = useState(false);
   useEffect(() => {
     try {
       const s = JSON.parse(localStorage.getItem("keystone_unlock") || "null");
@@ -1884,38 +2019,183 @@ const DesignGenerator = ({ onOpenModal }) => {
     if (!planSpec) return;
     const p = [];
     const e = (code, val) => { p.push(String(code)); p.push(String(val)); };
-    const line3d = (layer, ax, ay, bx, by) => {
+    // LINE entity helper
+    const ln = (layer, ax, ay, bx, by) => {
       e(0,"LINE"); e(8,layer);
-      e(10,ax.toFixed(3)); e(20,ay.toFixed(3)); e(30,"0.0");
-      e(11,bx.toFixed(3)); e(21,by.toFixed(3)); e(31,"0.0");
+      e(10,ax.toFixed(4)); e(20,ay.toFixed(4)); e(30,"0.0");
+      e(11,bx.toFixed(4)); e(21,by.toFixed(4)); e(31,"0.0");
     };
-    // R12 header — most compatible, opens in all AutoCAD versions and DXF viewers
+    // TEXT entity helper (centered)
+    const txt = (layer, x, y, h, str) => {
+      e(0,"TEXT"); e(8,layer);
+      e(10,x.toFixed(4)); e(20,y.toFixed(4)); e(30,"0.0");
+      e(40,h.toFixed(4)); e(1,String(str));
+      e(72,1); e(11,x.toFixed(4)); e(21,y.toFixed(4)); e(31,"0.0");
+    };
+    // ARC entity helper (angles in degrees)
+    const arc = (layer, cx, cy, r, startDeg, endDeg) => {
+      e(0,"ARC"); e(8,layer);
+      e(10,cx.toFixed(4)); e(20,cy.toFixed(4)); e(30,"0.0");
+      e(40,r.toFixed(4)); e(50,startDeg.toFixed(2)); e(51,endDeg.toFixed(2));
+    };
+    const EXT_W = 0.5;   // exterior wall thickness ~15cm in feet
+    const INT_W = 0.33;  // interior wall thickness ~10cm in feet
+    const EPS   = 0.15;
+    const WIN_W = 3.0;   // default window width ft (3ft unless we know better)
+    const DOOR_W = 3.0;  // door leaf width ft
+    // R12 header
     e(0,"SECTION"); e(2,"HEADER");
     e(9,"$ACADVER"); e(1,"AC1009");
     e(9,"$INSUNITS"); e(70,2);
+    e(9,"$MEASUREMENT"); e(70,0);
     e(0,"ENDSEC");
     e(0,"SECTION"); e(2,"ENTITIES");
     (planSpec.levels||[]).forEach((level, li) => {
-      const yOff = li * ((Number(planSpec.levels[0]?.height)||40) + 10);
-      (level.rooms||[]).forEach(room => {
-        const x1=Number(room.x)||0, y1=yOff+(Number(room.y)||0);
-        const x2=x1+(Number(room.w)||0), y2=y1+(Number(room.h)||0);
-        line3d("ROOMS",x1,y1,x2,y1);
-        line3d("ROOMS",x2,y1,x2,y2);
-        line3d("ROOMS",x2,y2,x1,y2);
-        line3d("ROOMS",x1,y2,x1,y1);
-        const cx=((x1+x2)/2).toFixed(3), cy=((y1+y2)/2).toFixed(3);
-        const lbl=(room.label||room.type||"").replace(/_/g," ");
-        e(0,"TEXT"); e(8,"LABELS");
-        e(10,cx); e(20,cy); e(30,"0.0"); e(40,"1.5"); e(1,lbl);
-        e(0,"TEXT"); e(8,"DIMS");
-        e(10,cx); e(20,(parseFloat(cy)-2).toFixed(3)); e(30,"0.0"); e(40,"0.8"); e(1,room.w+"'x"+room.h+"'");
+      const yOff = li * ((Number(planSpec.levels[0]?.height)||40) + 18);
+      const rooms = level.rooms || [];
+      const isShared = (room, side) => rooms.some(o => {
+        if (o.id === room.id) return false;
+        const rx2=room.x+room.w, ry2=room.y+room.h, ox2=o.x+o.w, oy2=o.y+o.h;
+        if (side==='right')  return Math.abs(o.x  - rx2)    < EPS && Math.min(ry2,oy2)-Math.max(room.y,o.y) > EPS;
+        if (side==='left')   return Math.abs(ox2  - room.x) < EPS && Math.min(ry2,oy2)-Math.max(room.y,o.y) > EPS;
+        if (side==='bottom') return Math.abs(o.y  - ry2)    < EPS && Math.min(rx2,ox2)-Math.max(room.x,o.x) > EPS;
+        if (side==='top')    return Math.abs(oy2  - room.y) < EPS && Math.min(rx2,ox2)-Math.max(room.x,o.x) > EPS;
+        return false;
       });
+      // Draw room walls with thickness
+      rooms.forEach(room => {
+        const x1=room.x, y1=yOff+room.y, x2=x1+room.w, y2=y1+room.h;
+        const sides = ['top','right','bottom','left'];
+        // Map side → its two endpoint pairs (inner line)
+        const innerLines = { top:[x1,y1,x2,y1], right:[x2,y1,x2,y2], bottom:[x2,y2,x1,y2], left:[x1,y2,x1,y1] };
+        sides.forEach(side => {
+          const shared = isShared(room, side);
+          const layer = shared ? "WALLS_INT" : "WALLS_EXT";
+          const [ax,ay,bx,by] = innerLines[side];
+          ln(layer, ax, ay, bx, by); // inner face
+          // Outer parallel line for wall thickness
+          const t = shared ? INT_W : EXT_W;
+          if (side==='top')    ln(layer, ax, ay-t, bx, by-t);
+          if (side==='bottom') ln(layer, ax, ay+t, bx, by+t);
+          if (side==='left')   ln(layer, ax-t, ay, bx-t, by);
+          if (side==='right')  ln(layer, ax+t, ay, bx+t, by);
+        });
+        // Room label (smaller text: 0.5ft height)
+        const cx=(x1+x2)/2, cy=(y1+y2)/2;
+        const lbl=(room.label||room.type||"").replace(/_/g," ").toUpperCase();
+        txt("LABELS", cx, cy+0.4, 0.5, lbl);
+        txt("LABELS", cx, cy-0.5, 0.32, room.w+"'x"+room.h+"'");
+        // Stairs: tread lines + direction arrow
+        if (room.type==='stairs' || room.type==='staircase') {
+          const tCount = Math.max(3, Math.floor(room.h / 0.75));
+          for (let t=1; t<tCount; t++) {
+            const ty = y1 + (t/tCount)*(y2-y1);
+            ln("STAIRS", x1+0.2, ty, x2-0.2, ty);
+          }
+          // UP arrow at top of stair well
+          ln("STAIRS", cx, y1+0.4, cx, y1+1.8);
+          ln("STAIRS", cx, y1+0.4, cx-0.35, y1+1.0);
+          ln("STAIRS", cx, y1+0.4, cx+0.35, y1+1.0);
+          txt("STAIRS", cx, y1+1.2, 0.38, "UP");
+          txt("STAIRS", cx, y2-0.9, 0.38, "DN");
+        }
+      });
+      // Draw doors: line (door leaf) + arc (swing)
       (level.doors||[]).forEach(door => {
         const dx=Number(door.x)||0, dy=yOff+(Number(door.y)||0);
-        const isH=door.dir==="horizontal";
-        line3d("DOORS", dx-(isH?1.5:0), dy-(isH?0:1.5), dx+(isH?1.5:0), dy+(isH?0:1.5));
+        if (door.dir==='horizontal') {
+          // Door in horizontal wall: leaf goes down, hinge on left
+          const hx = dx - DOOR_W/2;
+          ln("DOORS", hx, dy, hx+DOOR_W, dy);       // door leaf closed
+          arc("DOORS", hx, dy, DOOR_W, 0, 90);        // swing arc
+        } else {
+          // Door in vertical wall: hinge at top, swing right
+          const hy = dy - DOOR_W/2;
+          ln("DOORS", dx, hy, dx, hy+DOOR_W);         // door leaf closed
+          arc("DOORS", dx, hy, DOOR_W, 270, 360);      // swing arc
+        }
       });
+      // Draw windows: 3 parallel lines in wall opening
+      (level.windows||[]).forEach(win => {
+        const wx=Number(win.x)||0, wy=yOff+(Number(win.y)||0);
+        if (win.dir==='horizontal') {
+          // Window in horizontal (top/bottom) wall — 3 lines left-right
+          const half = WIN_W/2;
+          ln("WINDOWS", wx-half, wy-0.2, wx+half, wy-0.2);
+          ln("WINDOWS", wx-half, wy,     wx+half, wy);
+          ln("WINDOWS", wx-half, wy+0.2, wx+half, wy+0.2);
+        } else {
+          // Window in vertical (left/right) wall — 3 lines up-down
+          const half = WIN_W/2;
+          ln("WINDOWS", wx-0.2, wy-half, wx-0.2, wy+half);
+          ln("WINDOWS", wx,     wy-half, wx,     wy+half);
+          ln("WINDOWS", wx+0.2, wy-half, wx+0.2, wy+half);
+        }
+      });
+      // ── 3-Level Dimension Chains ────────────────────────────────────────
+      if (rooms.length) {
+        const allX = rooms.flatMap(r=>[r.x, r.x+r.w]);
+        const allY = rooms.flatMap(r=>[yOff+r.y, yOff+r.y+r.h]);
+        const minX=Math.min(...allX), maxX=Math.max(...allX);
+        const minY=Math.min(...allY), maxY=Math.max(...allY);
+        // Unique sorted x positions (room boundaries) for horizontal dim chains
+        const xBreaks = [...new Set(allX)].sort((a,b)=>a-b);
+        // Unique sorted y positions for vertical dim chains
+        const yBreaks = [...new Set(allY)].sort((a,b)=>a-b);
+        const TICK = 0.28;
+        const TH = 0.4; // dim text height
+        // Draw a horizontal dim chain at y=yDim, for positions array xs
+        const hChain = (xs, yDim) => {
+          xs.forEach(x => { ln("DIMS", x, yDim-TICK, x, yDim+TICK); });
+          for (let i=0; i<xs.length-1; i++) {
+            const a=xs[i], b=xs[i+1];
+            if (b-a < 0.01) return;
+            ln("DIMS", a, yDim, b, yDim);
+            txt("DIMS", (a+b)/2, yDim+0.5, TH, (b-a).toFixed(1)+"'");
+          }
+        };
+        // Draw a vertical dim chain at x=xDim, for positions array ys
+        const vChain = (ys, xDim) => {
+          ys.forEach(y => { ln("DIMS", xDim-TICK, y, xDim+TICK, y); });
+          for (let i=0; i<ys.length-1; i++) {
+            const a=ys[i], b=ys[i+1];
+            if (b-a < 0.01) return;
+            ln("DIMS", xDim, a, xDim, b);
+            txt("DIMS", xDim+0.55, (a+b)/2, TH, (b-a).toFixed(1)+"'");
+          }
+        };
+        // BOTTOM EDGE (door/window marks L1, room widths L2, overall L3)
+        const dOff1=3, dOff2=5.5, dOff3=8.5;
+        // L1: tick at every door/window x position along bottom of building
+        const botOpenings = [
+          ...(level.doors||[]).filter(d=>d.dir==='horizontal').map(d=>d.x),
+          ...(level.windows||[]).filter(w=>w.dir==='horizontal').map(w=>w.x),
+        ].filter(x=>x>=minX&&x<=maxX);
+        if (botOpenings.length) {
+          const xs1 = [...new Set([minX, ...botOpenings, maxX])].sort((a,b)=>a-b);
+          hChain(xs1, maxY+dOff1);
+        }
+        // L2: room widths along bottom
+        hChain(xBreaks, maxY+dOff2);
+        // L3: overall width
+        hChain([minX, maxX], maxY+dOff3);
+        // RIGHT EDGE (door/window marks L1, room heights L2, overall L3)
+        const rOff1=3, rOff2=5.5, rOff3=8.5;
+        const rightOpenings = [
+          ...(level.doors||[]).filter(d=>d.dir==='vertical').map(d=>yOff+d.y),
+          ...(level.windows||[]).filter(w=>w.dir==='vertical').map(w=>yOff+w.y),
+        ].filter(y=>y>=minY&&y<=maxY);
+        if (rightOpenings.length) {
+          const ys1 = [...new Set([minY, ...rightOpenings, maxY])].sort((a,b)=>a-b);
+          vChain(ys1, maxX+rOff1);
+        }
+        // L2: room heights along right
+        vChain(yBreaks, maxX+rOff2);
+        // L3: overall height
+        vChain([minY, maxY], maxX+rOff3);
+        // Level label
+        txt("LABELS", minX, minY-2.5, 0.7, "LEVEL "+(li+1));
+      }
     });
     e(0,"ENDSEC"); e(0,"EOF");
     const blob=new Blob([p.join("\n")+"\n"],{type:"application/octet-stream"});
@@ -1954,7 +2234,7 @@ const DesignGenerator = ({ onOpenModal }) => {
     },
     typeof zoomImage === "string" && zoomImage.startsWith("<svg") ? /* @__PURE__ */ React.createElement("div", { className: "bg-white p-4 md:p-8 max-w-5xl w-full max-h-[90vh] overflow-auto shadow-2xl rounded-sm", dangerouslySetInnerHTML: { __html: zoomImage } }) : /* @__PURE__ */ React.createElement("img", { src: zoomImage, className: "max-h-[90vh] max-w-full object-contain rounded-sm", alt: "Zoom" }),
     /* @__PURE__ */ React.createElement("button", { type: "button", onClick: () => setZoomImage(null), "aria-label": "Close zoomed plan", className: "absolute top-4 right-4 text-white/40 hover:text-white" }, /* @__PURE__ */ React.createElement(CloseIcon, { className: "w-6 h-6" }))
-  )), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start mb-8 md:mb-10" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "section-label", style: { color: "rgba(10,10,12,0.44)" } }, "Live studio"), /* @__PURE__ */ React.createElement("h2", { className: "cg mt-6", style: { fontSize: "clamp(2.6rem, 5.6vw, 4.6rem)", letterSpacing: "-0.06em", textTransform: "uppercase", lineHeight: 0.9 } }, "Open the client-to-studio workflow your firm will actually use."), /* @__PURE__ */ React.createElement("p", { className: "text-mid mt-4 text-base max-w-2xl leading-relaxed" }, "Plan generation is free and open — no passkey needed. Fill out the brief, generate a blueprint, and resize rooms to exact dimensions. Enter a passkey to unlock AI-powered refining, the Gemini exterior study, and 4K blueprint export.")), /* @__PURE__ */ React.createElement("div", { className: "dream-panel p-5 md:p-6" }, /* @__PURE__ */ React.createElement("div", { className: "mono text-[10px] uppercase tracking-[0.24em]", style: { color: "rgba(244,239,230,0.46)" } }, "Live now"), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-3 mt-5" }, /* @__PURE__ */ React.createElement("div", { className: "studio-metric" }, /* @__PURE__ */ React.createElement("strong", null, "<60s"), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] uppercase tracking-[0.18em]", style: { color: "rgba(244,239,230,0.5)" } }, "first plan")), /* @__PURE__ */ React.createElement("div", { className: "studio-metric" }, /* @__PURE__ */ React.createElement("strong", null, "4K"), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] uppercase tracking-[0.18em]", style: { color: "rgba(244,239,230,0.5)" } }, "plan export"))), /* @__PURE__ */ React.createElement("div", { className: "generator-step-grid mt-5" }, GENERATOR_FLOW_STEPS.map((item, index) => /* @__PURE__ */ React.createElement("div", { key: item.label, className: "generator-step-card" }, /* @__PURE__ */ React.createElement("div", { className: "mono text-[8px] uppercase tracking-[0.22em]", style: { color: "rgba(244,239,230,0.38)" } }, "0", index + 1), /* @__PURE__ */ React.createElement("strong", null, item.label), /* @__PURE__ */ React.createElement("p", null, item.body)))))), /* @__PURE__ */ React.createElement(RecentSessionsBar, { onRestoreSession: handleRestoreSession }), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-[380px_minmax(0,1fr)] gap-6 items-start" }, /* @__PURE__ */ React.createElement("div", { className: "paper-panel w-full p-6 md:p-7" }, /* @__PURE__ */ React.createElement(SurveyForm, { formData, setFormData, onSubmit: handleGeneratePlan, isLoading, onReset: resetSampleBrief })), /* @__PURE__ */ React.createElement("div", { className: "dream-panel w-full flex flex-col overflow-hidden", style: { minHeight: "520px" } }, status === "idle" && /* @__PURE__ */ React.createElement("div", { className: "flex-1 flex flex-col items-center justify-center p-12 text-center", style: { color: "rgba(244,239,230,0.42)" }, role: "status", "aria-live": "polite" }, /* @__PURE__ */ React.createElement("svg", { className: "w-16 h-16 mb-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, /* @__PURE__ */ React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "1", d: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" })), /* @__PURE__ */ React.createElement("p", { className: "cg text-2xl text-white", style: { letterSpacing: "-0.05em", textTransform: "uppercase" } }, "Awaiting your brief"), /* @__PURE__ */ React.createElement("p", { className: "mono text-[9px] uppercase tracking-widest mt-2" }, "Complete the five-step survey to generate the first plan"), planError && /* @__PURE__ */ React.createElement("p", { role: "alert", className: "mono text-[9px] uppercase tracking-widest mt-4 px-4 py-2 rounded-sm", style: { background: "rgba(200,40,28,0.18)", color: "#ff6b61", maxWidth: "20rem" } }, planError)), isLoading && /* @__PURE__ */ React.createElement("div", { className: "flex-1 flex flex-col items-center justify-center p-12 text-white", role: "status", "aria-live": "polite" }, /* @__PURE__ */ React.createElement("div", { className: "w-12 h-12 border-[3px] border-blue border-t-transparent rounded-full animate-spin mb-6" }), /* @__PURE__ */ React.createElement("p", { className: "mono text-[10px] uppercase tracking-widest animate-pulse text-blue" }, status === "refining" ? "Applying refinement..." : "Generating floor plan..."), /* @__PURE__ */ React.createElement("p", { className: "text-[9px] mt-2", style: { color: "rgba(244,239,230,0.5)" } }, "Usually under 5 seconds")), (status === "plan-ready" || status === "refining") && planSvg && /* @__PURE__ */ React.createElement("div", { className: "flex flex-col" }, /* @__PURE__ */ React.createElement("div", { className: "p-4 border-b border-white/8", style: { background: "rgba(255,255,255,0.04)" } }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2 mb-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, status === "refining" ? "Refining live plan" : "Plan ready"), /* @__PURE__ */ React.createElement("span", { className: "mono text-[7px] uppercase tracking-[0.22em]", style: { color: "rgba(244,239,230,0.42)" } }, refinementsLeft, " refinements left"), /* @__PURE__ */ React.createElement("span", { className: "mono text-[7px] uppercase tracking-widest bg-white border border-black/6 px-2 py-1 rounded-sm" }, "2D Blueprint"), canUndo && /* @__PURE__ */ React.createElement("button", { onClick: handleUndo, title: "Undo (Ctrl+Z)", className: "mono text-[7px] uppercase tracking-widest bg-white border border-black/12 text-ink px-2 py-1 rounded-sm hover:border-blue hover:text-blue transition-colors" }, "\u21A9 Undo"), canRedo && /* @__PURE__ */ React.createElement("button", { onClick: handleRedo, title: "Redo (Ctrl+Y)", className: "mono text-[7px] uppercase tracking-widest bg-white border border-black/12 text-ink px-2 py-1 rounded-sm hover:border-blue hover:text-blue transition-colors" }, "Redo \u21AA"), /* @__PURE__ */ React.createElement("button", { onClick: () => { if (requirePasskey()) downloadBlueprint(); }, className: "mono text-[7px] uppercase tracking-widest bg-blue text-white px-2 py-1 rounded-sm hover:bg-ink transition-colors" }, !isUnlocked ? "\uD83D\uDD12 Download PNG" : "Download PNG"), /* @__PURE__ */ React.createElement("button", { onClick: printBlueprint, className: "mono text-[7px] uppercase tracking-widest bg-white border border-black/12 text-ink px-2 py-1 rounded-sm hover:border-blue hover:text-blue transition-colors" }, "Print PDF"), /* @__PURE__ */ React.createElement("button", { onClick: () => { if (requirePasskey()) exportDxf(); }, className: "mono text-[7px] uppercase tracking-widest bg-white border border-black/12 text-ink px-2 py-1 rounded-sm hover:border-blue hover:text-blue transition-colors" }, !isUnlocked ? "\uD83D\uDD12 Export DXF" : "Export DXF"), downloadError && /* @__PURE__ */ React.createElement("span", { role: "alert", className: "mono text-[7px] uppercase tracking-widest", style: { color: "#ff6b61" } }, "Download failed"), alternatives.length > 0 && /* @__PURE__ */ React.createElement(
+  )), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start mb-8 md:mb-10" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("span", { className: "section-label", style: { color: "rgba(10,10,12,0.44)" } }, "Live studio"), /* @__PURE__ */ React.createElement("h2", { className: "cg mt-6", style: { fontSize: "clamp(2.6rem, 5.6vw, 4.6rem)", letterSpacing: "-0.06em", textTransform: "uppercase", lineHeight: 0.9 } }, "Open the client-to-studio workflow your firm will actually use."), /* @__PURE__ */ React.createElement("p", { className: "text-mid mt-4 text-base max-w-2xl leading-relaxed" }, "Plan generation is free and open — no passkey needed. Fill out the brief, generate a blueprint, and resize rooms to exact dimensions. Enter a passkey to unlock AI-powered refining, the Gemini exterior study, and 4K blueprint export.")), /* @__PURE__ */ React.createElement("div", { className: "dream-panel p-5 md:p-6" }, /* @__PURE__ */ React.createElement("div", { className: "mono text-[10px] uppercase tracking-[0.24em]", style: { color: "rgba(244,239,230,0.46)" } }, "Live now"), /* @__PURE__ */ React.createElement("div", { className: "grid grid-cols-2 gap-3 mt-5" }, /* @__PURE__ */ React.createElement("div", { className: "studio-metric" }, /* @__PURE__ */ React.createElement("strong", null, "<60s"), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] uppercase tracking-[0.18em]", style: { color: "rgba(244,239,230,0.5)" } }, "first plan")), /* @__PURE__ */ React.createElement("div", { className: "studio-metric" }, /* @__PURE__ */ React.createElement("strong", null, "4K"), /* @__PURE__ */ React.createElement("span", { className: "text-[11px] uppercase tracking-[0.18em]", style: { color: "rgba(244,239,230,0.5)" } }, "plan export"))), /* @__PURE__ */ React.createElement("div", { className: "generator-step-grid mt-5" }, GENERATOR_FLOW_STEPS.map((item, index) => /* @__PURE__ */ React.createElement("div", { key: item.label, className: "generator-step-card" }, /* @__PURE__ */ React.createElement("div", { className: "mono text-[8px] uppercase tracking-[0.22em]", style: { color: "rgba(244,239,230,0.38)" } }, "0", index + 1), /* @__PURE__ */ React.createElement("strong", null, item.label), /* @__PURE__ */ React.createElement("p", null, item.body)))))), /* @__PURE__ */ React.createElement(RecentSessionsBar, { onRestoreSession: handleRestoreSession }), /* @__PURE__ */ React.createElement("div", { className: "grid lg:grid-cols-[380px_minmax(0,1fr)] gap-6 items-start" }, /* @__PURE__ */ React.createElement("div", { className: "paper-panel w-full p-6 md:p-7" }, /* @__PURE__ */ React.createElement(SurveyForm, { formData, setFormData, onSubmit: handleGeneratePlan, isLoading, onReset: resetSampleBrief })), /* @__PURE__ */ React.createElement("div", { className: "dream-panel w-full flex flex-col overflow-hidden", style: { minHeight: "520px" } }, status === "idle" && /* @__PURE__ */ React.createElement("div", { className: "flex-1 flex flex-col items-center justify-center p-12 text-center", style: { color: "rgba(244,239,230,0.42)" }, role: "status", "aria-live": "polite" }, /* @__PURE__ */ React.createElement("svg", { className: "w-16 h-16 mb-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, /* @__PURE__ */ React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "1", d: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" })), /* @__PURE__ */ React.createElement("p", { className: "cg text-2xl text-white", style: { letterSpacing: "-0.05em", textTransform: "uppercase" } }, "Awaiting your brief"), /* @__PURE__ */ React.createElement("p", { className: "mono text-[9px] uppercase tracking-widest mt-2" }, "Complete the five-step survey to generate the first plan"), planError && /* @__PURE__ */ React.createElement("p", { role: "alert", className: "mono text-[9px] uppercase tracking-widest mt-4 px-4 py-2 rounded-sm", style: { background: "rgba(200,40,28,0.18)", color: "#ff6b61", maxWidth: "20rem" } }, planError)), isLoading && /* @__PURE__ */ React.createElement("div", { className: "flex-1 flex flex-col items-center justify-center p-12 text-white", role: "status", "aria-live": "polite" }, /* @__PURE__ */ React.createElement("div", { className: "w-12 h-12 border-[3px] border-blue border-t-transparent rounded-full animate-spin mb-6" }), /* @__PURE__ */ React.createElement("p", { className: "mono text-[10px] uppercase tracking-widest animate-pulse text-blue" }, status === "refining" ? "Applying refinement..." : "Generating floor plan..."), /* @__PURE__ */ React.createElement("p", { className: "text-[9px] mt-2", style: { color: "rgba(244,239,230,0.5)" } }, "Usually under 5 seconds")), (status === "plan-ready" || status === "refining") && planSvg && /* @__PURE__ */ React.createElement("div", { className: "flex flex-col" }, /* @__PURE__ */ React.createElement("div", { className: "p-4 border-b border-white/8", style: { background: "rgba(255,255,255,0.04)" } }, /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap items-center gap-2 mb-2.5" }, /* @__PURE__ */ React.createElement("span", { className: "badge" }, status === "refining" ? "Refining live plan" : "Plan ready"), /* @__PURE__ */ React.createElement("span", { className: "mono text-[7px] uppercase tracking-[0.22em]", style: { color: "rgba(244,239,230,0.42)" } }, refinementsLeft, " refinements left"), /* @__PURE__ */ React.createElement("span", { className: "mono text-[7px] uppercase tracking-widest bg-white border border-black/6 px-2 py-1 rounded-sm" }, "2D Blueprint"), canUndo && /* @__PURE__ */ React.createElement("button", { onClick: handleUndo, title: "Undo (Ctrl+Z)", className: "mono text-[7px] uppercase tracking-widest bg-white border border-black/12 text-ink px-2 py-1 rounded-sm hover:border-blue hover:text-blue transition-colors" }, "\u21A9 Undo"), canRedo && /* @__PURE__ */ React.createElement("button", { onClick: handleRedo, title: "Redo (Ctrl+Y)", className: "mono text-[7px] uppercase tracking-widest bg-white border border-black/12 text-ink px-2 py-1 rounded-sm hover:border-blue hover:text-blue transition-colors" }, "Redo \u21AA"), /* @__PURE__ */ React.createElement("button", { onClick: () => { if (requirePasskey()) downloadBlueprint(); }, className: "mono text-[7px] uppercase tracking-widest bg-blue text-white px-2 py-1 rounded-sm hover:bg-ink transition-colors" }, !isUnlocked ? "\uD83D\uDD12 Download PNG" : "Download PNG"), /* @__PURE__ */ React.createElement("button", { onClick: printBlueprint, className: "mono text-[7px] uppercase tracking-widest bg-white border border-black/12 text-ink px-2 py-1 rounded-sm hover:border-blue hover:text-blue transition-colors" }, "Print PDF"), /* @__PURE__ */ React.createElement("button", { onClick: () => { if (requirePasskey()) exportDxf(); }, className: "mono text-[7px] uppercase tracking-widest bg-white border border-black/12 text-ink px-2 py-1 rounded-sm hover:border-blue hover:text-blue transition-colors" }, !isUnlocked ? "\uD83D\uDD12 Export DXF" : "Export DXF"), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowEditor(true), className: "mono text-[7px] uppercase tracking-widest border px-2 py-1 rounded-sm transition-colors", style: { background: 'rgba(27,79,130,0.15)', borderColor: 'rgba(27,79,130,0.5)', color: '#a8c4e0' } }, "Edit Plan"), downloadError && /* @__PURE__ */ React.createElement("span", { role: "alert", className: "mono text-[7px] uppercase tracking-widest", style: { color: "#ff6b61" } }, "Download failed"), alternatives.length > 0 && /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: () => setShowAlternatives(true),
@@ -1966,7 +2246,7 @@ const DesignGenerator = ({ onOpenModal }) => {
   ), /* @__PURE__ */ React.createElement("button", { onClick: () => setZoomImage(planSvg), className: "ml-auto mono text-[7px] uppercase tracking-widest text-mid hover:text-ink" }, "Expand")), footprintInfo && /* @__PURE__ */ React.createElement("div", { className: "flex gap-3 mb-2" }, /* @__PURE__ */ React.createElement("span", { className: "mono text-[7px] text-mid" }, "Best of ", 1 + alternatives.length, " - ", footprintInfo.widthFt, " x ", footprintInfo.heightFt, " ft - ratio ", footprintInfo.aspectRatio.toFixed(2), planScore !== null && /* @__PURE__ */ React.createElement("span", { className: "ml-2 text-blue" }, "score ", planScore, "/100"))), /* @__PURE__ */ React.createElement("div", { className: "w-full overflow-auto bg-white rounded-[14px]", style: { position: "relative" } },
   /* @__PURE__ */ React.createElement("div", { className: "cursor-zoom-in", onClick: () => setZoomImage(planSvg), dangerouslySetInnerHTML: { __html: planSvg } }),
   /* @__PURE__ */ React.createElement(WallEditor, { planSpec, planSvg, onUpdatePlan: handleUpdatePlan })
-)), /* @__PURE__ */ React.createElement("div", { className: "px-5" }, /* @__PURE__ */ React.createElement(PlanSummaryPanel, { planSpec })), /* @__PURE__ */ React.createElement(DoorEditor, { planSpec, onUpdateDoors: (levelIdx, newDoors) => { const newSpec = { ...planSpec, levels: (planSpec.levels||[]).map((l,i) => i===levelIdx ? {...l, doors: newDoors} : l) }; handleUpdatePlan(newSpec); } }), /* @__PURE__ */ React.createElement(RefinementPanel, { planSpec, formData, refinementsLeft, refinementHistory, onRefine: handleRefine, isLoading, isUnlocked, onRequirePasskey: () => setShowGate(true) }), /* @__PURE__ */ React.createElement("div", { className: "p-5 border-t border-white/8", style: { background: "rgba(255,255,255,0.04)" } }, /* @__PURE__ */ React.createElement(Render3DPanel, { planSpec, formData, planSvg, galleryId, onRenderReady: (img) => setZoomImage(img), isUnlocked, onRequirePasskey: () => setShowGate(true) }))), showAlternatives && /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[200] flex items-center justify-center p-4", style: { background: "rgba(0,0,0,0.7)" } }, /* @__PURE__ */ React.createElement("div", { className: "bg-paper rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between p-4 border-b border-black/10" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "font-semibold text-sm" }, "Other Generated Plans"), /* @__PURE__ */ React.createElement("p", { className: "mono text-[8px] text-mid mt-0.5 uppercase tracking-widest" }, alternatives.length, " alternative footprints - click any to use it")), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowAlternatives(false), className: "w-8 h-8 flex items-center justify-center rounded hover:bg-black/8 text-mid hover:text-ink transition-colors" }, /* @__PURE__ */ React.createElement("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, /* @__PURE__ */ React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2", d: "M6 18L18 6M6 6l12 12" })))), /* @__PURE__ */ React.createElement("div", { className: "overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4" }, alternatives.map((alt, i) => /* @__PURE__ */ React.createElement(
+)), /* @__PURE__ */ React.createElement("div", { className: "px-5" }, /* @__PURE__ */ React.createElement(PlanSummaryPanel, { planSpec })), /* @__PURE__ */ React.createElement(DoorEditor, { planSpec, onUpdateDoors: (levelIdx, newDoors) => { const newSpec = { ...planSpec, levels: (planSpec.levels||[]).map((l,i) => i===levelIdx ? {...l, doors: newDoors} : l) }; handleUpdatePlan(newSpec); } }), /* @__PURE__ */ React.createElement(RefinementPanel, { planSpec, formData, refinementsLeft, refinementHistory, onRefine: handleRefine, isLoading, isUnlocked, onRequirePasskey: () => setShowGate(true) }), /* @__PURE__ */ React.createElement("div", { className: "p-5 border-t border-white/8", style: { background: "rgba(255,255,255,0.04)" } }, /* @__PURE__ */ React.createElement(Render3DPanel, { planSpec, formData, planSvg, galleryId, onRenderReady: (img) => setZoomImage(img), isUnlocked, onRequirePasskey: () => setShowGate(true) }))), showEditor && planSpec && planSvg && /* @__PURE__ */ React.createElement(PlanEditorModal, { planSpec, planSvg, onUpdatePlan: handleUpdatePlan, onClose: () => setShowEditor(false) }), showAlternatives && /* @__PURE__ */ React.createElement("div", { className: "fixed inset-0 z-[200] flex items-center justify-center p-4", style: { background: "rgba(0,0,0,0.7)" } }, /* @__PURE__ */ React.createElement("div", { className: "bg-paper rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center justify-between p-4 border-b border-black/10" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("h3", { className: "font-semibold text-sm" }, "Other Generated Plans"), /* @__PURE__ */ React.createElement("p", { className: "mono text-[8px] text-mid mt-0.5 uppercase tracking-widest" }, alternatives.length, " alternative footprints - click any to use it")), /* @__PURE__ */ React.createElement("button", { onClick: () => setShowAlternatives(false), className: "w-8 h-8 flex items-center justify-center rounded hover:bg-black/8 text-mid hover:text-ink transition-colors" }, /* @__PURE__ */ React.createElement("svg", { className: "w-4 h-4", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, /* @__PURE__ */ React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2", d: "M6 18L18 6M6 6l12 12" })))), /* @__PURE__ */ React.createElement("div", { className: "overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4" }, alternatives.map((alt, i) => /* @__PURE__ */ React.createElement(
     "div",
     {
       key: i,
