@@ -756,6 +756,8 @@ const SplashCursor = ({
   },
   TRANSPARENT = true
 }) => {
+  // WebGL fluid sim disabled — causes GL_INVALID_OPERATION feedback-loop errors on some GPUs
+  return null;
   const canvasRef = useRef(null);
   const animationFrameId = useRef(null);
   useEffect(() => {
@@ -5034,7 +5036,138 @@ const Gallery = ({
   }, "Showing ", entries.length, " recent sessions - refreshes quietly while this section is visible"))));
 };
 
-// â”€â”€â”€ DESIGN GENERATOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── INTERACTIVE CANVAS (pan/zoom blueprint viewport) ────────────────────────
+const InteractiveCanvas = ({ children }) => {
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [blueprintMode, setBlueprintMode] = useState(false);
+  const containerRef = useRef(null);
+
+  // Wheel zoom (non-passive so we can preventDefault)
+  const handleWheel = React.useCallback((e) => {
+    e.preventDefault();
+    const factor = e.deltaY > 0 ? 0.9 : 1.1;
+    setScale(s => Math.min(Math.max(s * factor, 0.2), 5));
+  }, []);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
+
+  const onMouseDown = (e) => {
+    if (e.button !== 0) return;
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
+  };
+  const onMouseMove = (e) => {
+    if (!isDragging) return;
+    setOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+  };
+  const onMouseUp = () => setIsDragging(false);
+
+  const resetView = () => { setScale(1); setOffset({ x: 0, y: 0 }); };
+  const zoomIn  = (e) => { e.stopPropagation(); setScale(s => Math.min(s * 1.25, 5)); };
+  const zoomOut = (e) => { e.stopPropagation(); setScale(s => Math.max(s * 0.8, 0.2)); };
+  const toggleBlueprint = (e) => { e.stopPropagation(); setBlueprintMode(m => !m); };
+  const fitView = (e) => { e.stopPropagation(); resetView(); };
+
+  const bg = blueprintMode ? '#0d1b2a' : '#1a1f2e';
+  const gridColor = blueprintMode ? 'rgba(100,149,237,0.12)' : 'rgba(255,255,255,0.05)';
+  const gridSz = Math.round(40 * scale);
+
+  const toolbarBtn = (onClick, title, content, active) =>
+    React.createElement('button', {
+      onClick, title,
+      style: {
+        width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        borderRadius: 6, border: 'none', cursor: 'pointer',
+        background: active ? 'rgba(100,149,237,0.25)' : 'transparent',
+        color: active ? 'rgb(147,197,253)' : 'rgba(244,239,230,0.72)',
+        fontSize: 15, fontWeight: 'bold', transition: 'background 0.15s',
+      }
+    }, content);
+
+  const divider = React.createElement('div', {
+    style: { width: 1, height: 16, background: 'rgba(255,255,255,0.12)', margin: '0 2px', flexShrink: 0 }
+  });
+
+  return React.createElement('div', {
+    ref: containerRef,
+    style: { position: 'relative', flex: 1, overflow: 'hidden', background: bg, cursor: isDragging ? 'grabbing' : 'grab' },
+    onMouseDown: onMouseDown,
+    onMouseMove: onMouseMove,
+    onMouseUp: onMouseUp,
+    onMouseLeave: onMouseUp,
+  },
+    // Grid background
+    React.createElement('div', {
+      style: {
+        position: 'absolute', inset: 0, pointerEvents: 'none',
+        backgroundImage: `linear-gradient(${gridColor} 1px, transparent 1px), linear-gradient(90deg, ${gridColor} 1px, transparent 1px)`,
+        backgroundSize: `${gridSz}px ${gridSz}px`,
+        backgroundPosition: `${offset.x % gridSz}px ${offset.y % gridSz}px`,
+      }
+    }),
+    // SVG content
+    React.createElement('div', {
+      style: {
+        position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+        transformOrigin: 'center center',
+        transition: isDragging ? 'none' : 'transform 0.06s ease',
+        willChange: 'transform',
+      }
+    }, children),
+    // Floating toolbar
+    React.createElement('div', {
+      style: {
+        position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)',
+        display: 'flex', alignItems: 'center', gap: 2,
+        background: 'rgba(10,10,12,0.72)', backdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255,255,255,0.1)', borderRadius: 999,
+        padding: '4px 10px', zIndex: 20, userSelect: 'none',
+      }
+    },
+      toolbarBtn(zoomOut, 'Zoom Out', React.createElement('svg', { width: 13, height: 13, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' },
+        React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: 2, d: 'M20 12H4' })
+      )),
+      React.createElement('span', {
+        className: 'mono',
+        style: { fontSize: 8, color: 'rgba(244,239,230,0.4)', letterSpacing: '0.1em', minWidth: 34, textAlign: 'center' }
+      }, `${Math.round(scale * 100)}%`),
+      toolbarBtn(zoomIn, 'Zoom In', React.createElement('svg', { width: 13, height: 13, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' },
+        React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: 2, d: 'M12 4v16m8-8H4' })
+      )),
+      divider,
+      toolbarBtn(fitView, 'Fit to View', React.createElement('svg', { width: 13, height: 13, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' },
+        React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: 2, d: 'M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4' })
+      )),
+      divider,
+      toolbarBtn(toggleBlueprint, blueprintMode ? 'White Mode' : 'Blueprint Mode',
+        React.createElement('svg', { width: 13, height: 13, fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' },
+          React.createElement('path', { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: 2, d: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' })
+        ),
+        blueprintMode
+      )
+    ),
+    // Coordinate readout (top-left)
+    React.createElement('div', {
+      style: {
+        position: 'absolute', top: 10, left: 12,
+        fontFamily: 'IBM Plex Mono, monospace', fontSize: 8,
+        color: 'rgba(244,239,230,0.25)', letterSpacing: '0.1em', textTransform: 'uppercase',
+        pointerEvents: 'none', userSelect: 'none',
+      }
+    }, blueprintMode ? 'BLUEPRINT — DRAG TO PAN · SCROLL TO ZOOM' : 'DRAG TO PAN · SCROLL TO ZOOM')
+  );
+};
+
+// ─── DESIGN GENERATOR ────────────────────────────────────────────────────────
 const DesignGenerator = ({
   onOpenModal
 }) => {
@@ -5444,28 +5577,51 @@ const DesignGenerator = ({
       color: 'rgba(10,10,12,0.66)'
     }
   }, item.body)))))), /*#__PURE__*/React.createElement("div", {
-    className: `grid lg:grid-cols-[320px_minmax(0,1fr)_320px] gap-5 items-start transition-all ${!isUnlocked ? 'opacity-15 pointer-events-none blur-sm select-none' : ''}`
+    className: `grid lg:grid-cols-[300px_minmax(0,1fr)_300px] gap-4 items-start transition-opacity ${!isUnlocked ? 'opacity-10 pointer-events-none blur-sm select-none' : ''}`
   }, /*#__PURE__*/React.createElement("div", {
-    className: "paper-panel w-full p-5 flex flex-col",
-    style: {
-      height: '82vh',
-      minHeight: '600px'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "overflow-y-auto pr-2 pb-safe custom-scrollbar flex-1"
-  }, /*#__PURE__*/React.createElement(SurveyForm, {
+    className: "cad-panel-brief"
+  },
+  /* Brief header */
+  React.createElement("div", { className: "cad-panel-brief-header" },
+    React.createElement("div", null,
+      React.createElement("div", { className: "mono text-[7px] uppercase tracking-[0.22em]", style: { color: 'rgba(10,10,12,0.36)' } }, "The Brief"),
+      React.createElement("div", { className: "cg text-sm font-bold", style: { letterSpacing: '-0.02em', marginTop: 1 } }, "Project Parameters")
+    ),
+    isLoading ? React.createElement("div", { className: "w-3 h-3 border-[2px] border-blue border-t-transparent rounded-full animate-spin" }) :
+    planSvg ? React.createElement("span", { style: { display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(27,79,130,0.1)', color: 'var(--blue)', padding: '3px 8px', borderRadius: 99, fontSize: 8, fontFamily: 'IBM Plex Mono,monospace', letterSpacing: '0.14em', textTransform: 'uppercase' } },
+      React.createElement("span", { style: { width: 5, height: 5, borderRadius: '50%', background: 'var(--blue)', display: 'inline-block' } }),
+      "Ready"
+    ) : null
+  ),
+  /*#__PURE__*/React.createElement("div", {
+    className: "cad-panel-brief-body"
+  }, /*#__PURE__*/React.createElement("div", { style: { padding: '8px 12px 12px' } },
+  /*#__PURE__*/React.createElement(SurveyForm, {
     formData: formData,
     setFormData: setFormData,
     onSubmit: handleGeneratePlan,
     isLoading: isLoading,
     onReset: resetSampleBrief
-  }))), /*#__PURE__*/React.createElement("div", {
-    className: "dream-panel w-full flex flex-col overflow-hidden relative",
-    style: {
-      height: '82vh',
-      minHeight: '600px'
-    }
-  }, status === 'idle' && /*#__PURE__*/React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "cad-canvas-panel"
+  },
+  /* CAD title block */
+  React.createElement("div", { className: "cad-canvas-titleblock" },
+    React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 8 } },
+      React.createElement("svg", { width: 12, height: 12, fill: 'none', stroke: 'rgba(244,239,230,0.4)', viewBox: '0 0 24 24' },
+        React.createElement("path", { strokeLinecap: 'round', strokeLinejoin: 'round', strokeWidth: 1.5, d: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' })
+      ),
+      React.createElement("span", { className: "mono", style: { fontSize: 8, color: 'rgba(244,239,230,0.38)', letterSpacing: '0.18em', textTransform: 'uppercase' } },
+        planSvg && footprintInfo ? `${footprintInfo.widthFt}′ × ${footprintInfo.heightFt}′  ·  ${formData.stories || ''}  ·  ${formData.bedrooms || ''}` : 'Blueprint Viewport'
+      )
+    ),
+    planSvg && planScore != null ? React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 6 } },
+      React.createElement("span", { className: "mono", style: { fontSize: 7, color: 'rgba(244,239,230,0.3)', letterSpacing: '0.14em', textTransform: 'uppercase' } }, "AI Score"),
+      React.createElement("span", { className: "mono", style: { fontSize: 9, fontWeight: 700, color: planScore >= 70 ? '#4ade80' : planScore >= 40 ? '#facc15' : '#f87171' } }, `${planScore}/100`)
+    ) : React.createElement("span", { className: "mono", style: { fontSize: 7, color: 'rgba(244,239,230,0.2)', letterSpacing: '0.16em', textTransform: 'uppercase' } }, "Keystone AI · Blueprint")
+  ),
+  React.createElement("div", { className: "cad-canvas-body" },
+  status === 'idle' && /*#__PURE__*/React.createElement("div", {
     className: "flex-1 flex flex-col items-center justify-center p-12 text-center",
     style: {
       color: 'rgba(244,239,230,0.42)'
@@ -5514,13 +5670,8 @@ const DesignGenerator = ({
     dangerouslySetInnerHTML: {
       __html: planSvg
     }
-  }))), /*#__PURE__*/React.createElement("div", {
-    className: "w-full flex flex-col gap-4 overflow-y-auto pb-safe custom-scrollbar",
-    style: {
-      height: '82vh',
-      minHeight: '600px',
-      paddingRight: '4px'
-    }
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "cad-panel-actions"
   }, (status === 'plan-ready' || status === 'refining') && planSvg ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "paper-panel p-5"
   }, /*#__PURE__*/React.createElement("div", {
@@ -5535,17 +5686,21 @@ const DesignGenerator = ({
     }
   }, status === 'refining' ? 'Refining...' : 'Plan ready'), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[7px] uppercase tracking-[0.22em] text-mid font-bold"
-  }, refinementsLeft, " updates left")), footprintInfo && /*#__PURE__*/React.createElement("div", {
-    className: "text-[11px] text-mid bg-white/50 p-2.5 rounded border border-black/5"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "flex justify-between mb-1"
-  }, /*#__PURE__*/React.createElement("span", null, "Dimensions:"), /*#__PURE__*/React.createElement("strong", {
-    className: "text-ink"
-  }, footprintInfo.widthFt, " x ", footprintInfo.heightFt, " ft")), /*#__PURE__*/React.createElement("div", {
-    className: "flex justify-between"
-  }, /*#__PURE__*/React.createElement("span", null, "AI Optimization Score:"), /*#__PURE__*/React.createElement("strong", {
-    className: "text-blue"
-  }, planScore, "/100"))), /*#__PURE__*/React.createElement("button", {
+  }, refinementsLeft, " updates left")), footprintInfo && React.createElement("div", { style: { display: 'flex', flexDirection: 'column', gap: 6 } },
+    React.createElement("div", { className: "cad-metric-chip" },
+      React.createElement("span", { className: "label" }, "Footprint"),
+      React.createElement("span", { className: "value" }, `${footprintInfo.widthFt}′ × ${footprintInfo.heightFt}′`)
+    ),
+    planScore != null && React.createElement("div", { className: "cad-metric-chip", style: { flexDirection: 'column', alignItems: 'flex-start', gap: 4 } },
+      React.createElement("div", { style: { display: 'flex', justifyContent: 'space-between', width: '100%' } },
+        React.createElement("span", { className: "label" }, "AI Score"),
+        React.createElement("span", { className: "value", style: { color: planScore >= 70 ? '#16a34a' : planScore >= 40 ? '#b45309' : '#dc2626' } }, `${planScore} / 100`)
+      ),
+      React.createElement("div", { className: "cad-score-bar", style: { width: '100%' } },
+        React.createElement("div", { className: "cad-score-fill", style: { width: `${Math.min(100, planScore)}%` } })
+      )
+    )
+  ), /*#__PURE__*/React.createElement("button", {
     onClick: downloadBlueprint,
     className: "w-full cta-hero cta-glow py-3 text-[10px] mt-1 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all"
   }, "Download High-Res PNG"), /*#__PURE__*/React.createElement("button", {

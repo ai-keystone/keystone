@@ -600,6 +600,8 @@ const SplashCursor = ({
     BACK_COLOR = { r: 0, g: 0, b: 0 },
     TRANSPARENT = true,
 }) => {
+    // WebGL fluid sim disabled — causes GL_INVALID_OPERATION feedback-loop errors on some GPUs
+    return null;
     const canvasRef = useRef(null);
     const animationFrameId = useRef(null);
     useEffect(() => {
@@ -676,18 +678,20 @@ const SplashCursor = ({
             constructor(vs,fs) { this.uniforms={}; this.program=createProgram(vs,fs); this.uniforms=getUniforms(this.program); }
             bind() { gl.useProgram(this.program); }
         }
-        function createProgram(vs,fs) { let p=gl.createProgram(); gl.attachShader(p,vs); gl.attachShader(p,fs); gl.linkProgram(p); return p; }
+        function createProgram(vs,fs) { let p=gl.createProgram(); gl.attachShader(p,vs); gl.attachShader(p,fs); gl.linkProgram(p); if(!gl.getProgramParameter(p,gl.LINK_STATUS)){console.error("Link err:", gl.getProgramInfoLog(p));} return p; }
         function getUniforms(program) { let u=[],n=gl.getProgramParameter(program,gl.ACTIVE_UNIFORMS); for(let i=0;i<n;i++){let nm=gl.getActiveUniform(program,i).name; u[nm]=gl.getUniformLocation(program,nm);} return u; }
         function compileShader(type,source,keywords) {
             if(keywords){let s=''; keywords.forEach(k=>{s+='#define '+k+'\n';}); source=s+source;}
-            const shader=gl.createShader(type); gl.shaderSource(shader,source); gl.compileShader(shader); return shader;
+            const shader=gl.createShader(type); gl.shaderSource(shader,source); gl.compileShader(shader); 
+            if(!gl.getShaderParameter(shader,gl.COMPILE_STATUS)){console.error("Compile err:", gl.getShaderInfoLog(shader));}
+            return shader;
         }
         const baseVS=compileShader(gl.VERTEX_SHADER,`precision highp float;attribute vec2 aPosition;varying vec2 vUv;varying vec2 vL;varying vec2 vR;varying vec2 vT;varying vec2 vB;uniform vec2 texelSize;void main(){vUv=aPosition*0.5+0.5;vL=vUv-vec2(texelSize.x,0.0);vR=vUv+vec2(texelSize.x,0.0);vT=vUv+vec2(0.0,texelSize.y);vB=vUv-vec2(0.0,texelSize.y);gl_Position=vec4(aPosition,0.0,1.0);}`);
         const copyShader=compileShader(gl.FRAGMENT_SHADER,`precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;uniform sampler2D uTexture;void main(){gl_FragColor=texture2D(uTexture,vUv);}`);
         const clearShader=compileShader(gl.FRAGMENT_SHADER,`precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;uniform sampler2D uTexture;uniform float value;void main(){gl_FragColor=value*texture2D(uTexture,vUv);}`);
-        const displayShaderSrc=`precision highp float;precision highp sampler2D;varying vec2 vUv;varying vec2 vL;varying vec2 vR;varying vec2 vT;varying vec2 vB;uniform sampler2D uTexture;uniform vec2 texelSize;void main(){vec3 c=texture2D(uTexture,vUv).rgb;#ifdef SHADING vec3 lc=texture2D(uTexture,vL).rgb;vec3 rc=texture2D(uTexture,vR).rgb;vec3 tc=texture2D(uTexture,vT).rgb;vec3 bc=texture2D(uTexture,vB).rgb;float dx=length(rc)-length(lc);float dy=length(tc)-length(bc);vec3 n=normalize(vec3(dx,dy,length(texelSize)));float diffuse=clamp(dot(n,vec3(0,0,1))+0.7,0.7,1.0);c*=diffuse;#endif float a=max(c.r,max(c.g,c.b));gl_FragColor=vec4(c,a);}`;
+        const displayShaderSrc=`precision highp float;precision highp sampler2D;varying vec2 vUv;varying vec2 vL;varying vec2 vR;varying vec2 vT;varying vec2 vB;uniform sampler2D uTexture;uniform vec2 texelSize;void main(){vec3 c=texture2D(uTexture,vUv).rgb;\n#ifdef SHADING\nvec3 lc=texture2D(uTexture,vL).rgb;vec3 rc=texture2D(uTexture,vR).rgb;vec3 tc=texture2D(uTexture,vT).rgb;vec3 bc=texture2D(uTexture,vB).rgb;float dx=length(rc)-length(lc);float dy=length(tc)-length(bc);vec3 n=normalize(vec3(dx,dy,length(texelSize)));float diffuse=clamp(dot(n,vec3(0,0,1))+0.7,0.7,1.0);c*=diffuse;\n#endif\nfloat a=max(c.r,max(c.g,c.b));gl_FragColor=vec4(c,a);}`;
         const splatShader=compileShader(gl.FRAGMENT_SHADER,`precision highp float;precision highp sampler2D;varying vec2 vUv;uniform sampler2D uTarget;uniform float aspectRatio;uniform vec3 color;uniform vec2 point;uniform float radius;void main(){vec2 p=vUv-point.xy;p.x*=aspectRatio;vec3 splat=exp(-dot(p,p)/radius)*color;gl_FragColor=vec4(texture2D(uTarget,vUv).xyz+splat,1.0);}`);
-        const advectionShader=compileShader(gl.FRAGMENT_SHADER,`precision highp float;precision highp sampler2D;varying vec2 vUv;uniform sampler2D uVelocity;uniform sampler2D uSource;uniform vec2 texelSize;uniform vec2 dyeTexelSize;uniform float dt;uniform float dissipation;vec4 bilerp(sampler2D sam,vec2 uv,vec2 tsize){vec2 st=uv/tsize-0.5;vec2 iuv=floor(st);vec2 fuv=fract(st);vec4 a=texture2D(sam,(iuv+vec2(0.5,0.5))*tsize);vec4 b=texture2D(sam,(iuv+vec2(1.5,0.5))*tsize);vec4 c=texture2D(sam,(iuv+vec2(0.5,1.5))*tsize);vec4 d=texture2D(sam,(iuv+vec2(1.5,1.5))*tsize);return mix(mix(a,b,fuv.x),mix(c,d,fuv.x),fuv.y);}void main(){#ifdef MANUAL_FILTERING vec2 coord=vUv-dt*bilerp(uVelocity,vUv,texelSize).xy*texelSize;vec4 result=bilerp(uSource,coord,dyeTexelSize);#else vec2 coord=vUv-dt*texture2D(uVelocity,vUv).xy*texelSize;vec4 result=texture2D(uSource,coord);#endif gl_FragColor=result/(1.0+dissipation*dt);}`, ext.supportLinearFiltering?null:['MANUAL_FILTERING']);
+        const advectionShader=compileShader(gl.FRAGMENT_SHADER,`precision highp float;precision highp sampler2D;varying vec2 vUv;uniform sampler2D uVelocity;uniform sampler2D uSource;uniform vec2 texelSize;uniform vec2 dyeTexelSize;uniform float dt;uniform float dissipation;vec4 bilerp(sampler2D sam,vec2 uv,vec2 tsize){vec2 st=uv/tsize-0.5;vec2 iuv=floor(st);vec2 fuv=fract(st);vec4 a=texture2D(sam,(iuv+vec2(0.5,0.5))*tsize);vec4 b=texture2D(sam,(iuv+vec2(1.5,0.5))*tsize);vec4 c=texture2D(sam,(iuv+vec2(0.5,1.5))*tsize);vec4 d=texture2D(sam,(iuv+vec2(1.5,1.5))*tsize);return mix(mix(a,b,fuv.x),mix(c,d,fuv.x),fuv.y);}void main(){\n#ifdef MANUAL_FILTERING\nvec2 coord=vUv-dt*bilerp(uVelocity,vUv,texelSize).xy*texelSize;vec4 result=bilerp(uSource,coord,dyeTexelSize);\n#else\nvec2 coord=vUv-dt*texture2D(uVelocity,vUv).xy*texelSize;vec4 result=texture2D(uSource,coord);\n#endif\ngl_FragColor=result/(1.0+dissipation*dt);}`, ext.supportLinearFiltering?null:['MANUAL_FILTERING']);
         const divergenceShader=compileShader(gl.FRAGMENT_SHADER,`precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;varying highp vec2 vL;varying highp vec2 vR;varying highp vec2 vT;varying highp vec2 vB;uniform sampler2D uVelocity;void main(){float L=texture2D(uVelocity,vL).x;float R=texture2D(uVelocity,vR).x;float T=texture2D(uVelocity,vT).y;float B=texture2D(uVelocity,vB).y;vec2 C=texture2D(uVelocity,vUv).xy;if(vL.x<0.0)L=-C.x;if(vR.x>1.0)R=-C.x;if(vT.y>1.0)T=-C.y;if(vB.y<0.0)B=-C.y;gl_FragColor=vec4(0.5*(R-L+T-B),0.0,0.0,1.0);}`);
         const curlShader=compileShader(gl.FRAGMENT_SHADER,`precision mediump float;precision mediump sampler2D;varying highp vec2 vUv;varying highp vec2 vL;varying highp vec2 vR;varying highp vec2 vT;varying highp vec2 vB;uniform sampler2D uVelocity;void main(){gl_FragColor=vec4(0.5*(texture2D(uVelocity,vR).y-texture2D(uVelocity,vL).y-texture2D(uVelocity,vT).x+texture2D(uVelocity,vB).x),0.0,0.0,1.0);}`);
         const vorticityShader=compileShader(gl.FRAGMENT_SHADER,`precision highp float;precision highp sampler2D;varying vec2 vUv;varying vec2 vL;varying vec2 vR;varying vec2 vT;varying vec2 vB;uniform sampler2D uVelocity;uniform sampler2D uCurl;uniform float curl;uniform float dt;void main(){float L=texture2D(uCurl,vL).x;float R=texture2D(uCurl,vR).x;float T=texture2D(uCurl,vT).x;float B=texture2D(uCurl,vB).x;float C=texture2D(uCurl,vUv).x;vec2 force=0.5*vec2(abs(T)-abs(B),abs(R)-abs(L));force/=length(force)+0.0001;force*=curl*C;force.y*=-1.0;vec2 velocity=texture2D(uVelocity,vUv).xy+force*dt;velocity=min(max(velocity,-1000.0),1000.0);gl_FragColor=vec4(velocity,0.0,1.0);}`);
@@ -2587,7 +2591,92 @@ const Gallery = ({ onOpenModal }) => {
     );
 };
 
-// â”€â”€â”€ DESIGN GENERATOR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── INTERACTIVE CANVAS (pan/zoom blueprint viewport) ────────────────────────
+const InteractiveCanvas = ({ children }) => {
+    const [scale, setScale] = useState(1);
+    const [offset, setOffset] = useState({ x: 0, y: 0 });
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+    const [blueprintMode, setBlueprintMode] = useState(false);
+    const containerRef = useRef(null);
+
+    const handleWheel = React.useCallback((e) => {
+        e.preventDefault();
+        const factor = e.deltaY > 0 ? 0.9 : 1.1;
+        setScale(s => Math.min(Math.max(s * factor, 0.2), 5));
+    }, []);
+
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        el.addEventListener('wheel', handleWheel, { passive: false });
+        return () => el.removeEventListener('wheel', handleWheel);
+    }, [handleWheel]);
+
+    const onMouseDown = (e) => { if (e.button !== 0) return; setIsDragging(true); setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y }); };
+    const onMouseMove = (e) => { if (!isDragging) return; setOffset({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y }); };
+    const onMouseUp = () => setIsDragging(false);
+    const resetView = () => { setScale(1); setOffset({ x: 0, y: 0 }); };
+
+    const bg = blueprintMode ? '#0d1b2a' : '#161b24';
+    const gridColor = blueprintMode ? 'rgba(100,149,237,0.12)' : 'rgba(255,255,255,0.05)';
+    const gridSz = Math.round(40 * scale);
+
+    const toolbarBtn = (onClick, title, content, active) => (
+        <button onClick={onClick} title={title} style={{
+            width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: 6, border: 'none', cursor: 'pointer',
+            background: active ? 'rgba(100,149,237,0.25)' : 'transparent',
+            color: active ? 'rgb(147,197,253)' : 'rgba(244,239,230,0.72)',
+            fontSize: 15, fontWeight: 'bold',
+        }}>{content}</button>
+    );
+
+    return (
+        <div ref={containerRef} style={{ position: 'relative', flex: 1, overflow: 'hidden', background: bg, cursor: isDragging ? 'grabbing' : 'grab' }}
+            onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp}>
+            {/* Grid */}
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
+                backgroundImage: `linear-gradient(${gridColor} 1px, transparent 1px), linear-gradient(90deg, ${gridColor} 1px, transparent 1px)`,
+                backgroundSize: `${gridSz}px ${gridSz}px`,
+                backgroundPosition: `${offset.x % gridSz}px ${offset.y % gridSz}px`,
+            }} />
+            {/* Content */}
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+                transformOrigin: 'center center',
+                transition: isDragging ? 'none' : 'transform 0.06s ease',
+                willChange: 'transform',
+            }}>{children}</div>
+            {/* Floating toolbar */}
+            <div style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)',
+                display: 'flex', alignItems: 'center', gap: 2,
+                background: 'rgba(10,10,12,0.72)', backdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.1)', borderRadius: 999,
+                padding: '4px 10px', zIndex: 20, userSelect: 'none',
+            }}>
+                {toolbarBtn((e) => { e.stopPropagation(); setScale(s => Math.max(s * 0.8, 0.2)); }, 'Zoom Out',
+                    <svg width=”13” height=”13” fill=”none” stroke=”currentColor” viewBox=”0 0 24 24”><path strokeLinecap=”round” strokeLinejoin=”round” strokeWidth=”2” d=”M20 12H4”/></svg>)}
+                <span className=”mono” style={{ fontSize: 8, color: 'rgba(244,239,230,0.4)', letterSpacing: '0.1em', minWidth: 34, textAlign: 'center' }}>{Math.round(scale * 100)}%</span>
+                {toolbarBtn((e) => { e.stopPropagation(); setScale(s => Math.min(s * 1.25, 5)); }, 'Zoom In',
+                    <svg width=”13” height=”13” fill=”none” stroke=”currentColor” viewBox=”0 0 24 24”><path strokeLinecap=”round” strokeLinejoin=”round” strokeWidth=”2” d=”M12 4v16m8-8H4”/></svg>)}
+                <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.12)', margin: '0 2px' }} />
+                {toolbarBtn((e) => { e.stopPropagation(); resetView(); }, 'Fit to View',
+                    <svg width=”13” height=”13” fill=”none” stroke=”currentColor” viewBox=”0 0 24 24”><path strokeLinecap=”round” strokeLinejoin=”round” strokeWidth=”2” d=”M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4”/></svg>)}
+                <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.12)', margin: '0 2px' }} />
+                {toolbarBtn((e) => { e.stopPropagation(); setBlueprintMode(m => !m); }, blueprintMode ? 'White Mode' : 'Blueprint Mode',
+                    <svg width=”13” height=”13” fill=”none” stroke=”currentColor” viewBox=”0 0 24 24”><path strokeLinecap=”round” strokeLinejoin=”round” strokeWidth=”2” d=”M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2”/></svg>,
+                    blueprintMode)}
+            </div>
+            <div style={{ position: 'absolute', top: 10, left: 12, fontFamily: 'IBM Plex Mono,monospace', fontSize: 8,
+                color: 'rgba(244,239,230,0.25)', letterSpacing: '0.1em', textTransform: 'uppercase',
+                pointerEvents: 'none', userSelect: 'none',
+            }}>{blueprintMode ? 'BLUEPRINT — DRAG TO PAN · SCROLL TO ZOOM' : 'DRAG TO PAN · SCROLL TO ZOOM'}</div>
+        </div>
+    );
+};
+
+// ─── DESIGN GENERATOR ────────────────────────────────────────────────────────
 const DesignGenerator = ({ onOpenModal }) => {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [passkeyInput, setPasskeyInput] = useState('');
@@ -2832,39 +2921,72 @@ const DesignGenerator = ({ onOpenModal }) => {
                     </div>
                 )}
 
-                <div className={`grid lg:grid-cols-[320px_minmax(0,1fr)_320px] gap-5 items-start transition-all ${!isUnlocked ? 'opacity-15 pointer-events-none blur-sm select-none' : ''}`}>
-                    {/* LEFT (Survey) */}
-                    <div className="paper-panel w-full p-5 flex flex-col" style={{height:'82vh', minHeight:'600px'}}>
-                        <div className="overflow-y-auto pr-2 pb-safe custom-scrollbar flex-1">
-                            <SurveyForm formData={formData} setFormData={setFormData} onSubmit={handleGeneratePlan} isLoading={isLoading} onReset={resetSampleBrief}/>
+                <div className={`grid lg:grid-cols-[300px_minmax(0,1fr)_300px] gap-4 items-start transition-opacity ${!isUnlocked ? 'opacity-10 pointer-events-none blur-sm select-none' : ''}`}>
+                    {/* LEFT — The Brief */}
+                    <div className="cad-panel-brief">
+                        <div className="cad-panel-brief-header">
+                            <div>
+                                <div className="mono text-[7px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.36)'}}>The Brief</div>
+                                <div className="cg text-sm font-bold" style={{letterSpacing:'-0.02em',marginTop:1}}>Project Parameters</div>
+                            </div>
+                            {isLoading
+                                ? <div className="w-3 h-3 border-[2px] border-blue border-t-transparent rounded-full animate-spin"/>
+                                : planSvg
+                                    ? <span style={{display:'inline-flex',alignItems:'center',gap:4,background:'rgba(27,79,130,0.1)',color:'var(--blue)',padding:'3px 8px',borderRadius:99,fontSize:8,fontFamily:'IBM Plex Mono,monospace',letterSpacing:'0.14em',textTransform:'uppercase'}}>
+                                        <span style={{width:5,height:5,borderRadius:'50%',background:'var(--blue)',display:'inline-block'}}/>Ready
+                                      </span>
+                                    : null}
+                        </div>
+                        <div className="cad-panel-brief-body">
+                            <div style={{padding:'8px 12px 12px'}}>
+                                <SurveyForm formData={formData} setFormData={setFormData} onSubmit={handleGeneratePlan} isLoading={isLoading} onReset={resetSampleBrief}/>
+                            </div>
                         </div>
                     </div>
 
-                    {/* CENTER (Interactive Blueprint) */}
-                    <div className="dream-panel w-full flex flex-col overflow-hidden relative" style={{height:'82vh', minHeight:'600px'}}>
-                        {status === 'idle' && (
-                            <div className="flex-1 flex flex-col items-center justify-center p-12 text-center" style={{color:'rgba(244,239,230,0.42)'}} role="status" aria-live="polite">
-                                <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                <p className="cg text-2xl text-white" style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>Awaiting your brief</p>
-                                <p className="mono text-[9px] uppercase tracking-widest mt-2">Complete the survey to generate the first plan</p>
+                    {/* CENTER — Blueprint Canvas */}
+                    <div className="cad-canvas-panel">
+                        {/* Title block */}
+                        <div className="cad-canvas-titleblock">
+                            <div style={{display:'flex',alignItems:'center',gap:8}}>
+                                <svg width="12" height="12" fill="none" stroke="rgba(244,239,230,0.4)" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                <span className="mono" style={{fontSize:8,color:'rgba(244,239,230,0.38)',letterSpacing:'0.18em',textTransform:'uppercase'}}>
+                                    {planSvg && footprintInfo ? `${footprintInfo.widthFt}′ × ${footprintInfo.heightFt}′  ·  ${formData.stories || ''}  ·  ${formData.bedrooms || ''}` : 'Blueprint Viewport'}
+                                </span>
                             </div>
-                        )}
-                        {isLoading && (
-                            <div className="flex-1 flex flex-col items-center justify-center p-12 text-white" role="status" aria-live="polite">
-                                <div className="w-12 h-12 border-[3px] border-blue border-t-transparent rounded-full animate-spin mb-6"/>
-                                <p className="mono text-[10px] uppercase tracking-widest animate-pulse text-blue">{status==='refining' ? 'Applying refinement...' : 'Generating floor plan...'}</p>
-                                <p className="text-[9px] mt-2" style={{color:'rgba(244,239,230,0.5)'}}>Usually under 5 seconds</p>
-                            </div>
-                        )}
-                        {(status === 'plan-ready' || status === 'refining') && planSvg && (
-                            <InteractiveCanvas>
-                                <div style={{width:'90%', height:'90%', display:'flex', alignItems:'center', justifyContent:'center'}} dangerouslySetInnerHTML={{__html:planSvg}}/>
-                            </InteractiveCanvas>
-                        )}
+                            {planSvg && planScore != null
+                                ? <div style={{display:'flex',alignItems:'center',gap:6}}>
+                                    <span className="mono" style={{fontSize:7,color:'rgba(244,239,230,0.3)',letterSpacing:'0.14em',textTransform:'uppercase'}}>AI Score</span>
+                                    <span className="mono" style={{fontSize:9,fontWeight:700,color:planScore>=70?'#4ade80':planScore>=40?'#facc15':'#f87171'}}>{planScore}/100</span>
+                                  </div>
+                                : <span className="mono" style={{fontSize:7,color:'rgba(244,239,230,0.2)',letterSpacing:'0.16em',textTransform:'uppercase'}}>Keystone AI · Blueprint</span>}
+                        </div>
+                        {/* Canvas body */}
+                        <div className="cad-canvas-body">
+                            {status === 'idle' && (
+                                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center" style={{color:'rgba(244,239,230,0.42)'}} role="status" aria-live="polite">
+                                    <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                    <p className="cg text-2xl text-white" style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>Awaiting your brief</p>
+                                    <p className="mono text-[9px] uppercase tracking-widest mt-2">Complete the survey to generate the first plan</p>
+                                </div>
+                            )}
+                            {isLoading && (
+                                <div className="flex-1 flex flex-col items-center justify-center p-12 text-white" role="status" aria-live="polite">
+                                    <div className="w-12 h-12 border-[3px] border-blue border-t-transparent rounded-full animate-spin mb-6"/>
+                                    <p className="mono text-[10px] uppercase tracking-widest animate-pulse text-blue">{status==='refining' ? 'Applying refinement...' : 'Generating floor plan...'}</p>
+                                    <p className="text-[9px] mt-2" style={{color:'rgba(244,239,230,0.5)'}}>Usually under 5 seconds</p>
+                                </div>
+                            )}
+                            {(status === 'plan-ready' || status === 'refining') && planSvg && (
+                                <InteractiveCanvas>
+                                    <div style={{display:'flex',alignItems:'center',justifyContent:'center'}} dangerouslySetInnerHTML={{__html:planSvg}}/>
+                                </InteractiveCanvas>
+                            )}
+                        </div>
                     </div>
 
-                    {/* RIGHT (Actions & Spec Data) */}
-                    <div className="w-full flex flex-col gap-4 overflow-y-auto pb-safe custom-scrollbar" style={{height:'82vh', minHeight:'600px', paddingRight:'4px'}}>
+                    {/* RIGHT — Actions & Tools */}
+                    <div className="cad-panel-actions">
                         {(status === 'plan-ready' || status === 'refining') && planSvg ? (
                             <>
                                 <div className="paper-panel p-5">
@@ -2874,15 +2996,22 @@ const DesignGenerator = ({ onOpenModal }) => {
                                             <span className="mono text-[7px] uppercase tracking-[0.22em] text-mid font-bold">{refinementsLeft} updates left</span>
                                         </div>
                                         {footprintInfo && (
-                                            <div className="text-[11px] text-mid bg-white/50 p-2.5 rounded border border-black/5">
-                                                <div className="flex justify-between mb-1">
-                                                    <span>Dimensions:</span>
-                                                    <strong className="text-ink">{footprintInfo.widthFt} x {footprintInfo.heightFt} ft</strong>
+                                            <div style={{display:'flex',flexDirection:'column',gap:6}}>
+                                                <div className="cad-metric-chip">
+                                                    <span className="label">Footprint</span>
+                                                    <span className="value">{footprintInfo.widthFt}′ × {footprintInfo.heightFt}′</span>
                                                 </div>
-                                                <div className="flex justify-between">
-                                                    <span>AI Optimization Score:</span>
-                                                    <strong className="text-blue">{planScore}/100</strong>
-                                                </div>
+                                                {planScore != null && (
+                                                    <div className="cad-metric-chip" style={{flexDirection:'column',alignItems:'flex-start',gap:4}}>
+                                                        <div style={{display:'flex',justifyContent:'space-between',width:'100%'}}>
+                                                            <span className="label">AI Score</span>
+                                                            <span className="value" style={{color:planScore>=70?'#16a34a':planScore>=40?'#b45309':'#dc2626'}}>{planScore} / 100</span>
+                                                        </div>
+                                                        <div className="cad-score-bar" style={{width:'100%'}}>
+                                                            <div className="cad-score-fill" style={{width:`${Math.min(100,planScore)}%`}}/>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                         <button onClick={downloadBlueprint} className="w-full cta-hero cta-glow py-3 text-[10px] mt-1 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all">Download High-Res PNG</button>
