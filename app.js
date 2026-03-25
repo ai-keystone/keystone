@@ -1350,8 +1350,11 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady, 
   )))));
   return null;
 };
+const DEFAULT_BEDROOM_CONFIGS = (n) => Array.from({ length: n }, (_, i) =>
+  i === 0 ? { privateBath: "Yes", closet: "Walk-in" } : { privateBath: "No", closet: "Small" }
+);
 const SURVEY_STEPS = [
-  { id: "basics", title: "Basic Requirements", subtitle: "Size, stories, and rooms", fields: ["totalArea", "stories", "bedrooms", "bathrooms", "privateBaths"] },
+  { id: "basics", title: "Basic Requirements", subtitle: "Size, stories, and rooms", fields: ["totalArea", "stories", "bedrooms", "bedroomDetails"] },
   { id: "structure", title: "Structure & Site", subtitle: "Garage, shape, and orientation", fields: ["garage", "shape", "lotDimensions", "frontFacing", "lotContext"] },
   { id: "lifestyle", title: "Lifestyle & Layout", subtitle: "How you live in the home", fields: ["openConcept", "masterLocation", "kitchenPlacement", "laundryLocation", "ceilingHeight"] },
   { id: "style", title: "Style & Materials", subtitle: "Aesthetic and finishes", fields: ["materials", "indoorOutdoor", "naturalLight"] },
@@ -1362,8 +1365,8 @@ const DEFAULT_FORM_DATA = {
   totalArea: "2400",
   stories: "2 Stories",
   bedrooms: "3 Bed",
-  bathrooms: "3 Bath",
-  privateBaths: "1",
+  bedroomConfigs: DEFAULT_BEDROOM_CONFIGS(3),
+  sharedBathroomCount: "1",
   shape: "Rectangular",
   lotWidth: "",
   lotDepth: "",
@@ -1507,8 +1510,79 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
       case "bedrooms":
         return /* @__PURE__ */ React.createElement("div", { key: field, className: "space-y-1.5" }, /* @__PURE__ */ React.createElement(Lbl, null, "Bedrooms"), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, [1, 2, 3, 4, 5].map((n) => {
           const selected = formData.bedrooms === `${n} Bed`;
-          return /* @__PURE__ */ React.createElement("button", { key: n, type: "button", "aria-pressed": selected, onClick: () => upd("bedrooms", `${n} Bed`), className: "flex-1 h-11 border text-sm font-bold rounded-sm transition-all", style: choiceStyle(selected) }, n);
+          return /* @__PURE__ */ React.createElement("button", { key: n, type: "button", "aria-pressed": selected, onClick: () => {
+            const existing = formData.bedroomConfigs || [];
+            const newConfigs = Array.from({ length: n }, (_, i) => existing[i] || (i === 0 ? { privateBath: "Yes", closet: "Walk-in" } : { privateBath: "No", closet: "Small" }));
+            setFormData((prev) => ({ ...prev, bedrooms: `${n} Bed`, bedroomConfigs: newConfigs }));
+          }, className: "flex-1 h-11 border text-sm font-bold rounded-sm transition-all", style: choiceStyle(selected) }, n);
         })));
+      case "bedroomDetails": {
+        const configs = formData.bedroomConfigs || DEFAULT_BEDROOM_CONFIGS(parseInt(formData.bedrooms) || 3);
+        const updateConfig = (idx, key, val) => {
+          const next = [...configs];
+          next[idx] = { ...next[idx], [key]: val };
+          setFormData((prev) => ({ ...prev, bedroomConfigs: next }));
+        };
+        const bedroomLabel = (i) => i === 0 ? "Primary Bedroom" : `Bedroom ${i}`;
+        return /* @__PURE__ */ React.createElement("div", { key: field, className: "space-y-2" },
+          /* @__PURE__ */ React.createElement(Lbl, null, "Bedroom Details"),
+          /* @__PURE__ */ React.createElement("p", { className: "text-[9px] text-mid/60 -mt-0.5 mb-1" }, "Configure private bathroom and closet for each bedroom"),
+          /* @__PURE__ */ React.createElement("div", { className: "space-y-1.5" },
+            configs.map((cfg, idx) => {
+              const isPrimary = idx === 0;
+              return /* @__PURE__ */ React.createElement("div", {
+                key: idx,
+                className: "p-2.5 border rounded-sm",
+                style: { borderColor: isPrimary ? "rgba(27,79,130,0.18)" : "rgba(0,0,0,0.08)", background: isPrimary ? "rgba(27,79,130,0.04)" : "rgba(255,255,255,0.7)" }
+              },
+                /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3 flex-wrap" },
+                  /* @__PURE__ */ React.createElement("span", { className: "mono text-[8px] uppercase tracking-widest font-bold flex-shrink-0", style: { color: isPrimary ? "var(--blue)" : "var(--ink)", opacity: 0.72, minWidth: "88px" } }, bedroomLabel(idx)),
+                  /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1.5 flex-shrink-0" },
+                    /* @__PURE__ */ React.createElement("span", { className: "mono text-[7px] uppercase tracking-widest", style: { color: "var(--mid)", opacity: 0.5 } }, "En-suite"),
+                    ["Yes", "No"].map((val) => {
+                      const sel = cfg.privateBath === val || (isPrimary && val === "Yes");
+                      const disabled = isPrimary;
+                      return /* @__PURE__ */ React.createElement("button", {
+                        key: val, type: "button", disabled,
+                        onClick: () => !disabled && updateConfig(idx, "privateBath", val),
+                        className: "px-2.5 py-1 border text-[9px] font-bold rounded-sm",
+                        style: { ...choiceStyle(sel, "blue"), opacity: (disabled && val === "No") ? 0.3 : 1, cursor: disabled ? "default" : "pointer" }
+                      }, val);
+                    })
+                  ),
+                  /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-1.5 flex-shrink-0" },
+                    /* @__PURE__ */ React.createElement("span", { className: "mono text-[7px] uppercase tracking-widest", style: { color: "var(--mid)", opacity: 0.5 } }, "Closet"),
+                    [{ val: "Walk-in", label: "Walk-in" }, { val: "Small", label: "Small" }].map(({ val, label }) => {
+                      const sel = cfg.closet === val;
+                      return /* @__PURE__ */ React.createElement("button", {
+                        key: val, type: "button",
+                        onClick: () => updateConfig(idx, "closet", val),
+                        className: "px-2.5 py-1 border text-[9px] font-bold rounded-sm transition-all",
+                        style: choiceStyle(sel)
+                      }, label);
+                    })
+                  )
+                )
+              );
+            })
+          ),
+          /* @__PURE__ */ React.createElement("div", { className: "space-y-1.5 pt-1" },
+            /* @__PURE__ */ React.createElement(Lbl, null, "Shared Hallway Bathrooms"),
+            /* @__PURE__ */ React.createElement("p", { className: "text-[9px] text-mid/60 -mt-0.5 mb-1.5" }, "Full bathrooms shared off the hallway (primary en-suite is separate)"),
+            /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" },
+              [0, 1, 2, 3].map((n) => {
+                const sel = formData.sharedBathroomCount === `${n}`;
+                return /* @__PURE__ */ React.createElement("button", {
+                  key: n, type: "button",
+                  onClick: () => upd("sharedBathroomCount", `${n}`),
+                  className: "flex-1 h-10 border text-sm font-bold rounded-sm transition-all",
+                  style: choiceStyle(sel)
+                }, n === 0 ? "None" : n);
+              })
+            )
+          )
+        );
+      }
       case "bathrooms":
         return /* @__PURE__ */ React.createElement("div", { key: field, className: "space-y-1.5" }, /* @__PURE__ */ React.createElement(Lbl, null, "Full Bathrooms"), /* @__PURE__ */ React.createElement("div", { className: "flex gap-2" }, [1, 2, 3, 4, 5].map((n) => {
           const selected = formData.bathrooms === `${n} Bath`;
