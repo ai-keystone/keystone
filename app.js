@@ -543,6 +543,40 @@ const ROOM_TYPE_OPTIONS = [
   {type:'laundry',label:'Laundry'},{type:'storage',label:'Storage'},
   {type:'wine_cellar',label:'Wine Cellar'},{type:'music_room',label:'Music Room'},
 ];
+// ── CLIENT-SIDE SVG RENDERER ─────────────────────────────────────────────────
+// Generates a fast simplified SVG from planSpec immediately on every edit,
+// so changes are visible instantly without waiting for the server round-trip.
+// The server's /api/plan/svg call then upgrades to the full-quality render.
+function buildClientSvg(spec) {
+  const PX_FT = 18, PAD = 100, LGAP = 130;
+  const levels = spec.levels || [];
+  let svgWidth = 0, yOffset = 0;
+  levels.forEach(lvl => {
+    const lw = (lvl.width || 40) * PX_FT + PAD * 2 + 80;
+    if (lw > svgWidth) svgWidth = lw;
+  });
+  if (!svgWidth) svgWidth = 800;
+  levels.forEach(lvl => { yOffset += (lvl.height || 40) * PX_FT + PAD + LGAP; });
+  const totalH = yOffset + PAD;
+  const parts = [`<rect width="${svgWidth}" height="${totalH}" fill="#F9F8F4"/>`];
+  let yo = 0;
+  levels.forEach((lvl) => {
+    const startY = yo + PAD;
+    (lvl.rooms || []).forEach(room => {
+      const rw = room.w * PX_FT, rh = room.h * PX_FT;
+      if (!rw || !rh) return;
+      const rx = PAD + room.x * PX_FT, ry = startY + room.y * PX_FT;
+      const fill = PLAN_ROOM_COLORS[room.type] || '#fff';
+      const lbl = (room.label || room.type || '').replace(/_/g,' ').toUpperCase();
+      const fs = Math.min(11, Math.max(7, Math.min(rw, rh) * 0.08));
+      parts.push(`<rect x="${rx}" y="${ry}" width="${rw}" height="${rh}" fill="${fill}" stroke="#2c2c2e" stroke-width="3"/>`);
+      parts.push(`<text x="${rx+rw/2}" y="${ry+rh/2-5}" text-anchor="middle" dominant-baseline="middle" font-size="${fs}" fill="#444" font-family="Arial,sans-serif">${lbl}</text>`);
+      parts.push(`<text x="${rx+rw/2}" y="${ry+rh/2+fs}" text-anchor="middle" dominant-baseline="middle" font-size="${fs*0.75}" fill="#888" font-family="monospace">${room.w}'\xD7${room.h}'</text>`);
+    });
+    yo += (lvl.height || 40) * PX_FT + PAD + LGAP;
+  });
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${totalH}" viewBox="0 0 ${svgWidth} ${totalH}">${parts.join('')}</svg>`;
+}
 // ── WALL EDITOR ──────────────────────────────────────────────────────────────
 const WallEditor = ({ planSpec, planSvg, onUpdatePlan, onRoomSelect, externalSelectedKey }) => {
   const [internalKey, setInternalKey] = React.useState(null);
@@ -660,24 +694,8 @@ const WallEditor = ({ planSpec, planSvg, onUpdatePlan, onRoomSelect, externalSel
   const svgH = vbMatch ? parseFloat(vbMatch[2]) : 1000;
   const activeSpec = previewSpec || planSpec;
 
-  // Build preview SVG string showing all rooms during drag (instant client-side feedback)
-  const buildPreviewSvg = (spec) => {
-    const parts = [`<rect width="${svgW}" height="${svgH}" fill="#F9F8F4"/>`];
-    (spec.levels || []).forEach((lvl, li) => {
-      const startY = getLevelStartY(li);
-      (lvl.rooms || []).forEach(room => {
-        const rx = PAD + room.x * PX_FT, ry = startY + room.y * PX_FT;
-        const rw = room.w * PX_FT, rh = room.h * PX_FT;
-        const fill = PLAN_ROOM_COLORS[room.type] || '#fff';
-        const lbl = (room.label || room.type || '').replace(/_/g,' ').toUpperCase();
-        const fs = Math.min(11, Math.max(7, Math.min(rw, rh) * 0.08));
-        parts.push(`<rect x="${rx}" y="${ry}" width="${rw}" height="${rh}" fill="${fill}" stroke="#2c2c2e" stroke-width="3"/>`);
-        parts.push(`<text x="${rx+rw/2}" y="${ry+rh/2-5}" text-anchor="middle" dominant-baseline="middle" font-size="${fs}" fill="#444" font-family="Arial,sans-serif">${lbl}</text>`);
-        parts.push(`<text x="${rx+rw/2}" y="${ry+rh/2+fs}" text-anchor="middle" dominant-baseline="middle" font-size="${fs*0.75}" fill="#888" font-family="monospace">${room.w}'\xD7${room.h}'</text>`);
-      });
-    });
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${svgW}" height="${svgH}" viewBox="0 0 ${svgW} ${svgH}">${parts.join('')}</svg>`;
-  };
+  // Delegate to the module-level buildClientSvg for the drag preview
+  const buildPreviewSvg = (spec) => buildClientSvg(spec);
 
   const HANDLE_W = 10;
 
@@ -1987,11 +2005,17 @@ const DesignGenerator = ({ onOpenModal }) => {
       });
       const d = await r.json();
       if (d.success && d.svg) setPlanSvg(d.svg);
-    } catch {}
+      else console.warn('[rerenderSvg] server error:', d.error || d);
+    } catch (err) {
+      console.warn('[rerenderSvg] fetch failed:', err.message);
+    }
   };
   const handleUpdatePlan = async (newSpec) => {
     pushToHistory(planSvg, planSpec);
     setPlanSpec(newSpec);
+    // Immediately show client-side render so the change is visible right away.
+    // The server call below upgrades it to the full-quality render (doors, windows, labels).
+    setPlanSvg(buildClientSvg(newSpec));
     await rerenderSvg(newSpec);
   };
   const downloadBlueprint = async () => {
