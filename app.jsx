@@ -467,7 +467,7 @@ const TiltCard = ({ children, className = '', style = {}, maxTilt = 7 }) => {
 };
 
 // BlurText — scroll-triggered word-by-word blur reveal
-const BlurText = ({ text = '', delay = 65, className = '', direction = 'bottom', tag: Tag = 'span' }) => {
+const BlurText = ({ text = '', delay = 65, className = '', direction = 'bottom', tag: Tag = 'span', style = {} }) => {
     const [inView, setInView] = useState(false);
     const ref = useRef(null);
     useEffect(() => {
@@ -479,7 +479,7 @@ const BlurText = ({ text = '', delay = 65, className = '', direction = 'bottom',
     const words = text.split(' ');
     const yFrom = direction === 'bottom' ? 28 : -28;
     return (
-        <Tag ref={ref} className={`blur-text-wrap ${className}`}>
+        <Tag ref={ref} className={`blur-text-wrap ${className}`} style={style}>
             {words.map((word, i) => (
                 <motion.span key={i} className="blur-word"
                     initial={{ filter: 'blur(10px)', opacity: 0, y: yFrom }}
@@ -912,12 +912,18 @@ const Waves = ({
 
 // ─── MAGIC BENTO (interactive particle bento grid) ───────────────────────────
 const keystoneBentoCards = [
-    { color:'#0D0806', title:'Floor Plans in <60s', description:'From guided client brief to architect-ready layout, instantly', label:'Speed' },
-    { color:'#0D0806', title:'Gemini Exterior', description:'Atmosphere visualized from the same brief', label:'Vision' },
-    { color:'#0D0806', title:'Guided Intake', description:'Structured discovery before the meeting starts', label:'Discovery' },
-    { color:'#0D0806', title:'4K PNG Export', description:'High-res blueprint download, architect-ready', label:'Export' },
-    { color:'#0D0806', title:'Passkey Access', description:'Firm-controlled client link with secure entry', label:'Security' },
-    { color:'#0D0806', title:'Session History', description:'Firm-visible pipeline for every active lead', label:'Pipeline' },
+    { color:'#0D0806', title:'Floor Plans in <60s', description:'From guided client brief to architect-ready layout, instantly', label:'Speed',
+      svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="74" height="50" rx="2" stroke="#FF6A37" stroke-width="1.2" opacity="0.4"/><rect x="3" y="3" width="42" height="30" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><rect x="45" y="3" width="32" height="30" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><rect x="3" y="33" width="26" height="20" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><rect x="29" y="33" width="48" height="20" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><line x1="16" y1="3" x2="16" y2="33" stroke="#FF6A37" stroke-width="0.8" opacity="0.35"/><line x1="45" y1="33" x2="45" y2="53" stroke="#FF6A37" stroke-width="0.8" opacity="0.35"/></svg>' },
+    { color:'#0D0806', title:'Gemini Exterior', description:'Atmosphere visualized from the same brief', label:'Vision',
+      svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><polygon points="40,6 70,27 70,53 10,53 10,27" stroke="#FF9A5C" stroke-width="1.4" fill="none" stroke-linejoin="round"/><polygon points="40,6 70,27 10,27" stroke="#FF6A37" stroke-width="1.2" fill="rgba(255,106,55,0.07)" stroke-linejoin="round"/><rect x="32" y="36" width="16" height="17" rx="1" stroke="#FF9A5C" stroke-width="1.2"/><rect x="14" y="30" width="12" height="10" rx="1" stroke="#FF9A5C" stroke-width="1" opacity="0.65"/><rect x="54" y="30" width="12" height="10" rx="1" stroke="#FF9A5C" stroke-width="1" opacity="0.65"/><circle cx="65" cy="13" r="5" stroke="#FF6A37" stroke-width="1" opacity="0.55"/><line x1="65" y1="6" x2="65" y2="4" stroke="#FF6A37" stroke-width="1" opacity="0.45"/><line x1="72" y1="13" x2="74" y2="13" stroke="#FF6A37" stroke-width="1" opacity="0.45"/><line x1="58" y1="13" x2="56" y2="13" stroke="#FF6A37" stroke-width="1" opacity="0.45"/></svg>' },
+    { color:'#0D0806', title:'Guided Intake', description:'Structured discovery before the meeting starts', label:'Discovery',
+      svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="8" width="48" height="44" rx="3" stroke="#FF6A37" stroke-width="1.4" opacity="0.55"/><rect x="28" y="4" width="24" height="8" rx="2" stroke="#FF9A5C" stroke-width="1.2"/><circle cx="24" cy="22" r="3" stroke="#FF9A5C" stroke-width="1.3"/><polyline points="22.6,22 24,23.8 26,20.2" stroke="#FF9A5C" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="30" y1="22" x2="57" y2="22" stroke="#FF9A5C" stroke-width="1.3" opacity="0.85"/><circle cx="24" cy="33" r="3" stroke="#FF9A5C" stroke-width="1.3" opacity="0.7"/><line x1="30" y1="33" x2="57" y2="33" stroke="#FF9A5C" stroke-width="1.3" opacity="0.6"/><circle cx="24" cy="44" r="3" stroke="#FF9A5C" stroke-width="1.3" opacity="0.5"/><line x1="30" y1="44" x2="50" y2="44" stroke="#FF9A5C" stroke-width="1.3" opacity="0.4"/></svg>' },
+    { color:'#0D0806', title:'4K PNG Export', description:'High-res blueprint download, architect-ready', label:'Export',
+      svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="2" width="44" height="38" rx="3" stroke="#FF6A37" stroke-width="1.4" opacity="0.55"/><rect x="22" y="6" width="36" height="30" rx="1" stroke="#FF9A5C" stroke-width="1.1" opacity="0.5"/><line x1="22" y1="14" x2="58" y2="14" stroke="#FF9A5C" stroke-width="0.9" opacity="0.4"/><line x1="22" y1="22" x2="58" y2="22" stroke="#FF9A5C" stroke-width="0.9" opacity="0.4"/><line x1="22" y1="30" x2="50" y2="30" stroke="#FF9A5C" stroke-width="0.9" opacity="0.35"/><line x1="32" y1="6" x2="32" y2="36" stroke="#FF9A5C" stroke-width="0.9" opacity="0.3"/><line x1="40" y1="43" x2="40" y2="52" stroke="#FF9A5C" stroke-width="2" stroke-linecap="round"/><polyline points="33,48 40,54 47,48" stroke="#FF9A5C" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' },
+    { color:'#0D0806', title:'Passkey Access', description:'Firm-controlled client link with secure entry', label:'Security',
+      svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="22" y="27" width="36" height="26" rx="4" stroke="#FF6A37" stroke-width="1.4"/><path d="M29 27 V20 C29 11 51 11 51 20 V27" stroke="#FF9A5C" stroke-width="1.4" fill="none"/><circle cx="40" cy="38" r="4" stroke="#FF9A5C" stroke-width="1.4"/><line x1="40" y1="42" x2="40" y2="46" stroke="#FF9A5C" stroke-width="1.4" stroke-linecap="round"/><line x1="29" y1="17" x2="25" y2="14" stroke="#FF6A37" stroke-width="1" opacity="0.5"/><line x1="51" y1="17" x2="55" y2="14" stroke="#FF6A37" stroke-width="1" opacity="0.5"/><line x1="40" y1="11" x2="40" y2="7" stroke="#FF6A37" stroke-width="1" opacity="0.5"/></svg>' },
+    { color:'#0D0806', title:'Session History', description:'Firm-visible pipeline for every active lead', label:'Pipeline',
+      svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="28" r="6" stroke="#FF6A37" stroke-width="1.4" opacity="0.65"/><circle cx="40" cy="11" r="6" stroke="#FF9A5C" stroke-width="1.4"/><circle cx="40" cy="45" r="6" stroke="#FF9A5C" stroke-width="1.4" opacity="0.8"/><circle cx="68" cy="28" r="6" stroke="#FF6A37" stroke-width="1.4" opacity="0.65"/><line x1="18" y1="25" x2="34" y2="14" stroke="#FF6A37" stroke-width="1.1" opacity="0.45"/><line x1="18" y1="31" x2="34" y2="42" stroke="#FF6A37" stroke-width="1.1" opacity="0.45"/><line x1="46" y1="14" x2="62" y2="25" stroke="#FF6A37" stroke-width="1.1" opacity="0.45"/><line x1="46" y1="42" x2="62" y2="31" stroke="#FF6A37" stroke-width="1.1" opacity="0.45"/><circle cx="40" cy="28" r="3" fill="#FF6A37" opacity="0.5"/></svg>' },
 ];
 const BentoParticleCard = ({ children, className='', style, particleCount=10, glowColor='255,106,55', clickEffect=true }) => {
     const cardRef = useRef(null);
@@ -1031,6 +1037,7 @@ const MagicBento = ({ cards=keystoneBentoCards, glowColor='255,106,55', spotligh
                         <div className="magic-bento-card__header">
                             <div className="magic-bento-card__label">{card.label}</div>
                         </div>
+                        {card.svgHtml && <div className="magic-bento-card__graphic" dangerouslySetInnerHTML={{ __html: card.svgHtml }} />}
                         <div className="magic-bento-card__content">
                             <h2 className="magic-bento-card__title">{card.title}</h2>
                             <p className="magic-bento-card__description">{card.description}</p>
@@ -3567,9 +3574,9 @@ const DreamApp = () => {
                                             <span className="block">Build the</span>
                                             <span className="block">
                                                 <BlurText text="feeling of home" delay={55} direction="bottom" tag="span"
-                                                    className="serif hero-accent-word magic-gradient-text"/>
+                                                    className="serif hero-accent-word" style={{ color: '#FF7040' }}/>
                                             </span>
-                                            <span className="block" style={{color:'rgba(78,69,61,0.52)'}}>before the meeting.</span>
+                                            <span className="block" style={{color:'rgba(78,69,61,0.78)'}}>before the meeting.</span>
                                         </motion.h1>
 
                                         <motion.p initial={{opacity:0,y:14}} animate={{opacity:1,y:0}} transition={{delay:0.48}}
