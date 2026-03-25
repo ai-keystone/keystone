@@ -1,4 +1,4 @@
-﻿const { useState, useEffect, useRef, useMemo } = React;
+const { useState, useEffect, useRef, useMemo } = React;
 const FM = window.framerMotion || window.Motion;
 const { motion, AnimatePresence, useScroll, useTransform, useSpring } = FM;
 
@@ -2832,19 +2832,21 @@ const DesignGenerator = ({ onOpenModal }) => {
                     </div>
                 )}
 
-                <div className={`grid lg:grid-cols-[380px_minmax(0,1fr)] gap-6 items-start transition-all ${!isUnlocked ? 'opacity-15 pointer-events-none blur-sm select-none' : ''}`}>
-                    {/* LEFT */}
-                    <div className="paper-panel w-full p-6 md:p-7">
-                        <SurveyForm formData={formData} setFormData={setFormData} onSubmit={handleGeneratePlan} isLoading={isLoading} onReset={resetSampleBrief}/>
+                <div className={`grid lg:grid-cols-[320px_minmax(0,1fr)_320px] gap-5 items-start transition-all ${!isUnlocked ? 'opacity-15 pointer-events-none blur-sm select-none' : ''}`}>
+                    {/* LEFT (Survey) */}
+                    <div className="paper-panel w-full p-5 flex flex-col" style={{height:'82vh', minHeight:'600px'}}>
+                        <div className="overflow-y-auto pr-2 pb-safe custom-scrollbar flex-1">
+                            <SurveyForm formData={formData} setFormData={setFormData} onSubmit={handleGeneratePlan} isLoading={isLoading} onReset={resetSampleBrief}/>
+                        </div>
                     </div>
 
-                    {/* RIGHT */}
-                    <div className="dream-panel w-full flex flex-col overflow-hidden" style={{minHeight:'520px'}}>
+                    {/* CENTER (Interactive Blueprint) */}
+                    <div className="dream-panel w-full flex flex-col overflow-hidden relative" style={{height:'82vh', minHeight:'600px'}}>
                         {status === 'idle' && (
                             <div className="flex-1 flex flex-col items-center justify-center p-12 text-center" style={{color:'rgba(244,239,230,0.42)'}} role="status" aria-live="polite">
-                                <svg className="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                 <p className="cg text-2xl text-white" style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>Awaiting your brief</p>
-                                <p className="mono text-[9px] uppercase tracking-widest mt-2">Complete the five-step survey to generate the first plan</p>
+                                <p className="mono text-[9px] uppercase tracking-widest mt-2">Complete the survey to generate the first plan</p>
                             </div>
                         )}
                         {isLoading && (
@@ -2855,42 +2857,63 @@ const DesignGenerator = ({ onOpenModal }) => {
                             </div>
                         )}
                         {(status === 'plan-ready' || status === 'refining') && planSvg && (
-                            <div className="flex flex-col">
-                                <div className="p-4 border-b border-white/8" style={{background:'rgba(255,255,255,0.04)'}}>
-                                    <div className="flex flex-wrap items-center gap-2 mb-2.5">
-                                        <span className="badge">{status === 'refining' ? 'Refining live plan' : 'Plan ready'}</span>
-                                        <span className="mono text-[7px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.42)'}}>{refinementsLeft} refinements left</span>
-                                        <span className="mono text-[7px] uppercase tracking-widest bg-white border border-black/6 px-2 py-1 rounded-sm">2D Blueprint</span>
-                                        <button onClick={downloadBlueprint} className="mono text-[7px] uppercase tracking-widest bg-blue text-white px-2 py-1 rounded-sm hover:bg-ink transition-colors">Download PNG</button>
-                                        {alternatives.length > 0 && (
-                                            <button
-                                                onClick={() => setShowAlternatives(true)}
-                                                className="mono text-[7px] uppercase tracking-widest bg-white border border-black/15 px-2 py-1 rounded-sm hover:border-blue hover:text-blue transition-colors"
-                                            >
-                                                See Other Generations ({alternatives.length})
-                                            </button>
-                                        )}
-                                        <button onClick={() => setZoomImage(planSvg)} className="ml-auto mono text-[7px] uppercase tracking-widest text-mid hover:text-ink">
-                                            Expand
-                                        </button>
-                                    </div>
-                                    {footprintInfo && (
-                                        <div className="flex gap-3 mb-2">
-                                            <span className="mono text-[7px] text-mid">
-                                                Best of {1 + alternatives.length} - {footprintInfo.widthFt} x {footprintInfo.heightFt} ft - ratio {footprintInfo.aspectRatio.toFixed(2)}
-                                                {planScore !== null && <span className="ml-2 text-blue">score {planScore}/100</span>}
-                                            </span>
+                            <InteractiveCanvas>
+                                <div style={{width:'90%', height:'90%', display:'flex', alignItems:'center', justifyContent:'center'}} dangerouslySetInnerHTML={{__html:planSvg}}/>
+                            </InteractiveCanvas>
+                        )}
+                    </div>
+
+                    {/* RIGHT (Actions & Spec Data) */}
+                    <div className="w-full flex flex-col gap-4 overflow-y-auto pb-safe custom-scrollbar" style={{height:'82vh', minHeight:'600px', paddingRight:'4px'}}>
+                        {(status === 'plan-ready' || status === 'refining') && planSvg ? (
+                            <>
+                                <div className="paper-panel p-5">
+                                    <div className="flex flex-col gap-3">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <span className="badge" style={{background: status === 'refining' ? '#fff6ed' : 'var(--paper)', borderColor: status === 'refining' ? 'var(--accent)' : 'var(--blue)'}}>{status === 'refining' ? 'Refining...' : 'Plan ready'}</span>
+                                            <span className="mono text-[7px] uppercase tracking-[0.22em] text-mid font-bold">{refinementsLeft} updates left</span>
                                         </div>
-                                    )}
-                                    <div className="w-full overflow-auto cursor-zoom-in bg-white rounded-[14px]" onClick={()=>setZoomImage(planSvg)} dangerouslySetInnerHTML={{__html:planSvg}}/>
+                                        {footprintInfo && (
+                                            <div className="text-[11px] text-mid bg-white/50 p-2.5 rounded border border-black/5">
+                                                <div className="flex justify-between mb-1">
+                                                    <span>Dimensions:</span>
+                                                    <strong className="text-ink">{footprintInfo.widthFt} x {footprintInfo.heightFt} ft</strong>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span>AI Optimization Score:</span>
+                                                    <strong className="text-blue">{planScore}/100</strong>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <button onClick={downloadBlueprint} className="w-full cta-hero cta-glow py-3 text-[10px] mt-1 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all">Download High-Res PNG</button>
+                                        <button onClick={() => { alert('DXF export functionality is coming soon.'); }} className="w-full px-4 py-3 border border-black/10 rounded-sm hover:border-blue hover:text-blue text-[10px] font-bold uppercase tracking-widest transition-all bg-white shadow-sm flex items-center justify-center gap-2">
+                                            {!isUnlocked && <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>}
+                                            Export Vector DXF
+                                        </button>
+                                        {alternatives.length > 0 && (
+                                            <button onClick={() => setShowAlternatives(true)} className="w-full cta-secondary py-3 text-[10px]">View Alternatives ({alternatives.length})</button>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="px-5"><PlanSummaryPanel planSpec={planSpec}/></div>
-                                <RefinementPanel planSpec={planSpec} formData={formData} refinementsLeft={refinementsLeft} refinementHistory={refinementHistory} onRefine={handleRefine} isLoading={isLoading}/>
-                                <div className="p-5 border-t border-white/8" style={{background:'rgba(255,255,255,0.04)'}}>
+                                <div className="paper-panel overflow-hidden">
+                                    <RefinementPanel planSpec={planSpec} formData={formData} refinementsLeft={refinementsLeft} refinementHistory={refinementHistory} onRefine={handleRefine} isLoading={isLoading}/>
+                                </div>
+                                <div className="paper-panel overflow-hidden">
                                     <Render3DPanel planSpec={planSpec} formData={formData} planSvg={planSvg} galleryId={galleryId} onRenderReady={img=>setZoomImage(img)}/>
                                 </div>
+                                <div className="paper-panel overflow-hidden">
+                                    <div className="p-4 border-b border-black/5 bg-white/40"><span className="section-label">Spec Details</span></div>
+                                    <PlanSummaryPanel planSpec={planSpec}/>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="paper-panel p-6 text-center text-mid flex flex-col items-center justify-center h-full">
+                                <svg className="w-8 h-8 mb-3 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
+                                <p className="text-[11px] leading-relaxed">Once you generate a plan, export options, AI refinement tools, and structural metrics will appear here.</p>
                             </div>
                         )}
+                    </div>
+                </div>
 
                         {/* â”€â”€ ALTERNATIVES MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                         {showAlternatives && (
@@ -2954,8 +2977,6 @@ const DesignGenerator = ({ onOpenModal }) => {
                                 </div>
                             </div>
                         )}
-                    </div>
-                </div>
             </div>
         </section>
     );
