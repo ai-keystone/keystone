@@ -30,9 +30,13 @@ const ASSETS = {
 };
 
 // â”€â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-const scrollTo = id => document.getElementById(id)?.scrollIntoView({
-  behavior: 'smooth'
-});
+const scrollTo = id => {
+  if (id === 'generator') {
+    document.dispatchEvent(new CustomEvent('keystone:open-studio'));
+    return;
+  }
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+};
 const BRAND_NAME = 'Keystone AI Studio';
 const CONTACT_EMAIL = 'aikeystone559@gmail.com';
 const LEGAL_UPDATED_AT = 'March 14, 2026';
@@ -6114,6 +6118,29 @@ const DreamApp = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [heroVisible, setHeroVisible] = useState(true);
+  const [isStudioOpen, setStudioOpen] = useState(false);
+
+  // Listen for scrollTo('generator') dispatched from any button on the page
+  useEffect(() => {
+    const handler = () => setStudioOpen(true);
+    const escHandler = (e) => { if (e.key === 'Escape') setStudioOpen(false); };
+    document.addEventListener('keystone:open-studio', handler);
+    document.addEventListener('keydown', escHandler);
+    return () => {
+      document.removeEventListener('keystone:open-studio', handler);
+      document.removeEventListener('keydown', escHandler);
+    };
+  }, []);
+
+  // Lock / unlock body scroll
+  useEffect(() => {
+    if (isStudioOpen) {
+      document.body.classList.add('studio-open');
+    } else {
+      document.body.classList.remove('studio-open');
+    }
+    return () => document.body.classList.remove('studio-open');
+  }, [isStudioOpen]);
   const featuredWorks = [{
     eyebrow: 'Generated floor plan',
     title: 'A plan the architect can react to before kickoff.',
@@ -6947,9 +6974,48 @@ const DreamApp = () => {
     className: "cta-live-mark"
   }, /*#__PURE__*/React.createElement("span", {
     className: "cta-live-dot"
-  }), "Try it now"))))))))), /*#__PURE__*/React.createElement(DesignGenerator, {
-    onOpenModal: () => setModalOpen(true)
-  }), /*#__PURE__*/React.createElement(Gallery, {
+  }), "Try it now"))))))))),
+  /* Studio fullscreen modal */
+  /*#__PURE__*/React.createElement(AnimatePresence, null,
+  isStudioOpen && /*#__PURE__*/React.createElement(motion.div, {
+    key: "studio-modal",
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+    transition: { duration: 0.18 },
+    className: "studio-modal-overlay",
+  },
+    React.createElement(motion.div, {
+      initial: { y: 32, opacity: 0 },
+      animate: { y: 0, opacity: 1 },
+      exit: { y: 16, opacity: 0 },
+      transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] },
+      className: "studio-modal-window",
+    },
+      /* Top bar */
+      React.createElement("div", { className: "studio-modal-topbar" },
+        React.createElement("div", { style: { display: 'flex', alignItems: 'center', gap: 10 } },
+          React.createElement("img", { src: ASSETS.icon, alt: "Keystone", style: { width: 22, height: 22, opacity: 0.85 } }),
+          React.createElement("span", { className: "cg", style: { fontSize: '1rem', fontWeight: 700, letterSpacing: '-0.03em' } }, "Live Studio"),
+          React.createElement("span", { className: "mono", style: { fontSize: 8, color: 'rgba(10,10,12,0.36)', letterSpacing: '0.18em', textTransform: 'uppercase', marginLeft: 4 } }, "Keystone AI")
+        ),
+        React.createElement("button", {
+          className: "studio-modal-close",
+          onClick: () => setStudioOpen(false),
+          "aria-label": "Close Live Studio",
+        },
+          React.createElement("svg", { width: 14, height: 14, fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" },
+            React.createElement("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: "2", d: "M6 18L18 6M6 6l12 12" })
+          )
+        )
+      ),
+      /* Scrollable body — contains DesignGenerator */
+      React.createElement("div", { className: "studio-modal-body" },
+        React.createElement(DesignGenerator, { onOpenModal: () => setModalOpen(true) })
+      )
+    )
+  )),  /* end AnimatePresence studio modal */
+  /*#__PURE__*/React.createElement(Gallery, {
     onOpenModal: () => setModalOpen(true)
   }), /*#__PURE__*/React.createElement("section", {
     className: "relative py-5 border-y overflow-hidden",

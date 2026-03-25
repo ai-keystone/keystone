@@ -1877,6 +1877,60 @@
         .global-spotlight { mix-blend-mode: screen; will-change: transform, opacity; z-index: 200 !important; pointer-events: none; }
         .waves-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 
+        /* ── STUDIO FULLSCREEN MODAL ── */
+        .studio-modal-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 500;
+            background: rgba(9,9,9,0.72);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            display: flex;
+            flex-direction: column;
+        }
+        .studio-modal-window {
+            position: absolute;
+            inset: 0;
+            background: var(--paper);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .studio-modal-topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(10,10,12,0.08);
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(8px);
+            flex-shrink: 0;
+            z-index: 2;
+        }
+        .studio-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        .studio-modal-body::-webkit-scrollbar { width: 3px; }
+        .studio-modal-body::-webkit-scrollbar-thumb { background: rgba(9,9,9,0.2); }
+        .studio-modal-close {
+            width: 34px; height: 34px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 99px;
+            border: 1px solid rgba(10,10,12,0.1);
+            background: transparent;
+            cursor: pointer;
+            color: rgba(10,10,12,0.6);
+            transition: background 0.15s, color 0.15s;
+        }
+        .studio-modal-close:hover {
+            background: rgba(10,10,12,0.06);
+            color: var(--ink);
+        }
+        /* When studio modal is open, prevent body scroll */
+        body.studio-open { overflow: hidden; }
+
         /* ── CAD STUDIO ENHANCEMENTS ── */
         /* Left panel: "The Brief" */
         .cad-panel-brief {
@@ -2051,6 +2105,6 @@
         }, { passive: true });
     })();
 </script>
-<script defer src="app.js?v=20260325-cad-studio"></script>
+<script defer src="app.js?v=20260325-studio-modal"></script>
 </body>
 </html>
