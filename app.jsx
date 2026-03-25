@@ -2819,36 +2819,6 @@ const DesignGenerator = ({ onOpenModal }) => {
                     )}
                 </AnimatePresence>
 
-                <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start mb-8 md:mb-10">
-                    <div>
-                        <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>Live studio</span>
-                        <h2 className="cg mt-6" style={{fontSize:'clamp(2.6rem, 5.6vw, 4.6rem)',letterSpacing:'-0.06em',textTransform:'uppercase',lineHeight:0.9}}>Open the client-to-studio workflow your firm will actually use.</h2>
-                        <p className="text-mid mt-4 text-base max-w-2xl leading-relaxed">This is the real product: the firm shares a guided brief, the client completes it, and Keystone turns the same inputs into a scored floor plan, a downloadable PNG, and an optional Gemini-powered exterior study.</p>
-                    </div>
-                    <div className="dream-panel p-5 md:p-6">
-                        <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(244,239,230,0.46)'}}>Live now</div>
-                        <div className="grid grid-cols-2 gap-3 mt-5">
-                            <div className="studio-metric">
-                                <strong>{'<60s'}</strong>
-                                <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>first plan</span>
-                            </div>
-                            <div className="studio-metric">
-                                <strong>4K</strong>
-                                <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>plan export</span>
-                            </div>
-                        </div>
-                        <div className="generator-step-grid mt-5">
-                            {GENERATOR_FLOW_STEPS.map((item, index) => (
-                                <div key={item.label} className="generator-step-card">
-                                    <div className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.38)'}}>0{index + 1}</div>
-                                    <strong>{item.label}</strong>
-                                    <p>{item.body}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-
                 {/* Passkey gate */}
                 {!isUnlocked && (
                     <div className="studio-access-grid mb-8">

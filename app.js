@@ -5371,57 +5371,7 @@ const DesignGenerator = ({
     className: "absolute top-4 right-4 text-white/40 hover:text-white"
   }, /*#__PURE__*/React.createElement(CloseIcon, {
     className: "w-6 h-6"
-  })))), /*#__PURE__*/React.createElement("div", {
-    className: "grid lg:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start mb-8 md:mb-10"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-    className: "section-label",
-    style: {
-      color: 'rgba(10,10,12,0.44)'
-    }
-  }, "Live studio"), /*#__PURE__*/React.createElement("h2", {
-    className: "cg mt-6",
-    style: {
-      fontSize: 'clamp(2.6rem, 5.6vw, 4.6rem)',
-      letterSpacing: '-0.06em',
-      textTransform: 'uppercase',
-      lineHeight: 0.9
-    }
-  }, "Open the client-to-studio workflow your firm will actually use."), /*#__PURE__*/React.createElement("p", {
-    className: "text-mid mt-4 text-base max-w-2xl leading-relaxed"
-  }, "This is the real product: the firm shares a guided brief, the client completes it, and Keystone turns the same inputs into a scored floor plan, a downloadable PNG, and an optional Gemini-powered exterior study.")), /*#__PURE__*/React.createElement("div", {
-    className: "dream-panel p-5 md:p-6"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mono text-[10px] uppercase tracking-[0.24em]",
-    style: {
-      color: 'rgba(244,239,230,0.46)'
-    }
-  }, "Live now"), /*#__PURE__*/React.createElement("div", {
-    className: "grid grid-cols-2 gap-3 mt-5"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "studio-metric"
-  }, /*#__PURE__*/React.createElement("strong", null, '<60s'), /*#__PURE__*/React.createElement("span", {
-    className: "text-[11px] uppercase tracking-[0.18em]",
-    style: {
-      color: 'rgba(244,239,230,0.5)'
-    }
-  }, "first plan")), /*#__PURE__*/React.createElement("div", {
-    className: "studio-metric"
-  }, /*#__PURE__*/React.createElement("strong", null, "4K"), /*#__PURE__*/React.createElement("span", {
-    className: "text-[11px] uppercase tracking-[0.18em]",
-    style: {
-      color: 'rgba(244,239,230,0.5)'
-    }
-  }, "plan export"))), /*#__PURE__*/React.createElement("div", {
-    className: "generator-step-grid mt-5"
-  }, GENERATOR_FLOW_STEPS.map((item, index) => /*#__PURE__*/React.createElement("div", {
-    key: item.label,
-    className: "generator-step-card"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mono text-[8px] uppercase tracking-[0.22em]",
-    style: {
-      color: 'rgba(244,239,230,0.38)'
-    }
-  }, "0", index + 1), /*#__PURE__*/React.createElement("strong", null, item.label), /*#__PURE__*/React.createElement("p", null, item.body)))))), !isUnlocked && /*#__PURE__*/React.createElement("div", {
+  })))), !isUnlocked && /*#__PURE__*/React.createElement("div", {
     className: "studio-access-grid mb-8"
   }, /*#__PURE__*/React.createElement("div", {
     className: "dream-panel studio-access-card p-6 md:p-8"
@@ -7747,8 +7697,6 @@ const CaseStudyPage = () => {
     className: "hero-video-shell"
   }, /*#__PURE__*/React.createElement("div", {
     className: "hero-video-base"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "hero-video-wave orange"
   }), /*#__PURE__*/React.createElement("div", {
     className: "hero-video-wave soft"
   }), /*#__PURE__*/React.createElement("div", {
