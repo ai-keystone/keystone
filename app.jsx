@@ -500,7 +500,6 @@ const GradientText = ({ children, className = '' }) => (
 // StarBorderBtn — CTA button with animated rotating glow ring
 const StarBorderBtn = ({ children, onClick, className = '' }) => (
     <div className={`star-border-wrap ${className}`}>
-        <div className="star-border-ring" aria-hidden="true"/>
         <button type="button" onClick={onClick} className="cta-hero cta-glow cta-live" style={{ position: 'relative', zIndex: 1 }}>
             {children}
         </button>

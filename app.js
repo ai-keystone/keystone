@@ -613,10 +613,7 @@ const StarBorderBtn = ({
   className = ''
 }) => /*#__PURE__*/React.createElement("div", {
   className: `star-border-wrap ${className}`
-}, /*#__PURE__*/React.createElement("div", {
-  className: "star-border-ring",
-  "aria-hidden": "true"
-}), /*#__PURE__*/React.createElement("button", {
+}, /*#__PURE__*/React.createElement("button", {
   type: "button",
   onClick: onClick,
   className: "cta-hero cta-glow cta-live",
