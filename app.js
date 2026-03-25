@@ -2001,7 +2001,7 @@ const DesignGenerator = ({ onOpenModal }) => {
       const r = await fetch('/api/plan/svg', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planSpec: newSpec }),
+        body: JSON.stringify({ planSpec: newSpec, surveyData: formData }),
       });
       const d = await r.json();
       if (d.success && d.svg) setPlanSvg(d.svg);
