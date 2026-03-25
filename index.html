@@ -2014,13 +2014,15 @@
 
     </style>
     <script>
-        tailwind.config = {
+        // Pre-seed tailwind config before the deferred CDN script loads
+        window.tailwind = window.tailwind || {};
+        window.tailwind.config = {
             theme: { extend: { colors: {
                 ink: '#090909', paper: '#F5F0E9', cream: '#EDE7DF',
                 blue: '#1B4F82', 'blue-lt': '#2563A8', red: '#FF6A37',
                 'red-dk': '#FF4D1D', gold: '#B5882A', mid: '#6E6A66'
             }}}
-        }
+        };
     </script>
 </head>
 <body>
