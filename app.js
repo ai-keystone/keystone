@@ -27,7 +27,7 @@ const ASSETS = {
   },
   phase1: ["images/1.jpg", "images/2.jpg", "images/3.jpg", "images/4.jpg", "images/5.jpg", "images/6.jpg"],
   phase2: ["images/7.jpeg", "images/8.jpeg", "images/9.jpeg", "images/10.jpeg", "images/11.jpeg", "images/12.jpeg", "images/13.jpeg", "images/14.jpeg"],
-  phase3: ["images/15.jpeg", "images/16.jpeg", "images/17.jpeg", "images/18.jpeg", "images/19.jpeg", "images/20.jpeg"],
+  phase3: ["images/15.jpeg", "images/6.jpg", "images/1.jpg", "images/4.jpg", "images/2.jpg", "images/5.jpg"],
   exampleBlueprint: "images/sample_plan.png",
   exampleRender: "images/sample_3d.png"
 };
@@ -6245,8 +6245,8 @@ const PLATFORM_PAGE_CARDS = [{
   body: 'See how the client link, passkey, structured brief, generated plan, and optional Gemini study fit together inside a professional practice.',
   href: '/b2b-workflow',
   cta: 'View Workflow',
-  image: ASSETS.phase2[2],
-  alt: 'Keystone workflow visual',
+  image: ASSETS.phase3[4],
+  alt: 'Client guided intake shown on a mobile phone',
   stat: 'Firm-led'
 }, {
   eyebrow: 'Product roadmap',
@@ -6255,7 +6255,7 @@ const PLATFORM_PAGE_CARDS = [{
   href: '/roadmap',
   cta: 'View Roadmap',
   image: ASSETS.phase3[1],
-  alt: 'Keystone roadmap visual',
+  alt: 'Technical wireframe cube concept image',
   stat: 'Live + next'
 }];
 const LIVE_NOW_FEATURES = ['Client-guided brief capture', 'Generated plan plus 4K blueprint export', 'Gemini-powered exterior study'];
@@ -6512,7 +6512,7 @@ const DreamApp = () => {
     title: 'A client link that does real pre-meeting work.',
     body: 'Light, taste, room priorities, and lot context arrive in a structure the firm can review before the first conversation starts.',
     image: ASSETS.phase3[4],
-    alt: 'Keystone client experience preview'
+    alt: 'Mobile intake interface for a client project brief'
   }];
   const trustCards = [{
     eyebrow: 'Firm workflow',
@@ -8252,20 +8252,20 @@ const HowFloorPlansWorkPage = () => {
   const planInputs = [{
     title: 'Program and footprint',
     body: 'Bedrooms, baths, stories, area goals, garage needs, and rough footprint expectations anchor the first layout.',
-    image: ASSETS.phase1[1],
-    alt: 'Program and footprint reference'
+    image: ASSETS.phase1[4],
+    alt: 'Architectural floor plan sketch on paper'
   }, {
     title: 'Light and atmosphere',
     body: 'Warm modern cues, daylight preference, and exterior tone help shape the visual direction without replacing architectural judgment.',
-    image: ASSETS.phase2[5],
-    alt: 'Light and atmosphere reference'
+    image: ASSETS.phase1[3],
+    alt: 'Bright open interior with soft daylight'
   }, {
     title: 'Circulation and zoning',
     body: 'The brief separates public, private, and service needs so the generated plan has a stronger starting logic before review.',
     image: ASSETS.phase3[4],
-    alt: 'Circulation and zoning reference'
+    alt: 'Mobile questionnaire interface organizing project inputs'
   }];
-  const supportingGallery = [ASSETS.phase1[4], ASSETS.phase2[1], ASSETS.phase2[7], ASSETS.phase3[2]];
+  const supportingGallery = [ASSETS.phase3[2], ASSETS.phase3[4], ASSETS.phase1[4], ASSETS.phase3[1]];
   return /*#__PURE__*/React.createElement(SubpageChrome, null, ({
     openModal
   }) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
@@ -8362,8 +8362,8 @@ const HowFloorPlansWorkPage = () => {
       border: '1px solid rgba(255,255,255,0.12)'
     }
   }, /*#__PURE__*/React.createElement(SmartImage, {
-    src: ASSETS.phase3[5],
-    alt: "Keystone floor plan workflow preview",
+    src: ASSETS.phase3[4],
+    alt: "Keystone guided intake shown on mobile",
     style: {
       width: '100%',
       height: '220px',
@@ -8683,7 +8683,7 @@ const B2BWorkflowPage = () => {
     step: '02',
     title: 'The client fills out structured intent',
     body: 'Room needs, lot cues, light preferences, and style signals arrive in a format the studio can review later instead of pulling everything out live on the call.',
-    image: ASSETS.phase1[2]
+    image: ASSETS.phase3[2]
   }, {
     step: '03',
     title: 'Keystone returns a plan and export',
@@ -8696,7 +8696,7 @@ const B2BWorkflowPage = () => {
     image: ASSETS.exampleRender
   }];
   const operatorBenefits = ['More serious kickoff meetings with less unpaid discovery time', 'A clearer client handoff before the architect starts shaping options', 'A stronger internal review artifact for firms that want consistency'];
-  const supportGallery = [ASSETS.phase2[0], ASSETS.phase2[3], ASSETS.phase3[1], ASSETS.phase3[5]];
+  const supportGallery = [ASSETS.phase3[2], ASSETS.phase1[4], ASSETS.phase2[0], ASSETS.exampleBlueprint];
   return /*#__PURE__*/React.createElement(SubpageChrome, null, ({
     openModal
   }) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
@@ -8744,8 +8744,8 @@ const B2BWorkflowPage = () => {
   }, /*#__PURE__*/React.createElement("div", {
     className: "rounded-[18px] overflow-hidden"
   }, /*#__PURE__*/React.createElement(SmartImage, {
-    src: ASSETS.phase2[2],
-    alt: "Keystone B2B workflow preview",
+    src: ASSETS.phase3[2],
+    alt: "Designer working on a digital architectural concept",
     style: {
       width: '100%',
       height: '260px',
@@ -8956,19 +8956,19 @@ const RoadmapPage = () => {
     phase: 'Roadmap next',
     title: 'DWG / CAD export',
     body: 'Downstream drafting support is planned so approved early concepts can move more cleanly into the studio production process.',
-    image: ASSETS.phase1[0],
+    image: ASSETS.phase1[4],
     status: 'Planned'
   }, {
     phase: 'Roadmap next',
     title: 'Quantity and estimate layers',
     body: 'Quantity takeoff support and early estimation ranges are planned to give firms stronger commercial context earlier in the pipeline.',
-    image: ASSETS.phase2[3],
+    image: ASSETS.phase1[2],
     status: 'Planned'
   }, {
     phase: 'Roadmap next',
     title: '3D viewer and schedule depth',
     body: 'Interactive 3D viewing and project schedule intelligence are part of the broader platform direction, but they are not marketed as live today.',
-    image: ASSETS.phase2[6],
+    image: ASSETS.phase3[1],
     status: 'Planned'
   }];
   const roadmapTracks = [['Estimates', 'Tie quantity logic to early project conversations without overselling precision.'], ['Elevations', 'Expand from plan logic into richer facade and elevation support for early review.'], ['Scheduling', 'Help firms preview timing dependencies once the product truth is ready for it.'], ['White-labeling', 'Let studios present Keystone inside their own professional brand language.']];
