@@ -13,6 +13,19 @@ const ASSETS = {
     phase1:           ["images/1.jpg","images/2.jpg","images/3.jpg","images/4.jpg","images/5.jpg","images/6.jpg"],
     phase2:           ["images/7.jpeg","images/8.jpeg","images/9.jpeg","images/10.jpeg","images/11.jpeg","images/12.jpeg","images/13.jpeg","images/14.jpeg"],
     phase3:           ["images/15.jpeg","images/6.jpg","images/1.jpg","images/4.jpg","images/2.jpg","images/5.jpg"],
+    workflow:         {
+        planReview:     "images/b2b-plan-review.jpeg",
+        firmLaunch:     "images/b2b-firm-launch.jpeg",
+        clientIntake:   "images/b2b-client-intake.jpeg",
+        planExport:     "images/b2b-plan-export.jpeg",
+        kickoffMeeting: "images/b2b-kickoff-meeting.jpeg",
+        collage:        "images/b2b-workflow-collage.jpeg",
+    },
+    roadmap:          {
+        exteriorStudy:  "images/roadmap-exterior-study.jpeg",
+        cadExport:      "images/roadmap-cad-export.jpeg",
+        overview:       "images/roadmap-overview.jpeg",
+    },
     exampleBlueprint: "images/sample_plan.png",
     exampleRender:    "images/sample_3d.png",
 };
@@ -3342,8 +3355,8 @@ const PLATFORM_PAGE_CARDS = [
         body: 'See how the client link, passkey, structured brief, generated plan, and optional Gemini study fit together inside a professional practice.',
         href: '/b2b-workflow',
         cta: 'View Workflow',
-        image: ASSETS.phase3[4],
-        alt: 'Client guided intake shown on a mobile phone',
+        image: ASSETS.workflow.planReview,
+        alt: 'Architect reviewing a Keystone floor plan on screen and paper',
         stat: 'Firm-led',
     },
     {
@@ -3352,8 +3365,8 @@ const PLATFORM_PAGE_CARDS = [
         body: 'The roadmap page groups upcoming modules like CAD export, quantity takeoff, scheduling, 3D viewer, and white-label capabilities without overstating what is already available.',
         href: '/roadmap',
         cta: 'View Roadmap',
-        image: ASSETS.phase3[1],
-        alt: 'Technical wireframe cube concept image',
+        image: ASSETS.roadmap.overview,
+        alt: 'Keystone roadmap overview collage with plans, 3D concept, and schedule cards',
         stat: 'Live + next',
     },
 ];
@@ -4700,25 +4713,25 @@ const B2BWorkflowPage = () => {
             step: '01',
             title: 'The firm sends a guided link',
             body: 'Keystone is sold to the studio and shared with the client before the first serious meeting. The architect controls when the workflow starts and who sees it.',
-            image: ASSETS.phase3[4],
+            image: ASSETS.workflow.firmLaunch,
         },
         {
             step: '02',
             title: 'The client fills out structured intent',
             body: 'Room needs, lot cues, light preferences, and style signals arrive in a format the studio can review later instead of pulling everything out live on the call.',
-            image: ASSETS.phase3[2],
+            image: ASSETS.workflow.clientIntake,
         },
         {
             step: '03',
             title: 'Keystone returns a plan and export',
             body: 'The generated plan becomes a working artifact the team can download, review, and annotate. The output exists before the architect even begins the kickoff conversation.',
-            image: ASSETS.exampleBlueprint,
+            image: ASSETS.workflow.planExport,
         },
         {
             step: '04',
             title: 'The architect walks in prepared',
             body: 'An optional Gemini exterior study can support emotional alignment, but the operational win is simpler: the firm begins with more clarity and less drift.',
-            image: ASSETS.exampleRender,
+            image: ASSETS.workflow.kickoffMeeting,
         },
     ];
     const operatorBenefits = [
@@ -4726,7 +4739,7 @@ const B2BWorkflowPage = () => {
         'A clearer client handoff before the architect starts shaping options',
         'A stronger internal review artifact for firms that want consistency',
     ];
-    const supportGallery = [ASSETS.phase3[2], ASSETS.phase1[4], ASSETS.phase2[0], ASSETS.exampleBlueprint];
+    const supportGallery = [ASSETS.workflow.collage, ASSETS.workflow.planReview, ASSETS.roadmap.exteriorStudy, ASSETS.workflow.planExport];
 
     return (
         <SubpageChrome>
@@ -4758,7 +4771,7 @@ const B2BWorkflowPage = () => {
                                 </div>
                                 <aside className="paper-panel p-5 md:p-6">
                                     <div className="rounded-[18px] overflow-hidden">
-                                        <SmartImage src={ASSETS.phase3[2]} alt="Designer working on a digital architectural concept" style={{width:'100%',height:'260px',objectFit:'cover',display:'block'}}/>
+                                        <SmartImage src={ASSETS.workflow.planReview} alt="Architect reviewing a Keystone floor plan on screen and paper" style={{width:'100%',height:'260px',objectFit:'cover',display:'block'}}/>
                                     </div>
                                     <div className="mt-5">
                                         <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>What firms get</div>
@@ -4855,35 +4868,35 @@ const RoadmapPage = () => {
             phase: 'Live today',
             title: 'Guided brief capture',
             body: 'The client-facing intake link already turns loose preferences into structured discovery data before kickoff.',
-            image: ASSETS.phase3[4],
+            image: ASSETS.workflow.clientIntake,
             status: 'Live',
         },
         {
             phase: 'Live today',
             title: 'Generated plan + PNG export',
             body: 'Keystone already returns a usable floor plan and a clean blueprint export the firm can download and review.',
-            image: ASSETS.exampleBlueprint,
+            image: ASSETS.workflow.planExport,
             status: 'Live',
         },
         {
             phase: 'Live today',
             title: 'Gemini exterior study',
             body: 'An optional exterior study is already available to give the client a visual anchor during the early conversation.',
-            image: ASSETS.exampleRender,
+            image: ASSETS.roadmap.exteriorStudy,
             status: 'Live',
         },
         {
             phase: 'Roadmap next',
             title: 'DWG / CAD export',
             body: 'Downstream drafting support is planned so approved early concepts can move more cleanly into the studio production process.',
-            image: ASSETS.phase1[4],
+            image: ASSETS.roadmap.cadExport,
             status: 'Planned',
         },
         {
             phase: 'Roadmap next',
             title: 'Quantity and estimate layers',
             body: 'Quantity takeoff support and early estimation ranges are planned to give firms stronger commercial context earlier in the pipeline.',
-            image: ASSETS.phase1[2],
+            image: ASSETS.roadmap.overview,
             status: 'Planned',
         },
         {
