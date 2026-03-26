@@ -1413,24 +1413,34 @@ const JoinModal = ({ isOpen, onClose }) => {
                         exit={{ y:50, opacity:0 }}
                         transition={{ type:"spring", damping:26 }}
                         onClick={(event) => event.stopPropagation()}
-                        className="bg-paper electric-border w-full md:max-w-md rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden"
+                        className="electric-border w-full md:max-w-md rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden"
+                        style={{
+                            background:'linear-gradient(180deg, rgba(255,252,247,0.985), rgba(246,240,231,0.97))',
+                            border:'1px solid rgba(10,10,12,0.08)',
+                            boxShadow:'0 28px 90px rgba(9,9,9,0.34)',
+                        }}
                     >
                         <div style={{ height:'3px', background:'linear-gradient(90deg, var(--accent), var(--accent-2))' }}/>
 
                         <button
                             onClick={onClose}
                             aria-label="Close access request"
-                            className="absolute top-4 right-4 w-9 h-9 bg-black/6 hover:bg-black/12 rounded-full flex items-center justify-center transition-colors z-10"
+                            className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center transition-colors z-10"
+                            style={{
+                                background:'rgba(255,255,255,0.82)',
+                                color:'rgba(10,10,12,0.72)',
+                                border:'1px solid rgba(10,10,12,0.08)',
+                            }}
                         >
                             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
                                 <path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
                             </svg>
                         </button>
 
-                        <div className="p-6 md:p-8 overflow-y-auto" style={{ maxHeight:'90vh' }}>
+                        <div className="p-6 md:p-8 overflow-y-auto" style={{ maxHeight:'90vh', color:'var(--ink)' }}>
                             <span className="badge mb-3 inline-block">Request Access</span>
-                            <h2 className="cg text-3xl mb-1 mt-2" style={{ letterSpacing:'-0.05em', textTransform:'uppercase' }}>Access the live studio.</h2>
-                            <p className="text-mid text-sm mt-2 mb-6 leading-relaxed">Qualified residential architecture firms can see how the B2B workflow works in practice: send the client a guided link, collect a structured brief, and review outputs before the first meeting.</p>
+                            <h2 className="cg text-3xl mb-1 mt-2" style={{ letterSpacing:'-0.05em', textTransform:'uppercase', color:'var(--ink)' }}>Access the live studio.</h2>
+                            <p className="text-sm mt-2 mb-6 leading-relaxed" style={{color:'rgba(10,10,12,0.7)'}}>Qualified residential architecture firms can see how the B2B workflow works in practice: send the client a guided link, collect a structured brief, and review outputs before the first meeting.</p>
 
                             {status === 'success' ? (
                                 <motion.div initial={{ scale:0.9, opacity:0 }} animate={{ scale:1, opacity:1 }} className="flex flex-col items-center text-center py-10">
@@ -1551,37 +1561,37 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
     const countColor = refinementsLeft > 5 ? 'var(--blue)' : refinementsLeft > 2 ? 'var(--gold)' : 'var(--red)';
 
     return (
-        <div className="border-t border-white/8">
+        <div className="border-t border-black/8">
             <div className="flex items-center justify-between px-4 md:px-5 pt-4 pb-2">
                 <div className="flex items-center gap-2">
                     <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'var(--accent)',display:'inline-block'}}/>
-                    <p className="mono text-[8px] uppercase tracking-[0.24em] font-bold" style={{color:'rgba(244,239,230,0.76)'}}>Studio notes</p>
+                    <p className="mono text-[8px] uppercase tracking-[0.24em] font-bold" style={{color:'rgba(10,10,12,0.62)'}}>Studio notes</p>
                 </div>
                 <span className="mono text-[9px] font-bold" style={{color: countColor}}>
                     {refinementsLeft}/10 edits left
                 </span>
             </div>
             <div className="px-4 md:px-5 pb-3">
-                <p className="text-[12px] leading-relaxed" style={{color:'rgba(244,239,230,0.56)'}}>
+                <p className="text-[12px] leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
                     Use quick edits to explore the floor plan before you export it or move into the Gemini exterior study.
                 </p>
             </div>
 
             {refinementHistory.length > 0 && (
                 <div ref={historyRef} className="mx-4 md:mx-5 mb-3 max-h-40 overflow-y-auto rounded-[14px]"
-                    style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.08)'}}>
+                    style={{background:'rgba(255,255,255,0.86)',border:'1px solid rgba(10,10,12,0.08)'}}>
                     {refinementHistory.map((msg, i) => (
-                        <div key={i} className="px-3 py-2.5 border-b last:border-0" style={{borderColor:'rgba(255,255,255,0.06)'}}>
+                        <div key={i} className="px-3 py-2.5 border-b last:border-0" style={{borderColor:'rgba(10,10,12,0.06)'}}>
                             {msg.role === 'user' && (
                                 <div className="flex gap-2 items-start">
-                                    <span className="mono text-[7px] uppercase pt-0.5 flex-shrink-0 font-bold" style={{color:'rgba(255,181,160,0.92)'}}>You</span>
-                                    <span className="text-[11px] leading-snug" style={{color:'rgba(244,239,230,0.82)'}}>{msg.content}</span>
+                                    <span className="mono text-[7px] uppercase pt-0.5 flex-shrink-0 font-bold" style={{color:'rgba(173,51,0,0.92)'}}>You</span>
+                                    <span className="text-[11px] leading-snug" style={{color:'rgba(10,10,12,0.82)'}}>{msg.content}</span>
                                 </div>
                             )}
                             {msg.role === 'assistant' && (
                                 <div className="flex gap-2 items-start">
-                                    <span className="mono text-[7px] uppercase pt-0.5 flex-shrink-0 font-bold" style={{color:'rgba(244,239,230,0.46)'}}>Studio</span>
-                                    <span className="text-[11px] leading-snug" style={{color:'rgba(190,221,255,0.92)'}}>Updated: {msg.content}</span>
+                                    <span className="mono text-[7px] uppercase pt-0.5 flex-shrink-0 font-bold" style={{color:'rgba(10,10,12,0.42)'}}>Studio</span>
+                                    <span className="text-[11px] leading-snug" style={{color:'rgba(27,79,130,0.92)'}}>Updated: {msg.content}</span>
                                 </div>
                             )}
                             {msg.role === 'error' && (
@@ -1595,15 +1605,15 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
                     {isLoading && (
                         <div className="px-3 py-2 flex items-center gap-2">
                             <div className="w-3 h-3 border-2 border-blue border-t-transparent rounded-full animate-spin flex-shrink-0"/>
-                            <span className="mono text-[8px] uppercase tracking-widest animate-pulse" style={{color:'rgba(244,239,230,0.48)'}}>Updating the plan...</span>
+                            <span className="mono text-[8px] uppercase tracking-widest animate-pulse" style={{color:'rgba(10,10,12,0.46)'}}>Updating the plan...</span>
                         </div>
                     )}
                 </div>
             )}
             {isLoading && refinementHistory.length === 0 && (
-                <div className="mx-4 md:mx-5 mb-3 px-3 py-2 flex items-center gap-2 rounded-[14px]" style={{background:'rgba(255,255,255,0.06)'}}>
+                <div className="mx-4 md:mx-5 mb-3 px-3 py-2 flex items-center gap-2 rounded-[14px]" style={{background:'rgba(255,255,255,0.82)', border:'1px solid rgba(10,10,12,0.08)'}}>
                     <div className="w-3 h-3 border-2 border-blue border-t-transparent rounded-full animate-spin flex-shrink-0"/>
-                    <span className="mono text-[8px] uppercase tracking-widest animate-pulse" style={{color:'rgba(244,239,230,0.48)'}}>Updating the plan...</span>
+                    <span className="mono text-[8px] uppercase tracking-widest animate-pulse" style={{color:'rgba(10,10,12,0.46)'}}>Updating the plan...</span>
                 </div>
             )}
 
@@ -1611,7 +1621,7 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
                 {REFINEMENT_SUGGESTIONS.map((s, i) => (
                     <button key={i} disabled={disabled} onClick={() => onRefine(s)}
                         className="text-[9px] px-2.5 py-1.5 border transition-all disabled:opacity-30 rounded-full"
-                        style={{borderColor:'rgba(255,255,255,0.12)',background:'rgba(255,255,255,0.04)',color:'rgba(244,239,230,0.74)'}}>
+                        style={{borderColor:'rgba(10,10,12,0.1)',background:'rgba(255,255,255,0.72)',color:'rgba(10,10,12,0.74)'}}>
                         {s}
                     </button>
                 ))}
@@ -1673,16 +1683,26 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                     className="fixed inset-0 z-[150] flex items-end md:items-center justify-center bg-black/88 backdrop-blur-sm p-0 md:p-6">
                     <motion.div initial={{y:40,opacity:0}} animate={{y:0,opacity:1}} exit={{y:40,opacity:0}}
                         transition={{type:'spring',damping:26}}
-                        className="bg-paper electric-border w-full md:max-w-lg rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden">
+                        className="electric-border w-full md:max-w-lg rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden"
+                        style={{
+                            background:'linear-gradient(180deg, rgba(255,252,247,0.985), rgba(246,240,231,0.97))',
+                            border:'1px solid rgba(10,10,12,0.08)',
+                            boxShadow:'0 30px 96px rgba(9,9,9,0.36)',
+                        }}>
                         <div style={{height:'3px',background:'linear-gradient(90deg,var(--blue),var(--red))'}}/>
-                        <button type="button" onClick={onClose} aria-label="Close render options" className="absolute top-4 right-4 w-8 h-8 bg-black/6 hover:bg-black/12 rounded-full flex items-center justify-center z-10">
+                        <button type="button" onClick={onClose} aria-label="Close render options" className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center z-10"
+                            style={{
+                                background:'rgba(255,255,255,0.82)',
+                                color:'rgba(10,10,12,0.72)',
+                                border:'1px solid rgba(10,10,12,0.08)',
+                            }}>
                             <CloseIcon className="w-4 h-4"/>
                         </button>
 
-                        <div className="p-6 overflow-y-auto" style={{maxHeight:'85vh'}}>
+                        <div className="p-6 overflow-y-auto" style={{maxHeight:'85vh', color:'var(--ink)'}}>
                             <span className="badge mb-3 inline-block">3D Render Options</span>
-                            <h2 className="cg text-2xl italic mb-1">Customize Your Render.</h2>
-                            <p className="text-mid text-[11px] mb-5 leading-relaxed">These details help Gemini AI generate a more accurate and context-aware exterior render.</p>
+                            <h2 className="cg text-2xl italic mb-1" style={{color:'var(--ink)'}}>Customize Your Render.</h2>
+                            <p className="text-[11px] mb-5 leading-relaxed" style={{color:'rgba(10,10,12,0.7)'}}>These details help Gemini AI generate a more accurate and context-aware exterior render.</p>
 
                             <div className="space-y-4">
                                 {/* ZIP CODE */}
@@ -1691,7 +1711,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                                     <input type="text" placeholder="e.g. 78701" maxLength="10"
                                         value={data.zipCode} onChange={e => upd('zipCode', e.target.value)}
                                         style={{maxWidth:'180px'}}/>
-                                    <p className="text-[9px] text-mid/60 mt-1">Helps set regional context - climate, terrain, neighborhood character</p>
+                                    <p className="text-[9px] mt-1" style={{color:'rgba(10,10,12,0.56)'}}>Helps set regional context - climate, terrain, neighborhood character</p>
                                 </div>
 
                                 {/* EXTERIOR STYLE OVERRIDE */}
@@ -1705,7 +1725,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                                         {val:'Mediterranean (Stucco & Tile)',     label:'Mediterranean'},
                                         {val:'Rustic Cabin (Log & Stone)',        label:'Rustic'},
                                     ]}/>
-                                    <p className="text-[9px] text-mid/60 mt-1">Leave blank to use your plan survey style</p>
+                                    <p className="text-[9px] mt-1" style={{color:'rgba(10,10,12,0.56)'}}>Leave blank to use your plan survey style</p>
                                 </div>
 
                                 {/* ROOF STYLE */}
@@ -2801,7 +2821,7 @@ const InteractiveCanvas = ({ children }) => {
             <div style={{ position: 'absolute', top: 10, left: 12, fontFamily: 'IBM Plex Mono,monospace', fontSize: 8,
                 color: 'rgba(244,239,230,0.25)', letterSpacing: '0.1em', textTransform: 'uppercase',
                 pointerEvents: 'none', userSelect: 'none',
-            }}>{blueprintMode ? 'BLUEPRINT â€" DRAG TO PAN Â· SCROLL TO ZOOM' : 'DRAG TO PAN Â· SCROLL TO ZOOM'}</div>
+            }}>{blueprintMode ? 'Blueprint View - Drag to Pan | Scroll to Zoom' : 'Drag to Pan | Scroll to Zoom'}</div>
         </div>
     );
 };
@@ -3147,7 +3167,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                             <div style={{display:'flex',alignItems:'center',gap:8}}>
                                 <svg width="12" height="12" fill="none" stroke="rgba(244,239,230,0.4)" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                 <span className="mono" style={{fontSize:8,color:'rgba(244,239,230,0.38)',letterSpacing:'0.18em',textTransform:'uppercase'}}>
-                                    {planSvg && footprintInfo ? `${footprintInfo.widthFt}â€² Ã— ${footprintInfo.heightFt}â€²  Â·  ${formData.stories || ''}  Â·  ${formData.bedrooms || ''}` : 'Blueprint Viewport'}
+                                    {planSvg && footprintInfo ? `${footprintInfo.widthFt}' x ${footprintInfo.heightFt}' | ${formData.stories || ''} | ${formData.bedrooms || ''}` : 'Blueprint Viewport'}
                                 </span>
                             </div>
                             {planSvg && planScore != null
@@ -3155,7 +3175,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                     <span className="mono" style={{fontSize:7,color:'rgba(244,239,230,0.3)',letterSpacing:'0.14em',textTransform:'uppercase'}}>AI Score</span>
                                     <span className="mono" style={{fontSize:9,fontWeight:700,color:planScore>=70?'#4ade80':planScore>=40?'#facc15':'#f87171'}}>{planScore}/100</span>
                                   </div>
-                                : <span className="mono" style={{fontSize:7,color:'rgba(244,239,230,0.2)',letterSpacing:'0.16em',textTransform:'uppercase'}}>Keystone AI Â· Blueprint</span>}
+                                : <span className="mono" style={{fontSize:7,color:'rgba(244,239,230,0.2)',letterSpacing:'0.16em',textTransform:'uppercase'}}>Keystone AI | Blueprint</span>}
                         </div>
                         {/* Canvas body */}
                         <div className="cad-canvas-body">
@@ -3195,7 +3215,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                             <div style={{display:'flex',flexDirection:'column',gap:6}}>
                                                 <div className="cad-metric-chip">
                                                     <span className="label">Footprint</span>
-                                                    <span className="value">{footprintInfo.widthFt}â€² Ã— {footprintInfo.heightFt}â€²</span>
+                                                    <span className="value">{footprintInfo.widthFt}' x {footprintInfo.heightFt}'</span>
                                                 </div>
                                                 {planScore != null && (
                                                     <div className="cad-metric-chip" style={{flexDirection:'column',alignItems:'flex-start',gap:4}}>
