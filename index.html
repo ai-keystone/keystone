@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Keystone AI - Floor Plans in 60 Seconds</title>
     <meta name="description" content="Residential floor plan generator in 60 seconds. Keystone helps architecture firms send a guided client link before kickoff — structured brief, generated blueprint, and optional Gemini 3D exterior study.">
-    <meta name="theme-color" content="#1B4F82">
+    <meta name="theme-color" content="#AD3300">
     <!-- Open Graph / Social sharing -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://keystone-api-97830102261.us-central1.run.app/">
@@ -17,7 +17,7 @@
     <meta name="twitter:title" content="Keystone AI — Floor Plans in 60 Seconds">
     <meta name="twitter:description" content="Residential floor plan generator for architecture firms. Structured brief capture, AI-generated blueprint, downloadable PNG, and optional Gemini 3D exterior study.">
     <meta name="twitter:image" content="https://keystone-api-97830102261.us-central1.run.app/images/og-preview.png">
-    <link rel="icon" href="images/keystone-icon.svg" type="image/svg+xml">
+    <link rel="icon" href="images/keystone-logo-mark.svg" type="image/svg+xml">
     <script defer crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script defer crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script defer src="https://cdn.tailwindcss.com"></script>
@@ -25,13 +25,13 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" crossorigin></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Manrope:wght@400;500;600;700;800&family=Noto+Serif:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script defer src="/_vercel/insights/script.js"></script>
     <style>
         :root {
             --ink:      #090909;
-            --paper:    #F5F0E9;
-            --cream:    #EDE7DF;
+            --paper:    #FEF9F2;
+            --cream:    #F7F1E8;
             --blue:     #1B4F82;
             --blue-lt:  #2563A8;
             --red:      #C8281C;
@@ -44,9 +44,9 @@
             --mist:     #8E8880;
             --cloud:    #F7F2EA;
             --sand:     #D8D0C4;
-            --accent:   #FF6A37;
-            --accent-2: #FF4D1D;
-            --accent-soft:#FFE5D4;
+            --accent:   #AD3300;
+            --accent-2: #FF6A37;
+            --accent-soft:#FFEEE6;
             --nav-offset: 104px;
             --shell-max: 1500px;
             --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
@@ -68,9 +68,10 @@
         body.has-laser-cursor .cursor-target {
             cursor: none !important;
         }
-        .cg  { font-family: 'Space Grotesk', sans-serif; font-weight: 700; }
+        .cg  { font-family: 'Noto Serif', serif; font-weight: 700; }
         .serif { font-family: 'Cormorant Garamond', serif; font-weight: 600; letter-spacing: -0.03em; }
         .mono{ font-family: 'IBM Plex Mono', monospace; }
+        .brand-wordmark { font-family: 'Noto Serif', serif; font-weight: 700; text-transform: uppercase; }
         #hero, #proof, #generator, #gallery, #work, #services, #pricing, #studio, #research { scroll-margin-top: var(--nav-offset); }
         .site-shell {
             width: min(calc(100vw - 2rem), var(--shell-max));

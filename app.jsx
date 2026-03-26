@@ -1,10 +1,13 @@
-const { useState, useEffect, useRef, useMemo } = React;
+﻿const { useState, useEffect, useRef, useMemo } = React;
 const FM = window.framerMotion || window.Motion;
 const { motion, AnimatePresence, useScroll, useTransform, useSpring } = FM;
 
 const ASSETS = {
     watermark:        "images/keystone-line-art.png",
-    icon:             "images/keystone-icon.svg",
+    icon:             "images/keystone-logo-mark.svg",
+    logoMark:         "images/keystone-logo-mark.svg",
+    logoPrimary:      "images/keystone-logo-primary.svg",
+    logoReverse:      "images/keystone-logo-reverse.svg",
     qrCode:           "images/qualtrics-qr.png",
     team:             { sujan: "images/sujan.png", subrat: "images/subrat.png", rhythm: "images/rhythm.png" },
     phase1:           ["images/1.jpg","images/2.jpg","images/3.jpg","images/4.jpg","images/5.jpg","images/6.jpg"],
@@ -14,12 +17,14 @@ const ASSETS = {
     exampleRender:    "images/sample_3d.png",
 };
 
-// â”€â”€â”€ HELPERS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ HELPERS Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const scrollTo = (id) => {
     if (id === 'generator') { document.dispatchEvent(new CustomEvent('keystone:open-studio')); return; }
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 };
+const BRAND_DISPLAY_NAME = 'Keystone AI';
 const BRAND_NAME = 'Keystone AI Studio';
+const BRAND_TAGLINE = 'Architect-first discovery';
 const CONTACT_EMAIL = 'aikeystone559@gmail.com';
 const LEGAL_UPDATED_AT = 'March 14, 2026';
 const getCurrentPath = () => {
@@ -35,6 +40,58 @@ const SmartImage = ({ eager = false, ...props }) => (
         {...props}
     />
 );
+const BrandLockup = ({
+    href = '/',
+    reverse = false,
+    compact = false,
+    markOnly = false,
+    className = '',
+    onClick,
+}) => {
+    const textColor = reverse ? 'text-white' : '';
+    const subtitleColor = reverse ? 'rgba(244,239,230,0.56)' : 'rgba(9,9,9,0.42)';
+    const content = (
+        <div className={`flex items-center gap-3 ${className}`}>
+            <SmartImage
+                src={ASSETS.logoMark}
+                alt={BRAND_DISPLAY_NAME}
+                eager
+                style={{
+                    width: compact ? '30px' : '34px',
+                    height: compact ? '30px' : '34px',
+                    flexShrink: 0,
+                }}
+            />
+            {!markOnly && (
+                <div>
+                    <span
+                        className={`brand-wordmark block leading-none ${textColor}`}
+                        style={{
+                            fontSize: compact ? '1.08rem' : '1.18rem',
+                            letterSpacing: '0.04em',
+                        }}
+                    >
+                        {BRAND_DISPLAY_NAME}
+                    </span>
+                    <div
+                        className="mono text-[8px] uppercase tracking-[0.22em] mt-1"
+                        style={{ color: subtitleColor }}
+                    >
+                        {BRAND_TAGLINE}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
+    if (!href) return content;
+    return <a href={href} onClick={onClick}>{content}</a>;
+};
+const usePageTitle = (title) => {
+    useEffect(() => {
+        if (title) document.title = title;
+    }, [title]);
+};
 const CloseIcon = ({ className = 'w-4 h-4' }) => (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M6 18L18 6M6 6l12 12"/>
@@ -410,10 +467,10 @@ const SectionRail = () => {
     );
 };
 
-// ─── SCROLL PROGRESS ────────────────────────────────────────────────────────
-// (handled by vanilla JS in index.html — no React overhead needed)
+// â"€â"€â"€ SCROLL PROGRESS â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// (handled by vanilla JS in index.html â€" no React overhead needed)
 
-// ─── REVEAL WRAPPER ─────────────────────────────────────────────────────────
+// â"€â"€â"€ REVEAL WRAPPER â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 // Elegant scroll-triggered entrance. Use for headings, standalone cards, etc.
 const Reveal = ({ children, delay = 0, y = 28, className = '', style = {} }) => (
     <motion.div
@@ -428,9 +485,9 @@ const Reveal = ({ children, delay = 0, y = 28, className = '', style = {} }) => 
     </motion.div>
 );
 
-// ─── REACT-BITS ADAPTED COMPONENTS ──────────────────────────────────────────
+// â"€â"€â"€ REACT-BITS ADAPTED COMPONENTS â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-// SpotlightCard — mouse-tracking radial spotlight
+// SpotlightCard â€" mouse-tracking radial spotlight
 const SpotlightCard = ({ children, className = '', spotlightColor = 'rgba(255,106,55,0.15)', style = {} }) => {
     const ref = useRef(null);
     const handleMove = (e) => {
@@ -447,7 +504,7 @@ const SpotlightCard = ({ children, className = '', spotlightColor = 'rgba(255,10
     );
 };
 
-// TiltCard — 3D perspective tilt on hover
+// TiltCard â€" 3D perspective tilt on hover
 const TiltCard = ({ children, className = '', style = {}, maxTilt = 7 }) => {
     const ref = useRef(null);
     const reset = () => { if (ref.current) ref.current.style.transform = 'perspective(860px) rotateX(0deg) rotateY(0deg) scale(1)'; };
@@ -466,7 +523,7 @@ const TiltCard = ({ children, className = '', style = {}, maxTilt = 7 }) => {
     );
 };
 
-// BlurText — scroll-triggered word-by-word blur reveal
+// BlurText â€" scroll-triggered word-by-word blur reveal
 const BlurText = ({ text = '', delay = 65, className = '', direction = 'bottom', tag: Tag = 'span', style = {} }) => {
     const [inView, setInView] = useState(false);
     const ref = useRef(null);
@@ -492,12 +549,12 @@ const BlurText = ({ text = '', delay = 65, className = '', direction = 'bottom',
     );
 };
 
-// GradientText — animated orange gradient text wrapper
+// GradientText â€" animated orange gradient text wrapper
 const GradientText = ({ children, className = '' }) => (
     <span className={`gradient-text-anim ${className}`}>{children}</span>
 );
 
-// StarBorderBtn — CTA button with animated rotating glow ring
+// StarBorderBtn â€" CTA button with animated rotating glow ring
 const StarBorderBtn = ({ children, onClick, className = '' }) => (
     <div className={`star-border-wrap ${className}`}>
         <button type="button" onClick={onClick} className="cta-hero cta-glow cta-live" style={{ position: 'relative', zIndex: 1 }}>
@@ -506,7 +563,7 @@ const StarBorderBtn = ({ children, onClick, className = '' }) => (
     </div>
 );
 
-// OrbBackground — CSS animated floating orb blobs
+// OrbBackground â€" CSS animated floating orb blobs
 const OrbBackground = () => (
     <div className="orb-bg" aria-hidden="true">
         <div className="orb orb-1"/>
@@ -515,7 +572,7 @@ const OrbBackground = () => (
     </div>
 );
 
-// FloatingParticles — canvas-based drifting particle field
+// FloatingParticles â€" canvas-based drifting particle field
 const FloatingParticles = ({ count = 55, color = '255,106,55', className = '' }) => {
     const canvasRef = useRef(null);
     useEffect(() => {
@@ -558,7 +615,7 @@ const FloatingParticles = ({ count = 55, color = '255,106,55', className = '' })
     return <canvas ref={canvasRef} className={`particle-canvas ${className}`}/>;
 };
 
-// CountUp — scroll-triggered animated number counter
+// CountUp â€" scroll-triggered animated number counter
 const CountUp = ({ to, duration = 1600, suffix = '', className = '' }) => {
     const [n, setN] = useState(0);
     const ref = useRef(null);
@@ -585,7 +642,7 @@ const CountUp = ({ to, duration = 1600, suffix = '', className = '' }) => {
     return <span ref={ref} className={className}>{n}{suffix}</span>;
 };
 
-// ─── SPLASH CURSOR (WebGL fluid simulation) ─────────────────────────────────
+// â"€â"€â"€ SPLASH CURSOR (WebGL fluid simulation) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const SplashCursor = ({
     SIM_RESOLUTION = 32,
     DYE_RESOLUTION = 1440,
@@ -602,7 +659,7 @@ const SplashCursor = ({
     BACK_COLOR = { r: 0, g: 0, b: 0 },
     TRANSPARENT = true,
 }) => {
-    // WebGL fluid sim disabled — causes GL_INVALID_OPERATION feedback-loop errors on some GPUs
+    // WebGL fluid sim disabled â€" causes GL_INVALID_OPERATION feedback-loop errors on some GPUs
     return null;
     const canvasRef = useRef(null);
     const animationFrameId = useRef(null);
@@ -820,7 +877,7 @@ const SplashCursor = ({
     );
 };
 
-// ─── WAVES (Perlin noise animated wave lines) ────────────────────────────────
+// â"€â"€â"€ WAVES (Perlin noise animated wave lines) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const Waves = ({
     lineColor = 'rgba(255,106,55,0.35)',
     waveSpeedX = 0.015,
@@ -910,7 +967,7 @@ const Waves = ({
     );
 };
 
-// ─── MAGIC BENTO (interactive particle bento grid) ───────────────────────────
+// â"€â"€â"€ MAGIC BENTO (interactive particle bento grid) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const keystoneBentoCards = [
     { color:'#0D0806', title:'Floor Plans in <60s', description:'From guided client brief to architect-ready layout, instantly', label:'Speed',
       svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="74" height="50" rx="2" stroke="#FF6A37" stroke-width="1.2" opacity="0.4"/><rect x="3" y="3" width="42" height="30" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><rect x="45" y="3" width="32" height="30" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><rect x="3" y="33" width="26" height="20" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><rect x="29" y="33" width="48" height="20" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><line x1="16" y1="3" x2="16" y2="33" stroke="#FF6A37" stroke-width="0.8" opacity="0.35"/><line x1="45" y1="33" x2="45" y2="53" stroke="#FF6A37" stroke-width="0.8" opacity="0.35"/></svg>' },
@@ -1200,7 +1257,7 @@ const HeroFloatingBlueprint = () => {
     );
 };
 
-// ─── MOBILE NAV ──────────────────────────────────────────────────────────────
+// â"€â"€â"€ MOBILE NAV â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const MobileNavBar = ({ onOpenMenu }) => (
     <div className="fixed bottom-0 left-0 w-full bottom-nav z-[90] md:hidden pb-safe">
         <div className="grid grid-cols-5 h-[60px] items-center">
@@ -1244,16 +1301,13 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
                 className="fixed inset-0 z-[100] text-paper flex flex-col pb-safe"
                 style={{background:'linear-gradient(180deg, rgba(10,10,10,0.995), rgba(18,18,18,0.995))'}}>
                 <div className="flex justify-between items-center px-6 py-5 border-b border-white/8">
-                    <div>
-                        <span className="cg text-[1.35rem] uppercase tracking-[-0.05em] text-white">Keystone</span>
-                        <p className="mono text-[8px] uppercase tracking-[0.24em] mt-1" style={{color:'rgba(244,239,230,0.4)'}}>AI studio</p>
-                    </div>
+                    <BrandLockup href="/" reverse compact onClick={onClose}/>
                     <button onClick={onClose} className="w-9 h-9 bg-white/10 rounded-full flex items-center justify-center">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
                 <div className="flex-1 px-6 py-6 flex flex-col gap-0">
-                    {[['Work','work'],['Services','services'],['Pricing','pricing'],['Live Studio','generator'],['Studio','studio'],['Sessions','gallery']].map(([label, id], i) => (
+                    {[['Platform','work'],['Services','services'],['Pricing','pricing'],['Live Studio','generator'],['Studio','studio'],['Sessions','gallery']].map(([label, id], i) => (
                         <button key={id} onClick={() => { scrollTo(id); onClose(); }}
                             className="cg text-[2rem] text-left border-b border-white/6 py-4 flex justify-between items-center text-white/90 hover:text-white transition-colors"
                             style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>
@@ -1262,8 +1316,14 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
                         </button>
                     ))}
                     <div className="grid grid-cols-2 gap-2 mt-5">
-                        <a href="/case-study" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
-                            Case Study
+                        <a href="/how-floor-plans-work" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
+                            How It Works
+                        </a>
+                        <a href="/b2b-workflow" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
+                            B2B Workflow
+                        </a>
+                        <a href="/roadmap" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
+                            Roadmap
                         </a>
                         <a href="/faq" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
                             FAQ
@@ -1285,7 +1345,7 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
     </AnimatePresence>
 );
 
-// â”€â”€â”€ JOIN MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ JOIN MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const JoinModal = ({ isOpen, onClose }) => {
     const [formData, setFormData] = React.useState({ fullName:'', firmName:'', email:'', volume:'1-10 Projects', questions:'' });
     const [status, setStatus] = React.useState('idle'); // idle | loading | success
@@ -1414,7 +1474,7 @@ const JoinModal = ({ isOpen, onClose }) => {
     );
 };
 
-// PLAN SUMMARY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// PLAN SUMMARY Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const PlanSummaryPanel = ({ planSpec }) => {
     if (!planSpec) return null;
     const allRooms = (planSpec.levels||[]).flatMap(l => l.rooms||[]);
@@ -1445,7 +1505,7 @@ const PlanSummaryPanel = ({ planSpec }) => {
     );
 };
 
-// â”€â”€â”€ REFINEMENT PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ REFINEMENT PANEL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const REFINEMENT_SUGGESTIONS = [
     "Make the living room 4 feet wider",
     "Make the primary bedroom bigger",
@@ -1569,7 +1629,7 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
     );
 };
 
-// â”€â”€â”€ RENDER SURVEY MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ RENDER SURVEY MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
     const [data, setData] = useState(initialData || {
         zipCode: '', exteriorStyle: '', roofStyle: 'Gabled', landscaping: 'Manicured lawn',
@@ -1755,7 +1815,7 @@ const svgToPngDataUrl = (svgMarkup, options = {}) => new Promise((resolve, rejec
     }
 });
 
-// â”€â”€â”€ 3D RENDER PANEL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ 3D RENDER PANEL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const RENDER_REFINEMENTS = [
     { label: 'Golden Hour',  hint: 'warm late-afternoon sunlight, long shadows, golden orange sky. Only change the lighting and sky; keep the house architecture identical.' },
     { label: 'Overcast Day', hint: 'soft diffuse overcast lighting, muted tones, grey cloud-covered sky. Only change the lighting and sky; keep the house architecture identical.' },
@@ -1906,7 +1966,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
                 <button onClick={() => setShowSurvey(true)} className="mono text-[9px] text-mid underline">Options</button>
             </div>
 
-            {/* Lighting refinement chips â€” lighting only, architecture unchanged */}
+            {/* Lighting refinement chips Ã¢â‚¬" lighting only, architecture unchanged */}
             <div className="border-t border-black/5 pt-3">
                 <div className="flex items-center justify-between mb-2">
                     <p className="mono text-[7px] uppercase tracking-widest text-mid">Lighting &amp; Mood</p>
@@ -1932,7 +1992,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
     return null;
 };
 
-// â”€â”€â”€ SURVEY FORM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ SURVEY FORM Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const SURVEY_STEPS = [
     { id:'basics',    title:'Basic Requirements',   subtitle:'Size, stories, and rooms',           fields:['totalArea','stories','bedrooms','bathrooms','privateBaths'] },
     { id:'structure', title:'Structure & Site',      subtitle:'Garage, shape, and orientation',     fields:['garage','shape','frontFacing','lotContext'] },
@@ -2391,7 +2451,7 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
 };
 
 
-// â”€â”€â”€ GALLERY COMPONENT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ GALLERY COMPONENT Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const Gallery = ({ onOpenModal }) => {
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -2485,9 +2545,9 @@ const Gallery = ({ onOpenModal }) => {
                                         <CloseIcon className="w-4 h-4"/>
                                     </button>
                                 </div>
-                                {/* Side-by-side at 50% scale each â€” both visible without scrolling */}
+                                {/* Side-by-side at 50% scale each Ã¢â‚¬" both visible without scrolling */}
                                 <div className="gallery-detail-grid">
-                                    {/* SVG blueprint â€” clipped to fixed height, scaled down */}
+                                    {/* SVG blueprint Ã¢â‚¬" clipped to fixed height, scaled down */}
                                     <div className="border border-black/6 rounded-sm overflow-hidden cursor-zoom-in"
                                         style={{background:'white'}} onClick={() => setZoomImg(selected.svg)}>
                                         <div className="flex items-center gap-1.5 px-3 py-2 border-b border-black/5">
@@ -2594,7 +2654,7 @@ const Gallery = ({ onOpenModal }) => {
                                 onClick={() => setSelected(entry)}
                                 className="group cursor-pointer paper-panel overflow-hidden hover:shadow-xl transition-all duration-200 hover:-translate-y-1">
 
-                                {/* Thumbnail â€” blueprint + render side by side at 50% */}
+                                {/* Thumbnail Ã¢â‚¬" blueprint + render side by side at 50% */}
                                 <div style={{position:'relative', borderBottom:'1px solid rgba(0,0,0,0.05)'}}>
                                     <div style={{display:'grid', gridTemplateColumns: entry.renderImage ? '1fr 1fr' : '1fr', height:'140px', background:'white'}}>
                                         {/* Blueprint at 50% scale */}
@@ -2648,7 +2708,7 @@ const Gallery = ({ onOpenModal }) => {
     );
 };
 
-// ─── INTERACTIVE CANVAS (pan/zoom blueprint viewport) ────────────────────────
+// â"€â"€â"€ INTERACTIVE CANVAS (pan/zoom blueprint viewport) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const InteractiveCanvas = ({ children }) => {
     const [scale, setScale] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -2713,27 +2773,27 @@ const InteractiveCanvas = ({ children }) => {
                 padding: '4px 10px', zIndex: 20, userSelect: 'none',
             }}>
                 {toolbarBtn((e) => { e.stopPropagation(); setScale(s => Math.max(s * 0.8, 0.2)); }, 'Zoom Out',
-                    <svg width=”13” height=”13” fill=”none” stroke=”currentColor” viewBox=”0 0 24 24”><path strokeLinecap=”round” strokeLinejoin=”round” strokeWidth=”2” d=”M20 12H4”/></svg>)}
-                <span className=”mono” style={{ fontSize: 8, color: 'rgba(244,239,230,0.4)', letterSpacing: '0.1em', minWidth: 34, textAlign: 'center' }}>{Math.round(scale * 100)}%</span>
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 12H4"/></svg>)}
+                <span className="mono" style={{ fontSize: 8, color: 'rgba(244,239,230,0.4)', letterSpacing: '0.1em', minWidth: 34, textAlign: 'center' }}>{Math.round(scale * 100)}%</span>
                 {toolbarBtn((e) => { e.stopPropagation(); setScale(s => Math.min(s * 1.25, 5)); }, 'Zoom In',
-                    <svg width=”13” height=”13” fill=”none” stroke=”currentColor” viewBox=”0 0 24 24”><path strokeLinecap=”round” strokeLinejoin=”round” strokeWidth=”2” d=”M12 4v16m8-8H4”/></svg>)}
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>)}
                 <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.12)', margin: '0 2px' }} />
                 {toolbarBtn((e) => { e.stopPropagation(); resetView(); }, 'Fit to View',
-                    <svg width=”13” height=”13” fill=”none” stroke=”currentColor” viewBox=”0 0 24 24”><path strokeLinecap=”round” strokeLinejoin=”round” strokeWidth=”2” d=”M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4”/></svg>)}
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>)}
                 <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.12)', margin: '0 2px' }} />
                 {toolbarBtn((e) => { e.stopPropagation(); setBlueprintMode(m => !m); }, blueprintMode ? 'White Mode' : 'Blueprint Mode',
-                    <svg width=”13” height=”13” fill=”none” stroke=”currentColor” viewBox=”0 0 24 24”><path strokeLinecap=”round” strokeLinejoin=”round” strokeWidth=”2” d=”M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2”/></svg>,
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>,
                     blueprintMode)}
             </div>
             <div style={{ position: 'absolute', top: 10, left: 12, fontFamily: 'IBM Plex Mono,monospace', fontSize: 8,
                 color: 'rgba(244,239,230,0.25)', letterSpacing: '0.1em', textTransform: 'uppercase',
                 pointerEvents: 'none', userSelect: 'none',
-            }}>{blueprintMode ? 'BLUEPRINT — DRAG TO PAN · SCROLL TO ZOOM' : 'DRAG TO PAN · SCROLL TO ZOOM'}</div>
+            }}>{blueprintMode ? 'BLUEPRINT â€" DRAG TO PAN Â· SCROLL TO ZOOM' : 'DRAG TO PAN Â· SCROLL TO ZOOM'}</div>
         </div>
     );
 };
 
-// ─── DESIGN GENERATOR ────────────────────────────────────────────────────────
+// â"€â"€â"€ DESIGN GENERATOR â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const DesignGenerator = ({ onOpenModal }) => {
     const [isUnlocked, setIsUnlocked] = useState(false);
     const [passkeyInput, setPasskeyInput] = useState('');
@@ -3045,7 +3105,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                 )}
 
                 <div className={`grid lg:grid-cols-[300px_minmax(0,1fr)_300px] gap-4 items-start transition-opacity ${!isUnlocked ? 'opacity-10 pointer-events-none blur-sm select-none' : ''}`}>
-                    {/* LEFT — The Brief */}
+                    {/* LEFT â€" The Brief */}
                     <div className="cad-panel-brief">
                         <div className="cad-panel-brief-header">
                             <div>
@@ -3067,14 +3127,14 @@ const DesignGenerator = ({ onOpenModal }) => {
                         </div>
                     </div>
 
-                    {/* CENTER — Blueprint Canvas */}
+                    {/* CENTER â€" Blueprint Canvas */}
                     <div className="cad-canvas-panel">
                         {/* Title block */}
                         <div className="cad-canvas-titleblock">
                             <div style={{display:'flex',alignItems:'center',gap:8}}>
                                 <svg width="12" height="12" fill="none" stroke="rgba(244,239,230,0.4)" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                 <span className="mono" style={{fontSize:8,color:'rgba(244,239,230,0.38)',letterSpacing:'0.18em',textTransform:'uppercase'}}>
-                                    {planSvg && footprintInfo ? `${footprintInfo.widthFt}′ × ${footprintInfo.heightFt}′  ·  ${formData.stories || ''}  ·  ${formData.bedrooms || ''}` : 'Blueprint Viewport'}
+                                    {planSvg && footprintInfo ? `${footprintInfo.widthFt}â€² Ã— ${footprintInfo.heightFt}â€²  Â·  ${formData.stories || ''}  Â·  ${formData.bedrooms || ''}` : 'Blueprint Viewport'}
                                 </span>
                             </div>
                             {planSvg && planScore != null
@@ -3082,7 +3142,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                     <span className="mono" style={{fontSize:7,color:'rgba(244,239,230,0.3)',letterSpacing:'0.14em',textTransform:'uppercase'}}>AI Score</span>
                                     <span className="mono" style={{fontSize:9,fontWeight:700,color:planScore>=70?'#4ade80':planScore>=40?'#facc15':'#f87171'}}>{planScore}/100</span>
                                   </div>
-                                : <span className="mono" style={{fontSize:7,color:'rgba(244,239,230,0.2)',letterSpacing:'0.16em',textTransform:'uppercase'}}>Keystone AI · Blueprint</span>}
+                                : <span className="mono" style={{fontSize:7,color:'rgba(244,239,230,0.2)',letterSpacing:'0.16em',textTransform:'uppercase'}}>Keystone AI Â· Blueprint</span>}
                         </div>
                         {/* Canvas body */}
                         <div className="cad-canvas-body">
@@ -3108,7 +3168,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                         </div>
                     </div>
 
-                    {/* RIGHT — Actions & Tools */}
+                    {/* RIGHT â€" Actions & Tools */}
                     <div className="cad-panel-actions">
                         {(status === 'plan-ready' || status === 'refining') && planSvg ? (
                             <>
@@ -3122,7 +3182,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                             <div style={{display:'flex',flexDirection:'column',gap:6}}>
                                                 <div className="cad-metric-chip">
                                                     <span className="label">Footprint</span>
-                                                    <span className="value">{footprintInfo.widthFt}′ × {footprintInfo.heightFt}′</span>
+                                                    <span className="value">{footprintInfo.widthFt}â€² Ã— {footprintInfo.heightFt}â€²</span>
                                                 </div>
                                                 {planScore != null && (
                                                     <div className="cad-metric-chip" style={{flexDirection:'column',alignItems:'flex-start',gap:4}}>
@@ -3166,7 +3226,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                     </div>
                 </div>
 
-                        {/* â”€â”€ ALTERNATIVES MODAL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+                        {/* Ã¢"â‚¬Ã¢"â‚¬ ALTERNATIVES MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ */}
                         {showAlternatives && (
                             <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)'}}>
                                 <div className="bg-paper rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
@@ -3233,14 +3293,21 @@ const DesignGenerator = ({ onOpenModal }) => {
     );
 };
 
-// â”€â”€â”€ APP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ APP Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const HOME_NAV_ITEMS = [
-    { label:'Work', kind:'section', value:'work' },
-    { label:'Case Study', kind:'path', value:'/case-study' },
-    { label:'Services', kind:'section', value:'services' },
-    { label:'Pricing', kind:'section', value:'pricing' },
+    { label:'Platform', kind:'section', value:'work' },
+    { label:'How It Works', kind:'path', value:'/how-floor-plans-work' },
+    { label:'Roadmap', kind:'path', value:'/roadmap' },
+    { label:'B2B Workflow', kind:'path', value:'/b2b-workflow' },
     { label:'FAQ', kind:'path', value:'/faq' },
-    { label:'Live Studio', kind:'section', value:'generator' },
+];
+const PAGE_NAV_LINKS = [
+    ['Home', '/'],
+    ['How It Works', '/how-floor-plans-work'],
+    ['Roadmap', '/roadmap'],
+    ['B2B Workflow', '/b2b-workflow'],
+    ['FAQ', '/faq'],
+    ['Live Studio', '/#generator'],
 ];
 const FOOTER_SECTION_LINKS = [
     ['Work', 'work'],
@@ -3251,10 +3318,44 @@ const FOOTER_SECTION_LINKS = [
     ['Sessions', 'gallery'],
 ];
 const RESOURCE_PAGE_LINKS = [
-    ['Case Study', '/case-study'],
+    ['How Floor Plans Work', '/how-floor-plans-work'],
+    ['B2B Workflow', '/b2b-workflow'],
+    ['Roadmap', '/roadmap'],
     ['FAQ', '/faq'],
     ['Privacy', '/privacy'],
     ['Terms', '/terms'],
+];
+const PLATFORM_PAGE_CARDS = [
+    {
+        eyebrow: 'Methodology',
+        title: 'How Keystone turns client intent into a first working floor plan.',
+        body: 'The floor-plan page replaces the old case-study framing with a clearer explanation of intake structure, plan logic, output review, and professional limits.',
+        href: '/how-floor-plans-work',
+        cta: 'View Methodology',
+        image: ASSETS.exampleBlueprint,
+        alt: 'Keystone sample blueprint methodology preview',
+        stat: '4 steps',
+    },
+    {
+        eyebrow: 'Studio workflow',
+        title: 'A B2B handoff shaped for architecture firms, not generic software funnels.',
+        body: 'See how the client link, passkey, structured brief, generated plan, and optional Gemini study fit together inside a professional practice.',
+        href: '/b2b-workflow',
+        cta: 'View Workflow',
+        image: ASSETS.phase2[2],
+        alt: 'Keystone workflow visual',
+        stat: 'Firm-led',
+    },
+    {
+        eyebrow: 'Product roadmap',
+        title: 'What is live today, what is next, and where 3D, scheduling, and estimates fit.',
+        body: 'The roadmap page groups upcoming modules like CAD export, quantity takeoff, scheduling, 3D viewer, and white-label capabilities without overstating what is already available.',
+        href: '/roadmap',
+        cta: 'View Roadmap',
+        image: ASSETS.phase3[1],
+        alt: 'Keystone roadmap visual',
+        stat: 'Live + next',
+    },
 ];
 const LIVE_NOW_FEATURES = [
     'Client-guided brief capture',
@@ -3351,13 +3452,7 @@ const SiteFooter = ({ home = false }) => (
         <div className="site-shell">
             <div className="grid md:grid-cols-[1.15fr_0.9fr_0.9fr_1fr] gap-8 items-start">
                 <div>
-                    <div className="flex items-center gap-3">
-                        <SmartImage src={ASSETS.icon} alt="Keystone" eager style={{width:'30px',height:'30px',filter:'brightness(0) invert(1)'}}/>
-                        <div>
-                            <span className="cg text-[1.1rem] uppercase tracking-[-0.05em] text-white">Keystone AI</span>
-                            <p className="mono text-[10px] uppercase tracking-[0.22em] mt-1 nav-subtitle-orange">Architect-first discovery</p>
-                        </div>
-                    </div>
+                    <BrandLockup href="/" reverse compact/>
                     <p className="text-sm leading-relaxed mt-4" style={{color:'rgba(244,239,230,0.58)'}}>
                         Keystone lets residential firms send a guided client link before kickoff, then walk into the meeting with a structured brief, a generated plan, and a downloadable blueprint already in hand.
                     </p>
@@ -3392,7 +3487,7 @@ const SiteFooter = ({ home = false }) => (
                 </div>
             </div>
             <div className="mt-10 pt-5 flex flex-col md:flex-row justify-between gap-4 mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.26)'}}>
-                <span>Copyright 2026 {BRAND_NAME}</span>
+                <span>Copyright 2026 {BRAND_DISPLAY_NAME}</span>
                 <span>Legal pages last updated {LEGAL_UPDATED_AT}</span>
             </div>
         </div>
@@ -3402,22 +3497,9 @@ const SiteFooter = ({ home = false }) => (
 const PageNav = ({ onOpenModal }) => (
     <nav className="fixed top-0 w-full z-40 h-[64px] flex items-center justify-between px-5 md:px-10"
         style={{background:'rgba(245,240,233,0.84)',backdropFilter:'blur(20px)',WebkitBackdropFilter:'blur(20px)',borderBottom:'1px solid rgba(9,9,9,0.08)'}}>
-        <a href="/" className="flex items-center gap-3">
-            <SmartImage src={ASSETS.icon} alt="Keystone" eager style={{width:'30px',height:'30px'}}/>
-            <div>
-                <span className="cg text-[1.2rem] leading-none uppercase tracking-[-0.05em]" style={{color:'var(--ink)'}}>Keystone</span>
-                <div className="mono text-[8px] uppercase tracking-[0.22em] mt-1" style={{color:'rgba(9,9,9,0.42)'}}>AI studio</div>
-            </div>
-        </a>
-        <div className="hidden md:flex items-center gap-7 mono text-[11px] uppercase tracking-[0.24em]" style={{color:'rgba(9,9,9,0.54)'}}>
-            {[
-                ['Home', '/'],
-                ['Case Study', '/case-study'],
-                ['FAQ', '/faq'],
-                ['Privacy', '/privacy'],
-                ['Terms', '/terms'],
-                ['Live Studio', '/#generator'],
-            ].map(([label, href]) => (
+        <BrandLockup href="/" compact/>
+        <div className="hidden md:flex items-center gap-6 mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(9,9,9,0.54)'}}>
+            {PAGE_NAV_LINKS.map(([label, href]) => (
                 <a key={href} href={href} className="transition-colors hover:text-black">{label}</a>
             ))}
             <button onClick={onOpenModal} className="cta-hero cta-glow-soft px-5 py-3 text-[11px]">
@@ -3451,6 +3533,7 @@ const DreamApp = () => {
     const [isMenuOpen, setMenuOpen] = useState(false);
     const [heroVisible, setHeroVisible] = useState(true);
     const [isStudioOpen, setStudioOpen] = useState(false);
+    usePageTitle('Keystone AI - Floor Plans in 60 Seconds');
 
     useEffect(() => {
         const handler = () => setStudioOpen(true);
@@ -3665,21 +3748,15 @@ const DreamApp = () => {
             </AnimatePresence>
 
             <main>
-                    {/* ─── NAV ─────────────────────────────────────────── */}
+                    {/* â"€â"€â"€ NAV â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
                     <motion.nav
                         initial={{ opacity: 0, y: -64 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.56, ease: [0.22, 1, 0.36, 1], delay: 0.05 }}
                         className="fixed top-0 w-full z-40 h-[64px] flex items-center justify-between px-5 md:px-10"
                         style={{background:'rgba(255,253,249,0.92)',backdropFilter:'blur(22px)',WebkitBackdropFilter:'blur(22px)',borderBottom:'1px solid rgba(255,106,55,0.1)'}}>
-                        <a href="#hero" className="flex items-center gap-3">
-                            <SmartImage src={ASSETS.icon} alt="Keystone" eager style={{width:'30px',height:'30px'}}/>
-                            <div>
-                                <span className="cg text-[1.2rem] leading-none uppercase tracking-[-0.05em]" style={{color:'var(--ink)'}}>Keystone</span>
-                                <div className="mono text-[8px] uppercase tracking-[0.22em] mt-0.5 nav-subtitle-orange">AI studio</div>
-                            </div>
-                        </a>
-                        <div className="hidden md:flex items-center gap-8 mono text-[11px] uppercase tracking-[0.26em]" style={{color:'rgba(9,9,9,0.52)'}}>
+                        <BrandLockup href="#hero" compact/>
+                        <div className="hidden md:flex items-center gap-6 mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(9,9,9,0.52)'}}>
                             {HOME_NAV_ITEMS.map((item) => (
                                 <a key={item.label} href={navHref(item, true)} className="transition-colors hover:text-black">{item.label}</a>
                             ))}
@@ -3689,7 +3766,7 @@ const DreamApp = () => {
                         </div>
                     </motion.nav>
 
-                        {/* ─── HERO ──────────────────────────────────────── */}
+                        {/* â"€â"€â"€ HERO â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€ */}
                         <section id="hero" className="relative overflow-hidden hero-v2-bg"
                             style={{minHeight:'min(90svh, 920px)',paddingTop:'64px'}}>
                             <OrbBackground/>
@@ -3790,9 +3867,9 @@ const DreamApp = () => {
                                             ))}
                                         </div>
                                         <div className="mt-5 pt-4 border-t border-white/10">
-                                            <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.46)'}}>Proof before pitch</p>
-                                            <a href="/case-study" data-cursor-text="Open case study" className="inline-block mt-3 text-sm transition-colors hover:text-orange-300" style={{color:'rgba(255,255,255,0.88)'}}>
-                                                View the representative case study →
+                                            <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.46)'}}>Method before meeting</p>
+                                            <a href="/how-floor-plans-work" data-cursor-text="Open methodology page" className="inline-block mt-3 text-sm transition-colors hover:text-orange-300" style={{color:'rgba(255,255,255,0.88)'}}>
+                                                See how Keystone makes floor plans â†’
                                             </a>
                                         </div>
                                     </motion.aside>
@@ -3824,7 +3901,7 @@ const DreamApp = () => {
                                                 <span>Open Live Studio</span>
                                                 <span className="cta-live-mark"><span className="cta-live-dot"/>Now</span>
                                             </StarBorderBtn>
-                                            <a href="/case-study" data-cursor-text="Open case study" className="cta-secondary">View Case Study</a>
+                                            <a href="/how-floor-plans-work" data-cursor-text="Open methodology page" className="cta-secondary">How Floor Plans Work</a>
                                         </div>
                                         </Reveal>
                                     </div>
@@ -4044,6 +4121,58 @@ const DreamApp = () => {
                                                 <div className="mt-10 pt-5" style={{borderTop:'1px solid rgba(255,106,55,0.15)'}}>
                                                     <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'var(--accent)',opacity:0.7}}>Keystone signal</div>
                                                     <div className="cg mt-3 text-[2.4rem] leading-none gradient-text-anim" style={{letterSpacing:'-0.06em'}}>{item.stat}</div>
+                                                </div>
+                                            </SpotlightCard>
+                                        </TiltCard>
+                                    </motion.article>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="defer-section py-14 md:py-[4.75rem] relative overflow-hidden" style={{background:'linear-gradient(180deg, #FFFDFC 0%, #F7F1E8 100%)'}}>
+                        <OrbBackground/>
+                        <FloatingParticles count={28} color="255,106,55" className="opacity-24"/>
+                        <div className="site-shell relative z-10">
+                            <div className="grid lg:grid-cols-[280px_minmax(0,1fr)] gap-8 items-end">
+                                <div>
+                                    <Reveal y={12}>
+                                        <span className="section-label" style={{color:'rgba(9,9,9,0.42)'}}>Platform pages</span>
+                                        <div className="orange-line mt-3"/>
+                                    </Reveal>
+                                    <Reveal y={26} delay={0.08}>
+                                        <h2 className="cg mt-6" style={{fontSize:'clamp(2.4rem, 5vw, 4.6rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
+                                            Three clearer ways to understand Keystone.
+                                        </h2>
+                                    </Reveal>
+                                </div>
+                                <Reveal y={16} delay={0.16}>
+                                    <p className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.6)'}}>
+                                        The homepage keeps the live product story. These pages go deeper into the floor-plan method, the firm workflow, and the roadmap without flattening everything into one long scroll.
+                                    </p>
+                                </Reveal>
+                            </div>
+                            <div className="grid lg:grid-cols-3 gap-4 mt-10">
+                                {PLATFORM_PAGE_CARDS.map((card, index) => (
+                                    <motion.article key={card.href} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}>
+                                        <TiltCard maxTilt={4} style={{height:'100%'}}>
+                                            <SpotlightCard spotlightColor="rgba(255,106,55,0.12)" className="h-full" style={{background:'rgba(255,255,255,0.78)',border:'1px solid rgba(255,106,55,0.1)',borderRadius:'22px',overflow:'hidden'}}>
+                                                <div style={{aspectRatio:'1 / 0.78',overflow:'hidden',position:'relative'}}>
+                                                    <SmartImage src={card.image} alt={card.alt} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                                                    <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, rgba(9,9,9,0.02) 0%, rgba(9,9,9,0.42) 100%)'}}/>
+                                                    <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{position:'absolute',left:'1rem',right:'1rem',top:'1rem',color:'rgba(255,255,255,0.78)'}}>
+                                                        {card.eyebrow}
+                                                    </div>
+                                                    <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{position:'absolute',left:'1rem',bottom:'1rem',color:'white'}}>
+                                                        {card.stat}
+                                                    </div>
+                                                </div>
+                                                <div className="p-5 md:p-6">
+                                                    <h3 className="cg text-[1.8rem] leading-[0.94]" style={{color:'var(--ink)'}}>{card.title}</h3>
+                                                    <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>{card.body}</p>
+                                                    <a href={card.href} className="cta-secondary mt-6 inline-flex">
+                                                        {card.cta}
+                                                    </a>
                                                 </div>
                                             </SpotlightCard>
                                         </TiltCard>
@@ -4313,41 +4442,63 @@ const DreamApp = () => {
     );
 };
 
-const CaseStudyPage = () => {
+const HowFloorPlansWorkPage = () => {
+    usePageTitle('Keystone AI - How Floor Plans Work');
     const caseFacts = [
-        ['Project type', 'Representative family-home intake'],
-        ['Firm workflow', 'Client completes guided link before kickoff'],
-        ['Area target', '2,640 sq ft'],
-        ['Architect handoff', 'Structured brief + plan export'],
+        ['Input', 'Guided pre-meeting brief'],
+        ['Output', 'Plan + PNG + optional 3D study'],
+        ['Use case', 'Architect-ready kickoff meeting'],
+        ['Boundary', 'Conceptual, not construction docs'],
     ];
     const intakeSignals = [
-        'Client completed the brief through a firm-issued pre-meeting link',
-        'Four-bedroom layout with one quiet home office',
-        'Warm modern exterior with wood, stone, and soft daylight',
-        'Open kitchen / living core with a cleaner circulation path',
+        'Room count, area target, and adjacency intent are captured before the meeting begins.',
+        'Taste, light preferences, and material mood arrive in a format the architect can review quickly.',
+        'Lot cues and circulation priorities help the first plan start from structure instead of vague notes.',
+        'The result is a first working layout the team can save, discuss, and annotate before kickoff.',
     ];
     const processSteps = [
         {
             step: '01',
-            title: 'Firm sends the link',
-            body: 'The studio shares a guided intake link before kickoff so the client can describe needs, priorities, and taste before the architect meeting begins.',
+            title: 'The client answers in structure',
+            body: 'Keystone starts with a firm-issued intake link that gathers spatial priorities, room needs, lifestyle cues, and lot context before the architect spends unpaid discovery time.',
         },
         {
             step: '02',
-            title: 'Client brief is structured',
-            body: 'The intake captures room count, lot context, circulation intent, and stylistic cues before the architect spends an unpaid hour pulling it out in conversation.',
+            title: 'Signals are organized into plan logic',
+            body: 'The system turns those answers into usable constraints: footprint targets, public/private zoning, circulation intent, and the first pass at room relationships.',
         },
         {
             step: '03',
-            title: 'Plan is generated and saved',
-            body: 'Keystone turns that brief into a first residential layout and a clean PNG export the team can save, review, and annotate before kickoff.',
+            title: 'A floor plan is generated and exported',
+            body: 'Keystone scores alternatives, keeps the strongest option, and gives the firm a clean blueprint PNG that can be reviewed immediately inside the studio workflow.',
         },
         {
             step: '04',
-            title: 'Meeting starts ahead',
-            body: 'A Gemini exterior image can add emotional context, but the real gain is that the architect begins with a plan, not a blank page.',
+            title: 'The architect enters with context',
+            body: 'An optional Gemini exterior study can add emotional direction, but the core value stays the same: the architect is no longer starting from a blank page.',
         },
     ];
+    const planInputs = [
+        {
+            title: 'Program and footprint',
+            body: 'Bedrooms, baths, stories, area goals, garage needs, and rough footprint expectations anchor the first layout.',
+            image: ASSETS.phase1[1],
+            alt: 'Program and footprint reference',
+        },
+        {
+            title: 'Light and atmosphere',
+            body: 'Warm modern cues, daylight preference, and exterior tone help shape the visual direction without replacing architectural judgment.',
+            image: ASSETS.phase2[5],
+            alt: 'Light and atmosphere reference',
+        },
+        {
+            title: 'Circulation and zoning',
+            body: 'The brief separates public, private, and service needs so the generated plan has a stronger starting logic before review.',
+            image: ASSETS.phase3[4],
+            alt: 'Circulation and zoning reference',
+        },
+    ];
+    const supportingGallery = [ASSETS.phase1[4], ASSETS.phase2[1], ASSETS.phase2[7], ASSETS.phase3[2]];
 
     return (
         <SubpageChrome>
@@ -4364,12 +4515,12 @@ const CaseStudyPage = () => {
                         <div className="site-shell py-16 md:py-24 relative z-10">
                             <div className="grid xl:grid-cols-[minmax(0,1.05fr)_360px] gap-8 items-start">
                                 <div>
-                                    <span className="section-label">Representative case study</span>
+                                    <span className="section-label">How floor plans are made</span>
                                     <h1 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 6rem)',lineHeight:0.9,letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
-                                        A firm-sent client brief, turned into a first plan the kickoff meeting can actually use.
+                                        How Keystone turns client intent into a first working floor plan.
                                     </h1>
                                     <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
-                                        This sample is intentionally labeled as a representative session. It shows the B2B workflow Keystone is built for: a firm sends a guided client link, the client completes the brief, and the architect receives a generated plan, downloadable blueprint export, and optional Gemini-powered exterior study before the meeting.
+                                        This page explains the actual floor-plan workflow: a firm sends the client a guided link, Keystone structures the responses, generates a first plan, prepares a downloadable export, and optionally adds a Gemini exterior study before the architect meeting.
                                     </p>
                                     <div className="grid sm:grid-cols-2 gap-3 mt-8 max-w-3xl">
                                         {caseFacts.map(([label, value]) => (
@@ -4385,7 +4536,7 @@ const CaseStudyPage = () => {
                                     </div>
                                 </div>
                                 <aside className="dream-panel p-6 md:p-7 overflow-hidden relative">
-                                    <span className="section-label" style={{color:'rgba(245,240,233,0.58)'}}>What went in</span>
+                                    <span className="section-label" style={{color:'rgba(245,240,233,0.58)'}}>What goes in</span>
                                     <h2 className="cg text-white mt-5" style={{fontSize:'clamp(1.8rem,3vw,2.6rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
                                         Enough specificity to help the architect before the meeting, not just during it.
                                     </h2>
@@ -4396,6 +4547,9 @@ const CaseStudyPage = () => {
                                                 <span>{item}</span>
                                             </div>
                                         ))}
+                                    </div>
+                                    <div className="mt-6 rounded-[18px] overflow-hidden" style={{border:'1px solid rgba(255,255,255,0.12)'}}>
+                                        <SmartImage src={ASSETS.phase3[5]} alt="Keystone floor plan workflow preview" style={{width:'100%',height:'220px',objectFit:'cover',display:'block'}}/>
                                     </div>
                                     <div className="mt-8 pt-5 border-t border-white/10">
                                         <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.46)'}}>Outcome</p>
@@ -4452,7 +4606,7 @@ const CaseStudyPage = () => {
                         <div className="site-shell">
                             <div className="grid lg:grid-cols-[320px_minmax(0,1fr)] gap-8 items-start">
                                 <div>
-                                    <span className="section-label" style={{color:'rgba(10,10,12,0.42)'}}>Why it matters</span>
+                                    <span className="section-label" style={{color:'rgba(10,10,12,0.42)'}}>Method</span>
                                     <h2 className="cg mt-6" style={{fontSize:'clamp(2.4rem, 5vw, 4.3rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
                                         The value is not more content. It is a better first conversation for the firm and the client.
                                     </h2>
@@ -4469,6 +4623,374 @@ const CaseStudyPage = () => {
                             </div>
                         </div>
                     </section>
+
+                    <section className="py-10 md:py-14" style={{background:'linear-gradient(180deg, #FFFDF9 0%, #F0E8DD 100%)'}}>
+                        <div className="site-shell">
+                            <div className="grid lg:grid-cols-[280px_minmax(0,1fr)] gap-8 items-start">
+                                <div>
+                                    <span className="section-label" style={{color:'rgba(10,10,12,0.42)'}}>What shapes the plan</span>
+                                    <h2 className="cg mt-6" style={{fontSize:'clamp(2.2rem, 4.5vw, 4rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
+                                        The system starts with structure, not guesswork.
+                                    </h2>
+                                </div>
+                                <div className="grid md:grid-cols-3 gap-4">
+                                    {planInputs.map((item, index) => (
+                                        <motion.article key={item.title} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}>
+                                            <TiltCard maxTilt={4} style={{height:'100%'}}>
+                                                <SpotlightCard spotlightColor="rgba(255,106,55,0.12)" className="h-full" style={{background:'rgba(255,255,255,0.7)',border:'1px solid rgba(255,106,55,0.1)',borderRadius:'22px',overflow:'hidden'}}>
+                                                    <div style={{aspectRatio:'1 / 0.78',overflow:'hidden'}}>
+                                                        <SmartImage src={item.image} alt={item.alt} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                                                    </div>
+                                                    <div className="p-5 md:p-6">
+                                                        <h3 className="cg text-[1.6rem] leading-[0.95]" style={{color:'var(--ink)'}}>{item.title}</h3>
+                                                        <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.64)'}}>{item.body}</p>
+                                                    </div>
+                                                </SpotlightCard>
+                                            </TiltCard>
+                                        </motion.article>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="py-12 md:py-16 relative overflow-hidden" style={{background:'linear-gradient(180deg,#0A0806 0%,#130B05 100%)'}}>
+                        <FloatingParticles count={28} color="255,106,55" className="opacity-18"/>
+                        <div className="site-shell relative z-10">
+                            <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
+                                <div>
+                                    <span className="section-label" style={{color:'rgba(255,106,55,0.7)'}}>Support material</span>
+                                    <h2 className="cg text-white mt-6" style={{fontSize:'clamp(2.3rem, 4.8vw, 4rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
+                                        More visual proof, without pretending the output is final construction documentation.
+                                    </h2>
+                                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-8">
+                                        {supportingGallery.map((image, index) => (
+                                            <div key={image} className="rounded-[18px] overflow-hidden" style={{border:'1px solid rgba(255,255,255,0.08)',background:'rgba(255,255,255,0.03)'}}>
+                                                <SmartImage src={image} alt={`Keystone floor plan support visual ${index + 1}`} style={{width:'100%',height:'210px',objectFit:'cover',display:'block'}}/>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <SpotlightCard spotlightColor="rgba(255,106,55,0.14)" className="dream-panel p-6 md:p-7 self-start">
+                                    <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(255,106,55,0.8)'}}>Important boundary</div>
+                                    <h3 className="cg text-white mt-5 text-[2rem] leading-[0.95]">Keystone helps start the design discussion. It does not replace professional design responsibility.</h3>
+                                    <p className="mt-5 text-sm leading-relaxed" style={{color:'rgba(244,239,230,0.7)'}}>
+                                        The output is a concept aid for discovery and kickoff. It is not a permit-ready drawing set, not a stamped document, and not a substitute for architect or engineer review.
+                                    </p>
+                                    <div className="mt-6 flex flex-col gap-3">
+                                        <a href="/#generator" className="cta-secondary text-center">Open Live Studio</a>
+                                        <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
+                                    </div>
+                                </SpotlightCard>
+                            </div>
+                        </div>
+                    </section>
+                </>
+            )}
+        </SubpageChrome>
+    );
+};
+
+const CaseStudyPage = () => <HowFloorPlansWorkPage/>;
+
+const B2BWorkflowPage = () => {
+    usePageTitle('Keystone AI - B2B Workflow');
+    const workflowStages = [
+        {
+            step: '01',
+            title: 'The firm sends a guided link',
+            body: 'Keystone is sold to the studio and shared with the client before the first serious meeting. The architect controls when the workflow starts and who sees it.',
+            image: ASSETS.phase3[4],
+        },
+        {
+            step: '02',
+            title: 'The client fills out structured intent',
+            body: 'Room needs, lot cues, light preferences, and style signals arrive in a format the studio can review later instead of pulling everything out live on the call.',
+            image: ASSETS.phase1[2],
+        },
+        {
+            step: '03',
+            title: 'Keystone returns a plan and export',
+            body: 'The generated plan becomes a working artifact the team can download, review, and annotate. The output exists before the architect even begins the kickoff conversation.',
+            image: ASSETS.exampleBlueprint,
+        },
+        {
+            step: '04',
+            title: 'The architect walks in prepared',
+            body: 'An optional Gemini exterior study can support emotional alignment, but the operational win is simpler: the firm begins with more clarity and less drift.',
+            image: ASSETS.exampleRender,
+        },
+    ];
+    const operatorBenefits = [
+        'More serious kickoff meetings with less unpaid discovery time',
+        'A clearer client handoff before the architect starts shaping options',
+        'A stronger internal review artifact for firms that want consistency',
+    ];
+    const supportGallery = [ASSETS.phase2[0], ASSETS.phase2[3], ASSETS.phase3[1], ASSETS.phase3[5]];
+
+    return (
+        <SubpageChrome>
+            {({ openModal }) => (
+                <>
+                    <section className="relative overflow-hidden" style={{background:'linear-gradient(180deg, #FFFDF9 0%, #F5EADF 100%)'}}>
+                        <div className="site-shell py-16 md:py-24 relative z-10">
+                            <div className="grid xl:grid-cols-[minmax(0,1fr)_360px] gap-8 items-start">
+                                <div>
+                                    <span className="section-label">B2B workflow</span>
+                                    <h1 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 6rem)',lineHeight:0.9,letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
+                                        A pre-meeting workflow designed for architecture firms.
+                                    </h1>
+                                    <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
+                                        Keystone is not a generic lead form or portfolio gimmick. It is a firm-led process that helps clients arrive with structured intent so the architect can start the first serious conversation further ahead.
+                                    </p>
+                                    <div className="grid sm:grid-cols-3 gap-3 mt-8 max-w-3xl">
+                                        {[
+                                            ['Buyer', 'Residential firms'],
+                                            ['Live today', 'Brief + plan + PNG + Gemini'],
+                                            ['Rollout', 'Firm-led access'],
+                                        ].map(([label, value]) => (
+                                            <div key={label} className="paper-panel p-4 md:p-5">
+                                                <div className="mono text-[9px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>{label}</div>
+                                                <div className="cg text-[1.4rem] mt-3 leading-[0.95]" style={{color:'var(--ink)'}}>{value}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <aside className="paper-panel p-5 md:p-6">
+                                    <div className="rounded-[18px] overflow-hidden">
+                                        <SmartImage src={ASSETS.phase2[2]} alt="Keystone B2B workflow preview" style={{width:'100%',height:'260px',objectFit:'cover',display:'block'}}/>
+                                    </div>
+                                    <div className="mt-5">
+                                        <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>What firms get</div>
+                                        <div className="grid gap-3 mt-4">
+                                            {LIVE_NOW_FEATURES.map((item) => (
+                                                <div key={item} className="flex items-start gap-3 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.68)'}}>
+                                                    <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{background:'var(--accent)'}}/>
+                                                    <span>{item}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </aside>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="py-12 md:py-16" style={{background:'var(--paper)'}}>
+                        <div className="site-shell">
+                            <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+                                {workflowStages.map((item, index) => (
+                                    <motion.article key={item.step} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.08}}>
+                                        <TiltCard maxTilt={4} style={{height:'100%'}}>
+                                            <SpotlightCard spotlightColor="rgba(255,106,55,0.1)" className="h-full" style={{background:'rgba(255,255,255,0.72)',border:'1px solid rgba(255,106,55,0.1)',borderRadius:'22px',overflow:'hidden'}}>
+                                                <div style={{aspectRatio:'1 / 0.82'}}>
+                                                    <SmartImage src={item.image} alt={item.title} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                                                </div>
+                                                <div className="p-5 md:p-6">
+                                                    <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'var(--accent)',opacity:0.78}}>{item.step}</div>
+                                                    <h3 className="cg text-[1.6rem] mt-4 leading-[0.95]" style={{color:'var(--ink)'}}>{item.title}</h3>
+                                                    <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.64)'}}>{item.body}</p>
+                                                </div>
+                                            </SpotlightCard>
+                                        </TiltCard>
+                                    </motion.article>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="py-12 md:py-16 relative overflow-hidden" style={{background:'linear-gradient(180deg,#0A0806 0%,#130B05 100%)'}}>
+                        <FloatingParticles count={24} color="255,106,55" className="opacity-18"/>
+                        <div className="site-shell relative z-10">
+                            <div className="grid xl:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start">
+                                <div>
+                                    <span className="section-label" style={{color:'rgba(255,106,55,0.72)'}}>Why it matters</span>
+                                    <h2 className="cg text-white mt-6" style={{fontSize:'clamp(2.4rem, 5vw, 4.4rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
+                                        More signal before the architect spends real time.
+                                    </h2>
+                                    <div className="grid sm:grid-cols-2 gap-3 mt-8">
+                                        {supportGallery.map((image, index) => (
+                                            <div key={image} className="rounded-[18px] overflow-hidden" style={{border:'1px solid rgba(255,255,255,0.08)'}}>
+                                                <SmartImage src={image} alt={`B2B workflow support visual ${index + 1}`} style={{width:'100%',height:'220px',objectFit:'cover',display:'block'}}/>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="grid gap-4">
+                                    <SpotlightCard spotlightColor="rgba(255,106,55,0.14)" className="dream-panel p-6 md:p-7">
+                                        <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(255,106,55,0.78)'}}>Operator benefits</div>
+                                        <div className="grid gap-3 mt-5">
+                                            {operatorBenefits.map((item) => (
+                                                <div key={item} className="flex items-start gap-3 text-sm leading-relaxed" style={{color:'rgba(244,239,230,0.7)'}}>
+                                                    <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{background:'var(--accent)'}}/>
+                                                    <span>{item}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </SpotlightCard>
+                                    <SpotlightCard spotlightColor="rgba(255,106,55,0.12)" className="paper-panel p-6 md:p-7">
+                                        <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(10,10,12,0.42)'}}>Scope discipline</div>
+                                        <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.68)'}}>
+                                            Keystone is intentionally narrow today: structured intake, generated plan, blueprint export, and optional Gemini study. CAD, estimating, scheduling, and viewer depth belong on the roadmap until they are truly live.
+                                        </p>
+                                        <div className="mt-6 flex flex-col gap-3">
+                                            <a href="/roadmap" className="cta-secondary text-center">View Roadmap</a>
+                                            <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
+                                        </div>
+                                    </SpotlightCard>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </>
+            )}
+        </SubpageChrome>
+    );
+};
+
+const RoadmapPage = () => {
+    usePageTitle('Keystone AI - Roadmap');
+    const roadmapModules = [
+        {
+            phase: 'Live today',
+            title: 'Guided brief capture',
+            body: 'The client-facing intake link already turns loose preferences into structured discovery data before kickoff.',
+            image: ASSETS.phase3[4],
+            status: 'Live',
+        },
+        {
+            phase: 'Live today',
+            title: 'Generated plan + PNG export',
+            body: 'Keystone already returns a usable floor plan and a clean blueprint export the firm can download and review.',
+            image: ASSETS.exampleBlueprint,
+            status: 'Live',
+        },
+        {
+            phase: 'Live today',
+            title: 'Gemini exterior study',
+            body: 'An optional exterior study is already available to give the client a visual anchor during the early conversation.',
+            image: ASSETS.exampleRender,
+            status: 'Live',
+        },
+        {
+            phase: 'Roadmap next',
+            title: 'DWG / CAD export',
+            body: 'Downstream drafting support is planned so approved early concepts can move more cleanly into the studio production process.',
+            image: ASSETS.phase1[0],
+            status: 'Planned',
+        },
+        {
+            phase: 'Roadmap next',
+            title: 'Quantity and estimate layers',
+            body: 'Quantity takeoff support and early estimation ranges are planned to give firms stronger commercial context earlier in the pipeline.',
+            image: ASSETS.phase2[3],
+            status: 'Planned',
+        },
+        {
+            phase: 'Roadmap next',
+            title: '3D viewer and schedule depth',
+            body: 'Interactive 3D viewing and project schedule intelligence are part of the broader platform direction, but they are not marketed as live today.',
+            image: ASSETS.phase2[6],
+            status: 'Planned',
+        },
+    ];
+    const roadmapTracks = [
+        ['Estimates', 'Tie quantity logic to early project conversations without overselling precision.'],
+        ['Elevations', 'Expand from plan logic into richer facade and elevation support for early review.'],
+        ['Scheduling', 'Help firms preview timing dependencies once the product truth is ready for it.'],
+        ['White-labeling', 'Let studios present Keystone inside their own professional brand language.'],
+    ];
+
+    return (
+        <SubpageChrome>
+            {({ openModal }) => (
+                <>
+                    <section className="relative overflow-hidden" style={{background:'linear-gradient(180deg, #FFFDF9 0%, #F4EBE1 100%)'}}>
+                        <div className="site-shell py-16 md:py-24 relative z-10">
+                            <div className="grid xl:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start">
+                                <div>
+                                    <span className="section-label">Roadmap</span>
+                                    <h1 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 6rem)',lineHeight:0.9,letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
+                                        What Keystone does now, and what the platform is growing toward next.
+                                    </h1>
+                                    <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
+                                        This roadmap keeps a strict line between live capability and planned capability. It shows the platform direction around estimates, elevations, 3D viewing, scheduling, and downstream export without pretending those modules are all ready today.
+                                    </p>
+                                </div>
+                                <SpotlightCard spotlightColor="rgba(255,106,55,0.1)" className="paper-panel p-6 md:p-7">
+                                    <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(10,10,12,0.42)'}}>Product truth</div>
+                                    <div className="grid gap-3 mt-5">
+                                        {LIVE_NOW_FEATURES.map((item) => (
+                                            <div key={item} className="flex items-start gap-3 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.68)'}}>
+                                                <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{background:'var(--accent)'}}/>
+                                                <span>{item}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-6 pt-5" style={{borderTop:'1px solid rgba(10,10,12,0.08)'}}>
+                                        <p className="text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.64)'}}>
+                                            Everything below marked <strong>Planned</strong> is direction, not a live sales claim.
+                                        </p>
+                                    </div>
+                                </SpotlightCard>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="py-12 md:py-16" style={{background:'var(--paper)'}}>
+                        <div className="site-shell">
+                            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                {roadmapModules.map((module, index) => (
+                                    <motion.article key={module.title} initial={{opacity:0,y:18}} whileInView={{opacity:1,y:0}} viewport={{once:true,amount:0.3}} transition={{delay:index * 0.06}}>
+                                        <TiltCard maxTilt={4} style={{height:'100%'}}>
+                                            <SpotlightCard spotlightColor="rgba(255,106,55,0.12)" className="h-full" style={{background:'rgba(255,255,255,0.74)',border:'1px solid rgba(255,106,55,0.1)',borderRadius:'22px',overflow:'hidden'}}>
+                                                <div style={{aspectRatio:'1 / 0.75'}}>
+                                                    <SmartImage src={module.image} alt={module.title} style={{width:'100%',height:'100%',objectFit:'cover',display:'block'}}/>
+                                                </div>
+                                                <div className="p-5 md:p-6">
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>{module.phase}</div>
+                                                        <span className="mono text-[9px] uppercase tracking-[0.2em] px-2 py-1 rounded-full" style={{
+                                                            color: module.status === 'Live' ? 'white' : 'rgba(10,10,12,0.56)',
+                                                            background: module.status === 'Live' ? 'var(--accent)' : 'rgba(10,10,12,0.06)',
+                                                        }}>{module.status}</span>
+                                                    </div>
+                                                    <h3 className="cg text-[1.7rem] mt-4 leading-[0.95]" style={{color:'var(--ink)'}}>{module.title}</h3>
+                                                    <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.64)'}}>{module.body}</p>
+                                                </div>
+                                            </SpotlightCard>
+                                        </TiltCard>
+                                    </motion.article>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    <section className="py-12 md:py-16 relative overflow-hidden" style={{background:'linear-gradient(180deg,#0A0806 0%,#130B05 100%)'}}>
+                        <FloatingParticles count={20} color="255,106,55" className="opacity-16"/>
+                        <div className="site-shell relative z-10">
+                            <div className="grid xl:grid-cols-[320px_minmax(0,1fr)] gap-8 items-start">
+                                <div>
+                                    <span className="section-label" style={{color:'rgba(255,106,55,0.72)'}}>Direction</span>
+                                    <h2 className="cg text-white mt-6" style={{fontSize:'clamp(2.4rem, 5vw, 4rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
+                                        The platform grows outward from plan logic.
+                                    </h2>
+                                </div>
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    {roadmapTracks.map(([title, body]) => (
+                                        <SpotlightCard key={title} spotlightColor="rgba(255,106,55,0.14)" className="dream-panel p-5 md:p-6">
+                                            <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(255,106,55,0.78)'}}>{title}</div>
+                                            <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(244,239,230,0.68)'}}>{body}</p>
+                                        </SpotlightCard>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                                <a href="/b2b-workflow" className="cta-secondary text-center">View B2B Workflow</a>
+                                <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
+                            </div>
+                        </div>
+                    </section>
                 </>
             )}
         </SubpageChrome>
@@ -4476,6 +4998,7 @@ const CaseStudyPage = () => {
 };
 
 const FAQPage = () => {
+    usePageTitle('Keystone AI - FAQ');
     const faqItems = [
         {
             question: 'What is live in Keystone right now?',
@@ -4549,7 +5072,7 @@ const FAQPage = () => {
                                         <p className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(10,10,12,0.42)'}}>Need a direct answer?</p>
                                         <a href={`mailto:${CONTACT_EMAIL}`} className="inline-block mt-3 text-sm" style={{color:'var(--ink)'}}>{CONTACT_EMAIL}</a>
                                         <div className="mt-5 flex flex-col gap-3">
-                                            <a href="/case-study" className="cta-secondary text-center">View Case Study</a>
+                                            <a href="/how-floor-plans-work" className="cta-secondary text-center">How Floor Plans Work</a>
                                             <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
                                         </div>
                                     </div>
@@ -4747,7 +5270,10 @@ const TermsPage = () => {
 
 const AppRouter = () => {
     const path = getCurrentPath();
+    if (path === '/how-floor-plans-work') return <HowFloorPlansWorkPage/>;
     if (path === '/case-study') return <CaseStudyPage/>;
+    if (path === '/b2b-workflow') return <B2BWorkflowPage/>;
+    if (path === '/roadmap') return <RoadmapPage/>;
     if (path === '/faq') return <FAQPage/>;
     if (path === '/privacy') return <PrivacyPage/>;
     if (path === '/terms') return <TermsPage/>;
@@ -4756,3 +5282,5 @@ const AppRouter = () => {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<AppRouter/>);
+
+

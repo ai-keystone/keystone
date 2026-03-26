@@ -33,6 +33,18 @@
       "destination": "/index.html"
     },
     {
+      "source": "/how-floor-plans-work",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/b2b-workflow",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/roadmap",
+      "destination": "/index.html"
+    },
+    {
       "source": "/faq",
       "destination": "/index.html"
     },

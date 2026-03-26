@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 620 140" fill="none">
+  <rect x="0" y="24" width="92" height="92" fill="#AD3300"/>
+  <path d="M18 40h3v60h-3z" fill="#F8F3EC" opacity=".42"/>
+  <path d="M32 42h8v56h-8z" fill="#F8F3EC"/>
+  <path d="M40 70 64 42h10L53 66l23 32H66L48 73l-8 9v16h-8V42h8v28z" fill="#F8F3EC"/>
+  <text x="126" y="70" fill="#F8F3EC" font-family="Noto Serif, Georgia, serif" font-size="44" font-weight="700" letter-spacing="0.04em">KEYSTONE AI</text>
+  <text x="127" y="98" fill="#C2B6AC" font-family="IBM Plex Mono, monospace" font-size="11" letter-spacing="0.28em">ARCHITECT-FIRST DISCOVERY</text>
+</svg>
