@@ -4478,60 +4478,70 @@ const DreamApp = () => {
 const HowFloorPlansWorkPage = () => {
     usePageTitle('Keystone AI - How Floor Plans Work');
     const caseFacts = [
-        ['Input', 'Guided pre-meeting brief'],
-        ['Output', 'Plan + PNG + optional 3D study'],
-        ['Use case', 'Architect-ready kickoff meeting'],
-        ['Boundary', 'Conceptual, not construction docs'],
+        ['Input', 'Firm-issued structured brief'],
+        ['Core engine', 'Deterministic layout + validation'],
+        ['Output', 'Plan SVG / PNG + optional render'],
+        ['Boundary', 'Concept study, not permit docs'],
     ];
     const intakeSignals = [
-        'Room count, area target, and adjacency intent are captured before the meeting begins.',
-        'Taste, light preferences, and material mood arrive in a format the architect can review quickly.',
-        'Lot cues and circulation priorities help the first plan start from structure instead of vague notes.',
-        'The result is a first working layout the team can save, discuss, and annotate before kickoff.',
+        'Area, stories, bedrooms, baths, garage type, and broad footprint bias are captured before discovery starts.',
+        'The brief records layout intent such as primary-suite level, kitchen position, laundry placement, and open-concept preference.',
+        'Frontage, lot context, light preference, indoor-outdoor intent, and accessibility needs shape the first zoning pass.',
+        'The architect receives a working plan artifact before kickoff instead of reconstructing the brief live from scattered notes.',
     ];
     const processSteps = [
         {
             step: '01',
-            title: 'The client answers in structure',
-            body: 'Keystone starts with a firm-issued intake link that gathers spatial priorities, room needs, lifestyle cues, and lot context before the architect spends unpaid discovery time.',
+            title: 'The survey is normalized into a usable brief',
+            body: 'The intake does not stay as loose text. Keystone converts the client answers into structured constraints such as story count, area target, garage type, primary-suite level, bathroom rules, frontage, and lot context.',
         },
         {
             step: '02',
-            title: 'Signals are organized into plan logic',
-            body: 'The system turns those answers into usable constraints: footprint targets, public/private zoning, circulation intent, and the first pass at room relationships.',
+            title: 'Multiple footprint candidates are explored',
+            body: 'The engine tests rectangular footprint options against the requested size, number of stories, garage needs, and lot assumptions so the first plan does not start from a single arbitrary box.',
         },
         {
             step: '03',
-            title: 'A floor plan is generated and exported',
-            body: 'Keystone scores alternatives, keeps the strongest option, and gives the firm a clean blueprint PNG that can be reviewed immediately inside the studio workflow.',
+            title: 'A room program is built before geometry',
+            body: 'Bedrooms, bathrooms, public rooms, stairs, circulation, mudroom, laundry, and requested extras are assembled into a room program with target areas and adjacency intent before the layout stage begins.',
         },
         {
             step: '04',
-            title: 'The architect enters with context',
-            body: 'An optional Gemini exterior study can add emotional direction, but the core value stays the same: the architect is no longer starting from a blank page.',
+            title: 'The plan is laid out on a tile grid',
+            body: 'Keystone places the room program into public, private, service, and circulation zones, then turns that into a real floor plan with dimensions, story alignment, and stair-core placement.',
+        },
+        {
+            step: '05',
+            title: 'Openings and circulation are validated',
+            body: 'Doors, windows, and entry points are added after the room geometry exists. The plan is then checked for connectivity, room count, bathroom logic, hallway bloat, and other architectural quality gates.',
+        },
+        {
+            step: '06',
+            title: 'The firm receives the plan and optional render',
+            body: 'The floor plan is exported first. Gemini can then be used as an optional exterior study layered on top of the approved plan geometry rather than replacing the core floor-plan logic.',
         },
     ];
     const planInputs = [
         {
-            title: 'Program and footprint',
-            body: 'Bedrooms, baths, stories, area goals, garage needs, and rough footprint expectations anchor the first layout.',
-            image: ASSETS.phase1[4],
-            alt: 'Architectural floor plan sketch on paper',
+            title: 'Program before drawing',
+            body: 'Keystone first resolves what must exist in the home: public rooms, private rooms, stairs, garage, service spaces, and the bathroom structure needed to make the program work.',
+            image: ASSETS.exampleBlueprint,
+            alt: 'Sample Keystone floor plan showing structured room program',
         },
         {
-            title: 'Light and atmosphere',
-            body: 'Warm modern cues, daylight preference, and exterior tone help shape the visual direction without replacing architectural judgment.',
-            image: ASSETS.phase1[3],
-            alt: 'Bright open interior with soft daylight',
+            title: 'Zoning and circulation',
+            body: 'The engine separates public, private, service, and circulation zones so the layout starts from movement and room relationships, not just a list of boxes.',
+            image: ASSETS.workflow.planReview,
+            alt: 'Architect reviewing plan layout and zoning relationships',
         },
         {
-            title: 'Circulation and zoning',
-            body: 'The brief separates public, private, and service needs so the generated plan has a stronger starting logic before review.',
-            image: ASSETS.phase3[4],
-            alt: 'Mobile questionnaire interface organizing project inputs',
+            title: 'Openings and review',
+            body: 'Doors, windows, frontage, and review logic are added after the layout exists so the export is usable in studio review rather than just visually attractive.',
+            image: ASSETS.roadmap.cadExport,
+            alt: 'Technical architectural output supporting review and export',
         },
     ];
-    const supportingGallery = [ASSETS.phase3[2], ASSETS.phase3[4], ASSETS.phase1[4], ASSETS.phase3[1]];
+    const supportingGallery = [ASSETS.workflow.clientIntake, ASSETS.workflow.planExport, ASSETS.exampleBlueprint, ASSETS.exampleRender];
 
     return (
         <SubpageChrome>
@@ -4553,7 +4563,7 @@ const HowFloorPlansWorkPage = () => {
                                         How Keystone turns client intent into a first working floor plan.
                                     </h1>
                                     <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
-                                        This page explains the actual floor-plan workflow: a firm sends the client a guided link, Keystone structures the responses, generates a first plan, prepares a downloadable export, and optionally adds a Gemini exterior study before the architect meeting.
+                                        This page explains the actual floor-plan workflow behind Keystone. A firm sends the client a guided brief, Keystone normalizes that information into plan constraints, explores footprint options, builds a room program, lays out the plan, validates circulation, and only then prepares the export and optional Gemini exterior study.
                                     </p>
                                     <div className="grid sm:grid-cols-2 gap-3 mt-8 max-w-3xl">
                                         {caseFacts.map(([label, value]) => (
@@ -4587,7 +4597,7 @@ const HowFloorPlansWorkPage = () => {
                                     <div className="mt-8 pt-5 border-t border-white/10">
                                         <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.46)'}}>Outcome</p>
                                         <p className="text-sm leading-relaxed mt-3" style={{color:'rgba(244,239,230,0.7)'}}>
-                                            The architect starts with a plan that can be critiqued and an image that can be felt. The client stops reacting to abstractions and starts reacting to something real.
+                                            The architect starts with a plan that has already been structured, zoned, and checked for basic circulation. If the team wants an image, Gemini comes after that as an optional exterior study rather than the core planning method.
                                         </p>
                                     </div>
                                 </aside>
@@ -4612,7 +4622,7 @@ const HowFloorPlansWorkPage = () => {
                                         </div>
                                         <div className="proof-caption">
                                             <span className="proof-dot" style={{background:'var(--blue)'}}/>
-                                            Keystone turns the intake into a working plan the team can save and discuss.
+                                            Keystone turns the brief into a working plan artifact the firm can review, critique, and annotate before kickoff.
                                         </div>
                                     </div>
                                     <div className="proof-browser">
@@ -4627,7 +4637,7 @@ const HowFloorPlansWorkPage = () => {
                                         </div>
                                         <div className="proof-caption">
                                             <span className="proof-dot" style={{background:'var(--accent)'}}/>
-                                            The paired Gemini study gives the client a mood to react to during the same early conversation.
+                                            Gemini is optional and comes after the plan, giving the client an exterior mood to react to without replacing the floor-plan logic.
                                         </div>
                                     </div>
                                 </div>
@@ -4641,7 +4651,7 @@ const HowFloorPlansWorkPage = () => {
                                 <div>
                                     <span className="section-label" style={{color:'rgba(10,10,12,0.42)'}}>Method</span>
                                     <h2 className="cg mt-6" style={{fontSize:'clamp(2.4rem, 5vw, 4.3rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        The value is not more content. It is a better first conversation for the firm and the client.
+                                        The value is not mystery. It is a tighter planning sequence before the architect enters the room.
                                     </h2>
                                 </div>
                                 <div className="grid md:grid-cols-2 gap-4">
@@ -4663,7 +4673,7 @@ const HowFloorPlansWorkPage = () => {
                                 <div>
                                     <span className="section-label" style={{color:'rgba(10,10,12,0.42)'}}>What shapes the plan</span>
                                     <h2 className="cg mt-6" style={{fontSize:'clamp(2.2rem, 4.5vw, 4rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        The system starts with structure, not guesswork.
+                                        The floor plan is built from program, zoning, and review logic before mood comes into the picture.
                                     </h2>
                                 </div>
                                 <div className="grid md:grid-cols-3 gap-4">
@@ -4694,7 +4704,7 @@ const HowFloorPlansWorkPage = () => {
                                 <div>
                                     <span className="section-label" style={{color:'rgba(255,106,55,0.7)'}}>Support material</span>
                                     <h2 className="cg text-white mt-6" style={{fontSize:'clamp(2.3rem, 4.8vw, 4rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        More visual proof, without pretending the output is final construction documentation.
+                                        More visual proof, while staying honest about what the system is and is not.
                                     </h2>
                                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-8">
                                         {supportingGallery.map((image, index) => (
@@ -4706,9 +4716,9 @@ const HowFloorPlansWorkPage = () => {
                                 </div>
                                 <SpotlightCard spotlightColor="rgba(255,106,55,0.14)" className="dream-panel p-6 md:p-7 self-start">
                                     <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(255,106,55,0.8)'}}>Important boundary</div>
-                                    <h3 className="cg text-white mt-5 text-[2rem] leading-[0.95]">Keystone helps start the design discussion. It does not replace professional design responsibility.</h3>
+                                    <h3 className="cg text-white mt-5 text-[2rem] leading-[0.95]">Keystone helps start the design discussion. It does not replace architectural responsibility.</h3>
                                     <p className="mt-5 text-sm leading-relaxed" style={{color:'rgba(244,239,230,0.7)'}}>
-                                        The output is a concept aid for discovery and kickoff. It is not a permit-ready drawing set, not a stamped document, and not a substitute for architect or engineer review.
+                                        The output is a concept aid for discovery and kickoff. It is not a permit-ready drawing set, not a stamped document, and not a substitute for architect or engineer review. Gemini can support the exterior mood, but it is not the core floor-plan engine.
                                     </p>
                                     <div className="mt-6 flex flex-col gap-3">
                                         <a href="/#generator" className="cta-secondary text-center">Open Live Studio</a>
