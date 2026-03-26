@@ -3539,6 +3539,7 @@ const DEFAULT_FORM_DATA = {
   bedrooms: '3 Bed',
   bathrooms: '3 Bath',
   privateBaths: '1',
+  bedroomConfigs: null,
   shape: 'Rectangular',
   garage: '1 Car Garage',
   materials: 'Craftsman (Wood & Stone)',
@@ -3798,27 +3799,67 @@ const SurveyForm = ({
         })), /*#__PURE__*/React.createElement("p", {
           className: "text-[9px] text-mid/60"
         }, "Half baths added automatically"));
-      case 'privateBaths':
+      case 'privateBaths': {
+        const bedLabels = bedCount <= 1
+          ? ['Primary Bedroom']
+          : ['Primary Bedroom', ...Array.from({length: bedCount - 1}, (_, i) => `Bedroom ${i + 2}`)];
+        const configs = formData.bedroomConfigs || bedLabels.map((_, i) => ({
+          privateBath: i === 0 ? 'Yes' : 'No',
+          closet: i === 0 ? 'Walk-in' : 'Standard',
+        }));
+        const ensureConfigs = () => {
+          if (!formData.bedroomConfigs) upd('bedroomConfigs', configs);
+        };
+        const updateConfig = (idx, key, val) => {
+          const next = [...(formData.bedroomConfigs || configs)];
+          while (next.length < bedCount) next.push({ privateBath: 'No', closet: 'Standard' });
+          next[idx] = { ...next[idx], [key]: val };
+          upd('bedroomConfigs', next.slice(0, bedCount));
+          const privateCount = next.slice(1, bedCount).filter(c => c.privateBath === 'Yes').length;
+          upd('privateBaths', `${privateCount}`);
+        };
         return /*#__PURE__*/React.createElement("div", {
           key: field,
-          className: "space-y-1.5 p-3 bg-blue/4 border border-blue/15 rounded-sm"
-        }, /*#__PURE__*/React.createElement(Lbl, null, "Private En-Suite Bathrooms"), /*#__PURE__*/React.createElement("p", {
-          className: "text-[10px] text-mid mb-2"
-        }, "How many bedrooms should have their own private bathroom attached?"), /*#__PURE__*/React.createElement("div", {
-          className: "flex gap-2"
-        }, [0, 1, 2, 3].filter(n => n <= bedCount).map(n => {
-          const selected = formData.privateBaths === `${n}`;
-          return /*#__PURE__*/React.createElement("button", {
-            key: n,
-            type: "button",
-            "aria-pressed": selected,
-            onClick: () => upd('privateBaths', `${n}`),
-            className: "flex-1 h-10 border text-sm font-bold rounded-sm transition-all",
-            style: choiceStyle(selected, 'blue')
-          }, n === 0 ? 'None' : n);
-        })), /*#__PURE__*/React.createElement("p", {
-          className: "text-[9px] text-mid/50"
-        }, "Primary bedroom always gets an en-suite. Remaining baths are shared."));
+          className: "space-y-3 p-3 bg-blue/4 border border-blue/15 rounded-sm"
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Bedroom Configuration"),
+          /*#__PURE__*/React.createElement("p", { className: "text-[10px] text-mid mb-1" }, "Set private bathroom and closet type for each bedroom."),
+          bedLabels.map((label, idx) => {
+            const cfg = (formData.bedroomConfigs || configs)[idx] || { privateBath: idx === 0 ? 'Yes' : 'No', closet: idx === 0 ? 'Walk-in' : 'Standard' };
+            return /*#__PURE__*/React.createElement("div", {
+              key: idx,
+              className: "p-2.5 bg-white/60 border border-black/5 rounded-sm space-y-2"
+            },
+              /*#__PURE__*/React.createElement("div", {
+                className: "text-[10px] font-bold uppercase tracking-wider",
+                style: { color: 'var(--blue)' }
+              }, label),
+              /*#__PURE__*/React.createElement("div", { className: "flex gap-3 items-center" },
+                /*#__PURE__*/React.createElement("span", { className: "text-[9px] font-medium text-mid w-16 shrink-0" }, "En-Suite"),
+                /*#__PURE__*/React.createElement("div", { className: "flex gap-1.5 flex-1" },
+                  ['Yes', 'No'].map(v => /*#__PURE__*/React.createElement("button", {
+                    key: v, type: "button", "aria-pressed": cfg.privateBath === v,
+                    onClick: () => { ensureConfigs(); updateConfig(idx, 'privateBath', v); },
+                    className: "flex-1 h-8 border text-[10px] font-bold rounded-sm",
+                    style: choiceStyle(cfg.privateBath === v, 'blue')
+                  }, v))
+                )
+              ),
+              /*#__PURE__*/React.createElement("div", { className: "flex gap-3 items-center" },
+                /*#__PURE__*/React.createElement("span", { className: "text-[9px] font-medium text-mid w-16 shrink-0" }, "Closet"),
+                /*#__PURE__*/React.createElement("div", { className: "flex gap-1.5 flex-1" },
+                  ['Walk-in', 'Standard'].map(v => /*#__PURE__*/React.createElement("button", {
+                    key: v, type: "button", "aria-pressed": cfg.closet === v,
+                    onClick: () => { ensureConfigs(); updateConfig(idx, 'closet', v); },
+                    className: "flex-1 h-8 border text-[10px] font-bold rounded-sm",
+                    style: choiceStyle(cfg.closet === v, 'blue')
+                  }, v))
+                )
+              )
+            );
+          }),
+          /*#__PURE__*/React.createElement("p", { className: "text-[9px] text-mid/50" }, "Primary bedroom always gets an en-suite. Remaining baths are shared.")
+        );
+      }
       case 'garage':
         return /*#__PURE__*/React.createElement("div", {
           key: field,
@@ -5339,6 +5380,94 @@ const DesignGenerator = ({
       alert('Download failed.');
     }
   };
+  const downloadDxf = () => {
+    if (!planSpec || !planSpec.levels) { alert('No plan to export.'); return; }
+    try {
+      const lines = [];
+      const dxfLine = (s) => lines.push(s);
+      const SCALE = 12;
+      dxfLine('0\nSECTION\n2\nHEADER');
+      dxfLine('9\n$INSUNITS\n70\n1');
+      dxfLine('9\n$MEASUREMENT\n70\n0');
+      dxfLine('0\nENDSEC');
+      dxfLine('0\nSECTION\n2\nTABLES');
+      dxfLine('0\nTABLE\n2\nLAYER\n70\n10');
+      const layerColors = { WALLS: 7, ROOMS: 3, DOORS: 1, WINDOWS: 5, LABELS: 2, OUTLINE: 7 };
+      Object.entries(layerColors).forEach(([name, color]) => {
+        dxfLine(`0\nLAYER\n2\n${name}\n70\n0\n62\n${color}\n6\nCONTINUOUS`);
+      });
+      dxfLine('0\nENDTAB\n0\nENDSEC');
+      dxfLine('0\nSECTION\n2\nENTITIES');
+      const drawLine = (x1, y1, x2, y2, layer) => {
+        dxfLine(`0\nLINE\n8\n${layer}\n10\n${x1*SCALE}\n20\n${y1*SCALE}\n30\n0\n11\n${x2*SCALE}\n21\n${y2*SCALE}\n31\n0`);
+      };
+      const drawRect = (x, y, w, h, layer) => {
+        drawLine(x, y, x+w, y, layer);
+        drawLine(x+w, y, x+w, y+h, layer);
+        drawLine(x+w, y+h, x, y+h, layer);
+        drawLine(x, y+h, x, y, layer);
+      };
+      const drawText = (x, y, h, text, layer) => {
+        dxfLine(`0\nTEXT\n8\n${layer}\n10\n${x*SCALE}\n20\n${y*SCALE}\n30\n0\n40\n${h*SCALE}\n1\n${text}`);
+      };
+      let yOff = 0;
+      for (const lvl of planSpec.levels) {
+        const lvlW = lvl.width || 40;
+        const lvlH = lvl.height || 30;
+        drawRect(0, yOff, lvlW, lvlH, 'OUTLINE');
+        for (const room of (lvl.rooms || [])) {
+          const rx = room.x || 0, ry = room.y || 0;
+          const rw = room.w || 0, rh = room.h || 0;
+          if (Array.isArray(room.parts) && room.parts.length > 1) {
+            room.parts.forEach(p => drawRect(p.x, yOff + p.y, p.w, p.h, 'WALLS'));
+          } else {
+            drawRect(rx, yOff + ry, rw, rh, 'WALLS');
+          }
+          const label = (room.label || room.type || '').toUpperCase().replace(/_/g, ' ');
+          const area = Array.isArray(room.parts) && room.parts.length > 1
+            ? room.parts.reduce((s,p) => s + (p.w||0)*(p.h||0), 0) : rw * rh;
+          const textH = Math.max(0.8, Math.min(1.5, Math.min(rw, rh) * 0.15));
+          drawText(rx + rw*0.05, yOff + ry + rh*0.5, textH, label, 'LABELS');
+          drawText(rx + rw*0.05, yOff + ry + rh*0.5 - textH*1.4, textH*0.7, `${Math.round(area)} sqft`, 'LABELS');
+        }
+        for (const door of (lvl.doors || [])) {
+          const dx = door.x || 0, dy = door.y || 0;
+          const dw = door.doorWidth || 3;
+          if (door.kind === 'horizontal') {
+            drawLine(dx - dw/2, yOff + dy, dx + dw/2, yOff + dy, 'DOORS');
+          } else {
+            drawLine(dx, yOff + dy - dw/2, dx, yOff + dy + dw/2, 'DOORS');
+          }
+        }
+        for (const win of (lvl.windows || [])) {
+          const wx = win.x || 0, wy = win.y || 0;
+          const ww = win.windowWidth || 3;
+          if (win.kind === 'horizontal') {
+            drawLine(wx - ww/2, yOff + wy - 0.25, wx + ww/2, yOff + wy - 0.25, 'WINDOWS');
+            drawLine(wx - ww/2, yOff + wy + 0.25, wx + ww/2, yOff + wy + 0.25, 'WINDOWS');
+          } else {
+            drawLine(wx - 0.25, yOff + wy - ww/2, wx - 0.25, yOff + wy + ww/2, 'WINDOWS');
+            drawLine(wx + 0.25, yOff + wy - ww/2, wx + 0.25, yOff + wy + ww/2, 'WINDOWS');
+          }
+        }
+        drawText(1, yOff + lvlH + 1.5, 2, `LEVEL ${lvl.level}`, 'LABELS');
+        yOff += lvlH + 10;
+      }
+      dxfLine('0\nENDSEC\n0\nEOF');
+      const blob = new Blob([lines.join('\n')], { type: 'application/dxf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Keystone_FloorPlan.dxf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[downloadDxf]', err);
+      alert('DXF export failed: ' + err.message);
+    }
+  };
   const isLoading = status === 'loading-plan' || status === 'refining';
   const resetSampleBrief = () => setFormData({
     ...DEFAULT_FORM_DATA
@@ -5666,25 +5795,13 @@ const DesignGenerator = ({
     onClick: downloadBlueprint,
     className: "w-full cta-hero cta-glow py-3 text-[10px] mt-1 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all"
   }, "Download High-Res PNG"), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      alert('DXF export functionality is coming soon.');
-    },
+    onClick: downloadDxf,
     className: "w-full px-4 py-3 border border-black/10 rounded-sm hover:border-blue hover:text-blue text-[10px] font-bold uppercase tracking-widest transition-all bg-white shadow-sm flex items-center justify-center gap-2"
-  }, !isUnlocked && /*#__PURE__*/React.createElement("svg", {
-    className: "w-3 h-3 opacity-60",
-    fill: "none",
-    stroke: "currentColor",
-    viewBox: "0 0 24 24"
-  }, /*#__PURE__*/React.createElement("path", {
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    strokeWidth: "2",
-    d: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-  })), "Export Vector DXF"), alternatives.length > 0 && /*#__PURE__*/React.createElement("button", {
+  }, "Export Vector DXF"), alternatives.length > 0 && /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowAlternatives(true),
     className: "w-full cta-secondary py-3 text-[10px]"
   }, "View Alternatives (", alternatives.length, ")"))), /*#__PURE__*/React.createElement("div", {
-    className: "paper-panel overflow-hidden"
+    className: "paper-panel"
   }, /*#__PURE__*/React.createElement(RefinementPanel, {
     planSpec: planSpec,
     formData: formData,
@@ -5693,7 +5810,7 @@ const DesignGenerator = ({
     onRefine: handleRefine,
     isLoading: isLoading
   })), /*#__PURE__*/React.createElement("div", {
-    className: "paper-panel overflow-hidden"
+    className: "paper-panel"
   }, /*#__PURE__*/React.createElement(Render3DPanel, {
     planSpec: planSpec,
     formData: formData,
@@ -5701,7 +5818,7 @@ const DesignGenerator = ({
     galleryId: galleryId,
     onRenderReady: img => setZoomImage(img)
   })), /*#__PURE__*/React.createElement("div", {
-    className: "paper-panel overflow-hidden"
+    className: "paper-panel"
   }, /*#__PURE__*/React.createElement("div", {
     className: "p-4 border-b border-black/5 bg-white/40"
   }, /*#__PURE__*/React.createElement("span", {
