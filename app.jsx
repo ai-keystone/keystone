@@ -1951,6 +1951,536 @@ const svgToPngDataUrl = (svgMarkup, options = {}) => new Promise((resolve, rejec
     }
 });
 
+const svgAttrNumber = (value, fallback = 0) => {
+    const n = parseFloat(String(value ?? '').replace(/[^\d.+-]/g, ''));
+    return Number.isFinite(n) ? n : fallback;
+};
+
+const parseSvgPathSubpaths = (d) => {
+    const tokens = String(d || '').match(/[MmLlHhVvZz]|-?\d*\.?\d+(?:e[-+]?\d+)?/g) || [];
+    const subpaths = [];
+    let i = 0;
+    let x = 0, y = 0, startX = 0, startY = 0;
+    let current = [];
+    let command = null;
+
+    const pushCurrent = (closed = false) => {
+        if (current.length >= 2) {
+            subpaths.push({ points: [...current], closed });
+        }
+        current = [];
+    };
+
+    const readNumber = () => {
+        const value = parseFloat(tokens[i++]);
+        return Number.isFinite(value) ? value : 0;
+    };
+
+    while (i < tokens.length) {
+        if (/[A-Za-z]/.test(tokens[i])) {
+            command = tokens[i++];
+        } else if (!command) {
+            break;
+        }
+
+        if (command === 'M' || command === 'm') {
+            const relative = command === 'm';
+            if (current.length) pushCurrent(false);
+            x = relative ? x + readNumber() : readNumber();
+            y = relative ? y + readNumber() : readNumber();
+            startX = x; startY = y;
+            current.push([x, y]);
+            command = relative ? 'l' : 'L';
+            while (i < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
+                x = command === 'l' ? x + readNumber() : readNumber();
+                y = command === 'l' ? y + readNumber() : readNumber();
+                current.push([x, y]);
+            }
+            continue;
+        }
+
+        if (command === 'L' || command === 'l') {
+            const relative = command === 'l';
+            while (i < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
+                x = relative ? x + readNumber() : readNumber();
+                y = relative ? y + readNumber() : readNumber();
+                current.push([x, y]);
+            }
+            continue;
+        }
+
+        if (command === 'H' || command === 'h') {
+            const relative = command === 'h';
+            while (i < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
+                x = relative ? x + readNumber() : readNumber();
+                current.push([x, y]);
+            }
+            continue;
+        }
+
+        if (command === 'V' || command === 'v') {
+            const relative = command === 'v';
+            while (i < tokens.length && !/[A-Za-z]/.test(tokens[i])) {
+                y = relative ? y + readNumber() : readNumber();
+                current.push([x, y]);
+            }
+            continue;
+        }
+
+        if (command === 'Z' || command === 'z') {
+            if (current.length && (current[0][0] !== x || current[0][1] !== y)) {
+                current.push([startX, startY]);
+            }
+            pushCurrent(true);
+            x = startX;
+            y = startY;
+            command = null;
+            continue;
+        }
+    }
+
+    if (current.length) pushCurrent(false);
+    return subpaths;
+};
+
+const rotateEdgeForView = (frontEdge, viewKey) => {
+    const order = ['top', 'right', 'bottom', 'left'];
+    const idx = Math.max(0, order.indexOf(String(frontEdge || 'bottom')));
+    const delta = viewKey === 'front' ? 0 : viewKey === 'right' ? 1 : viewKey === 'rear' ? 2 : -1;
+    return order[(idx + delta + order.length) % order.length];
+};
+
+const planSpanForElevation = (planSpec, viewKey) => {
+    const level1 = (planSpec?.levels || []).find(level => Number(level?.level || 1) === 1) || (planSpec?.levels || [])[0];
+    if (!level1) return 30;
+    const frontEdge = planSpec?.elevations?.meta?.frontEdge || planSpec?.facade?.frontEdge || 'bottom';
+    const edge = rotateEdgeForView(frontEdge, viewKey);
+    return edge === 'top' || edge === 'bottom'
+        ? Number(level1.width || 30)
+        : Number(level1.height || 24);
+};
+
+const buildPresentationDxf = (planSpec) => {
+    const SCALE = 12;
+    const entities = [];
+    const layers = {
+        OUTLINE: { color: 7, weight: 60 },
+        WALLS: { color: 7, weight: 30 },
+        DOORS: { color: 1, weight: 20 },
+        WINDOWS: { color: 5, weight: 20 },
+        LABELS: { color: 2, weight: 15 },
+        FURNITURE: { color: 8, weight: 18 },
+        DIMENSIONS: { color: 4, weight: 15 },
+        ELEVATION: { color: 6, weight: 20 },
+        ELEV_TEXT: { color: 2, weight: 15 },
+        SHEET: { color: 8, weight: 15 },
+    };
+
+    const push = (s) => entities.push(s);
+    const drawLine = (x1, y1, x2, y2, layer) => {
+        push(`0\nLINE\n8\n${layer}\n10\n${x1*SCALE}\n20\n${y1*SCALE}\n30\n0\n11\n${x2*SCALE}\n21\n${y2*SCALE}\n31\n0`);
+    };
+    const drawRect = (x, y, w, h, layer) => {
+        drawLine(x, y, x + w, y, layer);
+        drawLine(x + w, y, x + w, y + h, layer);
+        drawLine(x + w, y + h, x, y + h, layer);
+        drawLine(x, y + h, x, y, layer);
+    };
+    const drawCircle = (cx, cy, r, layer) => {
+        push(`0\nCIRCLE\n8\n${layer}\n10\n${cx*SCALE}\n20\n${cy*SCALE}\n30\n0\n40\n${r*SCALE}`);
+    };
+    const drawArc = (cx, cy, r, startAngle, endAngle, layer) => {
+        push(`0\nARC\n8\n${layer}\n10\n${cx*SCALE}\n20\n${cy*SCALE}\n30\n0\n40\n${r*SCALE}\n50\n${startAngle}\n51\n${endAngle}`);
+    };
+    const drawPolyline = (points, layer, closed = false) => {
+        if (!Array.isArray(points) || points.length < 2) return;
+        push(`0\nLWPOLYLINE\n8\n${layer}\n90\n${points.length}\n70\n${closed ? 1 : 0}`);
+        points.forEach(([x, y]) => {
+            push(`10\n${x*SCALE}\n20\n${y*SCALE}`);
+        });
+    };
+    const drawText = (x, y, h, text, layer, align = 'left') => {
+        const safe = String(text || '').replace(/\n/g, ' ').replace(/[^\x20-\x7E]/g, '');
+        if (!safe) return;
+        const justification = align === 'center' ? 1 : align === 'right' ? 2 : 0;
+        push(`0\nTEXT\n8\n${layer}\n10\n${x*SCALE}\n20\n${y*SCALE}\n30\n0\n40\n${h*SCALE}\n1\n${safe}\n72\n${justification}\n73\n0`);
+    };
+    const drawDimH = (x1, x2, baseY, offset, label) => {
+        const y = baseY + offset;
+        drawLine(x1, baseY, x1, y, 'DIMENSIONS');
+        drawLine(x2, baseY, x2, y, 'DIMENSIONS');
+        drawLine(x1, y, x2, y, 'DIMENSIONS');
+        drawLine(x1, y - 0.3, x1 + 0.35, y + 0.35, 'DIMENSIONS');
+        drawLine(x1, y + 0.3, x1 + 0.35, y - 0.35, 'DIMENSIONS');
+        drawLine(x2, y - 0.3, x2 - 0.35, y + 0.35, 'DIMENSIONS');
+        drawLine(x2, y + 0.3, x2 - 0.35, y - 0.35, 'DIMENSIONS');
+        drawText((x1 + x2) / 2, y + 0.55, 0.75, label, 'DIMENSIONS', 'center');
+    };
+    const drawDimV = (y1, y2, baseX, offset, label) => {
+        const x = baseX - offset;
+        drawLine(baseX, y1, x, y1, 'DIMENSIONS');
+        drawLine(baseX, y2, x, y2, 'DIMENSIONS');
+        drawLine(x, y1, x, y2, 'DIMENSIONS');
+        drawLine(x - 0.3, y1, x + 0.3, y1 + 0.35, 'DIMENSIONS');
+        drawLine(x + 0.3, y1, x - 0.3, y1 + 0.35, 'DIMENSIONS');
+        drawLine(x - 0.3, y2, x + 0.3, y2 - 0.35, 'DIMENSIONS');
+        drawLine(x + 0.3, y2, x - 0.3, y2 - 0.35, 'DIMENSIONS');
+        drawText(x - 0.55, (y1 + y2) / 2, 0.75, label, 'DIMENSIONS', 'right');
+    };
+    const drawSheetFrame = (x, y, w, h) => {
+        drawRect(x, y, w, h, 'SHEET');
+        drawRect(x + 0.8, y + 0.8, w - 1.6, h - 1.6, 'SHEET');
+    };
+    const drawTitleBlock = (x, y, w, h) => {
+        drawRect(x, y, w, h, 'SHEET');
+        drawLine(x, y + h - 4, x + w, y + h - 4, 'SHEET');
+        drawLine(x + w * 0.55, y, x + w * 0.55, y + h, 'SHEET');
+        drawText(x + 1, y + h - 2.8, 0.9, 'KEYSTONE AI', 'LABELS');
+        drawText(x + 1, y + h - 1.6, 1.15, 'PRESENTATION PLAN SET', 'LABELS');
+        drawText(x + 1, y + h - 0.55, 0.55, `Generated ${new Date().toISOString().slice(0, 10)}`, 'LABELS');
+        drawText(x + w * 0.55 + 0.8, y + h - 2.8, 0.7, `STYLE: ${String(planSpec?.elevations?.meta?.styleLabel || 'Residential').toUpperCase()}`, 'LABELS');
+        drawText(x + w * 0.55 + 0.8, y + h - 1.7, 0.7, `FRONT: ${String(planSpec?.surveyData?.frontFacing || 'South').toUpperCase()}`, 'LABELS');
+        drawText(x + w * 0.55 + 0.8, y + h - 0.6, 0.55, 'Includes plans, dimensions, furniture, and elevations', 'LABELS');
+    };
+
+    const roomParts = (room) => Array.isArray(room?.parts) && room.parts.length ? room.parts : [room];
+    const largestPart = (room) => roomParts(room).reduce((best, part) => (
+        ((part.w || 0) * (part.h || 0)) > ((best.w || 0) * (best.h || 0)) ? part : best
+    ), roomParts(room)[0] || room || {});
+    const roomArea = (room) => roomParts(room).reduce((sum, part) => sum + (Number(part.w || 0) * Number(part.h || 0)), 0);
+
+    const collectExteriorBreaks = (level, axis) => {
+        const max = axis === 'x' ? Number(level.width || 0) : Number(level.height || 0);
+        const values = new Set([0, max]);
+        (level.rooms || []).forEach((room) => {
+            roomParts(room).forEach((part) => {
+                const x = Number(part.x || 0), y = Number(part.y || 0), w = Number(part.w || 0), h = Number(part.h || 0);
+                if (axis === 'x') {
+                    if (y === 0 || y + h === Number(level.height || 0)) {
+                        values.add(x);
+                        values.add(x + w);
+                    }
+                } else if (x === 0 || x + w === Number(level.width || 0)) {
+                    values.add(y);
+                    values.add(y + h);
+                }
+            });
+        });
+        return [...values].sort((a, b) => a - b).filter((value, index, arr) => index === 0 || Math.abs(value - arr[index - 1]) > 0.1);
+    };
+
+    const drawFurnitureItem = (item, level, originX, originY) => {
+        const lvlH = Number(level.height || 0);
+        const fx = originX + Number(item.x || 0);
+        const fy = originY + (lvlH - Number(item.y || 0) - Number(item.h || 0));
+        const fw = Number(item.w || 0);
+        const fh = Number(item.h || 0);
+        if (!fw || !fh) return;
+        drawRect(fx, fy, fw, fh, 'FURNITURE');
+        const kind = String(item.kind || '').toLowerCase();
+        if (kind.includes('bed')) {
+            drawLine(fx, fy + fh - 0.8, fx + fw, fy + fh - 0.8, 'FURNITURE');
+            drawRect(fx + 0.35, fy + fh - 1.35, Math.min(1.35, fw / 2 - 0.45), 0.55, 'FURNITURE');
+            drawRect(fx + fw - Math.min(1.35, fw / 2 - 0.45) - 0.35, fy + fh - 1.35, Math.min(1.35, fw / 2 - 0.45), 0.55, 'FURNITURE');
+        } else if (kind === 'shower') {
+            drawLine(fx, fy, fx + fw, fy + fh, 'FURNITURE');
+            drawLine(fx + fw, fy, fx, fy + fh, 'FURNITURE');
+        } else if (kind === 'washer' || kind === 'dryer') {
+            drawCircle(fx + fw / 2, fy + fh / 2, Math.min(fw, fh) * 0.22, 'FURNITURE');
+        } else if (kind === 'dining_table') {
+            drawCircle(fx + fw / 2, fy + fh / 2, Math.min(fw, fh) * 0.35, 'FURNITURE');
+        } else if (kind === 'sofa') {
+            drawLine(fx + 0.4, fy + 0.55, fx + fw - 0.4, fy + 0.55, 'FURNITURE');
+            drawLine(fx + 0.4, fy + fh - 0.55, fx + fw - 0.4, fy + fh - 0.55, 'FURNITURE');
+        } else if (kind === 'coffee_table' || kind === 'console' || kind === 'dresser' || kind === 'laundry_counter' || kind === 'desk') {
+            drawLine(fx, fy + fh / 2, fx + fw, fy + fh / 2, 'FURNITURE');
+        } else if (kind === 'bookcase' || kind === 'counter') {
+            const step = Math.max(0.5, fw > fh ? fh / 4 : fw / 4);
+            if (fw >= fh) {
+                for (let y = fy + step; y < fy + fh; y += step) drawLine(fx, y, fx + fw, y, 'FURNITURE');
+            } else {
+                for (let x = fx + step; x < fx + fw; x += step) drawLine(x, fy, x, fy + fh, 'FURNITURE');
+            }
+        } else if (kind === 'vanity') {
+            drawCircle(fx + fw * 0.28, fy + fh * 0.5, Math.min(fw, fh) * 0.12, 'FURNITURE');
+        } else if (kind === 'tub') {
+            drawRect(fx + 0.25, fy + 0.25, Math.max(0.8, fw - 0.5), Math.max(0.8, fh - 0.5), 'FURNITURE');
+        }
+    };
+
+    const drawDoorSymbol = (door, level, originX, originY) => {
+        const lvlH = Number(level.height || 0);
+        const dw = Number(door.width || door.doorWidth || (door.garageDoor ? 9 : 3));
+        const mapY = (y) => originY + (lvlH - y);
+        const dx = originX + Number(door.x || 0);
+        const dy = mapY(Number(door.y || 0));
+
+        if (door.garageDoor) {
+            if (door.dir === 'horizontal') {
+                const left = dx - dw / 2;
+                const top = dy + 0.35;
+                drawLine(left, top, left + dw, top, 'DOORS');
+                const panelWidth = dw / Math.max(3, Math.round(dw / 2.5));
+                for (let px = left + panelWidth; px < left + dw - 0.1; px += panelWidth) {
+                    drawLine(px, top, px, top - 0.9, 'DOORS');
+                }
+                drawLine(left, top, left + 0.9, top - 0.9, 'DOORS');
+                drawLine(left + dw, top, left + dw - 0.9, top - 0.9, 'DOORS');
+            } else {
+                const bottom = dy - dw / 2;
+                drawLine(dx + 0.35, bottom, dx + 0.35, bottom + dw, 'DOORS');
+                const panelHeight = dw / Math.max(3, Math.round(dw / 2.5));
+                for (let py = bottom + panelHeight; py < bottom + dw - 0.1; py += panelHeight) {
+                    drawLine(dx + 0.35, py, dx - 0.55, py, 'DOORS');
+                }
+                drawLine(dx + 0.35, bottom, dx - 0.55, bottom + 0.9, 'DOORS');
+                drawLine(dx + 0.35, bottom + dw, dx - 0.55, bottom + dw - 0.9, 'DOORS');
+            }
+            return;
+        }
+
+        if (door.openThreshold) {
+            const gapHalf = dw / 2;
+            if (door.dir === 'horizontal') {
+                drawLine(dx - gapHalf, dy, dx + gapHalf, dy, 'DOORS');
+            } else {
+                drawLine(dx, dy - gapHalf, dx, dy + gapHalf, 'DOORS');
+            }
+            return;
+        }
+
+        const rooms = level.rooms || [];
+        const roomA = rooms.find(room => String(room.id) === String(door.a));
+        const roomB = rooms.find(room => String(room.id) === String(door.b));
+        const isPrivate = (room) => /bedroom|bathroom|study|office|garage|library|gym/i.test(String(room?.type || ''));
+        const preferIntoA = isPrivate(roomA) && !isPrivate(roomB);
+        const preferIntoB = isPrivate(roomB) && !isPrivate(roomA);
+
+        if (door.dir === 'vertical') {
+            const yTop = dy + dw / 2;
+            const yBottom = dy - dw / 2;
+            const centerA = roomA ? Number(roomA.x || 0) + Number(roomA.w || 0) / 2 : 0;
+            const centerB = roomB ? Number(roomB.x || 0) + Number(roomB.w || 0) / 2 : 0;
+            const swingRight = preferIntoB ? centerB > Number(door.x || 0) : preferIntoA ? centerA > Number(door.x || 0) : centerB >= centerA;
+            const hingeX = dx;
+            const hingeY = yTop;
+            const leafX = swingRight ? dx + dw : dx - dw;
+            drawLine(hingeX, hingeY, leafX, hingeY, 'DOORS');
+            if (swingRight) drawArc(hingeX, hingeY, dw, 270, 360, 'DOORS');
+            else drawArc(hingeX, hingeY, dw, 180, 270, 'DOORS');
+            drawLine(dx, yTop, dx, yBottom, 'DOORS');
+            return;
+        }
+
+        const xLeft = dx - dw / 2;
+        const centerA = roomA ? Number(roomA.y || 0) + Number(roomA.h || 0) / 2 : 0;
+        const centerB = roomB ? Number(roomB.y || 0) + Number(roomB.h || 0) / 2 : 0;
+        const swingDown = preferIntoB ? centerB < Number(door.y || 0) : preferIntoA ? centerA < Number(door.y || 0) : centerB <= centerA;
+        const hingeX = xLeft;
+        const hingeY = dy;
+        const leafY = swingDown ? dy - dw : dy + dw;
+        drawLine(hingeX, hingeY, hingeX, leafY, 'DOORS');
+        if (swingDown) drawArc(hingeX, hingeY, dw, 270, 360, 'DOORS');
+        else drawArc(hingeX, hingeY, dw, 0, 90, 'DOORS');
+        drawLine(dx - dw / 2, dy, dx + dw / 2, dy, 'DOORS');
+    };
+
+    const drawWindowSymbol = (win, level, originX, originY) => {
+        const lvlH = Number(level.height || 0);
+        const ww = Number(win.width || win.windowWidth || 4);
+        const mapY = (y) => originY + (lvlH - y);
+        const wx = originX + Number(win.x || 0);
+        const wy = mapY(Number(win.y || 0));
+        if (win.dir === 'horizontal') {
+            drawLine(wx - ww / 2, wy - 0.18, wx + ww / 2, wy - 0.18, 'WINDOWS');
+            drawLine(wx - ww / 2, wy + 0.18, wx + ww / 2, wy + 0.18, 'WINDOWS');
+        } else {
+            drawLine(wx - 0.18, wy - ww / 2, wx - 0.18, wy + ww / 2, 'WINDOWS');
+            drawLine(wx + 0.18, wy - ww / 2, wx + 0.18, wy + ww / 2, 'WINDOWS');
+        }
+    };
+
+    const drawPlanLevel = (level, originX, originY) => {
+        const lvlW = Number(level.width || 40);
+        const lvlH = Number(level.height || 30);
+        const mapY = (y, h = 0) => originY + (lvlH - y - h);
+        const titleY = originY + lvlH + 7.5;
+
+        drawText(originX, titleY, 1.35, `LEVEL ${level.level}`, 'LABELS');
+        drawText(originX, titleY - 1.2, 0.8, `${Math.round((lvlW * lvlH)).toLocaleString()} SQ FT`, 'LABELS');
+        drawRect(originX, originY, lvlW, lvlH, 'OUTLINE');
+
+        (level.rooms || []).forEach((room) => {
+            roomParts(room).forEach((part) => {
+                drawRect(originX + Number(part.x || 0), mapY(Number(part.y || 0), Number(part.h || 0)), Number(part.w || 0), Number(part.h || 0), 'WALLS');
+            });
+
+            const anchor = largestPart(room);
+            const label = String(room.label || room.type || '').toUpperCase().replace(/_/g, ' ');
+            drawText(originX + Number(anchor.x || 0) + Number(anchor.w || 0) / 2, mapY(Number(anchor.y || 0), Number(anchor.h || 0)) + Number(anchor.h || 0) / 2 + 0.4, 0.6, label, 'LABELS', 'center');
+            drawText(originX + Number(anchor.x || 0) + Number(anchor.w || 0) / 2, mapY(Number(anchor.y || 0), Number(anchor.h || 0)) + Number(anchor.h || 0) / 2 - 0.5, 0.45, `${Math.round(roomArea(room))} sqft`, 'LABELS', 'center');
+        });
+
+        (level.doors || []).forEach((door) => drawDoorSymbol(door, level, originX, originY));
+        (level.windows || []).forEach((win) => drawWindowSymbol(win, level, originX, originY));
+
+        (level.furniture || []).forEach((item) => drawFurnitureItem(item, level, originX, originY));
+
+        drawDimH(originX, originX + lvlW, originY + lvlH, 3.2, `${lvlW.toFixed(0)}'`);
+        drawDimV(originY, originY + lvlH, originX, 3.2, `${lvlH.toFixed(0)}'`);
+
+        const xBreaks = collectExteriorBreaks(level, 'x');
+        const yBreaks = collectExteriorBreaks(level, 'y');
+        if (xBreaks.length > 2 && xBreaks.length <= 9) {
+            for (let i = 0; i < xBreaks.length - 1; i++) {
+                const a = xBreaks[i], b = xBreaks[i + 1];
+                if (b - a < 1) continue;
+                drawDimH(originX + a, originX + b, originY + lvlH, 1.55, `${(b - a).toFixed(0)}'`);
+            }
+        }
+        if (yBreaks.length > 2 && yBreaks.length <= 9) {
+            for (let i = 0; i < yBreaks.length - 1; i++) {
+                const a = yBreaks[i], b = yBreaks[i + 1];
+                if (b - a < 1) continue;
+                drawDimV(originY + lvlH - b, originY + lvlH - a, originX, 1.55, `${(b - a).toFixed(0)}'`);
+            }
+        }
+
+        return { width: lvlW, height: lvlH };
+    };
+
+    const drawElevationSvg = (svgMarkup, label, originX, originY, targetWidthFt, dimensionLabel) => {
+        if (!svgMarkup || typeof DOMParser === 'undefined') return { width: targetWidthFt, height: 0 };
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svgMarkup, 'image/svg+xml');
+        const root = doc.documentElement;
+        const viewBox = String(root.getAttribute('viewBox') || '').trim().split(/\s+/).map(Number);
+        const vbX = viewBox.length === 4 ? viewBox[0] : 0;
+        const vbY = viewBox.length === 4 ? viewBox[1] : 0;
+        const vbW = viewBox.length === 4 ? viewBox[2] : svgAttrNumber(root.getAttribute('width'), 940);
+        const vbH = viewBox.length === 4 ? viewBox[3] : svgAttrNumber(root.getAttribute('height'), 480);
+        const scale = targetWidthFt / Math.max(1, vbW);
+        const mapX = (x) => originX + (x - vbX) * scale;
+        const mapY = (y, h = 0) => originY + (vbH - (y - vbY) - h) * scale;
+        const elevationHeight = vbH * scale;
+
+        drawText(originX, originY + elevationHeight + 3.2, 0.95, label, 'ELEV_TEXT');
+        if (dimensionLabel) drawDimH(originX, originX + targetWidthFt, originY, -2.4, dimensionLabel);
+
+        root.querySelectorAll('line,rect,circle,path,text,polygon,polyline').forEach((node) => {
+            const tag = node.tagName.toLowerCase();
+            const stroke = node.getAttribute('stroke');
+            const fill = node.getAttribute('fill');
+
+            if (tag === 'rect') {
+                const x = svgAttrNumber(node.getAttribute('x'));
+                const y = svgAttrNumber(node.getAttribute('y'));
+                const w = svgAttrNumber(node.getAttribute('width'));
+                const h = svgAttrNumber(node.getAttribute('height'));
+                if (!w || !h) return;
+                const fullBg = w >= vbW * 0.98 && h >= vbH * 0.98 && !stroke;
+                if (fullBg) return;
+                if (!stroke && (!fill || fill === 'none')) return;
+                drawRect(mapX(x), mapY(y, h), w * scale, h * scale, 'ELEVATION');
+                return;
+            }
+
+            if (tag === 'line') {
+                const x1 = svgAttrNumber(node.getAttribute('x1'));
+                const y1 = svgAttrNumber(node.getAttribute('y1'));
+                const x2 = svgAttrNumber(node.getAttribute('x2'));
+                const y2 = svgAttrNumber(node.getAttribute('y2'));
+                drawLine(mapX(x1), mapY(y1), mapX(x2), mapY(y2), 'ELEVATION');
+                return;
+            }
+
+            if (tag === 'circle') {
+                const cx = svgAttrNumber(node.getAttribute('cx'));
+                const cy = svgAttrNumber(node.getAttribute('cy'));
+                const r = svgAttrNumber(node.getAttribute('r'));
+                if (r > 0) drawCircle(mapX(cx), mapY(cy), r * scale, 'ELEVATION');
+                return;
+            }
+
+            if (tag === 'polygon' || tag === 'polyline') {
+                const raw = String(node.getAttribute('points') || '').trim();
+                if (!raw) return;
+                const points = raw
+                    .split(/\s+/)
+                    .map(pair => pair.split(',').map(Number))
+                    .filter(pair => pair.length === 2 && pair.every(Number.isFinite))
+                    .map(([x, y]) => [mapX(x), mapY(y)]);
+                drawPolyline(points, 'ELEVATION', tag === 'polygon');
+                return;
+            }
+
+            if (tag === 'path') {
+                parseSvgPathSubpaths(node.getAttribute('d')).forEach((subpath) => {
+                    const points = subpath.points.map(([x, y]) => [mapX(x), mapY(y)]);
+                    drawPolyline(points, 'ELEVATION', subpath.closed);
+                });
+                return;
+            }
+
+            if (tag === 'text') {
+                const x = svgAttrNumber(node.getAttribute('x'));
+                const y = svgAttrNumber(node.getAttribute('y'));
+                const size = Math.max(0.45, svgAttrNumber(node.getAttribute('font-size'), 10) * scale * 0.18);
+                const text = node.textContent || '';
+                if (text.trim()) drawText(mapX(x), mapY(y), size, text, 'ELEV_TEXT');
+            }
+        });
+
+        return { width: targetWidthFt, height: elevationHeight };
+    };
+
+    const level1 = (planSpec.levels || [])[0];
+    const level2 = (planSpec.levels || [])[1];
+    const leftMargin = 8;
+    const planGap = 14;
+    const elevationGap = 10;
+    const planBaseY = 62;
+
+    const level1Origin = { x: leftMargin, y: planBaseY };
+    const level1Size = drawPlanLevel(level1, level1Origin.x, level1Origin.y);
+    const level2Origin = { x: leftMargin + level1Size.width + planGap, y: planBaseY };
+    const level2Size = level2 ? drawPlanLevel(level2, level2Origin.x, level2Origin.y) : { width: 0, height: 0 };
+
+    const elevations = planSpec?.elevations || {};
+    const frontWidth = Math.max(26, planSpanForElevation(planSpec, 'front'));
+    const rearWidth = Math.max(26, planSpanForElevation(planSpec, 'rear'));
+    const leftWidth = Math.max(18, planSpanForElevation(planSpec, 'left'));
+    const rightWidth = Math.max(18, planSpanForElevation(planSpec, 'right'));
+
+    const elevationRow1Y = 0;
+    const elevationRow2Y = 26;
+    drawElevationSvg(elevations.frontSvg, 'FRONT ELEVATION', leftMargin, elevationRow1Y, frontWidth, `${frontWidth.toFixed(0)}'`);
+    drawElevationSvg(elevations.rearSvg, 'REAR ELEVATION', leftMargin + frontWidth + elevationGap, elevationRow1Y, rearWidth, `${rearWidth.toFixed(0)}'`);
+    drawElevationSvg(elevations.leftSvg, 'LEFT ELEVATION', leftMargin, elevationRow2Y, leftWidth, `${leftWidth.toFixed(0)}'`);
+    drawElevationSvg(elevations.rightSvg, 'RIGHT ELEVATION', leftMargin + leftWidth + elevationGap, elevationRow2Y, rightWidth, `${rightWidth.toFixed(0)}'`);
+
+    const sheet = { x: 0, y: 0, w: 140, h: 108 };
+    drawSheetFrame(sheet.x, sheet.y, sheet.w, sheet.h);
+    drawTitleBlock(sheet.x + sheet.w - 42, sheet.y + 2, 40, 10);
+
+    const lines = [];
+    lines.push('0\nSECTION\n2\nHEADER');
+    lines.push('9\n$INSUNITS\n70\n1');
+    lines.push('9\n$MEASUREMENT\n70\n0');
+    lines.push('9\n$LWDISPLAY\n70\n1');
+    lines.push('0\nENDSEC');
+    lines.push('0\nSECTION\n2\nTABLES');
+    lines.push(`0\nTABLE\n2\nLAYER\n70\n${Object.keys(layers).length}`);
+    Object.entries(layers).forEach(([name, config]) => {
+        lines.push(`0\nLAYER\n2\n${name}\n70\n0\n62\n${config.color}\n6\nCONTINUOUS\n370\n${config.weight}`);
+    });
+    lines.push('0\nENDTAB\n0\nENDSEC');
+    lines.push('0\nSECTION\n2\nENTITIES');
+    lines.push(...entities);
+    lines.push('0\nENDSEC\n0\nEOF');
+    return lines.join('\n');
+};
+
 // Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ 3D RENDER PANEL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const RENDER_REFINEMENTS = [
     { label: 'Golden Hour',  hint: 'warm late-afternoon sunlight, long shadows, golden orange sky. Only change the lighting and sky; keep the house architecture identical.' },
@@ -3073,123 +3603,12 @@ const DesignGenerator = ({ onOpenModal }) => {
     const downloadDxf = () => {
         if (!planSpec || !planSpec.levels) { alert('No plan to export.'); return; }
         try {
-            const lines = [];
-            const dxfLine = (s) => lines.push(s);
-            const SCALE = 12;
-            dxfLine('0\nSECTION\n2\nHEADER');
-            dxfLine('9\n$INSUNITS\n70\n1');
-            dxfLine('9\n$MEASUREMENT\n70\n0');
-            dxfLine('0\nENDSEC');
-            dxfLine('0\nSECTION\n2\nTABLES');
-            dxfLine('0\nTABLE\n2\nLAYER\n70\n10');
-            const layerColors = { WALLS: 7, ROOMS: 3, DOORS: 1, WINDOWS: 5, LABELS: 2, OUTLINE: 7, FURNITURE: 8 };
-            Object.entries(layerColors).forEach(([name, color]) => {
-                dxfLine(`0\nLAYER\n2\n${name}\n70\n0\n62\n${color}\n6\nCONTINUOUS`);
-            });
-            dxfLine('0\nENDTAB\n0\nENDSEC');
-            dxfLine('0\nSECTION\n2\nENTITIES');
-
-            const drawLine = (x1, y1, x2, y2, layer) => {
-                dxfLine(`0\nLINE\n8\n${layer}\n10\n${x1*SCALE}\n20\n${y1*SCALE}\n30\n0\n11\n${x2*SCALE}\n21\n${y2*SCALE}\n31\n0`);
-            };
-            const drawRect = (x, y, w, h, layer) => {
-                drawLine(x, y, x+w, y, layer);
-                drawLine(x+w, y, x+w, y+h, layer);
-                drawLine(x+w, y+h, x, y+h, layer);
-                drawLine(x, y+h, x, y, layer);
-            };
-            const drawArc = (cx, cy, r, startAngle, endAngle, layer) => {
-                dxfLine(`0\nARC\n8\n${layer}\n10\n${cx*SCALE}\n20\n${cy*SCALE}\n30\n0\n40\n${r*SCALE}\n50\n${startAngle}\n51\n${endAngle}`);
-            };
-            const drawCircle = (cx, cy, r, layer) => {
-                dxfLine(`0\nCIRCLE\n8\n${layer}\n10\n${cx*SCALE}\n20\n${cy*SCALE}\n30\n0\n40\n${r*SCALE}`);
-            };
-            const drawText = (x, y, h, text, layer) => {
-                dxfLine(`0\nTEXT\n8\n${layer}\n10\n${x*SCALE}\n20\n${y*SCALE}\n30\n0\n40\n${h*SCALE}\n1\n${text}`);
-            };
-            const drawFurniture = (item, yOff) => {
-                const fx = item.x || 0;
-                const fy = yOff + (item.y || 0);
-                const fw = item.w || 0;
-                const fh = item.h || 0;
-                if (!fw || !fh) return;
-                drawRect(fx, fy, fw, fh, 'FURNITURE');
-                const kind = String(item.kind || '').toLowerCase();
-                if (kind.includes('bed')) {
-                    drawLine(fx, fy + 0.8, fx + fw, fy + 0.8, 'FURNITURE');
-                } else if (kind === 'shower') {
-                    drawLine(fx, fy, fx + fw, fy + fh, 'FURNITURE');
-                    drawLine(fx + fw, fy, fx, fy + fh, 'FURNITURE');
-                } else if (kind === 'washer' || kind === 'dryer') {
-                    const cx = fx + fw / 2;
-                    const cy = fy + fh / 2;
-                    const r = Math.min(fw, fh) * 0.22;
-                    drawCircle(cx, cy, r, 'FURNITURE');
-                }
-            };
-
-            let yOff = 0;
-            for (const lvl of planSpec.levels) {
-                const lvlW = lvl.width || 40;
-                const lvlH = lvl.height || 30;
-                drawRect(0, yOff, lvlW, lvlH, 'OUTLINE');
-
-                for (const room of (lvl.rooms || [])) {
-                    const rx = room.x || 0, ry = room.y || 0;
-                    const rw = room.w || 0, rh = room.h || 0;
-                    if (Array.isArray(room.parts) && room.parts.length > 1) {
-                        room.parts.forEach(p => drawRect(p.x, yOff + p.y, p.w, p.h, 'WALLS'));
-                    } else {
-                        drawRect(rx, yOff + ry, rw, rh, 'WALLS');
-                    }
-                    const label = (room.label || room.type || '').toUpperCase().replace(/_/g, ' ');
-                    const area = Array.isArray(room.parts) && room.parts.length > 1
-                        ? room.parts.reduce((s,p) => s + (p.w||0)*(p.h||0), 0) : rw * rh;
-                    const textH = Math.max(0.8, Math.min(1.5, Math.min(rw, rh) * 0.15));
-                    drawText(rx + rw*0.05, yOff + ry + rh*0.5, textH, label, 'LABELS');
-                    drawText(rx + rw*0.05, yOff + ry + rh*0.5 - textH*1.4, textH*0.7, `${Math.round(area)} sqft`, 'LABELS');
-                }
-
-                for (const door of (lvl.doors || [])) {
-                    const dx = door.x || 0, dy = door.y || 0;
-                    const dw = door.width || door.doorWidth || (door.garageDoor ? 9 : 3);
-                    if (door.dir === 'horizontal') {
-                        drawLine(dx - dw/2, yOff + dy, dx + dw/2, yOff + dy, 'DOORS');
-                        if (!door.garageDoor) drawArc(dx - dw/2, yOff + dy, dw, 270, 360, 'DOORS');
-                        else drawLine(dx - dw/2, yOff + dy - 0.35, dx + dw/2, yOff + dy - 0.35, 'DOORS');
-                    } else {
-                        drawLine(dx, yOff + dy - dw/2, dx, yOff + dy + dw/2, 'DOORS');
-                        if (!door.garageDoor) drawArc(dx, yOff + dy - dw/2, dw, 0, 90, 'DOORS');
-                        else drawLine(dx - 0.35, yOff + dy - dw/2, dx - 0.35, yOff + dy + dw/2, 'DOORS');
-                    }
-                }
-
-                for (const win of (lvl.windows || [])) {
-                    const wx = win.x || 0, wy = win.y || 0;
-                    const ww = win.width || win.windowWidth || 4;
-                    if (win.dir === 'horizontal') {
-                        drawLine(wx - ww/2, yOff + wy - 0.25, wx + ww/2, yOff + wy - 0.25, 'WINDOWS');
-                        drawLine(wx - ww/2, yOff + wy + 0.25, wx + ww/2, yOff + wy + 0.25, 'WINDOWS');
-                    } else {
-                        drawLine(wx - 0.25, yOff + wy - ww/2, wx - 0.25, yOff + wy + ww/2, 'WINDOWS');
-                        drawLine(wx + 0.25, yOff + wy - ww/2, wx + 0.25, yOff + wy + ww/2, 'WINDOWS');
-                    }
-                }
-
-                for (const item of (lvl.furniture || [])) {
-                    drawFurniture(item, yOff);
-                }
-
-                drawText(1, yOff + lvlH + 1.5, 2, `LEVEL ${lvl.level}`, 'LABELS');
-                yOff += lvlH + 10;
-            }
-
-            dxfLine('0\nENDSEC\n0\nEOF');
-            const blob = new Blob([lines.join('\n')], { type: 'application/dxf' });
+            const dxfString = buildPresentationDxf(planSpec);
+            const blob = new Blob([dxfString], { type: 'application/dxf' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'Keystone_FloorPlan.dxf';
+            a.download = 'Keystone_Presentation_Plan.dxf';
             document.body.appendChild(a);
             a.click();
             a.remove();
