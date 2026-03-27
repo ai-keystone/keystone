@@ -37,12 +37,13 @@ const ASSETS = {
     collage: "images/b2b-workflow-collage.jpeg"
   },
   roadmap: {
-    exteriorStudy: "images/roadmap-exterior-study.jpeg",
-    cadExport: "images/roadmap-cad-export.jpeg",
+    exteriorStudy: "images/keystone_study_render.png",
+    cadExport: "images/keystone_dx.png",
     overview: "images/roadmap-overview.jpeg"
   },
-  exampleBlueprint: "images/sample_plan.png",
-  exampleRender: "images/sample_3d.png"
+  exampleBlueprint: "images/keystone_default_plan.png",
+  exampleElevationSheet: "images/keystone_default_elevations.png",
+  exampleRender: "images/keystone_study_render.png"
 };
 
 // Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ HELPERS Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
@@ -1810,10 +1811,10 @@ const keystoneBentoCards = [{
   svgHtml: '<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="8" width="48" height="44" rx="3" stroke="#FF6A37" stroke-width="1.4" opacity="0.55"/><rect x="28" y="4" width="24" height="8" rx="2" stroke="#FF9A5C" stroke-width="1.2"/><circle cx="24" cy="22" r="3" stroke="#FF9A5C" stroke-width="1.3"/><polyline points="22.6,22 24,23.8 26,20.2" stroke="#FF9A5C" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="30" y1="22" x2="57" y2="22" stroke="#FF9A5C" stroke-width="1.3" opacity="0.85"/><circle cx="24" cy="33" r="3" stroke="#FF9A5C" stroke-width="1.3" opacity="0.7"/><line x1="30" y1="33" x2="57" y2="33" stroke="#FF9A5C" stroke-width="1.3" opacity="0.6"/><circle cx="24" cy="44" r="3" stroke="#FF9A5C" stroke-width="1.3" opacity="0.5"/><line x1="30" y1="44" x2="50" y2="44" stroke="#FF9A5C" stroke-width="1.3" opacity="0.4"/></svg>'
 }, {
   color: '#0D0806',
-  title: '4K PNG Export',
-  description: 'High-res blueprint download, architect-ready',
+  title: 'DXF + Elevations',
+  description: 'CAD-ready export and matching facade views',
   label: 'Export',
-  svgHtml: '<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="18" y="2" width="44" height="38" rx="3" stroke="#FF6A37" stroke-width="1.4" opacity="0.55"/><rect x="22" y="6" width="36" height="30" rx="1" stroke="#FF9A5C" stroke-width="1.1" opacity="0.5"/><line x1="22" y1="14" x2="58" y2="14" stroke="#FF9A5C" stroke-width="0.9" opacity="0.4"/><line x1="22" y1="22" x2="58" y2="22" stroke="#FF9A5C" stroke-width="0.9" opacity="0.4"/><line x1="22" y1="30" x2="50" y2="30" stroke="#FF9A5C" stroke-width="0.9" opacity="0.35"/><line x1="32" y1="6" x2="32" y2="36" stroke="#FF9A5C" stroke-width="0.9" opacity="0.3"/><line x1="40" y1="43" x2="40" y2="52" stroke="#FF9A5C" stroke-width="2" stroke-linecap="round"/><polyline points="33,48 40,54 47,48" stroke="#FF9A5C" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+  svgHtml: '<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="5" width="24" height="18" rx="2" stroke="#FF6A37" stroke-width="1.4" opacity="0.75"/><rect x="14" y="9" width="16" height="10" rx="1" stroke="#FF9A5C" stroke-width="1.1" opacity="0.75"/><rect x="46" y="5" width="24" height="18" rx="2" stroke="#FF6A37" stroke-width="1.4" opacity="0.75"/><path d="M48 21 L58 11 L68 21" stroke="#FF9A5C" stroke-width="1.2" fill="none" stroke-linejoin="round"/><line x1="22" y1="29" x2="58" y2="29" stroke="#FF9A5C" stroke-width="1.1" opacity="0.6"/><line x1="22" y1="36" x2="58" y2="36" stroke="#FF9A5C" stroke-width="1.1" opacity="0.6"/><line x1="22" y1="43" x2="48" y2="43" stroke="#FF9A5C" stroke-width="1.1" opacity="0.45"/><line x1="40" y1="24" x2="40" y2="52" stroke="#FF9A5C" stroke-width="1.8" stroke-linecap="round"/><polyline points="33,45 40,52 47,45" stroke="#FF9A5C" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'
 }, {
   color: '#0D0806',
   title: 'Passkey Access',
@@ -6040,6 +6041,25 @@ const InteractiveCanvas = ({
   });
   const [blueprintMode, setBlueprintMode] = useState(false);
   const containerRef = useRef(null);
+  const contentRef = useRef(null);
+  const fitToView = React.useCallback(() => {
+    const container = containerRef.current;
+    const content = contentRef.current;
+    if (!container || !content) return;
+    const containerRect = container.getBoundingClientRect();
+    const contentWidth = content.scrollWidth || content.offsetWidth || 0;
+    const contentHeight = content.scrollHeight || content.offsetHeight || 0;
+    if (!containerRect.width || !containerRect.height || !contentWidth || !contentHeight) return;
+    const pad = 40;
+    const availableW = Math.max(1, containerRect.width - pad * 2);
+    const availableH = Math.max(1, containerRect.height - pad * 2);
+    const nextScale = Math.min(availableW / contentWidth, availableH / contentHeight, 1);
+    setScale(Math.max(0.15, nextScale));
+    setOffset({
+      x: 0,
+      y: 0
+    });
+  }, []);
   const handleWheel = React.useCallback(e => {
     e.preventDefault();
     const factor = e.deltaY > 0 ? 0.9 : 1.1;
@@ -6053,6 +6073,22 @@ const InteractiveCanvas = ({
     });
     return () => el.removeEventListener('wheel', handleWheel);
   }, [handleWheel]);
+  useEffect(() => {
+    const container = containerRef.current;
+    const content = contentRef.current;
+    if (!container || !content) return;
+    let rafId = requestAnimationFrame(() => fitToView());
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => fitToView());
+    });
+    observer.observe(container);
+    observer.observe(content);
+    return () => {
+      cancelAnimationFrame(rafId);
+      observer.disconnect();
+    };
+  }, [children, fitToView]);
   const onMouseDown = e => {
     if (e.button !== 0) return;
     setIsDragging(true);
@@ -6069,13 +6105,7 @@ const InteractiveCanvas = ({
     });
   };
   const onMouseUp = () => setIsDragging(false);
-  const resetView = () => {
-    setScale(1);
-    setOffset({
-      x: 0,
-      y: 0
-    });
-  };
+  const resetView = () => fitToView();
   const bg = blueprintMode ? '#0d1b2a' : '#161b24';
   const gridColor = blueprintMode ? 'rgba(100,149,237,0.12)' : 'rgba(255,255,255,0.05)';
   const gridSz = Math.round(40 * scale);
@@ -6131,7 +6161,14 @@ const InteractiveCanvas = ({
       transition: isDragging ? 'none' : 'transform 0.06s ease',
       willChange: 'transform'
     }
-  }, children), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    ref: contentRef,
+    style: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }
+  }, children)), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       bottom: 14,
@@ -7011,7 +7048,7 @@ const PLATFORM_PAGE_CARDS = [{
 }, {
   eyebrow: 'Studio workflow',
   title: 'A B2B handoff shaped for architecture firms, not generic software funnels.',
-  body: 'See how the client link, passkey, structured brief, generated plan, and optional Gemini study fit together inside a professional practice.',
+  body: 'See how the client link, passkey, structured brief, generated plan, elevation set, export package, and optional Gemini study fit together inside a professional practice.',
   href: '/b2b-workflow',
   cta: 'View Workflow',
   image: ASSETS.workflow.planReview,
@@ -7020,18 +7057,18 @@ const PLATFORM_PAGE_CARDS = [{
 }, {
   eyebrow: 'Product roadmap',
   title: 'What is live today, what is next, and where 3D, scheduling, and estimates fit.',
-  body: 'The roadmap page groups upcoming modules like CAD export, quantity takeoff, scheduling, 3D viewer, and white-label capabilities without overstating what is already available.',
+  body: 'The roadmap page separates live capability like elevations and vector DXF export from what is still next, like quantities, scheduling, and deeper 3D tools.',
   href: '/roadmap',
   cta: 'View Roadmap',
   image: ASSETS.roadmap.overview,
   alt: 'Keystone roadmap overview collage with plans, 3D concept, and schedule cards',
   stat: 'Live + next'
 }];
-const LIVE_NOW_FEATURES = ['Client-guided brief capture', 'Generated plan plus 4K blueprint export', 'Gemini-powered exterior study'];
+const LIVE_NOW_FEATURES = ['Client-guided brief capture', 'Generated floor plan + blueprint image', 'Elevation views', 'Vector DXF export', 'Gemini-powered exterior study'];
 const HERO_SIGNAL_CARDS = [{
   label: 'Live today',
-  value: 'Client brief -> plan -> export',
-  note: 'The firm shares a link, and Keystone returns something useful before the meeting.'
+  value: 'Brief -> plan -> elevations -> export',
+  note: 'One client brief becomes a real review package before the meeting starts.'
 }, {
   label: 'Best fit',
   value: 'Residential architecture firms',
@@ -7052,11 +7089,11 @@ const SAMPLE_SESSION_STEPS = [{
 }, {
   number: '03',
   title: 'Plan generated and saved',
-  body: 'Keystone scores multiple footprint options, keeps the strongest one, and gives the firm a clean blueprint export before kickoff.'
+  body: 'Keystone scores multiple footprint options, keeps the strongest one, and prepares the plan, elevations, and export files before kickoff.'
 }, {
   number: '04',
   title: 'Meeting starts ahead',
-  body: 'If the studio wants it, the same brief also becomes a Gemini study so the client reacts to mood while the architect reacts to plan.'
+  body: 'If the studio wants it, the same approved geometry also becomes a Gemini study so the client reacts to mood while the architect reacts to plan.'
 }];
 const GENERATOR_FLOW_STEPS = [{
   label: 'Unlock',
@@ -7069,22 +7106,22 @@ const GENERATOR_FLOW_STEPS = [{
   body: 'Review the strongest plan and alternatives the architect would see before kickoff.'
 }, {
   label: 'Export',
-  body: 'Download the blueprint and optionally create a Gemini exterior study from the same brief.'
+  body: 'Download the blueprint, elevations, and vector DXF, then optionally create a Gemini exterior study from the same brief.'
 }];
 const GENERATOR_UNLOCK_PREVIEW = [{
   label: 'Structured brief',
   body: 'The firm can review exactly what the client entered before anyone sits down together.'
 }, {
-  label: 'Plan export',
-  body: 'A scored floor plan can be saved immediately as a clean blueprint image for the meeting.'
+  label: 'Plan + elevations',
+  body: 'A scored plan and matching elevation views can be saved immediately for the meeting.'
 }, {
-  label: 'Optional study',
-  body: 'The same brief can create a Gemini exterior image when the studio wants an emotional anchor too.'
+  label: 'DXF + optional study',
+  body: 'The same brief can also create a vector DXF export and an optional Gemini exterior image.'
 }];
 const LIVE_STUDIO_PREVIEW = [{
-  label: 'Firm-ready blueprint',
-  title: 'The architect gets something concrete before kickoff.',
-  body: 'A scored plan gives the studio a real layout to critique instead of relying on raw intake notes.',
+  label: 'Plan + elevation set',
+  title: 'The architect gets a real review package before kickoff.',
+  body: 'A scored plan and matching elevations give the studio real geometry to critique instead of relying on raw intake notes.',
   image: ASSETS.exampleBlueprint,
   alt: 'Keystone generated blueprint preview'
 }, {
@@ -7129,7 +7166,7 @@ const SiteFooter = ({
   style: {
     color: 'rgba(244,239,230,0.58)'
   }
-}, "Keystone lets residential firms send a guided client link before kickoff, then walk into the meeting with a structured brief, a generated plan, and a downloadable blueprint already in hand.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+}, "Keystone helps residential firms start the first meeting with a client brief, a floor plan, elevations, and export files already prepared.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
   className: "mono text-[10px] uppercase tracking-[0.24em]",
   style: {
     color: 'rgba(244,239,230,0.34)'
@@ -7277,11 +7314,11 @@ const DreamApp = () => {
     image: ASSETS.exampleRender,
     alt: 'Keystone Gemini exterior study'
   }, {
-    eyebrow: 'Guided intake',
-    title: 'A client link that does real pre-meeting work.',
-    body: 'Light, taste, room priorities, and lot context arrive in a structure the firm can review before the first conversation starts.',
-    image: ASSETS.phase3[4],
-    alt: 'Mobile intake interface for a client project brief'
+    eyebrow: 'Elevation set',
+    title: 'The plan now comes with facade views too.',
+    body: 'Matching elevations make the output feel closer to a real architectural review package before the meeting begins.',
+    image: ASSETS.exampleElevationSheet,
+    alt: 'Keystone generated elevation sheet'
   }];
   const trustCards = [{
     eyebrow: 'Firm workflow',
@@ -7289,12 +7326,12 @@ const DreamApp = () => {
     body: 'The firm shares the link and passkey, the client completes the guided brief, and the architect reviews the output before the meeting.'
   }, {
     eyebrow: 'Live today',
-    title: 'Plan generation, export, and Gemini study.',
-    body: 'Keystone currently covers guided intake, floor plan generation, high-resolution PNG export, and Gemini exterior study generation from the same brief.'
+    title: 'Plan, elevations, DXF export, and Gemini study.',
+    body: 'Keystone currently covers guided intake, floor plan generation, elevation views, vector DXF export, and Gemini exterior study generation from the same brief.'
   }, {
     eyebrow: 'Coming next',
-    title: 'CAD/DWG and estimate layers are on the roadmap.',
-    body: 'DWG or CAD export, quantity takeoff, and early cost-estimate features are planned next, but they are not being sold as live today.'
+    title: 'Quantities, scheduling, and deeper 3D remain on the roadmap.',
+    body: 'Quantity takeoff, cost ranges, scheduling, and deeper viewer tools are still roadmap items and are not being sold as live today.'
   }];
   const outcomeCards = [{
     eyebrow: 'Before the meeting',
@@ -7312,34 +7349,34 @@ const DreamApp = () => {
     body: 'Keystone helps firms qualify seriousness faster, save unpaid exploration time, and move active leads into real design momentum.',
     stat: 'B2B'
   }];
-  const marqueeItems = ['Architect-first discovery', 'Live floor plan generation', '4K PNG blueprint download', 'Gemini exterior studies', 'Pay-as-you-go for firms', 'Client-ready visual anchors'];
+  const marqueeItems = ['Architect-first discovery', 'Live floor plan generation', 'Elevation views', 'Vector DXF export', 'Gemini exterior studies', 'Client-ready visual anchors'];
   const serviceCards = [{
     number: '01',
     title: 'Firm sends the link',
     body: 'The architect shares a guided link and passkey before kickoff so the client can complete the early thinking asynchronously.'
   }, {
     number: '02',
-    title: 'Client brief becomes a plan',
+    title: 'Client brief becomes a review package',
     body: 'That intake becomes a first residential layout your team can review, export, and use as the basis for the real conversation.'
   }, {
     number: '03',
     title: 'Architect walks in prepared',
-    body: 'Before the meeting starts, the firm can already review the brief, save the plan, and optionally add a Gemini study for emotional context.'
+    body: 'Before the meeting starts, the firm can already review the brief, save the plan, elevation set, and DXF, and optionally add a Gemini study for emotional context.'
   }];
   const studioMetrics = [{
     value: '<60s',
     label: 'first floor plan'
   }, {
-    value: '4K PNG',
-    label: 'download ready'
+    value: '4 views',
+    label: 'elevation set'
+  }, {
+    value: 'DXF',
+    label: 'cad export'
   }, {
     value: 'Gemini',
     label: '3D exterior study'
-  }, {
-    value: '1 brief',
-    label: 'becomes 2 outputs'
   }];
-  const sessionStack = ['Client-facing intake link', 'Passkey-controlled access', 'Scored footprint alternatives', 'Blueprint PNG export', 'Firm-visible session history', 'Gemini exterior study', 'Recent-session gallery proof'];
+  const sessionStack = ['Client-facing intake link', 'Passkey-controlled access', 'Scored footprint alternatives', 'Blueprint image export', 'Elevation SVG set', 'Vector DXF export', 'Firm-visible session history', 'Gemini exterior study', 'Recent-session gallery proof'];
   const studioTeam = [{
     name: 'Sujan Acharya',
     role: 'Founder and CEO',
@@ -7356,13 +7393,13 @@ const DreamApp = () => {
     image: ASSETS.team.subrat,
     bio: 'Financial operator focused on keeping Keystone rigorous, durable, and built for steady studio adoption.'
   }];
-  const roadmapCards = ['DWG/CAD export for downstream drafting', 'Quantity takeoff support', 'Early cost estimate ranges', 'White-label studio branding', 'CRM handoff for qualified leads'];
+  const roadmapCards = ['Quantity takeoff support', 'Early cost estimate ranges', 'Scheduling and viewer depth', 'White-label studio branding', 'CRM handoff for qualified leads'];
   const quoteCards = [{
     quote: 'The best use case is a firm that wants to send one link before the first serious meeting and walk in with something concrete already on screen.',
     name: 'Workflow fit',
     firm: 'B2B motion'
   }, {
-    quote: 'The current promise stays narrow on purpose: guided intake, generated plan, PNG export, and Gemini study. CAD and estimating come next, but only when they are real.',
+    quote: 'The live promise stays disciplined on purpose: guided intake, generated plan, elevations, vector DXF export, and optional Gemini study. Quantities and scheduling come next, but only when they are real.',
     name: 'Scope discipline',
     firm: 'Product truth'
   }];
@@ -7370,14 +7407,14 @@ const DreamApp = () => {
     tag: 'Guided demo',
     price: '$0',
     unit: 'for qualified firms',
-    desc: 'A guided walkthrough of the firm workflow so your team can see the client link, plan generation, export path, and Gemini study together.',
+    desc: 'A guided walkthrough of the firm workflow so your team can see the client link, plan generation, elevation views, export path, and Gemini study together.',
     cta: 'Request Access',
     featured: false
   }, {
     tag: 'Single session',
     price: '$149',
     unit: 'per live run',
-    desc: 'A complete Keystone session for one active lead, from client brief capture through architect-ready plan export and optional Gemini study.',
+    desc: 'A complete Keystone session for one active lead, from client brief capture through architect-ready plan, elevations, export, and optional Gemini study.',
     cta: 'Open Live Studio',
     featured: true
   }, {
@@ -7549,10 +7586,10 @@ const DreamApp = () => {
     }
   }, /*#__PURE__*/React.createElement("span", {
     className: "block"
-  }, "Build the"), /*#__PURE__*/React.createElement("span", {
+  }, "Start the"), /*#__PURE__*/React.createElement("span", {
     className: "block"
   }, /*#__PURE__*/React.createElement(BlurText, {
-    text: "feeling of home",
+    text: "first meeting",
     delay: 55,
     direction: "bottom",
     tag: "span",
@@ -7565,7 +7602,7 @@ const DreamApp = () => {
     style: {
       color: 'rgba(78,69,61,0.78)'
     }
-  }, "before the meeting.")), /*#__PURE__*/React.createElement(motion.p, {
+  }, "with a real plan.")), /*#__PURE__*/React.createElement(motion.p, {
     initial: {
       opacity: 0,
       y: 14
@@ -7582,7 +7619,7 @@ const DreamApp = () => {
       fontSize: 'clamp(1rem,1.8vw,1.12rem)',
       color: 'rgba(32,26,21,0.68)'
     }
-  }, "Keystone helps residential firms send a guided client link before kickoff, then open the first design conversation with a structured brief, a generated floor plan, and an optional Gemini study."), /*#__PURE__*/React.createElement(motion.div, {
+  }, "Keystone helps residential firms start the first meeting with a client brief, a floor plan, elevations, and an optional exterior study already prepared."), /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0,
       y: 14
@@ -7759,7 +7796,7 @@ const DreamApp = () => {
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, "The fastest way to trust Keystone is to watch the whole firm workflow happen in sequence: client brief, generated plan, export-ready blueprint, and optional Gemini study before the first architect meeting."), /*#__PURE__*/React.createElement("div", {
+  }, "The fastest way to trust Keystone is to watch the workflow happen in sequence: client brief, generated plan, elevations, export-ready DXF, and optional Gemini study before the first architect meeting."), /*#__PURE__*/React.createElement("div", {
     className: "mt-6 flex flex-wrap gap-3"
   }, /*#__PURE__*/React.createElement(StarBorderBtn, {
     onClick: () => scrollTo('generator')
@@ -8999,7 +9036,7 @@ const DreamApp = () => {
 };
 const HowFloorPlansWorkPage = () => {
   usePageTitle('Keystone AI - How Floor Plans Work');
-  const caseFacts = [['Input', 'Firm-issued structured brief'], ['Core engine', 'Deterministic layout + validation'], ['Output', 'Plan SVG / PNG + optional render'], ['Boundary', 'Concept study, not permit docs']];
+  const caseFacts = [['Input', 'Firm-issued structured brief'], ['Core engine', 'Deterministic layout + validation'], ['Output', 'Plan + elevations + DXF + optional render'], ['Boundary', 'Concept study, not permit docs']];
   const intakeSignals = ['Area, stories, bedrooms, baths, garage type, and broad footprint bias are captured before discovery starts.', 'The brief records layout intent such as primary-suite level, kitchen position, laundry placement, and open-concept preference.', 'Frontage, lot context, light preference, indoor-outdoor intent, and accessibility needs shape the first zoning pass.', 'The architect receives a working plan artifact before kickoff instead of reconstructing the brief live from scattered notes.'];
   const processSteps = [{
     step: '01',
@@ -9024,7 +9061,7 @@ const HowFloorPlansWorkPage = () => {
   }, {
     step: '06',
     title: 'The firm receives the plan and optional render',
-    body: 'The floor plan is exported first. Gemini can then be used as an optional exterior study layered on top of the approved plan geometry rather than replacing the core floor-plan logic.'
+    body: 'The floor plan, elevation set, and vector DXF are exported first. Gemini can then be used as an optional exterior study layered on top of the approved plan geometry rather than replacing the core floor-plan logic.'
   }];
   const planInputs = [{
     title: 'Program before drawing',
@@ -9037,12 +9074,12 @@ const HowFloorPlansWorkPage = () => {
     image: ASSETS.workflow.planReview,
     alt: 'Architect reviewing plan layout and zoning relationships'
   }, {
-    title: 'Openings and review',
-    body: 'Doors, windows, frontage, and review logic are added after the layout exists so the export is usable in studio review rather than just visually attractive.',
-    image: ASSETS.roadmap.cadExport,
+    title: 'Elevations and CAD export',
+    body: 'Doors, windows, frontage, elevations, and CAD export are prepared after the layout exists so the output is usable in studio review rather than just visually attractive.',
+    image: ASSETS.exampleElevationSheet,
     alt: 'Technical architectural output supporting review and export'
   }];
-  const supportingGallery = [ASSETS.workflow.clientIntake, ASSETS.workflow.planExport, ASSETS.exampleBlueprint, ASSETS.exampleRender];
+  const supportingGallery = [ASSETS.workflow.clientIntake, ASSETS.exampleElevationSheet, ASSETS.roadmap.cadExport, ASSETS.exampleRender];
   return /*#__PURE__*/React.createElement(SubpageChrome, null, ({
     openModal
   }) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
@@ -9463,8 +9500,8 @@ const B2BWorkflowPage = () => {
     image: ASSETS.workflow.clientIntake
   }, {
     step: '03',
-    title: 'Keystone returns a plan and export',
-    body: 'The generated plan becomes a working artifact the team can download, review, and annotate. The output exists before the architect even begins the kickoff conversation.',
+    title: 'Keystone returns a plan, elevations, and export',
+    body: 'The generated plan becomes a working artifact the team can download as a blueprint image, matching elevations, and vector DXF export before the kickoff conversation even begins.',
     image: ASSETS.workflow.planExport
   }, {
     step: '04',
@@ -9473,7 +9510,7 @@ const B2BWorkflowPage = () => {
     image: ASSETS.workflow.kickoffMeeting
   }];
   const operatorBenefits = ['More serious kickoff meetings with less unpaid discovery time', 'A clearer client handoff before the architect starts shaping options', 'A stronger internal review artifact for firms that want consistency'];
-  const supportGallery = [ASSETS.workflow.collage, ASSETS.workflow.planReview, ASSETS.roadmap.exteriorStudy, ASSETS.workflow.planExport];
+  const supportGallery = [ASSETS.workflow.collage, ASSETS.exampleElevationSheet, ASSETS.roadmap.cadExport, ASSETS.exampleRender];
   return /*#__PURE__*/React.createElement(SubpageChrome, null, ({
     openModal
   }) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
@@ -9503,7 +9540,7 @@ const B2BWorkflowPage = () => {
     }
   }, "Keystone is not a generic lead form or portfolio gimmick. It is a firm-led process that helps clients arrive with structured intent so the architect can start the first serious conversation further ahead."), /*#__PURE__*/React.createElement("div", {
     className: "grid sm:grid-cols-3 gap-3 mt-8 max-w-3xl"
-  }, [['Buyer', 'Residential firms'], ['Live today', 'Brief + plan + PNG + Gemini'], ['Rollout', 'Firm-led access']].map(([label, value]) => /*#__PURE__*/React.createElement("div", {
+  }, [['Buyer', 'Residential firms'], ['Live today', 'Brief + plan + elevations + DXF'], ['Rollout', 'Firm-led access']].map(([label, value]) => /*#__PURE__*/React.createElement("div", {
     key: label,
     className: "paper-panel p-4 md:p-5"
   }, /*#__PURE__*/React.createElement("div", {
@@ -9699,7 +9736,7 @@ const B2BWorkflowPage = () => {
     style: {
       color: 'rgba(10,10,12,0.68)'
     }
-  }, "Keystone is intentionally narrow today: structured intake, generated plan, blueprint export, and optional Gemini study. CAD, estimating, scheduling, and viewer depth belong on the roadmap until they are truly live."), /*#__PURE__*/React.createElement("div", {
+  }, "Keystone is intentionally narrow today: structured intake, generated plan, elevation views, vector DXF export, and optional Gemini study. Quantity logic, scheduling, and deeper viewer tools belong on the roadmap until they are truly live."), /*#__PURE__*/React.createElement("div", {
     className: "mt-6 flex flex-col gap-3"
   }, /*#__PURE__*/React.createElement("a", {
     href: "/roadmap",
@@ -9719,9 +9756,15 @@ const RoadmapPage = () => {
     status: 'Live'
   }, {
     phase: 'Live today',
-    title: 'Generated plan + PNG export',
-    body: 'Keystone already returns a usable floor plan and a clean blueprint export the firm can download and review.',
+    title: 'Generated plan + blueprint image',
+    body: 'Keystone already returns a usable floor plan and a clean blueprint image the firm can download and review.',
     image: ASSETS.workflow.planExport,
+    status: 'Live'
+  }, {
+    phase: 'Live today',
+    title: 'Elevation views',
+    body: 'The same generated plan now comes with deterministic elevation views grounded in the plan geometry and survey inputs.',
+    image: ASSETS.exampleElevationSheet,
     status: 'Live'
   }, {
     phase: 'Live today',
@@ -9730,11 +9773,11 @@ const RoadmapPage = () => {
     image: ASSETS.roadmap.exteriorStudy,
     status: 'Live'
   }, {
-    phase: 'Roadmap next',
-    title: 'DWG / CAD export',
-    body: 'Downstream drafting support is planned so approved early concepts can move more cleanly into the studio production process.',
+    phase: 'Live today',
+    title: 'Vector DXF export',
+    body: 'CAD-ready DXF export is live so approved concept geometry can move into studio review and downstream drafting more cleanly.',
     image: ASSETS.roadmap.cadExport,
-    status: 'Planned'
+    status: 'Live'
   }, {
     phase: 'Roadmap next',
     title: 'Quantity and estimate layers',
@@ -9748,7 +9791,7 @@ const RoadmapPage = () => {
     image: ASSETS.phase3[1],
     status: 'Planned'
   }];
-  const roadmapTracks = [['Estimates', 'Tie quantity logic to early project conversations without overselling precision.'], ['Elevations', 'Expand from plan logic into richer facade and elevation support for early review.'], ['Scheduling', 'Help firms preview timing dependencies once the product truth is ready for it.'], ['White-labeling', 'Let studios present Keystone inside their own professional brand language.']];
+  const roadmapTracks = [['Estimates', 'Tie quantity logic to early project conversations without overselling precision.'], ['Scheduling', 'Help firms preview timing dependencies once the product truth is ready for it.'], ['3D viewer', 'Add richer interactive viewing only after the core plan, elevation, and export workflow is solid.'], ['White-labeling', 'Let studios present Keystone inside their own professional brand language.']];
   return /*#__PURE__*/React.createElement(SubpageChrome, null, ({
     openModal
   }) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
@@ -9776,7 +9819,7 @@ const RoadmapPage = () => {
     style: {
       color: 'rgba(32,26,21,0.72)'
     }
-  }, "This roadmap keeps a strict line between live capability and planned capability. It shows the platform direction around estimates, elevations, 3D viewing, scheduling, and downstream export without pretending those modules are all ready today.")), /*#__PURE__*/React.createElement(SpotlightCard, {
+  }, "This roadmap keeps a strict line between live capability and planned capability. It shows the platform direction around quantity logic, scheduling, and deeper 3D viewing while keeping live features like elevations and DXF export clearly separate from roadmap items.")), /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.1)",
     className: "paper-panel p-6 md:p-7"
   }, /*#__PURE__*/React.createElement("div", {
@@ -9941,7 +9984,7 @@ const FAQPage = () => {
   usePageTitle('Keystone AI - FAQ');
   const faqItems = [{
     question: 'What is live in Keystone right now?',
-    answer: 'The live workflow today includes guided brief capture, floor plan generation, high-resolution plan download, and Gemini-powered exterior study generation from the same project brief.'
+    answer: 'The live workflow today includes guided brief capture, floor plan generation, elevation views, vector DXF export, high-resolution plan download, and Gemini-powered exterior study generation from the same project brief.'
   }, {
     question: 'Who is Keystone actually sold to?',
     answer: 'Keystone is a B2B product for residential architecture and design-led firms. The firm adopts it, then shares the guided workflow with clients before the first serious meeting.'
@@ -9950,7 +9993,7 @@ const FAQPage = () => {
     answer: 'Yes. That is the core workflow. The firm shares the link and access code, the client completes the guided brief, and the architect reviews the results before kickoff.'
   }, {
     question: 'What does the architect receive before the meeting?',
-    answer: 'The firm can review the completed brief, the generated floor plan, the downloadable blueprint image, and the Gemini exterior study if one was generated for that session.'
+    answer: 'The firm can review the completed brief, the generated floor plan, the elevation views, the downloadable blueprint image, the vector DXF export, and the Gemini exterior study if one was generated for that session.'
   }, {
     question: 'Does Keystone replace the architect?',
     answer: 'No. Keystone is an early discovery tool. It helps generate an initial plan and visual anchor, but design judgment still belongs to the architect and project team.'
@@ -9959,7 +10002,7 @@ const FAQPage = () => {
     answer: 'No. Keystone outputs are concept aids only. They are not permit-ready drawings, stamped documents, engineering deliverables, or final construction instructions.'
   }, {
     question: 'Are CAD files, quantity takeoff, or cost estimates live today?',
-    answer: 'Not yet. Today the live workflow centers on guided intake, plan generation, PNG export, and Gemini study generation. DWG or CAD export plus quantity and cost-estimate layers are planned next, but they are not being marketed as live today.'
+    answer: 'Elevation views and vector DXF export are live today. Quantity takeoff and cost-estimate layers are not live yet, and native DWG production still belongs to the downstream CAD workflow.'
   }, {
     question: 'Why is access private right now?',
     answer: 'Keystone is still being introduced through guided access so the workflow, onboarding, and firm fit stay strong while the product is maturing.'
