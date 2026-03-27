@@ -3104,6 +3104,237 @@ const PlanSummaryPanel = ({
 };
 
 // Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ REFINEMENT PANEL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
+const formatUsd = value => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '-';
+  return `$${Math.round(n).toLocaleString()}`;
+};
+const formatQuantity = (value, unit = '') => {
+  const n = Number(value);
+  const qty = Number.isFinite(n) ? Math.abs(n % 1) < 0.001 ? n.toLocaleString() : n.toLocaleString(undefined, {
+    maximumFractionDigits: 1
+  }) : String(value ?? '-');
+  return unit ? `${qty} ${unit}` : qty;
+};
+const csvEscape = value => {
+  const str = value == null ? '' : String(value);
+  if (/[",\n]/.test(str)) return `"${str.replace(/"/g, '""')}"`;
+  return str;
+};
+const estimateToCsv = estimate => {
+  const rows = Array.isArray(estimate?.csvRows) ? estimate.csvRows : [];
+  const headers = ['section', 'item', 'unit', 'quantity', 'low', 'target', 'high', 'notes'];
+  const lines = [headers.join(',')];
+  rows.forEach(row => {
+    lines.push(headers.map(header => csvEscape(row?.[header] ?? '')).join(','));
+  });
+  return lines.join('\r\n');
+};
+const EstimatePanel = ({
+  estimate,
+  onDownloadCsv
+}) => {
+  if (!estimate) return null;
+  const summary = estimate.summary || {};
+  const costRange = estimate.costRange || {};
+  const lineItems = Array.isArray(costRange.lineItems) ? costRange.lineItems : [];
+  const assemblies = Array.isArray(estimate.takeoff?.assemblies) ? estimate.takeoff.assemblies : [];
+  const assumptions = Array.isArray(estimate.assumptions?.notes) ? estimate.assumptions.notes : [];
+  const bathCount = Number(summary.bathCount || 0);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "paper-panel mt-4 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-4 md:p-5 border-b border-black/5 bg-white/40"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col md:flex-row md:items-end md:justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "mono text-[8px] uppercase tracking-[0.24em]",
+    style: {
+      color: 'rgba(27,79,130,0.82)'
+    }
+  }, "Planning estimate"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[13px] leading-relaxed mt-2",
+    style: {
+      color: 'rgba(10,10,12,0.62)'
+    }
+  }, "Concept-level quantity takeoff and cost range generated from the live plan geometry.")), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-2 flex-wrap"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "mono text-[8px] uppercase tracking-[0.22em]",
+    style: {
+      color: 'rgba(10,10,12,0.42)'
+    }
+  }, "USD \u2022 ", summary.rateFamily || 'MID', " rates"), /*#__PURE__*/React.createElement("button", {
+    onClick: onDownloadCsv,
+    className: "mono text-[9px] text-blue underline"
+  }, "Download CSV")))), /*#__PURE__*/React.createElement("div", {
+    className: "p-4 md:p-5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 xl:grid-cols-5 gap-2 mb-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "spec-panel",
+    style: {
+      gridColumn: 'span 2'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "spec-label"
+  }, "Planning cost range"), /*#__PURE__*/React.createElement("div", {
+    className: "spec-value",
+    style: {
+      fontSize: '1rem'
+    }
+  }, formatUsd(costRange?.total?.low), " - ", formatUsd(costRange?.total?.high)), /*#__PURE__*/React.createElement("div", {
+    className: "mono text-[8px] uppercase mt-1",
+    style: {
+      color: 'rgba(10,10,12,0.42)'
+    }
+  }, "Target ", formatUsd(costRange?.total?.target))), /*#__PURE__*/React.createElement("div", {
+    className: "spec-panel"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "spec-label"
+  }, "Conditioned area"), /*#__PURE__*/React.createElement("div", {
+    className: "spec-value"
+  }, formatQuantity(summary.conditionedAreaSqFt, 'sqft'))), /*#__PURE__*/React.createElement("div", {
+    className: "spec-panel"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "spec-label"
+  }, "Roof area"), /*#__PURE__*/React.createElement("div", {
+    className: "spec-value"
+  }, formatQuantity(summary.estimatedRoofSurfaceAreaSqFt, 'sqft'))), /*#__PURE__*/React.createElement("div", {
+    className: "spec-panel"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "spec-label"
+  }, "Windows"), /*#__PURE__*/React.createElement("div", {
+    className: "spec-value"
+  }, formatQuantity(summary.windowCount, 'total')), /*#__PURE__*/React.createElement("div", {
+    className: "mono text-[8px] uppercase mt-1",
+    style: {
+      color: 'rgba(10,10,12,0.42)'
+    }
+  }, formatQuantity(summary.roughGlazingAreaSqFt, 'sqft glazing'))), /*#__PURE__*/React.createElement("div", {
+    className: "spec-panel"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "spec-label"
+  }, "Baths"), /*#__PURE__*/React.createElement("div", {
+    className: "spec-value"
+  }, bathCount))), /*#__PURE__*/React.createElement("div", {
+    className: "grid lg:grid-cols-2 gap-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "rounded-[18px] border border-black/8 overflow-hidden bg-white/72"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-4 py-3 border-b border-black/6"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "mono text-[8px] uppercase tracking-[0.22em]",
+    style: {
+      color: 'rgba(10,10,12,0.46)'
+    }
+  }, "Cost line items")), /*#__PURE__*/React.createElement("div", {
+    className: "overflow-x-auto"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "w-full text-left"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
+    className: "mono text-[8px] uppercase tracking-[0.18em]",
+    style: {
+      color: 'rgba(10,10,12,0.42)'
+    }
+  }, /*#__PURE__*/React.createElement("th", {
+    className: "px-4 py-2"
+  }, "Item"), /*#__PURE__*/React.createElement("th", {
+    className: "px-2 py-2"
+  }, "Qty"), /*#__PURE__*/React.createElement("th", {
+    className: "px-2 py-2"
+  }, "Target"))), /*#__PURE__*/React.createElement("tbody", null, lineItems.map(item => /*#__PURE__*/React.createElement("tr", {
+    key: item.key,
+    className: "border-t border-black/5 text-[11px]",
+    style: {
+      color: 'rgba(10,10,12,0.78)'
+    }
+  }, /*#__PURE__*/React.createElement("td", {
+    className: "px-4 py-2.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "font-medium"
+  }, item.label), item.notes && /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] mt-0.5",
+    style: {
+      color: 'rgba(10,10,12,0.46)'
+    }
+  }, item.notes)), /*#__PURE__*/React.createElement("td", {
+    className: "px-2 py-2.5"
+  }, formatQuantity(item.quantity, item.unit === 'percent' ? '%' : item.unit)), /*#__PURE__*/React.createElement("td", {
+    className: "px-2 py-2.5 font-medium"
+  }, formatUsd(item.target)))))))), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-[18px] border border-black/8 overflow-hidden bg-white/72"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "px-4 py-3 border-b border-black/6"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "mono text-[8px] uppercase tracking-[0.22em]",
+    style: {
+      color: 'rgba(10,10,12,0.46)'
+    }
+  }, "Quantity takeoff")), /*#__PURE__*/React.createElement("div", {
+    className: "overflow-x-auto"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "w-full text-left"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
+    className: "mono text-[8px] uppercase tracking-[0.18em]",
+    style: {
+      color: 'rgba(10,10,12,0.42)'
+    }
+  }, /*#__PURE__*/React.createElement("th", {
+    className: "px-4 py-2"
+  }, "Item"), /*#__PURE__*/React.createElement("th", {
+    className: "px-2 py-2"
+  }, "Quantity"))), /*#__PURE__*/React.createElement("tbody", null, assemblies.map(item => /*#__PURE__*/React.createElement("tr", {
+    key: item.key,
+    className: "border-t border-black/5 text-[11px]",
+    style: {
+      color: 'rgba(10,10,12,0.78)'
+    }
+  }, /*#__PURE__*/React.createElement("td", {
+    className: "px-4 py-2.5"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "font-medium"
+  }, item.label), item.notes && /*#__PURE__*/React.createElement("div", {
+    className: "text-[10px] mt-0.5",
+    style: {
+      color: 'rgba(10,10,12,0.46)'
+    }
+  }, item.notes)), /*#__PURE__*/React.createElement("td", {
+    className: "px-2 py-2.5"
+  }, formatQuantity(item.quantity, item.unit))))))))), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-[18px] border border-black/8 bg-white/64 p-4 mt-4"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "mono text-[8px] uppercase tracking-[0.22em]",
+    style: {
+      color: 'rgba(10,10,12,0.46)'
+    }
+  }, "Assumptions"), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-2 mt-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "room-badge active",
+    style: {
+      cursor: 'default'
+    }
+  }, "Concept / planning estimate"), /*#__PURE__*/React.createElement("span", {
+    className: "room-badge active",
+    style: {
+      cursor: 'default'
+    }
+  }, "Roof: ", String(summary.roofKind || 'gabled').replace(/_/g, ' ')), /*#__PURE__*/React.createElement("span", {
+    className: "room-badge active",
+    style: {
+      cursor: 'default'
+    }
+  }, "Budget: ", summary.budgetTier || 'MID')), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 text-[12px] leading-relaxed",
+    style: {
+      color: 'rgba(10,10,12,0.62)'
+    }
+  }, assumptions.map(note => /*#__PURE__*/React.createElement("p", {
+    key: note,
+    className: "mt-1 first:mt-0"
+  }, note))))));
+};
 const REFINEMENT_SUGGESTIONS = ["Make the living room 4 feet wider", "Make the primary bedroom bigger", "Expand the kitchen", "Make the master bathroom larger", "Widen the hallways", "Make the garage wider", "Expand the dining room"];
 const RefinementPanel = ({
   planSpec,
@@ -6359,7 +6590,10 @@ const DesignGenerator = ({
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
       setPlanSvg(data.svg);
-      setPlanSpec(data.planSpec);
+      setPlanSpec(data.planSpec ? {
+        ...data.planSpec,
+        estimate: data.estimate || data.planSpec?.estimate || null
+      } : null);
       setRefinementHistory([]);
       setRefinementsLeft(10);
       setGalleryId(data.galleryId || null);
@@ -6406,7 +6640,10 @@ const DesignGenerator = ({
         return `Updated ${name}`;
       }).join(', ') : `Applied: ${instruction}`;
       setPlanSvg(data.svg);
-      setPlanSpec(data.planSpec);
+      setPlanSpec(data.planSpec ? {
+        ...data.planSpec,
+        estimate: data.estimate || data.planSpec?.estimate || null
+      } : null);
       if (data.galleryId) setGalleryId(data.galleryId);
       setRefinementHistory(prev => [...prev, {
         role: 'assistant',
@@ -6461,6 +6698,30 @@ const DesignGenerator = ({
     } catch (err) {
       console.error('[downloadDxf]', err);
       alert('DXF export failed: ' + err.message);
+    }
+  };
+  const downloadEstimateCsv = () => {
+    const estimate = planSpec?.estimate || null;
+    if (!estimate) {
+      alert('No estimate to export yet.');
+      return;
+    }
+    try {
+      const csv = estimateToCsv(estimate);
+      const blob = new Blob([csv], {
+        type: 'text/csv;charset=utf-8;'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Keystone_Planning_Estimate.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('[downloadEstimateCsv]', err);
+      alert('Estimate CSV export failed: ' + err.message);
     }
   };
   const isLoading = status === 'loading-plan' || status === 'refining';
@@ -6919,6 +7180,9 @@ const DesignGenerator = ({
     className: "section-label"
   }, "Spec Details")), /*#__PURE__*/React.createElement(PlanSummaryPanel, {
     planSpec: planSpec
+  }), /*#__PURE__*/React.createElement(EstimatePanel, {
+    estimate: planSpec?.estimate,
+    onDownloadCsv: downloadEstimateCsv
   }))) : /*#__PURE__*/React.createElement("div", {
     className: "paper-panel p-6 text-center text-mid flex flex-col items-center justify-center h-full"
   }, /*#__PURE__*/React.createElement("svg", {
@@ -6933,7 +7197,7 @@ const DesignGenerator = ({
     d: "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
   })), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] leading-relaxed"
-  }, "Once you generate a plan, export options, AI refinement tools, and structural metrics will appear here.")))), showAlternatives && /*#__PURE__*/React.createElement("div", {
+  }, "Once you generate a plan, export options, AI refinement tools, structural metrics, and the planning estimate will appear here.")))), showAlternatives && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-[200] flex items-center justify-center p-4",
     style: {
       background: 'rgba(0,0,0,0.7)'
@@ -7330,8 +7594,8 @@ const DreamApp = () => {
     body: 'Keystone currently covers guided intake, floor plan generation, elevation views, vector DXF export, and Gemini exterior study generation from the same brief.'
   }, {
     eyebrow: 'Coming next',
-    title: 'Quantities, scheduling, and deeper 3D remain on the roadmap.',
-    body: 'Quantity takeoff, cost ranges, scheduling, and deeper viewer tools are still roadmap items and are not being sold as live today.'
+    title: 'Scheduling and deeper 3D remain on the roadmap.',
+    body: 'Planning-grade quantity takeoff and cost range are now live. Scheduling and deeper viewer tools are still being kept on the roadmap until they are ready.'
   }];
   const outcomeCards = [{
     eyebrow: 'Before the meeting',
@@ -7393,7 +7657,7 @@ const DreamApp = () => {
     image: ASSETS.team.subrat,
     bio: 'Financial operator focused on keeping Keystone rigorous, durable, and built for steady studio adoption.'
   }];
-  const roadmapCards = ['Quantity takeoff support', 'Early cost estimate ranges', 'Scheduling and viewer depth', 'White-label studio branding', 'CRM handoff for qualified leads'];
+  const roadmapCards = ['Formatted XLSX estimate export', 'Deeper quantity logic by assembly', 'Scheduling and viewer depth', 'White-label studio branding', 'CRM handoff for qualified leads'];
   const quoteCards = [{
     quote: 'The best use case is a firm that wants to send one link before the first serious meeting and walk in with something concrete already on screen.',
     name: 'Workflow fit',
@@ -9736,7 +10000,7 @@ const B2BWorkflowPage = () => {
     style: {
       color: 'rgba(10,10,12,0.68)'
     }
-  }, "Keystone is intentionally narrow today: structured intake, generated plan, elevation views, vector DXF export, and optional Gemini study. Quantity logic, scheduling, and deeper viewer tools belong on the roadmap until they are truly live."), /*#__PURE__*/React.createElement("div", {
+  }, "Keystone is intentionally narrow today: structured intake, generated plan, elevation views, concept estimate, vector DXF export, and optional Gemini study. Scheduling and deeper viewer tools stay on the roadmap until they are truly live."), /*#__PURE__*/React.createElement("div", {
     className: "mt-6 flex flex-col gap-3"
   }, /*#__PURE__*/React.createElement("a", {
     href: "/roadmap",
@@ -9779,11 +10043,11 @@ const RoadmapPage = () => {
     image: ASSETS.roadmap.cadExport,
     status: 'Live'
   }, {
-    phase: 'Roadmap next',
-    title: 'Quantity and estimate layers',
-    body: 'Quantity takeoff support and early estimation ranges are planned to give firms stronger commercial context earlier in the pipeline.',
+    phase: 'Live today',
+    title: 'Planning estimate layer',
+    body: 'The generated plan now includes a concept-level quantity takeoff and early cost range so the team can discuss geometry and commercial context together.',
     image: ASSETS.roadmap.overview,
-    status: 'Planned'
+    status: 'Live'
   }, {
     phase: 'Roadmap next',
     title: '3D viewer and schedule depth',
@@ -9819,7 +10083,7 @@ const RoadmapPage = () => {
     style: {
       color: 'rgba(32,26,21,0.72)'
     }
-  }, "This roadmap keeps a strict line between live capability and planned capability. It shows the platform direction around quantity logic, scheduling, and deeper 3D viewing while keeping live features like elevations and DXF export clearly separate from roadmap items.")), /*#__PURE__*/React.createElement(SpotlightCard, {
+  }, "This roadmap keeps a strict line between live capability and planned capability. It shows the platform direction around deeper quantity logic, scheduling, and 3D viewing while keeping live features like elevations, concept estimate, and DXF export clearly separate from roadmap items.")), /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.1)",
     className: "paper-panel p-6 md:p-7"
   }, /*#__PURE__*/React.createElement("div", {
@@ -10002,7 +10266,7 @@ const FAQPage = () => {
     answer: 'No. Keystone outputs are concept aids only. They are not permit-ready drawings, stamped documents, engineering deliverables, or final construction instructions.'
   }, {
     question: 'Are CAD files, quantity takeoff, or cost estimates live today?',
-    answer: 'Elevation views and vector DXF export are live today. Quantity takeoff and cost-estimate layers are not live yet, and native DWG production still belongs to the downstream CAD workflow.'
+    answer: 'Elevation views, vector DXF export, and a concept-level planning estimate are live today. Native DWG production, scheduling, and deeper downstream quantity logic still belong to the later workflow.'
   }, {
     question: 'Why is access private right now?',
     answer: 'Keystone is still being introduced through guided access so the workflow, onboarding, and firm fit stay strong while the product is maturing.'
