@@ -1663,7 +1663,15 @@ const estimateToCsv = (estimate) => {
     return lines.join('\r\n');
 };
 
-const EstimatePanel = ({ estimate, onDownloadCsv }) => {
+const fileNameFromDisposition = (value, fallback) => {
+    const raw = String(value || '');
+    const utf8 = raw.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utf8?.[1]) return decodeURIComponent(utf8[1]);
+    const basic = raw.match(/filename="?([^";]+)"?/i);
+    return basic?.[1] || fallback;
+};
+
+const EstimatePanel = ({ estimate, onDownloadCsv, onDownloadXlsx, isExportingXlsx = false }) => {
     if (!estimate) return null;
     const summary = estimate.summary || {};
     const costRange = estimate.costRange || {};
@@ -1688,6 +1696,13 @@ const EstimatePanel = ({ estimate, onDownloadCsv }) => {
                         </span>
                         <button onClick={onDownloadCsv} className="mono text-[9px] text-blue underline">
                             Download CSV
+                        </button>
+                        <button
+                            onClick={onDownloadXlsx}
+                            disabled={isExportingXlsx}
+                            className="mono text-[9px] text-blue underline disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                            {isExportingXlsx ? 'Building XLSX…' : 'Download XLSX'}
                         </button>
                     </div>
                 </div>
@@ -3849,6 +3864,7 @@ const DesignGenerator = ({ onOpenModal }) => {
     const [footprintInfo, setFootprintInfo] = useState(null);
     const [alternatives, setAlternatives] = useState([]);
     const [showAlternatives, setShowAlternatives] = useState(false);
+    const [isExportingEstimateXlsx, setIsExportingEstimateXlsx] = useState(false);
 
     useEffect(() => {
         try { const s = JSON.parse(localStorage.getItem('keystone_unlock')||'null'); if (s?.unlocked && s?.ts && (Date.now() - s.ts < 30 * 24 * 60 * 60 * 1000)) setIsUnlocked(true); else if (s?.unlocked && (!s?.ts || Date.now() - s.ts >= 30 * 24 * 60 * 60 * 1000)) localStorage.removeItem('keystone_unlock'); } catch {}
@@ -3985,6 +4001,57 @@ const DesignGenerator = ({ onOpenModal }) => {
         } catch (err) {
             console.error('[downloadEstimateCsv]', err);
             alert('Estimate CSV export failed: ' + err.message);
+        }
+    };
+
+    const downloadEstimateXlsx = async () => {
+        const estimate = planSpec?.estimate || null;
+        if (!planSpec || !estimate) { alert('No estimate to export yet.'); return; }
+        setIsExportingEstimateXlsx(true);
+        try {
+            const res = await fetch('/api/estimate/xlsx', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    surveyData: formData,
+                    planSpec,
+                    estimate,
+                    exportMeta: {
+                        projectName: 'Keystone Planning Estimate',
+                        generatedAt: new Date().toISOString(),
+                    },
+                }),
+            });
+
+            if (!res.ok) {
+                let message = 'Failed to export XLSX.';
+                try {
+                    const data = await res.json();
+                    message = data?.detail || data?.message || message;
+                } catch (_) {
+                    const text = await res.text();
+                    if (text) message = text;
+                }
+                throw new Error(message);
+            }
+
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileNameFromDisposition(
+                res.headers.get('content-disposition'),
+                'Keystone_Planning_Estimate.xlsx'
+            );
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            console.error('[downloadEstimateXlsx]', err);
+            alert('Estimate XLSX export failed: ' + err.message);
+        } finally {
+            setIsExportingEstimateXlsx(false);
         }
     };
 
@@ -4196,7 +4263,12 @@ const DesignGenerator = ({ onOpenModal }) => {
                                 <div className="paper-panel">
                                     <div className="p-4 border-b border-black/5 bg-white/40"><span className="section-label">Spec Details</span></div>
                                     <PlanSummaryPanel planSpec={planSpec}/>
-                                    <EstimatePanel estimate={planSpec?.estimate} onDownloadCsv={downloadEstimateCsv}/>
+                                    <EstimatePanel
+                                        estimate={planSpec?.estimate}
+                                        onDownloadCsv={downloadEstimateCsv}
+                                        onDownloadXlsx={downloadEstimateXlsx}
+                                        isExportingXlsx={isExportingEstimateXlsx}
+                                    />
                                 </div>
                             </>
                         ) : (
