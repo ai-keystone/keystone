@@ -1507,6 +1507,32 @@ const svgMarkupToDataUri = (svgMarkup) => {
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 };
 
+const extractPrimaryNumber = (value, fallback = '') => {
+    const match = String(value ?? '').match(/\d+/);
+    return match?.[0] || fallback;
+};
+
+const normalizeFilenameWords = (value) => String(value ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const buildPlanExportFilename = (formData, label, extension, fallbackArea = '') => {
+    const area = extractPrimaryNumber(formData?.totalArea, fallbackArea);
+    const beds = normalizeFilenameWords(formData?.bedrooms);
+    const baths = normalizeFilenameWords(formData?.bathrooms);
+    const suffix = normalizeFilenameWords(label);
+    const parts = [
+        area ? `${area}sqft` : '',
+        beds,
+        baths,
+        suffix,
+    ].filter(Boolean);
+    const stem = parts.join(' ') || 'keystone plan';
+    return `${stem}.${extension}`;
+};
+
 const ElevationsPanel = ({ elevations, formData, onOpenPreview }) => {
     const availableViews = [
         { key:'frontSvg', label:'Front' },
@@ -1536,7 +1562,7 @@ const ElevationsPanel = ({ elevations, formData, onOpenPreview }) => {
         if (!activeSrc) return;
         const link = document.createElement('a');
         link.href = activeSrc;
-        link.download = `Keystone_${activeView.label}_Elevation.svg`;
+        link.download = buildPlanExportFilename(formData, `${activeView.label} elevation`, 'svg');
         link.click();
     };
 
@@ -1663,15 +1689,7 @@ const estimateToCsv = (estimate) => {
     return lines.join('\r\n');
 };
 
-const fileNameFromDisposition = (value, fallback) => {
-    const raw = String(value || '');
-    const utf8 = raw.match(/filename\*=UTF-8''([^;]+)/i);
-    if (utf8?.[1]) return decodeURIComponent(utf8[1]);
-    const basic = raw.match(/filename="?([^";]+)"?/i);
-    return basic?.[1] || fallback;
-};
-
-const EstimatePanel = ({ estimate, onDownloadCsv, onDownloadXlsx, isExportingXlsx = false }) => {
+const EstimatePanel = ({ estimate }) => {
     if (!estimate) return null;
     const summary = estimate.summary || {};
     const costRange = estimate.costRange || {};
@@ -1690,21 +1708,9 @@ const EstimatePanel = ({ estimate, onDownloadCsv, onDownloadXlsx, isExportingXls
                             MVP planning-grade quantity takeoff and cost range generated directly from the live plan geometry.
                         </p>
                     </div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <span className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
-                            USD • {summary.rateFamily || 'MID'} rates
-                        </span>
-                        <button onClick={onDownloadCsv} className="mono text-[9px] text-blue underline">
-                            Download CSV
-                        </button>
-                        <button
-                            onClick={onDownloadXlsx}
-                            disabled={isExportingXlsx}
-                            className="mono text-[9px] text-blue underline disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                            {isExportingXlsx ? 'Building XLSX…' : 'Download XLSX'}
-                        </button>
-                    </div>
+                    <span className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
+                        USD • {summary.rateFamily || 'MID'} rates
+                    </span>
                 </div>
             </div>
 
@@ -2816,7 +2822,17 @@ const RENDER_REFINEMENTS = [
     { label: 'Sunrise',      hint: 'sunrise with a pink-orange gradient sky and long warm shadows across the facade. Only change the lighting and sky; keep the house architecture identical.' },
 ];
 
-const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onRenderReady }) => {
+const Render3DPanel = ({
+    planSpec,
+    formData,
+    planSvg,
+    elevations,
+    galleryId,
+    onRenderReady,
+    launchSignal = 0,
+    showLaunchButton = true,
+    onRenderStatusChange,
+}) => {
     const [renderStatus, setRenderStatus] = useState('idle'); // idle|survey|loading|error|ready
     const [renderImage, setRenderImage] = useState(null);
     const [renderImageClean, setRenderImageClean] = useState(null); // without watermark, for lighting edits
@@ -2824,6 +2840,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
     const [activeRefinement, setActiveRefinement] = useState(null);
     const [showSurvey, setShowSurvey] = useState(false);
     const [renderSurveyData, setRenderSurveyData] = useState(null);
+    const launchHandledRef = useRef(launchSignal);
 
     const applyWatermark = (imgSrc) => new Promise((resolve) => {
         const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d'), img = new Image();
@@ -2922,13 +2939,32 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
         doRender(renderSurveyData, ref.hint, renderImageClean);
     };
 
+    useEffect(() => {
+        if (typeof onRenderStatusChange === 'function') onRenderStatusChange(renderStatus);
+    }, [renderStatus, onRenderStatusChange]);
+
+    useEffect(() => {
+        if (!launchSignal || launchSignal === launchHandledRef.current) return;
+        launchHandledRef.current = launchSignal;
+        handleRender();
+    }, [launchSignal]);
+
     if (renderStatus === 'idle') return (
         <>
             <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData}/>
-            <button onClick={handleRender}
-                className="w-full py-3.5 cta-hero cta-glow text-[10px]">
-                Generate Gemini Exterior Study
-            </button>
+            {showLaunchButton ? (
+                <button onClick={handleRender}
+                    className="w-full py-3.5 cta-hero cta-glow text-[10px]">
+                    Generate Gemini Exterior Study
+                </button>
+            ) : (
+                <div className="p-4 rounded-[16px] border border-black/8 bg-white/72">
+                    <p className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>Gemini exterior study</p>
+                    <p className="text-[11px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
+                        Use the main action bar above to open render options and generate the exterior study from this plan.
+                    </p>
+                </div>
+            )}
         </>
     );
 
@@ -2969,7 +3005,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
                 <span className="mono text-[8px] uppercase tracking-widest text-mid">
                     {activeRefinement ? `Lighting: ${activeRefinement}` : 'Gemini exterior study'}
                 </span>
-                <button onClick={() => { const l=document.createElement('a'); l.href=renderImage; l.download='Keystone_3D.png'; l.click(); }}
+                <button onClick={() => { const l=document.createElement('a'); l.href=renderImage; l.download=buildPlanExportFilename(formData, '3d render', 'png'); l.click(); }}
                     className="ml-auto mono text-[9px] text-blue underline">Download</button>
                 <button onClick={handleRegenerate} className="mono text-[9px] text-mid underline">Regenerate</button>
                 <button onClick={() => setShowSurvey(true)} className="mono text-[9px] text-mid underline">Options</button>
@@ -3865,6 +3901,8 @@ const DesignGenerator = ({ onOpenModal }) => {
     const [alternatives, setAlternatives] = useState([]);
     const [showAlternatives, setShowAlternatives] = useState(false);
     const [isExportingEstimateXlsx, setIsExportingEstimateXlsx] = useState(false);
+    const [renderLaunchSignal, setRenderLaunchSignal] = useState(0);
+    const [renderPanelStatus, setRenderPanelStatus] = useState('idle');
 
     useEffect(() => {
         try { const s = JSON.parse(localStorage.getItem('keystone_unlock')||'null'); if (s?.unlocked && s?.ts && (Date.now() - s.ts < 30 * 24 * 60 * 60 * 1000)) setIsUnlocked(true); else if (s?.unlocked && (!s?.ts || Date.now() - s.ts >= 30 * 24 * 60 * 60 * 1000)) localStorage.removeItem('keystone_unlock'); } catch {}
@@ -3955,7 +3993,7 @@ const DesignGenerator = ({ onOpenModal }) => {
 
         const l = document.createElement('a');
         l.href = pngUrl;
-        l.download = 'Keystone_Blueprint_4K.png';
+        l.download = buildPlanExportFilename(formData, 'floor plan', 'png');
         document.body.appendChild(l);
         l.click();
         l.remove();
@@ -3973,7 +4011,7 @@ const DesignGenerator = ({ onOpenModal }) => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'Keystone_Presentation_Plan.dxf';
+            a.download = buildPlanExportFilename(formData, 'floor plan cad', 'dxf');
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -3993,7 +4031,7 @@ const DesignGenerator = ({ onOpenModal }) => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'Keystone_Planning_Estimate.csv';
+            a.download = buildPlanExportFilename(formData, 'planning estimate', 'csv');
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -4041,10 +4079,7 @@ const DesignGenerator = ({ onOpenModal }) => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = fileNameFromDisposition(
-                res.headers.get('content-disposition'),
-                'Keystone_Planning_Estimate.xlsx'
-            );
+            a.download = buildPlanExportFilename(formData, 'planning estimate', 'xlsx');
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -4056,6 +4091,33 @@ const DesignGenerator = ({ onOpenModal }) => {
             setIsExportingEstimateXlsx(false);
         }
     };
+
+    const launchRenderSurvey = () => {
+        if (!planSpec || !planSvg) {
+            alert('Generate a plan first.');
+            return;
+        }
+        if (renderPanelStatus === 'loading') return;
+        setRenderLaunchSignal((value) => value + 1);
+    };
+
+    const actionButtonClass = (disabled = false) => [
+        'px-4 py-3 rounded-full text-[10px] font-bold uppercase tracking-[0.22em] transition-all shadow-md text-white',
+        disabled ? '' : 'cta-hero cta-glow-soft hover:-translate-y-0.5'
+    ].join(' ');
+
+    const actionButtonStyle = (disabled = false) => (
+        disabled
+            ? { background:'rgba(245,126,66,0.45)', cursor:'not-allowed', opacity:0.68, boxShadow:'none' }
+            : undefined
+    );
+
+    const renderActionLabel =
+        renderPanelStatus === 'loading'
+            ? 'Rendering 3D...'
+            : renderPanelStatus === 'ready'
+                ? '3D Render Options'
+                : 'Generate 3D Render';
 
     const isLoading = status === 'loading-plan' || status === 'refining';
     const resetSampleBrief = () => setFormData({ ...DEFAULT_FORM_DATA });
@@ -4153,7 +4215,36 @@ const DesignGenerator = ({ onOpenModal }) => {
                     </div>
                 )}
 
-                <div className={`grid lg:grid-cols-[300px_minmax(0,1fr)_300px] gap-4 items-start transition-opacity ${!isUnlocked ? 'opacity-10 pointer-events-none blur-sm select-none' : ''}`}>
+                <div className={`transition-opacity ${!isUnlocked ? 'opacity-10 pointer-events-none blur-sm select-none' : ''}`}>
+                    <div className="paper-panel p-4 md:p-5 mb-4">
+                        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+                            <div>
+                                <div className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(10,10,12,0.42)'}}>Main actions</div>
+                                <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.64)'}}>
+                                    Use this command bar to render, export, and package the current plan without jumping between panels.
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
+                                <button onClick={launchRenderSurvey} disabled={!planSvg || isLoading || renderPanelStatus === 'loading'} className={actionButtonClass(!planSvg || isLoading || renderPanelStatus === 'loading')} style={actionButtonStyle(!planSvg || isLoading || renderPanelStatus === 'loading')}>
+                                    {renderActionLabel}
+                                </button>
+                                <button onClick={downloadBlueprint} disabled={!planSvg || isLoading} className={actionButtonClass(!planSvg || isLoading)} style={actionButtonStyle(!planSvg || isLoading)}>
+                                    Download PNG
+                                </button>
+                                <button onClick={downloadDxf} disabled={!planSpec || isLoading} className={actionButtonClass(!planSpec || isLoading)} style={actionButtonStyle(!planSpec || isLoading)}>
+                                    Export DXF
+                                </button>
+                                <button onClick={downloadEstimateCsv} disabled={!planSpec?.estimate || isLoading} className={actionButtonClass(!planSpec?.estimate || isLoading)} style={actionButtonStyle(!planSpec?.estimate || isLoading)}>
+                                    Estimate CSV
+                                </button>
+                                <button onClick={downloadEstimateXlsx} disabled={!planSpec?.estimate || isLoading || isExportingEstimateXlsx} className={actionButtonClass(!planSpec?.estimate || isLoading || isExportingEstimateXlsx)} style={actionButtonStyle(!planSpec?.estimate || isLoading || isExportingEstimateXlsx)}>
+                                    {isExportingEstimateXlsx ? 'Building XLSX...' : 'Estimate XLSX'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                <div className={`grid lg:grid-cols-[300px_minmax(0,1fr)_300px] gap-4 items-start`}>
                     {/* LEFT â€" The Brief */}
                     <div className="cad-panel-brief">
                         <div className="cad-panel-brief-header">
@@ -4246,10 +4337,12 @@ const DesignGenerator = ({ onOpenModal }) => {
                                                 )}
                                             </div>
                                         )}
-                                        <button onClick={downloadBlueprint} className="w-full cta-hero cta-glow py-3 text-[10px] mt-1 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all">Download High-Res PNG</button>
-                                        <button onClick={downloadDxf} className="w-full px-4 py-3 border border-black/10 rounded-sm hover:border-blue hover:text-blue text-[10px] font-bold uppercase tracking-widest transition-all bg-white shadow-sm flex items-center justify-center gap-2">
-                                            Export Vector DXF
-                                        </button>
+                                        <div className="rounded-[14px] border border-black/8 bg-white/70 px-3 py-3">
+                                            <p className="mono text-[8px] uppercase tracking-[0.2em]" style={{color:'rgba(10,10,12,0.42)'}}>Action bar</p>
+                                            <p className="text-[10px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.64)'}}>
+                                                Main exports and the 3D render action now live in the orange command bar above the studio columns.
+                                            </p>
+                                        </div>
                                         {alternatives.length > 0 && (
                                             <button onClick={() => setShowAlternatives(true)} className="w-full cta-secondary py-3 text-[10px]">View Alternatives ({alternatives.length})</button>
                                         )}
@@ -4260,17 +4353,22 @@ const DesignGenerator = ({ onOpenModal }) => {
                                 </div>
                                 <ElevationsPanel elevations={planSpec?.elevations} formData={formData} onOpenPreview={img=>setZoomImage(img)}/>
                                 <div className="paper-panel">
-                                    <Render3DPanel planSpec={planSpec} formData={formData} planSvg={planSvg} elevations={planSpec?.elevations} galleryId={galleryId} onRenderReady={img=>setZoomImage(img)}/>
+                                    <Render3DPanel
+                                        planSpec={planSpec}
+                                        formData={formData}
+                                        planSvg={planSvg}
+                                        elevations={planSpec?.elevations}
+                                        galleryId={galleryId}
+                                        onRenderReady={img=>setZoomImage(img)}
+                                        launchSignal={renderLaunchSignal}
+                                        showLaunchButton={false}
+                                        onRenderStatusChange={setRenderPanelStatus}
+                                    />
                                 </div>
                                 <div className="paper-panel">
                                     <div className="p-4 border-b border-black/5 bg-white/40"><span className="section-label">Spec Details</span></div>
                                     <PlanSummaryPanel planSpec={planSpec}/>
-                                    <EstimatePanel
-                                        estimate={planSpec?.estimate}
-                                        onDownloadCsv={downloadEstimateCsv}
-                                        onDownloadXlsx={downloadEstimateXlsx}
-                                        isExportingXlsx={isExportingEstimateXlsx}
-                                    />
+                                    <EstimatePanel estimate={planSpec?.estimate}/>
                                 </div>
                             </>
                         ) : (
@@ -4280,6 +4378,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                             </div>
                         )}
                     </div>
+                </div>
                 </div>
 
                         {/* Ã¢"â‚¬Ã¢"â‚¬ ALTERNATIVES MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ */}

@@ -2942,6 +2942,20 @@ const svgMarkupToDataUri = svgMarkup => {
   const svg = svgMarkup.includes('xmlns=') ? svgMarkup : svgMarkup.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
   return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
 };
+const extractPrimaryNumber = (value, fallback = '') => {
+  const match = String(value ?? '').match(/\d+/);
+  return match?.[0] || fallback;
+};
+const normalizeFilenameWords = value => String(value ?? '').toLowerCase().replace(/[^a-z0-9]+/gi, ' ').replace(/\s+/g, ' ').trim();
+const buildPlanExportFilename = (formData, label, extension, fallbackArea = '') => {
+  const area = extractPrimaryNumber(formData?.totalArea, fallbackArea);
+  const beds = normalizeFilenameWords(formData?.bedrooms);
+  const baths = normalizeFilenameWords(formData?.bathrooms);
+  const suffix = normalizeFilenameWords(label);
+  const parts = [area ? `${area}sqft` : '', beds, baths, suffix].filter(Boolean);
+  const stem = parts.join(' ') || 'keystone plan';
+  return `${stem}.${extension}`;
+};
 const ElevationsPanel = ({
   elevations,
   formData,
@@ -2977,7 +2991,7 @@ const ElevationsPanel = ({
     if (!activeSrc) return;
     const link = document.createElement('a');
     link.href = activeSrc;
-    link.download = `Keystone_${activeView.label}_Elevation.svg`;
+    link.download = buildPlanExportFilename(formData, `${activeView.label} elevation`, 'svg');
     link.click();
   };
   return /*#__PURE__*/React.createElement("div", {
@@ -3130,18 +3144,8 @@ const estimateToCsv = estimate => {
   });
   return lines.join('\r\n');
 };
-const fileNameFromDisposition = (value, fallback) => {
-  const raw = String(value || '');
-  const utf8 = raw.match(/filename\*=UTF-8''([^;]+)/i);
-  if (utf8?.[1]) return decodeURIComponent(utf8[1]);
-  const basic = raw.match(/filename="?([^";]+)"?/i);
-  return basic?.[1] || fallback;
-};
 const EstimatePanel = ({
-  estimate,
-  onDownloadCsv,
-  onDownloadXlsx,
-  isExportingXlsx = false
+  estimate
 }) => {
   if (!estimate) return null;
   const summary = estimate.summary || {};
@@ -3166,21 +3170,12 @@ const EstimatePanel = ({
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, "MVP planning-grade quantity takeoff and cost range generated directly from the live plan geometry.")), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center gap-2 flex-wrap"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, "MVP planning-grade quantity takeoff and cost range generated directly from the live plan geometry.")), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "USD \u2022 ", summary.rateFamily || 'MID', " rates"), /*#__PURE__*/React.createElement("button", {
-    onClick: onDownloadCsv,
-    className: "mono text-[9px] text-blue underline"
-  }, "Download CSV"), /*#__PURE__*/React.createElement("button", {
-    onClick: onDownloadXlsx,
-    disabled: isExportingXlsx,
-    className: "mono text-[9px] text-blue underline disabled:opacity-40 disabled:cursor-not-allowed"
-  }, isExportingXlsx ? 'Building XLSX…' : 'Download XLSX')))), /*#__PURE__*/React.createElement("div", {
+  }, "USD \u2022 ", summary.rateFamily || 'MID', " rates"))), /*#__PURE__*/React.createElement("div", {
     className: "p-4 md:p-5"
   }, /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 xl:grid-cols-5 gap-2 mb-4"
@@ -4454,7 +4449,10 @@ const Render3DPanel = ({
   planSvg,
   elevations,
   galleryId,
-  onRenderReady
+  onRenderReady,
+  launchSignal = 0,
+  showLaunchButton = true,
+  onRenderStatusChange
 }) => {
   const [renderStatus, setRenderStatus] = useState('idle'); // idle|survey|loading|error|ready
   const [renderImage, setRenderImage] = useState(null);
@@ -4463,6 +4461,7 @@ const Render3DPanel = ({
   const [activeRefinement, setActiveRefinement] = useState(null);
   const [showSurvey, setShowSurvey] = useState(false);
   const [renderSurveyData, setRenderSurveyData] = useState(null);
+  const launchHandledRef = useRef(launchSignal);
   const applyWatermark = imgSrc => new Promise(resolve => {
     const canvas = document.createElement('canvas'),
       ctx = canvas.getContext('2d'),
@@ -4566,16 +4565,36 @@ const Render3DPanel = ({
     // Pass the clean (un-watermarked) existing image so backend can do lighting-only edit
     doRender(renderSurveyData, ref.hint, renderImageClean);
   };
+  useEffect(() => {
+    if (typeof onRenderStatusChange === 'function') onRenderStatusChange(renderStatus);
+  }, [renderStatus, onRenderStatusChange]);
+  useEffect(() => {
+    if (!launchSignal || launchSignal === launchHandledRef.current) return;
+    launchHandledRef.current = launchSignal;
+    handleRender();
+  }, [launchSignal]);
   if (renderStatus === 'idle') return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(RenderSurveyModal, {
     isOpen: showSurvey,
     onClose: () => setShowSurvey(false),
     onSubmit: handleSurveySubmit,
     initialData: renderSurveyData,
     baseSurveyData: formData
-  }), /*#__PURE__*/React.createElement("button", {
+  }), showLaunchButton ? /*#__PURE__*/React.createElement("button", {
     onClick: handleRender,
     className: "w-full py-3.5 cta-hero cta-glow text-[10px]"
-  }, "Generate Gemini Exterior Study"));
+  }, "Generate Gemini Exterior Study") : /*#__PURE__*/React.createElement("div", {
+    className: "p-4 rounded-[16px] border border-black/8 bg-white/72"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "mono text-[8px] uppercase tracking-[0.22em]",
+    style: {
+      color: 'rgba(10,10,12,0.42)'
+    }
+  }, "Gemini exterior study"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] leading-relaxed mt-2",
+    style: {
+      color: 'rgba(10,10,12,0.62)'
+    }
+  }, "Use the main action bar above to open render options and generate the exterior study from this plan.")));
   if (renderStatus === 'loading') return /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-center gap-3 py-5"
   }, /*#__PURE__*/React.createElement("div", {
@@ -4624,7 +4643,7 @@ const Render3DPanel = ({
     onClick: () => {
       const l = document.createElement('a');
       l.href = renderImage;
-      l.download = 'Keystone_3D.png';
+      l.download = buildPlanExportFilename(formData, '3d render', 'png');
       l.click();
     },
     className: "ml-auto mono text-[9px] text-blue underline"
@@ -6546,6 +6565,8 @@ const DesignGenerator = ({
   const [alternatives, setAlternatives] = useState([]);
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [isExportingEstimateXlsx, setIsExportingEstimateXlsx] = useState(false);
+  const [renderLaunchSignal, setRenderLaunchSignal] = useState(0);
+  const [renderPanelStatus, setRenderPanelStatus] = useState('idle');
   useEffect(() => {
     try {
       const s = JSON.parse(localStorage.getItem('keystone_unlock') || 'null');
@@ -6682,7 +6703,7 @@ const DesignGenerator = ({
       });
       const l = document.createElement('a');
       l.href = pngUrl;
-      l.download = 'Keystone_Blueprint_4K.png';
+      l.download = buildPlanExportFilename(formData, 'floor plan', 'png');
       document.body.appendChild(l);
       l.click();
       l.remove();
@@ -6704,7 +6725,7 @@ const DesignGenerator = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'Keystone_Presentation_Plan.dxf';
+      a.download = buildPlanExportFilename(formData, 'floor plan cad', 'dxf');
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -6728,7 +6749,7 @@ const DesignGenerator = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'Keystone_Planning_Estimate.csv';
+      a.download = buildPlanExportFilename(formData, 'planning estimate', 'csv');
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -6778,7 +6799,7 @@ const DesignGenerator = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = fileNameFromDisposition(res.headers.get('content-disposition'), 'Keystone_Planning_Estimate.xlsx');
+      a.download = buildPlanExportFilename(formData, 'planning estimate', 'xlsx');
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -6790,6 +6811,22 @@ const DesignGenerator = ({
       setIsExportingEstimateXlsx(false);
     }
   };
+  const launchRenderSurvey = () => {
+    if (!planSpec || !planSvg) {
+      alert('Generate a plan first.');
+      return;
+    }
+    if (renderPanelStatus === 'loading') return;
+    setRenderLaunchSignal(value => value + 1);
+  };
+  const actionButtonClass = (disabled = false) => ['px-4 py-3 rounded-full text-[10px] font-bold uppercase tracking-[0.22em] transition-all shadow-md text-white', disabled ? '' : 'cta-hero cta-glow-soft hover:-translate-y-0.5'].join(' ');
+  const actionButtonStyle = (disabled = false) => disabled ? {
+    background: 'rgba(245,126,66,0.45)',
+    cursor: 'not-allowed',
+    opacity: 0.68,
+    boxShadow: 'none'
+  } : undefined;
+  const renderActionLabel = renderPanelStatus === 'loading' ? 'Rendering 3D...' : renderPanelStatus === 'ready' ? '3D Render Options' : 'Generate 3D Render';
   const isLoading = status === 'loading-plan' || status === 'refining';
   const resetSampleBrief = () => setFormData({
     ...DEFAULT_FORM_DATA
@@ -6990,7 +7027,50 @@ const DesignGenerator = ({
       color: 'rgba(10,10,12,0.66)'
     }
   }, item.body)))))), /*#__PURE__*/React.createElement("div", {
-    className: `grid lg:grid-cols-[300px_minmax(0,1fr)_300px] gap-4 items-start transition-opacity ${!isUnlocked ? 'opacity-10 pointer-events-none blur-sm select-none' : ''}`
+    className: `transition-opacity ${!isUnlocked ? 'opacity-10 pointer-events-none blur-sm select-none' : ''}`
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "paper-panel p-4 md:p-5 mb-4"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "mono text-[8px] uppercase tracking-[0.24em]",
+    style: {
+      color: 'rgba(10,10,12,0.42)'
+    }
+  }, "Main actions"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[12px] leading-relaxed mt-2",
+    style: {
+      color: 'rgba(10,10,12,0.64)'
+    }
+  }, "Use this command bar to render, export, and package the current plan without jumping between panels.")), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: launchRenderSurvey,
+    disabled: !planSvg || isLoading || renderPanelStatus === 'loading',
+    className: actionButtonClass(!planSvg || isLoading || renderPanelStatus === 'loading'),
+    style: actionButtonStyle(!planSvg || isLoading || renderPanelStatus === 'loading')
+  }, renderActionLabel), /*#__PURE__*/React.createElement("button", {
+    onClick: downloadBlueprint,
+    disabled: !planSvg || isLoading,
+    className: actionButtonClass(!planSvg || isLoading),
+    style: actionButtonStyle(!planSvg || isLoading)
+  }, "Download PNG"), /*#__PURE__*/React.createElement("button", {
+    onClick: downloadDxf,
+    disabled: !planSpec || isLoading,
+    className: actionButtonClass(!planSpec || isLoading),
+    style: actionButtonStyle(!planSpec || isLoading)
+  }, "Export DXF"), /*#__PURE__*/React.createElement("button", {
+    onClick: downloadEstimateCsv,
+    disabled: !planSpec?.estimate || isLoading,
+    className: actionButtonClass(!planSpec?.estimate || isLoading),
+    style: actionButtonStyle(!planSpec?.estimate || isLoading)
+  }, "Estimate CSV"), /*#__PURE__*/React.createElement("button", {
+    onClick: downloadEstimateXlsx,
+    disabled: !planSpec?.estimate || isLoading || isExportingEstimateXlsx,
+    className: actionButtonClass(!planSpec?.estimate || isLoading || isExportingEstimateXlsx),
+    style: actionButtonStyle(!planSpec?.estimate || isLoading || isExportingEstimateXlsx)
+  }, isExportingEstimateXlsx ? 'Building XLSX...' : 'Estimate XLSX')))), /*#__PURE__*/React.createElement("div", {
+    className: `grid lg:grid-cols-[300px_minmax(0,1fr)_300px] gap-4 items-start`
   }, /*#__PURE__*/React.createElement("div", {
     className: "cad-panel-brief"
   }, /*#__PURE__*/React.createElement("div", {
@@ -7207,13 +7287,19 @@ const DesignGenerator = ({
     style: {
       width: `${Math.min(100, planScore)}%`
     }
-  })))), /*#__PURE__*/React.createElement("button", {
-    onClick: downloadBlueprint,
-    className: "w-full cta-hero cta-glow py-3 text-[10px] mt-1 shadow-md hover:shadow-xl hover:-translate-y-0.5 transition-all"
-  }, "Download High-Res PNG"), /*#__PURE__*/React.createElement("button", {
-    onClick: downloadDxf,
-    className: "w-full px-4 py-3 border border-black/10 rounded-sm hover:border-blue hover:text-blue text-[10px] font-bold uppercase tracking-widest transition-all bg-white shadow-sm flex items-center justify-center gap-2"
-  }, "Export Vector DXF"), alternatives.length > 0 && /*#__PURE__*/React.createElement("button", {
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "rounded-[14px] border border-black/8 bg-white/70 px-3 py-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "mono text-[8px] uppercase tracking-[0.2em]",
+    style: {
+      color: 'rgba(10,10,12,0.42)'
+    }
+  }, "Action bar"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[10px] leading-relaxed mt-2",
+    style: {
+      color: 'rgba(10,10,12,0.64)'
+    }
+  }, "Main exports and the 3D render action now live in the orange command bar above the studio columns.")), alternatives.length > 0 && /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowAlternatives(true),
     className: "w-full cta-secondary py-3 text-[10px]"
   }, "View Alternatives (", alternatives.length, ")"))), /*#__PURE__*/React.createElement("div", {
@@ -7237,7 +7323,10 @@ const DesignGenerator = ({
     planSvg: planSvg,
     elevations: planSpec?.elevations,
     galleryId: galleryId,
-    onRenderReady: img => setZoomImage(img)
+    onRenderReady: img => setZoomImage(img),
+    launchSignal: renderLaunchSignal,
+    showLaunchButton: false,
+    onRenderStatusChange: setRenderPanelStatus
   })), /*#__PURE__*/React.createElement("div", {
     className: "paper-panel"
   }, /*#__PURE__*/React.createElement("div", {
@@ -7247,10 +7336,7 @@ const DesignGenerator = ({
   }, "Spec Details")), /*#__PURE__*/React.createElement(PlanSummaryPanel, {
     planSpec: planSpec
   }), /*#__PURE__*/React.createElement(EstimatePanel, {
-    estimate: planSpec?.estimate,
-    onDownloadCsv: downloadEstimateCsv,
-    onDownloadXlsx: downloadEstimateXlsx,
-    isExportingXlsx: isExportingEstimateXlsx
+    estimate: planSpec?.estimate
   }))) : /*#__PURE__*/React.createElement("div", {
     className: "paper-panel p-6 text-center text-mid flex flex-col items-center justify-center h-full"
   }, /*#__PURE__*/React.createElement("svg", {
@@ -7265,7 +7351,7 @@ const DesignGenerator = ({
     d: "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
   })), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] leading-relaxed"
-  }, "Once you generate a plan, export options, AI refinement tools, structural metrics, and the planning estimate will appear here.")))), showAlternatives && /*#__PURE__*/React.createElement("div", {
+  }, "Once you generate a plan, export options, AI refinement tools, structural metrics, and the planning estimate will appear here."))))), showAlternatives && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-[200] flex items-center justify-center p-4",
     style: {
       background: 'rgba(0,0,0,0.7)'
