@@ -7327,16 +7327,6 @@ const DesignGenerator = ({
     launchSignal: renderLaunchSignal,
     showLaunchButton: false,
     onRenderStatusChange: setRenderPanelStatus
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "paper-panel"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "p-4 border-b border-black/5 bg-white/40"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "section-label"
-  }, "Spec Details")), /*#__PURE__*/React.createElement(PlanSummaryPanel, {
-    planSpec: planSpec
-  }), /*#__PURE__*/React.createElement(EstimatePanel, {
-    estimate: planSpec?.estimate
   }))) : /*#__PURE__*/React.createElement("div", {
     className: "paper-panel p-6 text-center text-mid flex flex-col items-center justify-center h-full"
   }, /*#__PURE__*/React.createElement("svg", {
@@ -7351,7 +7341,33 @@ const DesignGenerator = ({
     d: "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
   })), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] leading-relaxed"
-  }, "Once you generate a plan, export options, AI refinement tools, structural metrics, and the planning estimate will appear here."))))), showAlternatives && /*#__PURE__*/React.createElement("div", {
+  }, "Once you generate a plan, export options, AI refinement tools, structural metrics, and the planning estimate will appear here.")))), (status === 'plan-ready' || status === 'refining') && planSvg && /*#__PURE__*/React.createElement("div", {
+    className: "paper-panel mt-4 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-4 md:p-5 border-b border-black/5 bg-white/40"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col md:flex-row md:items-end md:justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "section-label"
+  }, "Plan Summary + Estimate"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[12px] leading-relaxed mt-2",
+    style: {
+      color: 'rgba(10,10,12,0.62)'
+    }
+  }, "Review the plan summary and the MVP planning estimate together below the main studio workspace.")), /*#__PURE__*/React.createElement("span", {
+    className: "mono text-[8px] uppercase tracking-[0.22em]",
+    style: {
+      color: 'rgba(10,10,12,0.42)'
+    }
+  }, "Footer review panel"))), /*#__PURE__*/React.createElement("div", {
+    className: "grid xl:grid-cols-[minmax(320px,380px)_minmax(0,1fr)] gap-0"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "border-r border-black/5"
+  }, /*#__PURE__*/React.createElement(PlanSummaryPanel, {
+    planSpec: planSpec
+  })), /*#__PURE__*/React.createElement(EstimatePanel, {
+    estimate: planSpec?.estimate
+  })))), showAlternatives && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-[200] flex items-center justify-center p-4",
     style: {
       background: 'rgba(0,0,0,0.7)'

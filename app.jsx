@@ -4365,11 +4365,6 @@ const DesignGenerator = ({ onOpenModal }) => {
                                         onRenderStatusChange={setRenderPanelStatus}
                                     />
                                 </div>
-                                <div className="paper-panel">
-                                    <div className="p-4 border-b border-black/5 bg-white/40"><span className="section-label">Spec Details</span></div>
-                                    <PlanSummaryPanel planSpec={planSpec}/>
-                                    <EstimatePanel estimate={planSpec?.estimate}/>
-                                </div>
                             </>
                         ) : (
                             <div className="paper-panel p-6 text-center text-mid flex flex-col items-center justify-center h-full">
@@ -4379,6 +4374,30 @@ const DesignGenerator = ({ onOpenModal }) => {
                         )}
                     </div>
                 </div>
+
+                {(status === 'plan-ready' || status === 'refining') && planSvg && (
+                    <div className="paper-panel mt-4 overflow-hidden">
+                        <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
+                            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                                <div>
+                                    <span className="section-label">Plan Summary + Estimate</span>
+                                    <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
+                                        Review the plan summary and the MVP planning estimate together below the main studio workspace.
+                                    </p>
+                                </div>
+                                <span className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
+                                    Footer review panel
+                                </span>
+                            </div>
+                        </div>
+                        <div className="grid xl:grid-cols-[minmax(320px,380px)_minmax(0,1fr)] gap-0">
+                            <div className="border-r border-black/5">
+                                <PlanSummaryPanel planSpec={planSpec}/>
+                            </div>
+                            <EstimatePanel estimate={planSpec?.estimate}/>
+                        </div>
+                    </div>
+                )}
                 </div>
 
                         {/* Ã¢"â‚¬Ã¢"â‚¬ ALTERNATIVES MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ */}

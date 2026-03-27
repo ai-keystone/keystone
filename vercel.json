@@ -17,6 +17,14 @@
       "destination": "https://keystone-api-97830102261.us-central1.run.app/api/plan/refine"
     },
     {
+      "source": "/api/estimate/xlsx",
+      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/estimate/xlsx"
+    },
+    {
+      "source": "/api/plan/svg",
+      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/plan/svg"
+    },
+    {
       "source": "/api/health",
       "destination": "https://keystone-api-97830102261.us-central1.run.app/health"
     },
