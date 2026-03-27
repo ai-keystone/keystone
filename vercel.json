@@ -2,39 +2,39 @@
   "rewrites": [
     {
       "source": "/api/plan",
-      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/plan"
+      "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/api/plan"
     },
     {
       "source": "/api/verify",
-      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/verify"
+      "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/api/verify"
     },
     {
       "source": "/api/render",
-      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/render"
+      "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/api/render"
     },
     {
       "source": "/api/plan/refine",
-      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/plan/refine"
+      "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/api/plan/refine"
     },
     {
       "source": "/api/estimate/xlsx",
-      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/estimate/xlsx"
+      "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/api/estimate/xlsx"
     },
     {
       "source": "/api/plan/svg",
-      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/plan/svg"
+      "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/api/plan/svg"
     },
     {
       "source": "/api/health",
-      "destination": "https://keystone-api-97830102261.us-central1.run.app/health"
+      "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/health"
     },
     {
       "source": "/api/gallery",
-      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/gallery"
+      "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/api/gallery"
     },
     {
       "source": "/api/training/:path*",
-      "destination": "https://keystone-api-97830102261.us-central1.run.app/api/training/:path*"
+      "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/api/training/:path*"
     },
     {
       "source": "/case-study",
