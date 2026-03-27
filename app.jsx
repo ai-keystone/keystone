@@ -1687,7 +1687,7 @@ const EstimatePanel = ({ estimate, onDownloadCsv, onDownloadXlsx, isExportingXls
                     <div>
                         <p className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.82)'}}>Planning estimate</p>
                         <p className="text-[13px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
-                            Concept-level quantity takeoff and cost range generated from the live plan geometry.
+                            MVP planning-grade quantity takeoff and cost range generated directly from the live plan geometry.
                         </p>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -4025,12 +4025,14 @@ const DesignGenerator = ({ onOpenModal }) => {
 
             if (!res.ok) {
                 let message = 'Failed to export XLSX.';
-                try {
-                    const data = await res.json();
-                    message = data?.detail || data?.message || message;
-                } catch (_) {
-                    const text = await res.text();
-                    if (text) message = text;
+                const raw = await res.text();
+                if (raw) {
+                    try {
+                        const data = JSON.parse(raw);
+                        message = data?.detail || data?.message || message;
+                    } catch (_) {
+                        message = raw;
+                    }
                 }
                 throw new Error(message);
             }
@@ -4403,7 +4405,7 @@ const PLATFORM_PAGE_CARDS = [
     {
         eyebrow: 'Product roadmap',
         title: 'What is live today, what is next, and where 3D, scheduling, and estimates fit.',
-        body: 'The roadmap page separates live capability like elevations and vector DXF export from what is still next, like quantities, scheduling, and deeper 3D tools.',
+        body: 'The roadmap page separates live capability like elevations, vector DXF export, and the MVP planning estimate from what is still next, like scheduling and deeper 3D tools.',
         href: '/roadmap',
         cta: 'View Roadmap',
         image: ASSETS.roadmap.overview,
@@ -4415,6 +4417,7 @@ const LIVE_NOW_FEATURES = [
     'Client-guided brief capture',
     'Generated floor plan + blueprint image',
     'Elevation views',
+    'MVP quantity takeoff + cost estimate',
     'Vector DXF export',
     'Gemini-powered exterior study',
 ];
@@ -4449,7 +4452,7 @@ const SAMPLE_SESSION_STEPS = [
     {
         number: '03',
         title: 'Plan generated and saved',
-        body: 'Keystone scores multiple footprint options, keeps the strongest one, and prepares the plan, elevations, and export files before kickoff.',
+        body: 'Keystone scores multiple footprint options, keeps the strongest one, and prepares the plan, elevations, estimate, and export files before kickoff.',
     },
     {
         number: '04',
@@ -4461,12 +4464,12 @@ const GENERATOR_FLOW_STEPS = [
     { label: 'Unlock', body: 'Open the same passkey-based workflow a firm can share with its clients.' },
     { label: 'Answer', body: 'Move through the guided intake a client would complete before the first architect meeting.' },
     { label: 'Compare', body: 'Review the strongest plan and alternatives the architect would see before kickoff.' },
-    { label: 'Export', body: 'Download the blueprint, elevations, and vector DXF, then optionally create a Gemini exterior study from the same brief.' },
+    { label: 'Export', body: 'Download the blueprint, elevations, MVP planning estimate, and vector DXF, then optionally create a Gemini exterior study from the same brief.' },
 ];
 const GENERATOR_UNLOCK_PREVIEW = [
     { label: 'Structured brief', body: 'The firm can review exactly what the client entered before anyone sits down together.' },
     { label: 'Plan + elevations', body: 'A scored plan and matching elevation views can be saved immediately for the meeting.' },
-    { label: 'DXF + optional study', body: 'The same brief can also create a vector DXF export and an optional Gemini exterior image.' },
+    { label: 'Estimate + export', body: 'The same brief can also create an MVP quantity takeoff, early cost range, vector DXF export, and an optional Gemini exterior image.' },
 ];
 const LIVE_STUDIO_PREVIEW = [
     {
@@ -4639,8 +4642,8 @@ const DreamApp = () => {
         },
         {
             eyebrow: 'Live today',
-            title: 'Plan, elevations, DXF export, and Gemini study.',
-            body: 'Keystone currently covers guided intake, floor plan generation, elevation views, vector DXF export, and Gemini exterior study generation from the same brief.',
+            title: 'Plan, elevations, estimate, DXF export, and Gemini study.',
+            body: 'Keystone currently covers guided intake, floor plan generation, elevation views, an MVP planning estimate, vector DXF export, and Gemini exterior study generation from the same brief.',
         },
         {
             eyebrow: 'Coming next',
@@ -4672,6 +4675,7 @@ const DreamApp = () => {
         'Architect-first discovery',
         'Live floor plan generation',
         'Elevation views',
+        'MVP planning estimate',
         'Vector DXF export',
         'Gemini exterior studies',
         'Client-ready visual anchors',
@@ -4690,12 +4694,13 @@ const DreamApp = () => {
         {
             number: '03',
             title: 'Architect walks in prepared',
-            body: 'Before the meeting starts, the firm can already review the brief, save the plan, elevation set, and DXF, and optionally add a Gemini study for emotional context.',
+            body: 'Before the meeting starts, the firm can already review the brief, save the plan, elevation set, estimate, and DXF, and optionally add a Gemini study for emotional context.',
         },
     ];
     const studioMetrics = [
         { value: '<60s', label: 'first floor plan' },
         { value: '4 views', label: 'elevation set' },
+        { value: 'MVP', label: 'cost estimate' },
         { value: 'DXF', label: 'cad export' },
         { value: 'Gemini', label: '3D exterior study' },
     ];
@@ -4705,6 +4710,7 @@ const DreamApp = () => {
         'Scored footprint alternatives',
         'Blueprint image export',
         'Elevation SVG set',
+        'MVP planning estimate',
         'Vector DXF export',
         'Firm-visible session history',
         'Gemini exterior study',
@@ -4744,7 +4750,7 @@ const DreamApp = () => {
             firm: 'B2B motion',
         },
         {
-            quote: 'The live promise stays disciplined on purpose: guided intake, generated plan, elevations, vector DXF export, and optional Gemini study. Quantities and scheduling come next, but only when they are real.',
+            quote: 'The live promise stays disciplined on purpose: guided intake, generated plan, elevations, MVP planning estimate, vector DXF export, and optional Gemini study. Scheduling and deeper quantity logic come next, but only when they are real.',
             name: 'Scope discipline',
             firm: 'Product truth',
         },
@@ -5899,7 +5905,7 @@ const B2BWorkflowPage = () => {
                                     <SpotlightCard spotlightColor="rgba(255,106,55,0.12)" className="paper-panel p-6 md:p-7">
                                         <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(10,10,12,0.42)'}}>Scope discipline</div>
                                         <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.68)'}}>
-                                            Keystone is intentionally narrow today: structured intake, generated plan, elevation views, concept estimate, vector DXF export, and optional Gemini study. Scheduling and deeper viewer tools stay on the roadmap until they are truly live.
+                                            Keystone is intentionally narrow today: structured intake, generated plan, elevation views, an MVP planning estimate, vector DXF export, and optional Gemini study. Scheduling and deeper viewer tools stay on the roadmap until they are truly live.
                                         </p>
                                         <div className="mt-6 flex flex-col gap-3">
                                             <a href="/roadmap" className="cta-secondary text-center">View Roadmap</a>
@@ -5989,7 +5995,7 @@ const RoadmapPage = () => {
                                         What Keystone does now, and what the platform is growing toward next.
                                     </h1>
                                     <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
-                                        This roadmap keeps a strict line between live capability and planned capability. It shows the platform direction around deeper quantity logic, scheduling, and 3D viewing while keeping live features like elevations, concept estimate, and DXF export clearly separate from roadmap items.
+                                        This roadmap keeps a strict line between live capability and planned capability. It shows the platform direction around deeper quantity logic, scheduling, and 3D viewing while keeping live features like elevations, the MVP planning estimate, and DXF export clearly separate from roadmap items.
                                     </p>
                                 </div>
                                 <SpotlightCard spotlightColor="rgba(255,106,55,0.1)" className="paper-panel p-6 md:p-7">
@@ -6077,7 +6083,7 @@ const FAQPage = () => {
     const faqItems = [
         {
             question: 'What is live in Keystone right now?',
-            answer: 'The live workflow today includes guided brief capture, floor plan generation, elevation views, vector DXF export, high-resolution plan download, and Gemini-powered exterior study generation from the same project brief.',
+            answer: 'The live workflow today includes guided brief capture, floor plan generation, elevation views, an MVP planning estimate, vector DXF export, high-resolution plan download, and Gemini-powered exterior study generation from the same project brief.',
         },
         {
             question: 'Who is Keystone actually sold to?',
@@ -6089,7 +6095,7 @@ const FAQPage = () => {
         },
         {
             question: 'What does the architect receive before the meeting?',
-            answer: 'The firm can review the completed brief, the generated floor plan, the elevation views, the downloadable blueprint image, the vector DXF export, and the Gemini exterior study if one was generated for that session.',
+            answer: 'The firm can review the completed brief, the generated floor plan, the elevation views, the MVP planning estimate, the downloadable blueprint image, the vector DXF export, and the Gemini exterior study if one was generated for that session.',
         },
         {
             question: 'Does Keystone replace the architect?',
@@ -6101,7 +6107,7 @@ const FAQPage = () => {
         },
         {
             question: 'Are CAD files, quantity takeoff, or cost estimates live today?',
-            answer: 'Elevation views, vector DXF export, and a concept-level planning estimate are live today. Native DWG production, scheduling, and deeper downstream quantity logic still belong to the later workflow.',
+            answer: 'Elevation views, vector DXF export, and an MVP concept-level planning estimate are live today. Native DWG production, scheduling, and deeper downstream quantity logic still belong to the later workflow.',
         },
         {
             question: 'Why is access private right now?',
@@ -6292,7 +6298,7 @@ const TermsPage = () => {
         {
             title: 'Nature of the service',
             body: [
-                'Keystone is a B2B design-assist product for early residential discovery. It helps firms collect client inputs, generate conceptual floor plans, create downloadable images, and produce Gemini-powered exterior studies from project briefs.',
+                'Keystone is a B2B design-assist product for early residential discovery. It helps firms collect client inputs, generate conceptual floor plans, prepare elevations and an MVP planning estimate, create downloadable images and DXF exports, and produce Gemini-powered exterior studies from project briefs.',
                 'The service is offered on an early-stage basis and may evolve, change, pause, or improve over time.',
             ],
         },
