@@ -1845,17 +1845,24 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
     "Apply"
   )), refinementsLeft === 0 && /* @__PURE__ */ React.createElement("p", { className: "mono text-[9px] font-bold uppercase px-4 md:px-5 pb-4", style: { color: "rgba(255,133,119,0.92)" } }, "Included edits used. Request guided access if you need a deeper session."));
 };
-const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
-  const [data, setData] = useState(initialData || {
-    zipCode: "",
-    exteriorStyle: "",
-    roofStyle: "Gabled",
-    landscaping: "Manicured lawn",
-    surroundings: "",
-    season: "Summer",
-    timeOfDay: "Midday",
-    lotContext: ""
-  });
+const buildRenderSurveyDefaults = (baseSurveyData = {}, initialData = {}) => ({
+  zipCode: "",
+  lotContext: "",
+  contextDensity: "Detached neighboring homes",
+  topography: "Mostly flat site",
+  drivewayStyle: "Concrete driveway",
+  landscaping: "Foundation plantings + lawn",
+  surroundings: "",
+  season: "Summer",
+  timeOfDay: "Midday",
+  weather: "Clear sky",
+  ...initialData
+});
+const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, baseSurveyData }) => {
+  const [data, setData] = useState(buildRenderSurveyDefaults(baseSurveyData, initialData));
+  useEffect(() => {
+    setData(buildRenderSurveyDefaults(baseSurveyData, initialData));
+  }, [initialData, baseSurveyData, isOpen]);
   const upd = (f, v) => setData((p) => ({ ...p, [f]: v }));
   const BtnRow = ({ field, options }) => /* @__PURE__ */ React.createElement("div", { className: "flex flex-wrap gap-1.5" }, options.map((opt) => {
     const val = typeof opt === "string" ? opt : opt.val;
@@ -1912,7 +1919,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
         },
         /* @__PURE__ */ React.createElement(CloseIcon, { className: "w-4 h-4" })
       ),
-      /* @__PURE__ */ React.createElement("div", { className: "p-6 overflow-y-auto", style: { maxHeight: "85vh", color: "var(--ink)" } }, /* @__PURE__ */ React.createElement("span", { className: "badge mb-3 inline-block" }, "3D Render Options"), /* @__PURE__ */ React.createElement("h2", { className: "cg text-2xl italic mb-1", style: { color: "var(--ink)" } }, "Customize Your Render."), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] mb-5 leading-relaxed", style: { color: "rgba(10,10,12,0.7)" } }, "These details help Gemini AI generate a more accurate and context-aware exterior render."), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Project ZIP Code"), /* @__PURE__ */ React.createElement(
+      /* @__PURE__ */ React.createElement("div", { className: "p-6 overflow-y-auto", style: { maxHeight: "85vh", color: "var(--ink)" } }, /* @__PURE__ */ React.createElement("span", { className: "badge mb-3 inline-block" }, "3D Render Options"), /* @__PURE__ */ React.createElement("h2", { className: "cg text-2xl italic mb-1", style: { color: "var(--ink)" } }, "Customize Your Render."), /* @__PURE__ */ React.createElement("p", { className: "text-[11px] mb-5 leading-relaxed", style: { color: "rgba(10,10,12,0.7)" } }, "These options shape site context, lighting, landscaping, and presentation mood. The house style, roof, and massing stay grounded by your floor plan and elevation set."), /* @__PURE__ */ React.createElement("div", { className: "space-y-4" }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Project ZIP Code"), /* @__PURE__ */ React.createElement(
         "input",
         {
           type: "text",
@@ -1922,22 +1929,46 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
           onChange: (e) => upd("zipCode", e.target.value),
           style: { maxWidth: "180px" }
         }
-      ), /* @__PURE__ */ React.createElement("p", { className: "text-[9px] mt-1", style: { color: "rgba(10,10,12,0.56)" } }, "Helps set regional context - climate, terrain, neighborhood character")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Exterior Style"), /* @__PURE__ */ React.createElement(BtnRow, { field: "exteriorStyle", options: [
-        { val: "Craftsman (Wood & Stone)", label: "Craftsman" },
-        { val: "Modern Farmhouse (Board & Batten)", label: "Farmhouse" },
-        { val: "Traditional Colonial (Brick)", label: "Colonial" },
-        { val: "Contemporary Modern (Concrete)", label: "Modern" },
-        { val: "Mediterranean (Stucco & Tile)", label: "Mediterranean" },
-        { val: "Rustic Cabin (Log & Stone)", label: "Rustic" }
-      ] }), /* @__PURE__ */ React.createElement("p", { className: "text-[9px] mt-1", style: { color: "rgba(10,10,12,0.56)" } }, "Leave blank to use your plan survey style")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Roof Style"), /* @__PURE__ */ React.createElement(BtnRow, { field: "roofStyle", options: ["Gabled", "Hip Roof", "Flat Roof", "Metal Standing Seam", "Terracotta Tile", "Cathedral / Vaulted"] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Season / Vegetation"), /* @__PURE__ */ React.createElement(BtnRow, { field: "season", options: ["Spring", "Summer", "Fall", "Winter (Snow)"] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Time of Day / Lighting"), /* @__PURE__ */ React.createElement(BtnRow, { field: "timeOfDay", options: ["Sunrise", "Midday", "Golden Hour", "Overcast", "Night"] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Surrounding Environment"), /* @__PURE__ */ React.createElement(BtnRow, { field: "surroundings", options: [
+      ), /* @__PURE__ */ React.createElement("p", { className: "text-[9px] mt-1", style: { color: "rgba(10,10,12,0.56)" } }, "Helps set regional context - climate, terrain, neighborhood character")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Lot / Site Context Override"), /* @__PURE__ */ React.createElement(BtnRow, { field: "lotContext", options: [
+        { val: "", label: "Use Plan Survey" },
+        { val: "Suburban standard lot", label: "Suburban" },
+        { val: "Suburban corner lot", label: "Corner" },
+        { val: "Urban tight lot", label: "Urban" },
+        { val: "Rural acreage", label: "Rural" },
+        { val: "View focused site", label: "View Site" },
+        { val: "Waterfront lot", label: "Waterfront" }
+      ] }), /* @__PURE__ */ React.createElement("p", { className: "text-[9px] mt-1", style: { color: "rgba(10,10,12,0.56)" } }, "Leave on \u201CUse Plan Survey\u201D unless the render needs a different site framing.")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Neighborhood / Context"), /* @__PURE__ */ React.createElement(BtnRow, { field: "contextDensity", options: [
+        "Detached neighboring homes",
+        "Close urban neighbors",
+        "Open rural edge",
+        "Tree-lined residential street",
+        "View-oriented sparse context"
+      ] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Topography / Site Grade"), /* @__PURE__ */ React.createElement(BtnRow, { field: "topography", options: [
+        "Mostly flat site",
+        "Gentle front slope",
+        "Gentle rear slope",
+        "Hillside / stepped terrain"
+      ] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Season / Vegetation"), /* @__PURE__ */ React.createElement(BtnRow, { field: "season", options: ["Spring", "Summer", "Fall", "Winter (Snow)"] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Time of Day / Lighting"), /* @__PURE__ */ React.createElement(BtnRow, { field: "timeOfDay", options: ["Sunrise", "Midday", "Golden Hour", "Overcast", "Night"] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Sky / Weather"), /* @__PURE__ */ React.createElement(BtnRow, { field: "weather", options: [
+        "Clear sky",
+        "Soft clouds",
+        "Overcast sky",
+        "Stormy atmosphere",
+        "Snowy air"
+      ] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Immediate Surroundings"), /* @__PURE__ */ React.createElement(BtnRow, { field: "surroundings", options: [
         { val: "Suburban neighborhood", label: "Suburban" },
-        { val: "Wooded forest", label: "Wooded" },
+        { val: "Wooded edge / mature trees", label: "Wooded" },
         { val: "Desert arid landscape", label: "Desert" },
-        { val: "Tropical lush", label: "Tropical" },
-        { val: "Snow and mountains", label: "Mountain" },
-        { val: "Ocean or lake waterfront", label: "Waterfront" }
+        { val: "Ocean or lake waterfront", label: "Waterfront" },
+        { val: "Mountain or hillside backdrop", label: "Mountain" },
+        { val: "Clean new-build street presence", label: "New Build" }
+      ] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Driveway / Hardscape"), /* @__PURE__ */ React.createElement(BtnRow, { field: "drivewayStyle", options: [
+        "Concrete driveway",
+        "Exposed aggregate concrete",
+        "Paver driveway",
+        "Gravel driveway",
+        "Minimal hardscape"
       ] })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Landscaping"), /* @__PURE__ */ React.createElement(BtnRow, { field: "landscaping", options: [
-        "Manicured lawn",
+        "Foundation plantings + lawn",
         "Native plantings",
         "Desert xeriscaping",
         "Formal hedges",
@@ -2008,6 +2039,79 @@ const svgToPngDataUrl = (svgMarkup, options = {}) => new Promise((resolve, rejec
     reject(err);
   }
 });
+const loadImageElement = (src) => new Promise((resolve, reject) => {
+  const img = new Image();
+  img.onload = () => resolve(img);
+  img.onerror = () => reject(new Error("Unable to load reference image"));
+  img.src = src;
+});
+const composeElevationReferenceSheet = async (elevations) => {
+  var _a, _b;
+  const views = [
+    { key: "frontSvg", label: "FRONT ELEVATION" },
+    { key: "rearSvg", label: "REAR ELEVATION" },
+    { key: "leftSvg", label: "LEFT ELEVATION" },
+    { key: "rightSvg", label: "RIGHT ELEVATION" }
+  ].filter((view) => elevations == null ? void 0 : elevations[view.key]);
+  if (!views.length) return null;
+  const rasterized = await Promise.all(
+    views.map(async (view) => ({
+      ...view,
+      src: await svgToPngDataUrl(elevations[view.key], { background: "#F8F2E7" })
+    }))
+  );
+  const images = await Promise.all(
+    rasterized.map(async (entry) => ({
+      ...entry,
+      image: await loadImageElement(entry.src)
+    }))
+  );
+  const cols = 2;
+  const rows = Math.ceil(images.length / cols);
+  const cellW = 720;
+  const cellH = 280;
+  const gutter = 28;
+  const pad = 30;
+  const headerH = 54;
+  const canvas = document.createElement("canvas");
+  canvas.width = pad * 2 + cols * cellW + (cols - 1) * gutter;
+  canvas.height = pad * 2 + headerH + rows * cellH + (rows - 1) * gutter;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#f6f1e8";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.strokeStyle = "#d8cfbf";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+  ctx.fillStyle = "#111";
+  ctx.font = "700 24px Georgia, serif";
+  ctx.fillText("Keystone Elevation Reference Set", pad, pad + 22);
+  ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillStyle = "#6f6558";
+  ctx.fillText(`Style: ${((_a = elevations == null ? void 0 : elevations.meta) == null ? void 0 : _a.styleLabel) || "Residential"} | Roof: ${String(((_b = elevations == null ? void 0 : elevations.meta) == null ? void 0 : _b.roofKind) || "gabled").replace(/_/g, " ")}`, pad, pad + 42);
+  images.forEach((entry, index) => {
+    const col = index % cols;
+    const row = Math.floor(index / cols);
+    const x = pad + col * (cellW + gutter);
+    const y = pad + headerH + row * (cellH + gutter);
+    ctx.fillStyle = "#fffdf9";
+    ctx.fillRect(x, y, cellW, cellH);
+    ctx.strokeStyle = "#d3c9b8";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(x, y, cellW, cellH);
+    ctx.fillStyle = "#534b40";
+    ctx.font = "700 13px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillText(entry.label, x + 14, y + 20);
+    const availableW = cellW - 28;
+    const availableH = cellH - 44;
+    const scale = Math.min(availableW / entry.image.width, availableH / entry.image.height);
+    const drawW = entry.image.width * scale;
+    const drawH = entry.image.height * scale;
+    const drawX = x + (cellW - drawW) / 2;
+    const drawY = y + 30 + (availableH - drawH) / 2;
+    ctx.drawImage(entry.image, drawX, drawY, drawW, drawH);
+  });
+  return canvas.toDataURL("image/png");
+};
 const svgAttrNumber = (value, fallback = 0) => {
   const n = parseFloat(String(value != null ? value : "").replace(/[^\d.+-]/g, ""));
   return Number.isFinite(n) ? n : fallback;
@@ -2108,19 +2212,22 @@ const buildPresentationDxf = (planSpec) => {
   const SCALE = 12;
   const entities = [];
   const layers = {
-    OUTLINE: { color: 7, weight: 60 },
-    WALLS: { color: 7, weight: 30 },
-    DOORS: { color: 1, weight: 20 },
-    WINDOWS: { color: 5, weight: 20 },
-    LABELS: { color: 2, weight: 15 },
-    FURNITURE: { color: 8, weight: 18 },
-    DIMENSIONS: { color: 4, weight: 15 },
-    ELEVATION: { color: 6, weight: 20 },
-    ELEV_TEXT: { color: 2, weight: 15 },
-    SHEET: { color: 8, weight: 15 }
+    OUTLINE: { color: 7 },
+    WALLS: { color: 7 },
+    DOORS: { color: 1 },
+    WINDOWS: { color: 5 },
+    LABELS: { color: 2 },
+    FURNITURE: { color: 8 },
+    DIMENSIONS: { color: 4 },
+    ELEVATION: { color: 6 },
+    ELEV_TEXT: { color: 2 },
+    SHEET: { color: 8 }
   };
   const push = (s) => entities.push(s);
+  const finite = (...values) => values.every((v) => Number.isFinite(v));
+  const safeText = (value) => String(value || "").replace(/\n/g, " ").replace(/[^\x20-\x7E]/g, "").trim();
   const drawLine = (x1, y1, x2, y2, layer) => {
+    if (!finite(x1, y1, x2, y2)) return;
     push(`0
 LINE
 8
@@ -2139,12 +2246,14 @@ ${y2 * SCALE}
 0`);
   };
   const drawRect = (x, y, w, h, layer) => {
+    if (!finite(x, y, w, h) || w <= 0 || h <= 0) return;
     drawLine(x, y, x + w, y, layer);
     drawLine(x + w, y, x + w, y + h, layer);
     drawLine(x + w, y + h, x, y + h, layer);
     drawLine(x, y + h, x, y, layer);
   };
   const drawCircle = (cx, cy, r, layer) => {
+    if (!finite(cx, cy, r) || r <= 0) return;
     push(`0
 CIRCLE
 8
@@ -2159,6 +2268,7 @@ ${cy * SCALE}
 ${r * SCALE}`);
   };
   const drawArc = (cx, cy, r, startAngle, endAngle, layer) => {
+    if (!finite(cx, cy, r, startAngle, endAngle) || r <= 0) return;
     push(`0
 ARC
 8
@@ -2178,24 +2288,16 @@ ${endAngle}`);
   };
   const drawPolyline = (points, layer, closed = false) => {
     if (!Array.isArray(points) || points.length < 2) return;
-    push(`0
-LWPOLYLINE
-8
-${layer}
-90
-${points.length}
-70
-${closed ? 1 : 0}`);
-    points.forEach(([x, y]) => {
-      push(`10
-${x * SCALE}
-20
-${y * SCALE}`);
-    });
+    const safe = points.filter(([x, y]) => finite(x, y));
+    if (safe.length < 2) return;
+    for (let i = 0; i < safe.length - 1; i++) {
+      drawLine(safe[i][0], safe[i][1], safe[i + 1][0], safe[i + 1][1], layer);
+    }
+    if (closed) drawLine(safe[safe.length - 1][0], safe[safe.length - 1][1], safe[0][0], safe[0][1], layer);
   };
   const drawText = (x, y, h, text, layer, align = "left") => {
-    const safe = String(text || "").replace(/\n/g, " ").replace(/[^\x20-\x7E]/g, "");
-    if (!safe) return;
+    const safe = safeText(text);
+    if (!safe || !finite(x, y, h) || h <= 0) return;
     const justification = align === "center" ? 1 : align === "right" ? 2 : 0;
     push(`0
 TEXT
@@ -2214,6 +2316,12 @@ ${safe}
 72
 ${justification}
 73
+0
+11
+${x * SCALE}
+21
+${y * SCALE}
+31
 0`);
   };
   const drawDimH = (x1, x2, baseY, offset, label) => {
@@ -2536,9 +2644,9 @@ ${justification}
   drawTitleBlock(sheet.x + sheet.w - 42, sheet.y + 2, 40, 10);
   const lines = [];
   lines.push("0\nSECTION\n2\nHEADER");
+  lines.push("9\n$ACADVER\n1\nAC1015");
   lines.push("9\n$INSUNITS\n70\n1");
   lines.push("9\n$MEASUREMENT\n70\n0");
-  lines.push("9\n$LWDISPLAY\n70\n1");
   lines.push("0\nENDSEC");
   lines.push("0\nSECTION\n2\nTABLES");
   lines.push(`0
@@ -2557,9 +2665,7 @@ ${name}
 62
 ${config.color}
 6
-CONTINUOUS
-370
-${config.weight}`);
+CONTINUOUS`);
   });
   lines.push("0\nENDTAB\n0\nENDSEC");
   lines.push("0\nSECTION\n2\nENTITIES");
@@ -2600,14 +2706,11 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
     img.src = imgSrc;
   });
   const doRender = async (renderSurvey, lightingHint = null, existingImageForLighting = null) => {
-    var _a, _b, _c, _d, _e;
     setRenderStatus("loading");
     setErrorMsg("");
     try {
       const isLightingOnly = !!(lightingHint && existingImageForLighting);
-      const elevationFrontSvg = (elevations == null ? void 0 : elevations.frontSvg) || ((_a = planSpec == null ? void 0 : planSpec.elevations) == null ? void 0 : _a.frontSvg) || null;
-      const supportKey = `${((_b = elevations == null ? void 0 : elevations.meta) == null ? void 0 : _b.supportViewKey) || ((_d = (_c = planSpec == null ? void 0 : planSpec.elevations) == null ? void 0 : _c.meta) == null ? void 0 : _d.supportViewKey) || "right"}Svg`;
-      const elevationSupportSvg = (elevations == null ? void 0 : elevations[supportKey]) || ((_e = planSpec == null ? void 0 : planSpec.elevations) == null ? void 0 : _e[supportKey]) || null;
+      const elevationSet = elevations || (planSpec == null ? void 0 : planSpec.elevations) || null;
       const safeRasterize = async (svgMarkup, background = "#F8F2E7") => {
         if (!svgMarkup) return null;
         try {
@@ -2616,10 +2719,9 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
           return null;
         }
       };
-      const [planImage, frontElevationImage, supportElevationImage] = isLightingOnly ? [null, null, null] : await Promise.all([
+      const [planImage, elevationSheetImage] = isLightingOnly ? [null, null] : await Promise.all([
         svgToPngDataUrl(planSvg, { background: "#F6F4EF" }),
-        safeRasterize(elevationFrontSvg),
-        elevationSupportSvg && elevationSupportSvg !== elevationFrontSvg ? safeRasterize(elevationSupportSvg) : Promise.resolve(null)
+        composeElevationReferenceSheet(elevationSet)
       ]);
       const payload = {
         surveyData: formData,
@@ -2631,10 +2733,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
         existingRenderImage: existingImageForLighting || null,
         // Ground new renders against the generated floor plan image
         planImage,
-        elevationImages: {
-          front: frontElevationImage,
-          support: supportElevationImage
-        }
+        elevationSheetImage
       };
       const res = await fetch("/api/render", {
         method: "POST",
@@ -2682,7 +2781,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
     setActiveRefinement(ref.label);
     doRender(renderSurveyData, ref.hint, renderImageClean);
   };
-  if (renderStatus === "idle") return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(RenderSurveyModal, { isOpen: showSurvey, onClose: () => setShowSurvey(false), onSubmit: handleSurveySubmit, initialData: renderSurveyData }), /* @__PURE__ */ React.createElement(
+  if (renderStatus === "idle") return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(RenderSurveyModal, { isOpen: showSurvey, onClose: () => setShowSurvey(false), onSubmit: handleSurveySubmit, initialData: renderSurveyData, baseSurveyData: formData }), /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: handleRender,
@@ -2691,7 +2790,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
     "Generate Gemini Exterior Study"
   ));
   if (renderStatus === "loading") return /* @__PURE__ */ React.createElement("div", { className: "flex flex-col items-center gap-3 py-5" }, /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-3 text-blue" }, /* @__PURE__ */ React.createElement("div", { className: "w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin" }), /* @__PURE__ */ React.createElement("span", { className: "mono text-[9px] uppercase tracking-widest animate-pulse" }, activeRefinement ? `Adjusting lighting: ${activeRefinement}...` : "Rendering with Gemini...")), /* @__PURE__ */ React.createElement("p", { className: "mono text-[8px] text-mid opacity-50" }, activeRefinement ? "Changing lighting only - architecture unchanged" : "Usually 15-30 seconds"));
-  if (renderStatus === "error") return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(RenderSurveyModal, { isOpen: showSurvey, onClose: () => setShowSurvey(false), onSubmit: handleSurveySubmit, initialData: renderSurveyData }), /* @__PURE__ */ React.createElement("div", { className: "p-4 bg-red/5 border border-red/20 rounded-sm" }, /* @__PURE__ */ React.createElement("p", { className: "mono text-[9px] font-bold text-red uppercase mb-1" }, "Render Failed"), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-mid leading-relaxed mb-3", style: { wordBreak: "break-word" } }, errorMsg), /* @__PURE__ */ React.createElement(
+  if (renderStatus === "error") return /* @__PURE__ */ React.createElement(React.Fragment, null, /* @__PURE__ */ React.createElement(RenderSurveyModal, { isOpen: showSurvey, onClose: () => setShowSurvey(false), onSubmit: handleSurveySubmit, initialData: renderSurveyData, baseSurveyData: formData }), /* @__PURE__ */ React.createElement("div", { className: "p-4 bg-red/5 border border-red/20 rounded-sm" }, /* @__PURE__ */ React.createElement("p", { className: "mono text-[9px] font-bold text-red uppercase mb-1" }, "Render Failed"), /* @__PURE__ */ React.createElement("p", { className: "text-[10px] text-mid leading-relaxed mb-3", style: { wordBreak: "break-word" } }, errorMsg), /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: () => setShowSurvey(true),
@@ -2699,7 +2798,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
     },
     "Retry"
   )));
-  if (renderStatus === "ready") return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(RenderSurveyModal, { isOpen: showSurvey, onClose: () => setShowSurvey(false), onSubmit: handleSurveySubmit, initialData: renderSurveyData }), /* @__PURE__ */ React.createElement(SmartImage, { src: renderImage, className: "w-full object-cover rounded-[16px] shadow-xl", alt: "Gemini exterior study" }), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 mt-2 mb-3 flex-wrap" }, /* @__PURE__ */ React.createElement("span", { className: "mono text-[8px] uppercase tracking-widest text-mid" }, activeRefinement ? `Lighting: ${activeRefinement}` : "Gemini exterior study"), /* @__PURE__ */ React.createElement(
+  if (renderStatus === "ready") return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(RenderSurveyModal, { isOpen: showSurvey, onClose: () => setShowSurvey(false), onSubmit: handleSurveySubmit, initialData: renderSurveyData, baseSurveyData: formData }), /* @__PURE__ */ React.createElement(SmartImage, { src: renderImage, className: "w-full object-cover rounded-[16px] shadow-xl", alt: "Gemini exterior study" }), /* @__PURE__ */ React.createElement("div", { className: "flex items-center gap-2 mt-2 mb-3 flex-wrap" }, /* @__PURE__ */ React.createElement("span", { className: "mono text-[8px] uppercase tracking-widest text-mid" }, activeRefinement ? `Lighting: ${activeRefinement}` : "Gemini exterior study"), /* @__PURE__ */ React.createElement(
     "button",
     {
       onClick: () => {

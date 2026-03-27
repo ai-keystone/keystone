@@ -1756,11 +1756,25 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
 };
 
 // Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ RENDER SURVEY MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
-const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
-    const [data, setData] = useState(initialData || {
-        zipCode: '', exteriorStyle: '', roofStyle: 'Gabled', landscaping: 'Manicured lawn',
-        surroundings: '', season: 'Summer', timeOfDay: 'Midday', lotContext: '',
-    });
+const buildRenderSurveyDefaults = (baseSurveyData = {}, initialData = {}) => ({
+    zipCode: '',
+    lotContext: '',
+    contextDensity: 'Detached neighboring homes',
+    topography: 'Mostly flat site',
+    drivewayStyle: 'Concrete driveway',
+    landscaping: 'Foundation plantings + lawn',
+    surroundings: '',
+    season: 'Summer',
+    timeOfDay: 'Midday',
+    weather: 'Clear sky',
+    ...initialData,
+});
+
+const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, baseSurveyData }) => {
+    const [data, setData] = useState(buildRenderSurveyDefaults(baseSurveyData, initialData));
+    useEffect(() => {
+        setData(buildRenderSurveyDefaults(baseSurveyData, initialData));
+    }, [initialData, baseSurveyData, isOpen]);
     const upd = (f, v) => setData(p => ({ ...p, [f]: v }));
 
     const BtnRow = ({ field, options }) => (
@@ -1805,7 +1819,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                         <div className="p-6 overflow-y-auto" style={{maxHeight:'85vh', color:'var(--ink)'}}>
                             <span className="badge mb-3 inline-block">3D Render Options</span>
                             <h2 className="cg text-2xl italic mb-1" style={{color:'var(--ink)'}}>Customize Your Render.</h2>
-                            <p className="text-[11px] mb-5 leading-relaxed" style={{color:'rgba(10,10,12,0.7)'}}>These details help Gemini AI generate a more accurate and context-aware exterior render.</p>
+                            <p className="text-[11px] mb-5 leading-relaxed" style={{color:'rgba(10,10,12,0.7)'}}>These options shape site context, lighting, landscaping, and presentation mood. The house style, roof, and massing stay grounded by your floor plan and elevation set.</p>
 
                             <div className="space-y-4">
                                 {/* ZIP CODE */}
@@ -1817,24 +1831,42 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                                     <p className="text-[9px] mt-1" style={{color:'rgba(10,10,12,0.56)'}}>Helps set regional context - climate, terrain, neighborhood character</p>
                                 </div>
 
-                                {/* EXTERIOR STYLE OVERRIDE */}
+                                {/* LOT CONTEXT */}
                                 <div>
-                                    <Lbl>Exterior Style</Lbl>
-                                    <BtnRow field="exteriorStyle" options={[
-                                        {val:'Craftsman (Wood & Stone)',          label:'Craftsman'},
-                                        {val:'Modern Farmhouse (Board & Batten)', label:'Farmhouse'},
-                                        {val:'Traditional Colonial (Brick)',      label:'Colonial'},
-                                        {val:'Contemporary Modern (Concrete)',    label:'Modern'},
-                                        {val:'Mediterranean (Stucco & Tile)',     label:'Mediterranean'},
-                                        {val:'Rustic Cabin (Log & Stone)',        label:'Rustic'},
+                                    <Lbl>Lot / Site Context Override</Lbl>
+                                    <BtnRow field="lotContext" options={[
+                                        {val:'',                      label:'Use Plan Survey'},
+                                        {val:'Suburban standard lot', label:'Suburban'},
+                                        {val:'Suburban corner lot',   label:'Corner'},
+                                        {val:'Urban tight lot',       label:'Urban'},
+                                        {val:'Rural acreage',         label:'Rural'},
+                                        {val:'View focused site',     label:'View Site'},
+                                        {val:'Waterfront lot',        label:'Waterfront'},
                                     ]}/>
-                                    <p className="text-[9px] mt-1" style={{color:'rgba(10,10,12,0.56)'}}>Leave blank to use your plan survey style</p>
+                                    <p className="text-[9px] mt-1" style={{color:'rgba(10,10,12,0.56)'}}>Leave on “Use Plan Survey” unless the render needs a different site framing.</p>
                                 </div>
 
-                                {/* ROOF STYLE */}
+                                {/* CONTEXT DENSITY */}
                                 <div>
-                                    <Lbl>Roof Style</Lbl>
-                                    <BtnRow field="roofStyle" options={['Gabled','Hip Roof','Flat Roof','Metal Standing Seam','Terracotta Tile','Cathedral / Vaulted']}/>
+                                    <Lbl>Neighborhood / Context</Lbl>
+                                    <BtnRow field="contextDensity" options={[
+                                        'Detached neighboring homes',
+                                        'Close urban neighbors',
+                                        'Open rural edge',
+                                        'Tree-lined residential street',
+                                        'View-oriented sparse context',
+                                    ]}/>
+                                </div>
+
+                                {/* TOPOGRAPHY */}
+                                <div>
+                                    <Lbl>Topography / Site Grade</Lbl>
+                                    <BtnRow field="topography" options={[
+                                        'Mostly flat site',
+                                        'Gentle front slope',
+                                        'Gentle rear slope',
+                                        'Hillside / stepped terrain',
+                                    ]}/>
                                 </div>
 
                                 {/* SEASON */}
@@ -1849,16 +1881,40 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                                     <BtnRow field="timeOfDay" options={['Sunrise','Midday','Golden Hour','Overcast','Night']}/>
                                 </div>
 
+                                {/* WEATHER */}
+                                <div>
+                                    <Lbl>Sky / Weather</Lbl>
+                                    <BtnRow field="weather" options={[
+                                        'Clear sky',
+                                        'Soft clouds',
+                                        'Overcast sky',
+                                        'Stormy atmosphere',
+                                        'Snowy air',
+                                    ]}/>
+                                </div>
+
                                 {/* SURROUNDINGS */}
                                 <div>
-                                    <Lbl>Surrounding Environment</Lbl>
+                                    <Lbl>Immediate Surroundings</Lbl>
                                     <BtnRow field="surroundings" options={[
                                         {val:'Suburban neighborhood', label:'Suburban'},
-                                        {val:'Wooded forest',         label:'Wooded'},
+                                        {val:'Wooded edge / mature trees', label:'Wooded'},
                                         {val:'Desert arid landscape', label:'Desert'},
-                                        {val:'Tropical lush',         label:'Tropical'},
-                                        {val:'Snow and mountains',    label:'Mountain'},
                                         {val:'Ocean or lake waterfront', label:'Waterfront'},
+                                        {val:'Mountain or hillside backdrop', label:'Mountain'},
+                                        {val:'Clean new-build street presence', label:'New Build'},
+                                    ]}/>
+                                </div>
+
+                                {/* DRIVEWAY */}
+                                <div>
+                                    <Lbl>Driveway / Hardscape</Lbl>
+                                    <BtnRow field="drivewayStyle" options={[
+                                        'Concrete driveway',
+                                        'Exposed aggregate concrete',
+                                        'Paver driveway',
+                                        'Gravel driveway',
+                                        'Minimal hardscape',
                                     ]}/>
                                 </div>
 
@@ -1866,7 +1922,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData }) => {
                                 <div>
                                     <Lbl>Landscaping</Lbl>
                                     <BtnRow field="landscaping" options={[
-                                        'Manicured lawn',
+                                        'Foundation plantings + lawn',
                                         'Native plantings',
                                         'Desert xeriscaping',
                                         'Formal hedges',
@@ -1950,6 +2006,88 @@ const svgToPngDataUrl = (svgMarkup, options = {}) => new Promise((resolve, rejec
         reject(err);
     }
 });
+
+const loadImageElement = (src) => new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Unable to load reference image'));
+    img.src = src;
+});
+
+const composeElevationReferenceSheet = async (elevations) => {
+    const views = [
+        { key: 'frontSvg', label: 'FRONT ELEVATION' },
+        { key: 'rearSvg', label: 'REAR ELEVATION' },
+        { key: 'leftSvg', label: 'LEFT ELEVATION' },
+        { key: 'rightSvg', label: 'RIGHT ELEVATION' },
+    ].filter(view => elevations?.[view.key]);
+
+    if (!views.length) return null;
+
+    const rasterized = await Promise.all(
+        views.map(async (view) => ({
+            ...view,
+            src: await svgToPngDataUrl(elevations[view.key], { background: '#F8F2E7' }),
+        }))
+    );
+    const images = await Promise.all(
+        rasterized.map(async (entry) => ({
+            ...entry,
+            image: await loadImageElement(entry.src),
+        }))
+    );
+
+    const cols = 2;
+    const rows = Math.ceil(images.length / cols);
+    const cellW = 720;
+    const cellH = 280;
+    const gutter = 28;
+    const pad = 30;
+    const headerH = 54;
+    const canvas = document.createElement('canvas');
+    canvas.width = pad * 2 + cols * cellW + (cols - 1) * gutter;
+    canvas.height = pad * 2 + headerH + rows * cellH + (rows - 1) * gutter;
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#f6f1e8';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#d8cfbf';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+
+    ctx.fillStyle = '#111';
+    ctx.font = '700 24px Georgia, serif';
+    ctx.fillText('Keystone Elevation Reference Set', pad, pad + 22);
+    ctx.font = '12px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.fillStyle = '#6f6558';
+    ctx.fillText(`Style: ${elevations?.meta?.styleLabel || 'Residential'} | Roof: ${String(elevations?.meta?.roofKind || 'gabled').replace(/_/g, ' ')}`, pad, pad + 42);
+
+    images.forEach((entry, index) => {
+        const col = index % cols;
+        const row = Math.floor(index / cols);
+        const x = pad + col * (cellW + gutter);
+        const y = pad + headerH + row * (cellH + gutter);
+        ctx.fillStyle = '#fffdf9';
+        ctx.fillRect(x, y, cellW, cellH);
+        ctx.strokeStyle = '#d3c9b8';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x, y, cellW, cellH);
+        ctx.fillStyle = '#534b40';
+        ctx.font = '700 13px ui-monospace, SFMono-Regular, Menlo, monospace';
+        ctx.fillText(entry.label, x + 14, y + 20);
+
+        const availableW = cellW - 28;
+        const availableH = cellH - 44;
+        const scale = Math.min(availableW / entry.image.width, availableH / entry.image.height);
+        const drawW = entry.image.width * scale;
+        const drawH = entry.image.height * scale;
+        const drawX = x + (cellW - drawW) / 2;
+        const drawY = y + 30 + (availableH - drawH) / 2;
+        ctx.drawImage(entry.image, drawX, drawY, drawW, drawH);
+    });
+
+    return canvas.toDataURL('image/png');
+};
 
 const svgAttrNumber = (value, fallback = 0) => {
     const n = parseFloat(String(value ?? '').replace(/[^\d.+-]/g, ''));
@@ -2064,46 +2202,54 @@ const buildPresentationDxf = (planSpec) => {
     const SCALE = 12;
     const entities = [];
     const layers = {
-        OUTLINE: { color: 7, weight: 60 },
-        WALLS: { color: 7, weight: 30 },
-        DOORS: { color: 1, weight: 20 },
-        WINDOWS: { color: 5, weight: 20 },
-        LABELS: { color: 2, weight: 15 },
-        FURNITURE: { color: 8, weight: 18 },
-        DIMENSIONS: { color: 4, weight: 15 },
-        ELEVATION: { color: 6, weight: 20 },
-        ELEV_TEXT: { color: 2, weight: 15 },
-        SHEET: { color: 8, weight: 15 },
+        OUTLINE: { color: 7 },
+        WALLS: { color: 7 },
+        DOORS: { color: 1 },
+        WINDOWS: { color: 5 },
+        LABELS: { color: 2 },
+        FURNITURE: { color: 8 },
+        DIMENSIONS: { color: 4 },
+        ELEVATION: { color: 6 },
+        ELEV_TEXT: { color: 2 },
+        SHEET: { color: 8 },
     };
 
     const push = (s) => entities.push(s);
+    const finite = (...values) => values.every(v => Number.isFinite(v));
+    const safeText = (value) => String(value || '').replace(/\n/g, ' ').replace(/[^\x20-\x7E]/g, '').trim();
     const drawLine = (x1, y1, x2, y2, layer) => {
+        if (!finite(x1, y1, x2, y2)) return;
         push(`0\nLINE\n8\n${layer}\n10\n${x1*SCALE}\n20\n${y1*SCALE}\n30\n0\n11\n${x2*SCALE}\n21\n${y2*SCALE}\n31\n0`);
     };
     const drawRect = (x, y, w, h, layer) => {
+        if (!finite(x, y, w, h) || w <= 0 || h <= 0) return;
         drawLine(x, y, x + w, y, layer);
         drawLine(x + w, y, x + w, y + h, layer);
         drawLine(x + w, y + h, x, y + h, layer);
         drawLine(x, y + h, x, y, layer);
     };
     const drawCircle = (cx, cy, r, layer) => {
+        if (!finite(cx, cy, r) || r <= 0) return;
         push(`0\nCIRCLE\n8\n${layer}\n10\n${cx*SCALE}\n20\n${cy*SCALE}\n30\n0\n40\n${r*SCALE}`);
     };
     const drawArc = (cx, cy, r, startAngle, endAngle, layer) => {
+        if (!finite(cx, cy, r, startAngle, endAngle) || r <= 0) return;
         push(`0\nARC\n8\n${layer}\n10\n${cx*SCALE}\n20\n${cy*SCALE}\n30\n0\n40\n${r*SCALE}\n50\n${startAngle}\n51\n${endAngle}`);
     };
     const drawPolyline = (points, layer, closed = false) => {
         if (!Array.isArray(points) || points.length < 2) return;
-        push(`0\nLWPOLYLINE\n8\n${layer}\n90\n${points.length}\n70\n${closed ? 1 : 0}`);
-        points.forEach(([x, y]) => {
-            push(`10\n${x*SCALE}\n20\n${y*SCALE}`);
-        });
+        const safe = points.filter(([x, y]) => finite(x, y));
+        if (safe.length < 2) return;
+        for (let i = 0; i < safe.length - 1; i++) {
+            drawLine(safe[i][0], safe[i][1], safe[i + 1][0], safe[i + 1][1], layer);
+        }
+        if (closed) drawLine(safe[safe.length - 1][0], safe[safe.length - 1][1], safe[0][0], safe[0][1], layer);
     };
     const drawText = (x, y, h, text, layer, align = 'left') => {
-        const safe = String(text || '').replace(/\n/g, ' ').replace(/[^\x20-\x7E]/g, '');
-        if (!safe) return;
+        const safe = safeText(text);
+        if (!safe || !finite(x, y, h) || h <= 0) return;
         const justification = align === 'center' ? 1 : align === 'right' ? 2 : 0;
-        push(`0\nTEXT\n8\n${layer}\n10\n${x*SCALE}\n20\n${y*SCALE}\n30\n0\n40\n${h*SCALE}\n1\n${safe}\n72\n${justification}\n73\n0`);
+        push(`0\nTEXT\n8\n${layer}\n10\n${x*SCALE}\n20\n${y*SCALE}\n30\n0\n40\n${h*SCALE}\n1\n${safe}\n72\n${justification}\n73\n0\n11\n${x*SCALE}\n21\n${y*SCALE}\n31\n0`);
     };
     const drawDimH = (x1, x2, baseY, offset, label) => {
         const y = baseY + offset;
@@ -2465,14 +2611,14 @@ const buildPresentationDxf = (planSpec) => {
 
     const lines = [];
     lines.push('0\nSECTION\n2\nHEADER');
+    lines.push('9\n$ACADVER\n1\nAC1015');
     lines.push('9\n$INSUNITS\n70\n1');
     lines.push('9\n$MEASUREMENT\n70\n0');
-    lines.push('9\n$LWDISPLAY\n70\n1');
     lines.push('0\nENDSEC');
     lines.push('0\nSECTION\n2\nTABLES');
     lines.push(`0\nTABLE\n2\nLAYER\n70\n${Object.keys(layers).length}`);
     Object.entries(layers).forEach(([name, config]) => {
-        lines.push(`0\nLAYER\n2\n${name}\n70\n0\n62\n${config.color}\n6\nCONTINUOUS\n370\n${config.weight}`);
+        lines.push(`0\nLAYER\n2\n${name}\n70\n0\n62\n${config.color}\n6\nCONTINUOUS`);
     });
     lines.push('0\nENDTAB\n0\nENDSEC');
     lines.push('0\nSECTION\n2\nENTITIES');
@@ -2521,9 +2667,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
         setErrorMsg('');
         try {
             const isLightingOnly = !!(lightingHint && existingImageForLighting);
-            const elevationFrontSvg = elevations?.frontSvg || planSpec?.elevations?.frontSvg || null;
-            const supportKey = `${elevations?.meta?.supportViewKey || planSpec?.elevations?.meta?.supportViewKey || 'right'}Svg`;
-            const elevationSupportSvg = elevations?.[supportKey] || planSpec?.elevations?.[supportKey] || null;
+            const elevationSet = elevations || planSpec?.elevations || null;
             const safeRasterize = async (svgMarkup, background = '#F8F2E7') => {
                 if (!svgMarkup) return null;
                 try {
@@ -2533,12 +2677,11 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
                 }
             };
 
-            const [planImage, frontElevationImage, supportElevationImage] = isLightingOnly
-                ? [null, null, null]
+            const [planImage, elevationSheetImage] = isLightingOnly
+                ? [null, null]
                 : await Promise.all([
                     svgToPngDataUrl(planSvg, { background: '#F6F4EF' }),
-                    safeRasterize(elevationFrontSvg),
-                    elevationSupportSvg && elevationSupportSvg !== elevationFrontSvg ? safeRasterize(elevationSupportSvg) : Promise.resolve(null),
+                    composeElevationReferenceSheet(elevationSet),
                 ]);
 
             const payload = {
@@ -2551,10 +2694,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
                 existingRenderImage: existingImageForLighting || null,
                 // Ground new renders against the generated floor plan image
                 planImage,
-                elevationImages: {
-                    front: frontElevationImage,
-                    support: supportElevationImage,
-                },
+                elevationSheetImage,
             };
 
             const res = await fetch('/api/render', {
@@ -2603,7 +2743,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
 
     if (renderStatus === 'idle') return (
         <>
-            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData}/>
+            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData}/>
             <button onClick={handleRender}
                 className="w-full py-3.5 cta-hero cta-glow text-[10px]">
                 Generate Gemini Exterior Study
@@ -2627,7 +2767,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
 
     if (renderStatus === 'error') return (
         <>
-            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData}/>
+            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData}/>
             <div className="p-4 bg-red/5 border border-red/20 rounded-sm">
                 <p className="mono text-[9px] font-bold text-red uppercase mb-1">Render Failed</p>
                 <p className="text-[10px] text-mid leading-relaxed mb-3" style={{wordBreak:'break-word'}}>{errorMsg}</p>
@@ -2641,7 +2781,7 @@ const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onR
 
     if (renderStatus === 'ready') return (
         <div>
-            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData}/>
+            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData}/>
             <SmartImage src={renderImage} className="w-full object-cover rounded-[16px] shadow-xl" alt="Gemini exterior study"/>
             {/* Toolbar */}
             <div className="flex items-center gap-2 mt-2 mb-3 flex-wrap">
