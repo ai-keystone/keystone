@@ -3082,7 +3082,7 @@ const DesignGenerator = ({ onOpenModal }) => {
             dxfLine('0\nENDSEC');
             dxfLine('0\nSECTION\n2\nTABLES');
             dxfLine('0\nTABLE\n2\nLAYER\n70\n10');
-            const layerColors = { WALLS: 7, ROOMS: 3, DOORS: 1, WINDOWS: 5, LABELS: 2, OUTLINE: 7 };
+            const layerColors = { WALLS: 7, ROOMS: 3, DOORS: 1, WINDOWS: 5, LABELS: 2, OUTLINE: 7, FURNITURE: 8 };
             Object.entries(layerColors).forEach(([name, color]) => {
                 dxfLine(`0\nLAYER\n2\n${name}\n70\n0\n62\n${color}\n6\nCONTINUOUS`);
             });
@@ -3098,8 +3098,34 @@ const DesignGenerator = ({ onOpenModal }) => {
                 drawLine(x+w, y+h, x, y+h, layer);
                 drawLine(x, y+h, x, y, layer);
             };
+            const drawArc = (cx, cy, r, startAngle, endAngle, layer) => {
+                dxfLine(`0\nARC\n8\n${layer}\n10\n${cx*SCALE}\n20\n${cy*SCALE}\n30\n0\n40\n${r*SCALE}\n50\n${startAngle}\n51\n${endAngle}`);
+            };
+            const drawCircle = (cx, cy, r, layer) => {
+                dxfLine(`0\nCIRCLE\n8\n${layer}\n10\n${cx*SCALE}\n20\n${cy*SCALE}\n30\n0\n40\n${r*SCALE}`);
+            };
             const drawText = (x, y, h, text, layer) => {
                 dxfLine(`0\nTEXT\n8\n${layer}\n10\n${x*SCALE}\n20\n${y*SCALE}\n30\n0\n40\n${h*SCALE}\n1\n${text}`);
+            };
+            const drawFurniture = (item, yOff) => {
+                const fx = item.x || 0;
+                const fy = yOff + (item.y || 0);
+                const fw = item.w || 0;
+                const fh = item.h || 0;
+                if (!fw || !fh) return;
+                drawRect(fx, fy, fw, fh, 'FURNITURE');
+                const kind = String(item.kind || '').toLowerCase();
+                if (kind.includes('bed')) {
+                    drawLine(fx, fy + 0.8, fx + fw, fy + 0.8, 'FURNITURE');
+                } else if (kind === 'shower') {
+                    drawLine(fx, fy, fx + fw, fy + fh, 'FURNITURE');
+                    drawLine(fx + fw, fy, fx, fy + fh, 'FURNITURE');
+                } else if (kind === 'washer' || kind === 'dryer') {
+                    const cx = fx + fw / 2;
+                    const cy = fy + fh / 2;
+                    const r = Math.min(fw, fh) * 0.22;
+                    drawCircle(cx, cy, r, 'FURNITURE');
+                }
             };
 
             let yOff = 0;
@@ -3126,24 +3152,32 @@ const DesignGenerator = ({ onOpenModal }) => {
 
                 for (const door of (lvl.doors || [])) {
                     const dx = door.x || 0, dy = door.y || 0;
-                    const dw = door.doorWidth || 3;
-                    if (door.kind === 'horizontal') {
+                    const dw = door.width || door.doorWidth || (door.garageDoor ? 9 : 3);
+                    if (door.dir === 'horizontal') {
                         drawLine(dx - dw/2, yOff + dy, dx + dw/2, yOff + dy, 'DOORS');
+                        if (!door.garageDoor) drawArc(dx - dw/2, yOff + dy, dw, 270, 360, 'DOORS');
+                        else drawLine(dx - dw/2, yOff + dy - 0.35, dx + dw/2, yOff + dy - 0.35, 'DOORS');
                     } else {
                         drawLine(dx, yOff + dy - dw/2, dx, yOff + dy + dw/2, 'DOORS');
+                        if (!door.garageDoor) drawArc(dx, yOff + dy - dw/2, dw, 0, 90, 'DOORS');
+                        else drawLine(dx - 0.35, yOff + dy - dw/2, dx - 0.35, yOff + dy + dw/2, 'DOORS');
                     }
                 }
 
                 for (const win of (lvl.windows || [])) {
                     const wx = win.x || 0, wy = win.y || 0;
-                    const ww = win.windowWidth || 3;
-                    if (win.kind === 'horizontal') {
+                    const ww = win.width || win.windowWidth || 4;
+                    if (win.dir === 'horizontal') {
                         drawLine(wx - ww/2, yOff + wy - 0.25, wx + ww/2, yOff + wy - 0.25, 'WINDOWS');
                         drawLine(wx - ww/2, yOff + wy + 0.25, wx + ww/2, yOff + wy + 0.25, 'WINDOWS');
                     } else {
                         drawLine(wx - 0.25, yOff + wy - ww/2, wx - 0.25, yOff + wy + ww/2, 'WINDOWS');
                         drawLine(wx + 0.25, yOff + wy - ww/2, wx + 0.25, yOff + wy + ww/2, 'WINDOWS');
                     }
+                }
+
+                for (const item of (lvl.furniture || [])) {
+                    drawFurniture(item, yOff);
                 }
 
                 drawText(1, yOff + lvlH + 1.5, 2, `LEVEL ${lvl.level}`, 'LABELS');
