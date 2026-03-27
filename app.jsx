@@ -1533,13 +1533,97 @@ const buildPlanExportFilename = (formData, label, extension, fallbackArea = '') 
     return `${stem}.${extension}`;
 };
 
+const getElevationViews = (elevations) => [
+    { key:'frontSvg', label:'Front' },
+    { key:'rearSvg', label:'Rear' },
+    { key:'leftSvg', label:'Left' },
+    { key:'rightSvg', label:'Right' },
+].filter(view => elevations?.[view.key]);
+
+const BlueprintPresentationSheet = ({ planSvg, elevations, formData, footprintInfo }) => {
+    if (!planSvg) return null;
+    const views = getElevationViews(elevations);
+    const area = extractPrimaryNumber(formData?.totalArea, footprintInfo?.widthFt && footprintInfo?.heightFt ? String(footprintInfo.widthFt * footprintInfo.heightFt) : '');
+    const styleLabel = elevations?.meta?.styleLabel || formData?.materials || 'Residential';
+    const roofKind = String(elevations?.meta?.roofKind || 'gabled').replace(/_/g, ' ');
+    const facing = String(formData?.frontFacing || elevations?.meta?.frontEdge || '').trim();
+    const summaryBits = [
+        area ? `${area} SQ FT` : null,
+        formData?.bedrooms ? String(formData.bedrooms).toUpperCase() : null,
+        formData?.bathrooms ? String(formData.bathrooms).toUpperCase() : null,
+        facing ? `${facing.toUpperCase()} FACING` : null,
+    ].filter(Boolean);
+
+    return (
+        <div style={{
+            background:'#f6f1e8',
+            border:'1px solid rgba(120,102,82,0.18)',
+            borderRadius:24,
+            padding:24,
+            boxShadow:'0 24px 60px rgba(0,0,0,0.14)',
+            width: views.length ? 1420 : 'auto',
+        }}>
+            <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:20,marginBottom:18}}>
+                <div>
+                    <div className="mono" style={{fontSize:10,letterSpacing:'0.28em',textTransform:'uppercase',color:'rgba(173,51,0,0.88)'}}>Keystone AI</div>
+                    <div className="cg" style={{fontSize:'2rem',lineHeight:0.94,letterSpacing:'-0.05em',textTransform:'uppercase',color:'var(--ink)',marginTop:6}}>
+                        Plan + Elevation Sheet
+                    </div>
+                    <div className="mono" style={{fontSize:10,letterSpacing:'0.16em',textTransform:'uppercase',color:'rgba(10,10,12,0.42)',marginTop:8}}>
+                        {summaryBits.join('  |  ') || 'Residential concept set'}
+                    </div>
+                </div>
+                <div className="mono" style={{fontSize:10,letterSpacing:'0.14em',textTransform:'uppercase',textAlign:'right',color:'rgba(10,10,12,0.5)',lineHeight:1.7}}>
+                    <div>{styleLabel}</div>
+                    <div>{roofKind}</div>
+                </div>
+            </div>
+
+            <div style={{
+                display:'grid',
+                gridTemplateColumns: views.length ? 'minmax(0,1fr) 352px' : 'minmax(0,1fr)',
+                gap:20,
+                alignItems:'start',
+            }}>
+                <div style={{
+                    background:'#fffdf9',
+                    border:'1px solid rgba(120,102,82,0.12)',
+                    borderRadius:18,
+                    padding:18,
+                    boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.6)',
+                }}>
+                    <div className="presentation-plan-svg" dangerouslySetInnerHTML={{__html: planSvg}} />
+                </div>
+
+                {views.length ? (
+                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                        {views.map(view => (
+                            <div key={view.key} style={{
+                                background:'#fffdf9',
+                                border:'1px solid rgba(120,102,82,0.12)',
+                                borderRadius:16,
+                                padding:'12px 12px 10px',
+                                minHeight:176,
+                                display:'flex',
+                                flexDirection:'column',
+                                gap:8,
+                                boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.58)',
+                            }}>
+                                <div className="mono" style={{fontSize:8,letterSpacing:'0.18em',textTransform:'uppercase',color:'rgba(10,10,12,0.48)'}}>
+                                    {view.label} elevation
+                                </div>
+                                <div className="presentation-elevation-svg" style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center'}} dangerouslySetInnerHTML={{__html: elevations[view.key]}} />
+                            </div>
+                        ))}
+                    </div>
+                ) : null}
+            </div>
+        </div>
+    );
+};
+
 const ElevationsPanel = ({ elevations, formData, onOpenPreview }) => {
-    const availableViews = [
-        { key:'frontSvg', label:'Front' },
-        { key:'rearSvg', label:'Rear' },
-        { key:'leftSvg', label:'Left' },
-        { key:'rightSvg', label:'Right' },
-    ].filter(view => elevations?.[view.key]);
+    const availableViews = getElevationViews(elevations);
 
     const defaultKey = `${elevations?.meta?.supportViewKey || 'front'}Svg`;
     const [activeKey, setActiveKey] = React.useState(availableViews.some(view => view.key === 'frontSvg') ? 'frontSvg' : (availableViews[0]?.key || null));
@@ -2186,12 +2270,10 @@ const loadImageElement = (src) => new Promise((resolve, reject) => {
 });
 
 const composeElevationReferenceSheet = async (elevations) => {
-    const views = [
-        { key: 'frontSvg', label: 'FRONT ELEVATION' },
-        { key: 'rearSvg', label: 'REAR ELEVATION' },
-        { key: 'leftSvg', label: 'LEFT ELEVATION' },
-        { key: 'rightSvg', label: 'RIGHT ELEVATION' },
-    ].filter(view => elevations?.[view.key]);
+    const views = getElevationViews(elevations).map((view) => ({
+        ...view,
+        label: `${view.label.toUpperCase()} ELEVATION`,
+    }));
 
     if (!views.length) return null;
 
@@ -2254,6 +2336,103 @@ const composeElevationReferenceSheet = async (elevations) => {
         const drawH = entry.image.height * scale;
         const drawX = x + (cellW - drawW) / 2;
         const drawY = y + 30 + (availableH - drawH) / 2;
+        ctx.drawImage(entry.image, drawX, drawY, drawW, drawH);
+    });
+
+    return canvas.toDataURL('image/png');
+};
+
+const composeBlueprintPresentationSheet = async ({ planSvg, elevations, formData, footprintInfo }) => {
+    if (!planSvg) return null;
+
+    const planSrc = await svgToPngDataUrl(planSvg, { background: '#fffdf9', pixelRatio: 2.5 });
+    const planImage = await loadImageElement(planSrc);
+    const views = getElevationViews(elevations);
+    const elevationImages = await Promise.all(
+        views.map(async (view) => ({
+            ...view,
+            image: await loadImageElement(await svgToPngDataUrl(elevations[view.key], { background: '#fffdf9', pixelRatio: 2 })),
+        }))
+    );
+
+    const pad = 30;
+    const headerH = 86;
+    const gap = 22;
+    const planBoxW = 1120;
+    const planBoxH = 720;
+    const sideW = views.length ? 360 : 0;
+    const cardGap = 14;
+    const cardW = sideW ? (sideW - cardGap) / 2 : 0;
+    const cardH = 168;
+    const sideH = views.length ? (Math.ceil(views.length / 2) * cardH) + ((Math.ceil(views.length / 2) - 1) * cardGap) : 0;
+    const contentH = Math.max(planBoxH, sideH);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = pad * 2 + planBoxW + (sideW ? gap + sideW : 0);
+    canvas.height = pad * 2 + headerH + contentH;
+
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#f6f1e8';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#d8cfbf';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+
+    const area = extractPrimaryNumber(formData?.totalArea, footprintInfo?.widthFt && footprintInfo?.heightFt ? String(footprintInfo.widthFt * footprintInfo.heightFt) : '');
+    const summaryBits = [
+        area ? `${area} SQ FT` : null,
+        formData?.bedrooms ? String(formData.bedrooms).toUpperCase() : null,
+        formData?.bathrooms ? String(formData.bathrooms).toUpperCase() : null,
+        formData?.frontFacing ? `${String(formData.frontFacing).toUpperCase()} FACING` : null,
+    ].filter(Boolean);
+
+    ctx.fillStyle = '#ad3300';
+    ctx.font = '700 12px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.fillText('KEYSTONE AI', pad, pad + 14);
+    ctx.fillStyle = '#111';
+    ctx.font = '700 28px Georgia, serif';
+    ctx.fillText('Plan + Elevation Sheet', pad, pad + 46);
+    ctx.font = '12px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.fillStyle = '#6f6558';
+    ctx.fillText(summaryBits.join(' | ') || 'Residential concept set', pad, pad + 70);
+    ctx.textAlign = 'right';
+    ctx.fillText(`${elevations?.meta?.styleLabel || formData?.materials || 'Residential'} | ${String(elevations?.meta?.roofKind || 'gabled').replace(/_/g, ' ')}`, canvas.width - pad, pad + 70);
+    ctx.textAlign = 'left';
+
+    const planX = pad;
+    const planY = pad + headerH;
+    ctx.fillStyle = '#fffdf9';
+    ctx.fillRect(planX, planY, planBoxW, planBoxH);
+    ctx.strokeStyle = '#d3c9b8';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(planX, planY, planBoxW, planBoxH);
+    const planScale = Math.min((planBoxW - 36) / planImage.width, (planBoxH - 36) / planImage.height);
+    const drawPlanW = planImage.width * planScale;
+    const drawPlanH = planImage.height * planScale;
+    const drawPlanX = planX + (planBoxW - drawPlanW) / 2;
+    const drawPlanY = planY + (planBoxH - drawPlanH) / 2;
+    ctx.drawImage(planImage, drawPlanX, drawPlanY, drawPlanW, drawPlanH);
+
+    elevationImages.forEach((entry, index) => {
+        const col = index % 2;
+        const row = Math.floor(index / 2);
+        const x = pad + planBoxW + gap + col * (cardW + cardGap);
+        const y = pad + headerH + row * (cardH + cardGap);
+        ctx.fillStyle = '#fffdf9';
+        ctx.fillRect(x, y, cardW, cardH);
+        ctx.strokeStyle = '#d3c9b8';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x, y, cardW, cardH);
+        ctx.fillStyle = '#534b40';
+        ctx.font = '700 10px ui-monospace, SFMono-Regular, Menlo, monospace';
+        ctx.fillText(`${entry.label.toUpperCase()} ELEVATION`, x + 10, y + 16);
+        const availableW = cardW - 16;
+        const availableH = cardH - 30;
+        const scale = Math.min(availableW / entry.image.width, availableH / entry.image.height);
+        const drawW = entry.image.width * scale;
+        const drawH = entry.image.height * scale;
+        const drawX = x + (cardW - drawW) / 2;
+        const drawY = y + 22 + (availableH - drawH) / 2;
         ctx.drawImage(entry.image, drawX, drawY, drawW, drawH);
     });
 
@@ -3986,7 +4165,12 @@ const DesignGenerator = ({ onOpenModal }) => {
 
     const downloadBlueprint = async () => {
     try {
-        const pngUrl = await svgToPngDataUrl(planSvg, {
+        const pngUrl = await composeBlueprintPresentationSheet({
+            planSvg,
+            elevations: planSpec?.elevations || null,
+            formData,
+            footprintInfo,
+        }) || await svgToPngDataUrl(planSvg, {
             background: '#F6F4EF',
             pixelRatio: 3,
         });
@@ -4274,7 +4458,9 @@ const DesignGenerator = ({ onOpenModal }) => {
                             <div style={{display:'flex',alignItems:'center',gap:8}}>
                                 <svg width="12" height="12" fill="none" stroke="rgba(244,239,230,0.4)" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                                 <span className="mono" style={{fontSize:8,color:'rgba(244,239,230,0.38)',letterSpacing:'0.18em',textTransform:'uppercase'}}>
-                                    {planSvg && footprintInfo ? `${footprintInfo.widthFt}' x ${footprintInfo.heightFt}' | ${formData.stories || ''} | ${formData.bedrooms || ''}` : 'Blueprint Viewport'}
+                                    {planSvg && footprintInfo
+                                        ? `${footprintInfo.widthFt}' x ${footprintInfo.heightFt}' | ${formData.stories || ''} | ${formData.bedrooms || ''}${planSpec?.elevations ? ' | elevation set' : ''}`
+                                        : 'Blueprint Viewport'}
                                 </span>
                             </div>
                             {planSvg && planScore != null
@@ -4302,7 +4488,12 @@ const DesignGenerator = ({ onOpenModal }) => {
                             )}
                             {(status === 'plan-ready' || status === 'refining') && planSvg && (
                                 <InteractiveCanvas>
-                                    <div style={{display:'flex',alignItems:'center',justifyContent:'center'}} dangerouslySetInnerHTML={{__html:planSvg}}/>
+                                    <BlueprintPresentationSheet
+                                        planSvg={planSvg}
+                                        elevations={planSpec?.elevations}
+                                        formData={formData}
+                                        footprintInfo={footprintInfo}
+                                    />
                                 </InteractiveCanvas>
                             )}
                         </div>
