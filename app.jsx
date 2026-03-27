@@ -1498,6 +1498,109 @@ const JoinModal = ({ isOpen, onClose }) => {
 };
 
 // PLAN SUMMARY Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
+const svgMarkupToDataUri = (svgMarkup) => {
+    if (!svgMarkup || typeof svgMarkup !== 'string') return null;
+    const svg = svgMarkup.includes('xmlns=')
+        ? svgMarkup
+        : svgMarkup.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+};
+
+const ElevationsPanel = ({ elevations, formData, onOpenPreview }) => {
+    const availableViews = [
+        { key:'frontSvg', label:'Front' },
+        { key:'rearSvg', label:'Rear' },
+        { key:'leftSvg', label:'Left' },
+        { key:'rightSvg', label:'Right' },
+    ].filter(view => elevations?.[view.key]);
+
+    const defaultKey = `${elevations?.meta?.supportViewKey || 'front'}Svg`;
+    const [activeKey, setActiveKey] = React.useState(availableViews.some(view => view.key === 'frontSvg') ? 'frontSvg' : (availableViews[0]?.key || null));
+
+    React.useEffect(() => {
+        const nextKey = availableViews.some(view => view.key === 'frontSvg') ? 'frontSvg' : (availableViews[0]?.key || defaultKey || null);
+        setActiveKey(nextKey);
+    }, [elevations]);
+
+    if (!elevations || availableViews.length === 0) return null;
+
+    const activeView = availableViews.find(view => view.key === activeKey) || availableViews[0];
+    const activeSvg = elevations?.[activeView?.key] || '';
+    const activeSrc = svgMarkupToDataUri(activeSvg);
+    const styleLabel = elevations?.meta?.styleLabel || formData?.materials || 'Residential';
+    const roofKind = String(elevations?.meta?.roofKind || 'gabled').replace(/_/g, ' ');
+    const supportLabel = elevations?.meta?.supportViewKey ? `${elevations.meta.supportViewKey} elevation` : 'side elevation';
+
+    const downloadActive = () => {
+        if (!activeSrc) return;
+        const link = document.createElement('a');
+        link.href = activeSrc;
+        link.download = `Keystone_${activeView.label}_Elevation.svg`;
+        link.click();
+    };
+
+    return (
+        <div className="paper-panel">
+            <div className="p-4 border-b border-black/5 bg-white/40 flex items-start justify-between gap-3">
+                <div>
+                    <span className="section-label">Elevations</span>
+                    <p className="text-[11px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
+                        Deterministic facade views derived from the plan geometry, vertical model, and survey style.
+                    </p>
+                </div>
+                <div className="mono text-[8px] uppercase tracking-[0.22em] text-right" style={{color:'rgba(10,10,12,0.46)'}}>
+                    {styleLabel}<br/>
+                    {roofKind}
+                </div>
+            </div>
+            <div className="p-4">
+                <div className="rounded-[18px] border border-black/8 bg-white overflow-hidden shadow-sm">
+                    {activeSrc ? (
+                        <img
+                            src={activeSrc}
+                            alt={`${activeView.label} elevation`}
+                            className="w-full h-auto cursor-zoom-in"
+                            onClick={() => onOpenPreview && onOpenPreview(activeSrc)}
+                        />
+                    ) : (
+                        <div className="p-8 text-center text-mid text-[11px]">Elevation preview unavailable.</div>
+                    )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                    {availableViews.map(view => {
+                        const selected = activeView?.key === view.key;
+                        return (
+                            <button
+                                key={view.key}
+                                type="button"
+                                onClick={() => setActiveKey(view.key)}
+                                className="px-3 py-2.5 border rounded-[12px] text-left transition-all"
+                                style={{
+                                    borderColor: selected ? 'rgba(27,79,130,0.32)' : 'rgba(10,10,12,0.08)',
+                                    background: selected ? 'rgba(27,79,130,0.06)' : 'rgba(255,255,255,0.9)',
+                                }}
+                            >
+                                <div className="mono text-[8px] uppercase tracking-[0.18em]" style={{color:selected?'rgba(27,79,130,0.92)':'rgba(10,10,12,0.52)'}}>{view.label} view</div>
+                                <div className="text-[11px] mt-1" style={{color:'rgba(10,10,12,0.72)'}}>
+                                    {view.key === 'frontSvg' ? 'Primary street-facing facade' :
+                                     view.key === 'rearSvg' ? 'Rear massing and glazing' :
+                                     view.key === 'leftSvg' ? 'Left-side profile' : 'Right-side profile'}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+                <div className="flex items-center gap-3 mt-3 flex-wrap">
+                    <button onClick={downloadActive} className="mono text-[9px] text-blue underline">Download active view</button>
+                    <span className="mono text-[8px] uppercase tracking-[0.18em]" style={{color:'rgba(10,10,12,0.42)'}}>
+                        {supportLabel} is also used to ground the 3D exterior study.
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const PlanSummaryPanel = ({ planSpec }) => {
     if (!planSpec) return null;
     const allRooms = (planSpec.levels||[]).flatMap(l => l.rooms||[]);
@@ -1856,7 +1959,7 @@ const RENDER_REFINEMENTS = [
     { label: 'Sunrise',      hint: 'sunrise with a pink-orange gradient sky and long warm shadows across the facade. Only change the lighting and sky; keep the house architecture identical.' },
 ];
 
-const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }) => {
+const Render3DPanel = ({ planSpec, formData, planSvg, elevations, galleryId, onRenderReady }) => {
     const [renderStatus, setRenderStatus] = useState('idle'); // idle|survey|loading|error|ready
     const [renderImage, setRenderImage] = useState(null);
     const [renderImageClean, setRenderImageClean] = useState(null); // without watermark, for lighting edits
@@ -1888,7 +1991,25 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
         setErrorMsg('');
         try {
             const isLightingOnly = !!(lightingHint && existingImageForLighting);
-            const planImage = isLightingOnly ? null : await svgToPngDataUrl(planSvg, { background: '#F6F4EF' });
+            const elevationFrontSvg = elevations?.frontSvg || planSpec?.elevations?.frontSvg || null;
+            const supportKey = `${elevations?.meta?.supportViewKey || planSpec?.elevations?.meta?.supportViewKey || 'right'}Svg`;
+            const elevationSupportSvg = elevations?.[supportKey] || planSpec?.elevations?.[supportKey] || null;
+            const safeRasterize = async (svgMarkup, background = '#F8F2E7') => {
+                if (!svgMarkup) return null;
+                try {
+                    return await svgToPngDataUrl(svgMarkup, { background });
+                } catch (_) {
+                    return null;
+                }
+            };
+
+            const [planImage, frontElevationImage, supportElevationImage] = isLightingOnly
+                ? [null, null, null]
+                : await Promise.all([
+                    svgToPngDataUrl(planSvg, { background: '#F6F4EF' }),
+                    safeRasterize(elevationFrontSvg),
+                    elevationSupportSvg && elevationSupportSvg !== elevationFrontSvg ? safeRasterize(elevationSupportSvg) : Promise.resolve(null),
+                ]);
 
             const payload = {
                 surveyData: formData,
@@ -1900,6 +2021,10 @@ const Render3DPanel = ({ planSpec, formData, planSvg, galleryId, onRenderReady }
                 existingRenderImage: existingImageForLighting || null,
                 // Ground new renders against the generated floor plan image
                 planImage,
+                elevationImages: {
+                    front: frontElevationImage,
+                    support: supportElevationImage,
+                },
             };
 
             const res = await fetch('/api/render', {
@@ -3242,8 +3367,9 @@ const DesignGenerator = ({ onOpenModal }) => {
                                 <div className="paper-panel">
                                     <RefinementPanel planSpec={planSpec} formData={formData} refinementsLeft={refinementsLeft} refinementHistory={refinementHistory} onRefine={handleRefine} isLoading={isLoading}/>
                                 </div>
+                                <ElevationsPanel elevations={planSpec?.elevations} formData={formData} onOpenPreview={img=>setZoomImage(img)}/>
                                 <div className="paper-panel">
-                                    <Render3DPanel planSpec={planSpec} formData={formData} planSvg={planSvg} galleryId={galleryId} onRenderReady={img=>setZoomImage(img)}/>
+                                    <Render3DPanel planSpec={planSpec} formData={formData} planSvg={planSvg} elevations={planSpec?.elevations} galleryId={galleryId} onRenderReady={img=>setZoomImage(img)}/>
                                 </div>
                                 <div className="paper-panel">
                                     <div className="p-4 border-b border-black/5 bg-white/40"><span className="section-label">Spec Details</span></div>
