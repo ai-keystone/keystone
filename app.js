@@ -3719,14 +3719,73 @@ const planSpanForElevation = (planSpec, viewKey) => {
 const buildPresentationDxf = planSpec => {
   const SCALE = 12;
   const entities = [];
-  const DEFAULT_LAYER = '0';
+  const layerStyles = {
+    OUTLINE: {
+      name: 'OUTLINE',
+      color: 8,
+      lineweight: 30
+    },
+    WALLS: {
+      name: 'WALLS',
+      color: 7,
+      lineweight: 45
+    },
+    DOORS: {
+      name: 'DOORS',
+      color: 1,
+      lineweight: 25
+    },
+    WINDOWS: {
+      name: 'WINDOWS',
+      color: 5,
+      lineweight: 20
+    },
+    LABELS: {
+      name: 'LABELS',
+      color: 2,
+      lineweight: 18
+    },
+    FURNITURE: {
+      name: 'FURNITURE',
+      color: 6,
+      lineweight: 18
+    },
+    DIMENSIONS: {
+      name: 'DIMENSIONS',
+      color: 4,
+      lineweight: 15
+    },
+    ELEVATION: {
+      name: 'ELEVATION',
+      color: 3,
+      lineweight: 25
+    },
+    ELEV_TEXT: {
+      name: 'ELEV_TEXT',
+      color: 2,
+      lineweight: 15
+    },
+    SHEET: {
+      name: 'SHEET',
+      color: 8,
+      lineweight: 18
+    }
+  };
   const push = s => entities.push(s);
   const finite = (...values) => values.every(v => Number.isFinite(v));
   const safeText = value => String(value || '').replace(/\n/g, ' ').replace(/[^\x20-\x7E]/g, '').trim();
-  const safeLayer = () => DEFAULT_LAYER;
+  const styleForLayer = layer => layerStyles[layer] || {
+    name: String(layer || '0'),
+    color: 7,
+    lineweight: 20
+  };
+  const dxfLayerAttrs = layer => {
+    const style = styleForLayer(layer);
+    return `8\n${style.name}\n62\n${style.color}`;
+  };
   const drawLine = (x1, y1, x2, y2, layer) => {
     if (!finite(x1, y1, x2, y2)) return;
-    push(`0\nLINE\n8\n${safeLayer(layer)}\n10\n${x1 * SCALE}\n20\n${y1 * SCALE}\n30\n0\n11\n${x2 * SCALE}\n21\n${y2 * SCALE}\n31\n0`);
+    push(`0\nLINE\n${dxfLayerAttrs(layer)}\n10\n${x1 * SCALE}\n20\n${y1 * SCALE}\n30\n0\n11\n${x2 * SCALE}\n21\n${y2 * SCALE}\n31\n0`);
   };
   const drawRect = (x, y, w, h, layer) => {
     if (!finite(x, y, w, h) || w <= 0 || h <= 0) return;
@@ -3737,11 +3796,11 @@ const buildPresentationDxf = planSpec => {
   };
   const drawCircle = (cx, cy, r, layer) => {
     if (!finite(cx, cy, r) || r <= 0) return;
-    push(`0\nCIRCLE\n8\n${safeLayer(layer)}\n10\n${cx * SCALE}\n20\n${cy * SCALE}\n30\n0\n40\n${r * SCALE}`);
+    push(`0\nCIRCLE\n${dxfLayerAttrs(layer)}\n10\n${cx * SCALE}\n20\n${cy * SCALE}\n30\n0\n40\n${r * SCALE}`);
   };
   const drawArc = (cx, cy, r, startAngle, endAngle, layer) => {
     if (!finite(cx, cy, r, startAngle, endAngle) || r <= 0) return;
-    push(`0\nARC\n8\n${safeLayer(layer)}\n10\n${cx * SCALE}\n20\n${cy * SCALE}\n30\n0\n40\n${r * SCALE}\n50\n${startAngle}\n51\n${endAngle}`);
+    push(`0\nARC\n${dxfLayerAttrs(layer)}\n10\n${cx * SCALE}\n20\n${cy * SCALE}\n30\n0\n40\n${r * SCALE}\n50\n${startAngle}\n51\n${endAngle}`);
   };
   const drawPolyline = (points, layer, closed = false) => {
     if (!Array.isArray(points) || points.length < 2) return;
@@ -3755,7 +3814,8 @@ const buildPresentationDxf = planSpec => {
   const drawText = (x, y, h, text, layer, align = 'left') => {
     const safe = safeText(text);
     if (!safe || !finite(x, y, h) || h <= 0) return;
-    push(`0\nTEXT\n8\n${safeLayer(layer)}\n10\n${x * SCALE}\n20\n${y * SCALE}\n30\n0\n40\n${h * SCALE}\n1\n${safe}\n7\nSTANDARD`);
+    const justification = align === 'center' ? 1 : align === 'right' ? 2 : 0;
+    push(`0\nTEXT\n${dxfLayerAttrs(layer)}\n10\n${x * SCALE}\n20\n${y * SCALE}\n30\n0\n40\n${h * SCALE}\n1\n${safe}\n7\nSTANDARD\n72\n${justification}\n73\n0\n11\n${x * SCALE}\n21\n${y * SCALE}\n31\n0`);
   };
   const drawDimH = (x1, x2, baseY, offset, label) => {
     const y = baseY + offset;
@@ -4107,6 +4167,18 @@ const buildPresentationDxf = planSpec => {
   lines.push('9\n$MEASUREMENT\n70\n0');
   lines.push('0\nENDSEC');
   lines.push('0\nSECTION\n2\nTABLES');
+  lines.push('0\nTABLE\n2\nLTYPE\n70\n1');
+  lines.push('0\nLTYPE\n2\nCONTINUOUS\n70\n0\n3\nSolid line\n72\n65\n73\n0\n40\n0.0');
+  lines.push('0\nENDTAB');
+  lines.push(`0\nTABLE\n2\nLAYER\n70\n${Object.keys(layerStyles).length + 1}`);
+  lines.push('0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS');
+  Object.values(layerStyles).forEach(style => {
+    lines.push(`0\nLAYER\n2\n${style.name}\n70\n0\n62\n${style.color}\n6\nCONTINUOUS`);
+  });
+  lines.push('0\nENDTAB');
+  lines.push('0\nTABLE\n2\nSTYLE\n70\n1');
+  lines.push('0\nSTYLE\n2\nSTANDARD\n70\n0\n40\n0\n41\n1\n50\n0\n71\n0\n42\n0.2\n3\ntxt\n4\n');
+  lines.push('0\nENDTAB');
   lines.push('0\nENDSEC');
   lines.push('0\nSECTION\n2\nBLOCKS');
   lines.push('0\nENDSEC');
