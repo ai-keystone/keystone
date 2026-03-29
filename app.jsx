@@ -38,9 +38,46 @@ const scrollTo = (id) => {
 };
 const BRAND_DISPLAY_NAME = 'Keystone AI';
 const BRAND_NAME = 'Keystone AI Studio';
-const BRAND_TAGLINE = 'Architect-first discovery';
+const BRAND_TAGLINE = 'Home design, made understandable';
 const CONTACT_EMAIL = 'aikeystone559@gmail.com';
 const LEGAL_UPDATED_AT = 'March 14, 2026';
+const STUDIO_UNLOCK_KEY = 'keystone_unlock';
+const STUDIO_SESSION_KEY = 'keystone_studio_session';
+const createEmptyRenderState = () => ({
+    status: 'idle',
+    image: null,
+    imageClean: null,
+    surveyData: null,
+    activeRefinement: null,
+    errorMsg: '',
+});
+const normalizeRenderState = (state) => {
+    const base = { ...createEmptyRenderState(), ...(state || {}) };
+    if (!base.image) {
+        return {
+            ...createEmptyRenderState(),
+            surveyData: base.surveyData || null,
+        };
+    }
+    return {
+        ...base,
+        status: base.status && base.status !== 'loading' && base.status !== 'survey' ? base.status : 'ready',
+    };
+};
+const getStoredJson = (key) => {
+    if (typeof window === 'undefined') return null;
+    try {
+        return JSON.parse(window.localStorage.getItem(key) || 'null');
+    } catch {
+        return null;
+    }
+};
+const getInitialStudioSession = () => {
+    const stored = getStoredJson(STUDIO_SESSION_KEY);
+    if (!stored || typeof stored !== 'object') return null;
+    if (stored.version !== 1) return null;
+    return stored;
+};
 const getCurrentPath = () => {
     const raw = (window.location.pathname || '/').replace(/\/+$/, '') || '/';
     return raw === '/index.html' ? '/' : raw;
@@ -983,15 +1020,15 @@ const Waves = ({
 
 // â"€â"€â"€ MAGIC BENTO (interactive particle bento grid) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const keystoneBentoCards = [
-    { color:'#0D0806', title:'Floor Plans in <60s', description:'From guided client brief to architect-ready layout, instantly', label:'Speed',
+    { color:'#0D0806', title:'Floor Plans in <60s', description:'From guided brief to a real layout, instantly', label:'Speed',
       svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="74" height="50" rx="2" stroke="#FF6A37" stroke-width="1.2" opacity="0.4"/><rect x="3" y="3" width="42" height="30" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><rect x="45" y="3" width="32" height="30" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><rect x="3" y="33" width="26" height="20" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><rect x="29" y="33" width="48" height="20" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><line x1="16" y1="3" x2="16" y2="33" stroke="#FF6A37" stroke-width="0.8" opacity="0.35"/><line x1="45" y1="33" x2="45" y2="53" stroke="#FF6A37" stroke-width="0.8" opacity="0.35"/></svg>' },
-    { color:'#0D0806', title:'Gemini Exterior', description:'Atmosphere visualized from the same brief', label:'Vision',
+    { color:'#0D0806', title:'Exterior Render', description:'Atmosphere visualized from the same brief', label:'Vision',
       svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><polygon points="40,6 70,27 70,53 10,53 10,27" stroke="#FF9A5C" stroke-width="1.4" fill="none" stroke-linejoin="round"/><polygon points="40,6 70,27 10,27" stroke="#FF6A37" stroke-width="1.2" fill="rgba(255,106,55,0.07)" stroke-linejoin="round"/><rect x="32" y="36" width="16" height="17" rx="1" stroke="#FF9A5C" stroke-width="1.2"/><rect x="14" y="30" width="12" height="10" rx="1" stroke="#FF9A5C" stroke-width="1" opacity="0.65"/><rect x="54" y="30" width="12" height="10" rx="1" stroke="#FF9A5C" stroke-width="1" opacity="0.65"/><circle cx="65" cy="13" r="5" stroke="#FF6A37" stroke-width="1" opacity="0.55"/><line x1="65" y1="6" x2="65" y2="4" stroke="#FF6A37" stroke-width="1" opacity="0.45"/><line x1="72" y1="13" x2="74" y2="13" stroke="#FF6A37" stroke-width="1" opacity="0.45"/><line x1="58" y1="13" x2="56" y2="13" stroke="#FF6A37" stroke-width="1" opacity="0.45"/></svg>' },
     { color:'#0D0806', title:'Guided Intake', description:'Structured discovery before the meeting starts', label:'Discovery',
       svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="16" y="8" width="48" height="44" rx="3" stroke="#FF6A37" stroke-width="1.4" opacity="0.55"/><rect x="28" y="4" width="24" height="8" rx="2" stroke="#FF9A5C" stroke-width="1.2"/><circle cx="24" cy="22" r="3" stroke="#FF9A5C" stroke-width="1.3"/><polyline points="22.6,22 24,23.8 26,20.2" stroke="#FF9A5C" stroke-width="1.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="30" y1="22" x2="57" y2="22" stroke="#FF9A5C" stroke-width="1.3" opacity="0.85"/><circle cx="24" cy="33" r="3" stroke="#FF9A5C" stroke-width="1.3" opacity="0.7"/><line x1="30" y1="33" x2="57" y2="33" stroke="#FF9A5C" stroke-width="1.3" opacity="0.6"/><circle cx="24" cy="44" r="3" stroke="#FF9A5C" stroke-width="1.3" opacity="0.5"/><line x1="30" y1="44" x2="50" y2="44" stroke="#FF9A5C" stroke-width="1.3" opacity="0.4"/></svg>' },
     { color:'#0D0806', title:'DXF + Elevations', description:'CAD-ready export and matching facade views', label:'Export',
       svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="5" width="24" height="18" rx="2" stroke="#FF6A37" stroke-width="1.4" opacity="0.75"/><rect x="14" y="9" width="16" height="10" rx="1" stroke="#FF9A5C" stroke-width="1.1" opacity="0.75"/><rect x="46" y="5" width="24" height="18" rx="2" stroke="#FF6A37" stroke-width="1.4" opacity="0.75"/><path d="M48 21 L58 11 L68 21" stroke="#FF9A5C" stroke-width="1.2" fill="none" stroke-linejoin="round"/><line x1="22" y1="29" x2="58" y2="29" stroke="#FF9A5C" stroke-width="1.1" opacity="0.6"/><line x1="22" y1="36" x2="58" y2="36" stroke="#FF9A5C" stroke-width="1.1" opacity="0.6"/><line x1="22" y1="43" x2="48" y2="43" stroke="#FF9A5C" stroke-width="1.1" opacity="0.45"/><line x1="40" y1="24" x2="40" y2="52" stroke="#FF9A5C" stroke-width="1.8" stroke-linecap="round"/><polyline points="33,45 40,52 47,45" stroke="#FF9A5C" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>' },
-    { color:'#0D0806', title:'Passkey Access', description:'Firm-controlled client link with secure entry', label:'Security',
+    { color:'#0D0806', title:'Passkey Access', description:'Advanced tools stay protected behind secure entry', label:'Security',
       svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="22" y="27" width="36" height="26" rx="4" stroke="#FF6A37" stroke-width="1.4"/><path d="M29 27 V20 C29 11 51 11 51 20 V27" stroke="#FF9A5C" stroke-width="1.4" fill="none"/><circle cx="40" cy="38" r="4" stroke="#FF9A5C" stroke-width="1.4"/><line x1="40" y1="42" x2="40" y2="46" stroke="#FF9A5C" stroke-width="1.4" stroke-linecap="round"/><line x1="29" y1="17" x2="25" y2="14" stroke="#FF6A37" stroke-width="1" opacity="0.5"/><line x1="51" y1="17" x2="55" y2="14" stroke="#FF6A37" stroke-width="1" opacity="0.5"/><line x1="40" y1="11" x2="40" y2="7" stroke="#FF6A37" stroke-width="1" opacity="0.5"/></svg>' },
     { color:'#0D0806', title:'Session History', description:'Firm-visible pipeline for every active lead', label:'Pipeline',
       svgHtml:'<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="28" r="6" stroke="#FF6A37" stroke-width="1.4" opacity="0.65"/><circle cx="40" cy="11" r="6" stroke="#FF9A5C" stroke-width="1.4"/><circle cx="40" cy="45" r="6" stroke="#FF9A5C" stroke-width="1.4" opacity="0.8"/><circle cx="68" cy="28" r="6" stroke="#FF6A37" stroke-width="1.4" opacity="0.65"/><line x1="18" y1="25" x2="34" y2="14" stroke="#FF6A37" stroke-width="1.1" opacity="0.45"/><line x1="18" y1="31" x2="34" y2="42" stroke="#FF6A37" stroke-width="1.1" opacity="0.45"/><line x1="46" y1="14" x2="62" y2="25" stroke="#FF6A37" stroke-width="1.1" opacity="0.45"/><line x1="46" y1="42" x2="62" y2="31" stroke="#FF6A37" stroke-width="1.1" opacity="0.45"/><circle cx="40" cy="28" r="3" fill="#FF6A37" opacity="0.5"/></svg>' },
@@ -1140,7 +1177,7 @@ const SurveySection = ({ onJoin }) => {
                     </Reveal>
                     <Reveal y={16} delay={0.14}>
                         <p className="mt-5 leading-relaxed mx-auto" style={{color:'rgba(9,9,9,0.58)',maxWidth:'30rem',fontSize:'1rem'}}>
-                            A brief study with residential architects and designers. Your responses directly shape Keystone's roadmap and pricing.
+                            Join the early trial list and help shape Keystone for homeowners and first-time home builders.
                         </p>
                     </Reveal>
 
@@ -1153,14 +1190,14 @@ const SurveySection = ({ onJoin }) => {
                                     style={{width:'100%',height:'100%',objectFit:'contain'}}/>
                             </div>
                             <p className="mt-4 text-[13px]" style={{color:'rgba(9,9,9,0.48)'}}>
-                                For residential architects &amp; designers
+                                For homeowners, builders, and early design explorers
                             </p>
                         </div>
                     </Reveal>
 
                     <Reveal y={12} delay={0.30}>
                         <div className="flex justify-center gap-3 flex-wrap mt-6">
-                            {[{val:'~3 min',lbl:'to complete'},{val:'10',lbl:'questions'},{val:'100%',lbl:'anonymous'}].map(item => (
+                            {[{val:'~3 min',lbl:'to complete'},{val:'1',lbl:'trial request'},{val:'early',lbl:'access'}].map(item => (
                                 <div key={item.lbl} className="paper-panel px-5 py-3 flex items-center gap-2">
                                     <span className="cg" style={{fontSize:'1.3rem',color:'var(--accent)',letterSpacing:'-0.03em'}}>{item.val}</span>
                                     <span className="mono text-[10px] uppercase tracking-[0.18em]" style={{color:'rgba(9,9,9,0.44)'}}>{item.lbl}</span>
@@ -1334,7 +1371,7 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
                             How It Works
                         </a>
                         <a href="/b2b-workflow" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
-                            B2B Workflow
+                            Guided Workflow
                         </a>
                         <a href="/roadmap" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
                             Roadmap
@@ -1350,7 +1387,7 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
                         </button>
                         <button onClick={() => { onJoin(); onClose(); }}
                             className="cta-hero cta-glow-soft w-full text-center py-4">
-                            Request Access
+                            Unlock Advanced Features
                         </button>
                     </div>
                 </div>
@@ -1361,7 +1398,7 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
 
 // Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ JOIN MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const JoinModal = ({ isOpen, onClose }) => {
-    const [formData, setFormData] = React.useState({ fullName:'', firmName:'', email:'', volume:'1-10 Projects', questions:'' });
+    const [formData, setFormData] = React.useState({ fullName:'', firmName:'', email:'', volume:'0-6 months', questions:'' });
     const [status, setStatus] = React.useState('idle'); // idle | loading | success
     const update = (e) => setFormData(p => ({ ...p, [e.target.name]: e.target.value }));
 
@@ -1382,7 +1419,7 @@ const JoinModal = ({ isOpen, onClose }) => {
         d.append("entry.564926659", formData.fullName);
         d.append("entry.510477948", formData.firmName);
         d.append("entry.1527142228", formData.email);
-        d.append("entry.623368817", formData.volume);
+                d.append("entry.623368817", formData.volume);
         d.append("entry.1172849489", formData.questions);
         try {
             await fetch(FORM, { method:"POST", mode:"no-cors", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body: d.toString() });
@@ -1390,7 +1427,7 @@ const JoinModal = ({ isOpen, onClose }) => {
             setTimeout(() => {
                 setStatus('idle');
                 onClose();
-                setFormData({ fullName:'', firmName:'', email:'', volume:'1-10 Projects', questions:'' });
+                setFormData({ fullName:'', firmName:'', email:'', volume:'0-6 months', questions:'' });
             }, 2600);
         } catch {
             alert("Error submitting. Please try again.");
@@ -1439,15 +1476,15 @@ const JoinModal = ({ isOpen, onClose }) => {
                         </button>
 
                         <div className="p-6 md:p-8 overflow-y-auto" style={{ maxHeight:'90vh', color:'var(--ink)' }}>
-                            <span className="badge mb-3 inline-block">Request Access</span>
-                            <h2 className="cg text-3xl mb-1 mt-2" style={{ letterSpacing:'-0.05em', textTransform:'uppercase', color:'var(--ink)' }}>Access the live studio.</h2>
-                            <p className="text-sm mt-2 mb-6 leading-relaxed" style={{color:'rgba(10,10,12,0.7)'}}>Qualified residential architecture firms can see how the B2B workflow works in practice: send the client a guided link, collect a structured brief, and review outputs before the first meeting.</p>
+                            <span className="badge mb-3 inline-block">Unlock Advanced Features</span>
+                            <h2 className="cg text-3xl mb-1 mt-2" style={{ letterSpacing:'-0.05em', textTransform:'uppercase', color:'var(--ink)' }}>Request a trial passkey.</h2>
+                            <p className="text-sm mt-2 mb-6 leading-relaxed" style={{color:'rgba(10,10,12,0.7)'}}>The free trial already includes the floor plan and elevations. Fill this out if you want access to the advanced package: Exterior Render, refinements, Cost Estimate workbook, and CAD export.</p>
 
                             {status === 'success' ? (
                                 <motion.div initial={{ scale:0.9, opacity:0 }} animate={{ scale:1, opacity:1 }} className="flex flex-col items-center text-center py-10">
                                     <div className="w-16 h-16 rounded-full bg-blue flex items-center justify-center mb-4"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-                                    <h3 className="cg text-2xl" style={{ letterSpacing:'-0.05em', textTransform:'uppercase' }}>You&apos;re in the queue.</h3>
-                                    <p className="text-mid text-sm mt-2">We will follow up with studio access details and next steps for your firm shortly.</p>
+                                    <h3 className="cg text-2xl" style={{ letterSpacing:'-0.05em', textTransform:'uppercase' }}>You&apos;re on the list.</h3>
+                                    <p className="text-mid text-sm mt-2">We will follow up with trial access details and next steps shortly.</p>
                                 </motion.div>
                             ) : (
                                 <form onSubmit={handleSubmit} className="space-y-4">
@@ -1457,30 +1494,30 @@ const JoinModal = ({ isOpen, onClose }) => {
                                             <input type="text" name="fullName" value={formData.fullName} onChange={update} required placeholder="Jane Doe"/>
                                         </div>
                                         <div>
-                                            <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Firm Name</label>
-                                            <input type="text" name="firmName" value={formData.firmName} onChange={update} required placeholder="Firm LLC"/>
+                                            <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Project Name</label>
+                                            <input type="text" name="firmName" value={formData.firmName} onChange={update} required placeholder="Dream House / Family Home"/>
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Business Email</label>
-                                        <input type="email" name="email" value={formData.email} onChange={update} required placeholder="jane@firm.com"/>
+                                        <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Email</label>
+                                        <input type="email" name="email" value={formData.email} onChange={update} required placeholder="jane@email.com"/>
                                     </div>
                                     <div>
-                                        <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Annual Project Volume</label>
+                                        <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Expected Build Timeline</label>
                                         <select name="volume" value={formData.volume} onChange={update}>
-                                            <option>1-10 Projects</option>
-                                            <option>10-30 Projects</option>
-                                            <option>30+ Projects</option>
+                                            <option>0-6 months</option>
+                                            <option>6-12 months</option>
+                                            <option>12+ months</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Questions / Notes</label>
-                                        <textarea name="questions" rows="2" value={formData.questions} onChange={update} placeholder="Optional..."/>
+                                        <textarea name="questions" rows="2" value={formData.questions} onChange={update} placeholder="Tell us what kind of house you are planning..."/>
                                     </div>
                                     <button type="submit" disabled={status === 'loading'} className="cta-hero w-full py-4 text-base disabled:opacity-60">
-                                        {status === 'loading' ? 'Sending...' : 'Request Access'}
+                                        {status === 'loading' ? 'Sending...' : 'Request Trial Access'}
                                     </button>
-                                    <p className="text-center mono text-[9px] text-mid">No spam - no credit card - fast follow-up</p>
+                                    <p className="text-center mono text-[9px] text-mid">No spam • no credit card • fast follow-up</p>
                                     <button
                                         type="button"
                                         onClick={onClose}
@@ -1540,9 +1577,10 @@ const getElevationViews = (elevations) => [
     { key:'rightSvg', label:'Right' },
 ].filter(view => elevations?.[view.key]);
 
-const BlueprintPresentationSheet = ({ planSvg, elevations, formData, footprintInfo }) => {
+const BlueprintPresentationSheet = ({ planSvg, elevations, formData, footprintInfo, renderImage }) => {
     if (!planSvg) return null;
     const views = getElevationViews(elevations);
+    const showSideRail = views.length > 0 || !!renderImage;
     const area = extractPrimaryNumber(formData?.totalArea, footprintInfo?.widthFt && footprintInfo?.heightFt ? String(footprintInfo.widthFt * footprintInfo.heightFt) : '');
     const styleLabel = elevations?.meta?.styleLabel || formData?.materials || 'Residential';
     const roofKind = String(elevations?.meta?.roofKind || 'gabled').replace(/_/g, ' ');
@@ -1561,13 +1599,13 @@ const BlueprintPresentationSheet = ({ planSvg, elevations, formData, footprintIn
             borderRadius:24,
             padding:24,
             boxShadow:'0 24px 60px rgba(0,0,0,0.14)',
-            width: views.length ? 1420 : 'auto',
+            width: showSideRail ? 1480 : 'auto',
         }}>
             <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:20,marginBottom:18}}>
                 <div>
                     <div className="mono" style={{fontSize:10,letterSpacing:'0.28em',textTransform:'uppercase',color:'rgba(173,51,0,0.88)'}}>Keystone AI</div>
                     <div className="cg" style={{fontSize:'2rem',lineHeight:0.94,letterSpacing:'-0.05em',textTransform:'uppercase',color:'var(--ink)',marginTop:6}}>
-                        Plan + Elevation Sheet
+                        Plan, Elevations + Exterior Render
                     </div>
                     <div className="mono" style={{fontSize:10,letterSpacing:'0.16em',textTransform:'uppercase',color:'rgba(10,10,12,0.42)',marginTop:8}}>
                         {summaryBits.join('  |  ') || 'Residential concept set'}
@@ -1581,7 +1619,7 @@ const BlueprintPresentationSheet = ({ planSvg, elevations, formData, footprintIn
 
             <div style={{
                 display:'grid',
-                gridTemplateColumns: views.length ? 'minmax(0,1fr) 352px' : 'minmax(0,1fr)',
+                gridTemplateColumns: showSideRail ? 'minmax(0,1fr) 392px' : 'minmax(0,1fr)',
                 gap:20,
                 alignItems:'start',
             }}>
@@ -1595,26 +1633,59 @@ const BlueprintPresentationSheet = ({ planSvg, elevations, formData, footprintIn
                     <div className="presentation-plan-svg" dangerouslySetInnerHTML={{__html: planSvg}} />
                 </div>
 
-                {views.length ? (
-                    <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
-                        {views.map(view => (
-                            <div key={view.key} style={{
+                {showSideRail ? (
+                    <div style={{display:'flex',flexDirection:'column',gap:12}}>
+                        {renderImage ? (
+                            <div style={{
                                 background:'#fffdf9',
                                 border:'1px solid rgba(120,102,82,0.12)',
                                 borderRadius:16,
                                 padding:'12px 12px 10px',
-                                minHeight:176,
+                                minHeight:218,
                                 display:'flex',
                                 flexDirection:'column',
                                 gap:8,
                                 boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.58)',
                             }}>
                                 <div className="mono" style={{fontSize:8,letterSpacing:'0.18em',textTransform:'uppercase',color:'rgba(10,10,12,0.48)'}}>
-                                    {view.label} elevation
+                                    Exterior render
                                 </div>
-                                <div className="presentation-elevation-svg" style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center'}} dangerouslySetInnerHTML={{__html: elevations[view.key]}} />
+                                <img
+                                    src={renderImage}
+                                    alt="Exterior render preview"
+                                    style={{
+                                        width:'100%',
+                                        height:220,
+                                        objectFit:'cover',
+                                        borderRadius:12,
+                                        border:'1px solid rgba(120,102,82,0.12)',
+                                    }}
+                                />
                             </div>
-                        ))}
+                        ) : null}
+
+                        {views.length ? (
+                            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+                                {views.map(view => (
+                                    <div key={view.key} style={{
+                                        background:'#fffdf9',
+                                        border:'1px solid rgba(120,102,82,0.12)',
+                                        borderRadius:16,
+                                        padding:'12px 12px 10px',
+                                        minHeight:176,
+                                        display:'flex',
+                                        flexDirection:'column',
+                                        gap:8,
+                                        boxShadow:'inset 0 0 0 1px rgba(255,255,255,0.58)',
+                                    }}>
+                                        <div className="mono" style={{fontSize:8,letterSpacing:'0.18em',textTransform:'uppercase',color:'rgba(10,10,12,0.48)'}}>
+                                            {view.label} elevation
+                                        </div>
+                                        <div className="presentation-elevation-svg" style={{flex:1,display:'flex',alignItems:'center',justifyContent:'center'}} dangerouslySetInnerHTML={{__html: elevations[view.key]}} />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : null}
                     </div>
                 ) : null}
             </div>
@@ -1704,7 +1775,7 @@ const ElevationsPanel = ({ elevations, formData, onOpenPreview }) => {
                 <div className="flex items-center gap-3 mt-3 flex-wrap">
                     <button onClick={downloadActive} className="mono text-[9px] text-blue underline">Download active view</button>
                     <span className="mono text-[8px] uppercase tracking-[0.18em]" style={{color:'rgba(10,10,12,0.42)'}}>
-                        {supportLabel} is also used to ground the 3D exterior study.
+                        {supportLabel} is also used to ground the Exterior Render.
                     </span>
                 </div>
             </div>
@@ -1787,9 +1858,9 @@ const EstimatePanel = ({ estimate }) => {
             <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
                 <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
                     <div>
-                        <p className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.82)'}}>Planning estimate</p>
+                        <p className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.82)'}}>Cost estimate</p>
                         <p className="text-[13px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
-                            MVP planning-grade quantity takeoff and cost range generated directly from the live plan geometry.
+                            Concept-level quantity takeoff and cost range generated directly from the live plan geometry.
                         </p>
                     </div>
                     <span className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
@@ -1801,7 +1872,7 @@ const EstimatePanel = ({ estimate }) => {
             <div className="p-4 md:p-5">
                 <div className="grid grid-cols-2 xl:grid-cols-5 gap-2 mb-4">
                     <div className="spec-panel" style={{gridColumn:'span 2'}}>
-                        <div className="spec-label">Planning cost range</div>
+                        <div className="spec-label">Cost range</div>
                         <div className="spec-value" style={{fontSize:'1rem'}}>{formatUsd(costRange?.total?.low)} - {formatUsd(costRange?.total?.high)}</div>
                         <div className="mono text-[8px] uppercase mt-1" style={{color:'rgba(10,10,12,0.42)'}}>Target {formatUsd(costRange?.total?.target)}</div>
                     </div>
@@ -1872,7 +1943,7 @@ const EstimatePanel = ({ estimate }) => {
                 <div className="rounded-[18px] border border-black/8 bg-white/64 p-4 mt-4">
                     <p className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.46)'}}>Assumptions</p>
                     <div className="flex flex-wrap gap-2 mt-3">
-                        <span className="room-badge active" style={{cursor:'default'}}>Concept / planning estimate</span>
+                        <span className="room-badge active" style={{cursor:'default'}}>Concept / cost estimate</span>
                         <span className="room-badge active" style={{cursor:'default'}}>Roof: {String(summary.roofKind || 'gabled').replace(/_/g, ' ')}</span>
                         <span className="room-badge active" style={{cursor:'default'}}>Budget: {summary.budgetTier || 'MID'}</span>
                     </div>
@@ -1931,7 +2002,7 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
             </div>
             <div className="px-4 md:px-5 pb-3">
                 <p className="text-[12px] leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
-                    Use quick edits to explore the floor plan before you export it or move into the Gemini exterior study.
+                    Use quick edits to explore the floor plan before you export it or move into the Exterior Render.
                 </p>
             </div>
 
@@ -2189,7 +2260,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, baseSurveyD
 
                             <button onClick={() => onSubmit(data)}
                                 className="w-full mt-6 py-3.5 bg-ink text-white mono text-[10px] uppercase tracking-[0.18em] font-bold hover:bg-blue transition-colors rounded-sm">
-                                Generate Exterior Study
+                                Generate Exterior Render
                             </button>
                         </div>
                     </motion.div>
@@ -2342,12 +2413,13 @@ const composeElevationReferenceSheet = async (elevations) => {
     return canvas.toDataURL('image/png');
 };
 
-const composeBlueprintPresentationSheet = async ({ planSvg, elevations, formData, footprintInfo }) => {
+const composeBlueprintPresentationSheet = async ({ planSvg, elevations, formData, footprintInfo, renderImage }) => {
     if (!planSvg) return null;
 
     const planSrc = await svgToPngDataUrl(planSvg, { background: '#fffdf9', pixelRatio: 2.5 });
     const planImage = await loadImageElement(planSrc);
     const views = getElevationViews(elevations);
+    const renderAsset = renderImage ? await loadImageElement(renderImage) : null;
     const elevationImages = await Promise.all(
         views.map(async (view) => ({
             ...view,
@@ -2360,11 +2432,14 @@ const composeBlueprintPresentationSheet = async ({ planSvg, elevations, formData
     const gap = 22;
     const planBoxW = 1120;
     const planBoxH = 720;
-    const sideW = views.length ? 360 : 0;
+    const sideW = (views.length || renderAsset) ? 392 : 0;
     const cardGap = 14;
     const cardW = sideW ? (sideW - cardGap) / 2 : 0;
     const cardH = 168;
-    const sideH = views.length ? (Math.ceil(views.length / 2) * cardH) + ((Math.ceil(views.length / 2) - 1) * cardGap) : 0;
+    const renderCardH = renderAsset ? 248 : 0;
+    const elevationRows = views.length ? Math.ceil(views.length / 2) : 0;
+    const elevationGridH = views.length ? (elevationRows * cardH) + ((elevationRows - 1) * cardGap) : 0;
+    const sideH = (renderAsset ? renderCardH : 0) + (renderAsset && views.length ? cardGap : 0) + elevationGridH;
     const contentH = Math.max(planBoxH, sideH);
 
     const canvas = document.createElement('canvas');
@@ -2391,7 +2466,7 @@ const composeBlueprintPresentationSheet = async ({ planSvg, elevations, formData
     ctx.fillText('KEYSTONE AI', pad, pad + 14);
     ctx.fillStyle = '#111';
     ctx.font = '700 28px Georgia, serif';
-    ctx.fillText('Plan + Elevation Sheet', pad, pad + 46);
+    ctx.fillText('Plan, Elevations + Exterior Render', pad, pad + 46);
     ctx.font = '12px ui-monospace, SFMono-Regular, Menlo, monospace';
     ctx.fillStyle = '#6f6558';
     ctx.fillText(summaryBits.join(' | ') || 'Residential concept set', pad, pad + 70);
@@ -2413,11 +2488,33 @@ const composeBlueprintPresentationSheet = async ({ planSvg, elevations, formData
     const drawPlanY = planY + (planBoxH - drawPlanH) / 2;
     ctx.drawImage(planImage, drawPlanX, drawPlanY, drawPlanW, drawPlanH);
 
+    if (renderAsset) {
+        const renderX = pad + planBoxW + gap;
+        const renderY = pad + headerH;
+        ctx.fillStyle = '#fffdf9';
+        ctx.fillRect(renderX, renderY, sideW, renderCardH);
+        ctx.strokeStyle = '#d3c9b8';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(renderX, renderY, sideW, renderCardH);
+        ctx.fillStyle = '#534b40';
+        ctx.font = '700 10px ui-monospace, SFMono-Regular, Menlo, monospace';
+        ctx.fillText('EXTERIOR RENDER', renderX + 10, renderY + 16);
+        const availableW = sideW - 18;
+        const availableH = renderCardH - 30;
+        const scale = Math.min(availableW / renderAsset.width, availableH / renderAsset.height);
+        const drawW = renderAsset.width * scale;
+        const drawH = renderAsset.height * scale;
+        const drawX = renderX + (sideW - drawW) / 2;
+        const drawY = renderY + 22 + (availableH - drawH) / 2;
+        ctx.drawImage(renderAsset, drawX, drawY, drawW, drawH);
+    }
+
+    const elevationsTop = pad + headerH + (renderAsset ? renderCardH + cardGap : 0);
     elevationImages.forEach((entry, index) => {
         const col = index % 2;
         const row = Math.floor(index / 2);
         const x = pad + planBoxW + gap + col * (cardW + cardGap);
-        const y = pad + headerH + row * (cardH + cardGap);
+        const y = elevationsTop + row * (cardH + cardGap);
         ctx.fillStyle = '#fffdf9';
         ctx.fillRect(x, y, cardW, cardH);
         ctx.strokeStyle = '#d3c9b8';
@@ -3008,18 +3105,28 @@ const Render3DPanel = ({
     elevations,
     galleryId,
     onRenderReady,
+    onRenderStateSnapshot,
     launchSignal = 0,
     showLaunchButton = true,
     onRenderStatusChange,
+    accessToken = null,
+    initialState = null,
+    isLocked = false,
+    onLockedAction,
 }) => {
-    const [renderStatus, setRenderStatus] = useState('idle'); // idle|survey|loading|error|ready
-    const [renderImage, setRenderImage] = useState(null);
-    const [renderImageClean, setRenderImageClean] = useState(null); // without watermark, for lighting edits
-    const [errorMsg, setErrorMsg] = useState('');
-    const [activeRefinement, setActiveRefinement] = useState(null);
+    const [renderStatus, setRenderStatus] = useState(() => normalizeRenderState(initialState).status); // idle|survey|loading|error|ready
+    const [renderImage, setRenderImage] = useState(() => normalizeRenderState(initialState).image || null);
+    const [renderImageClean, setRenderImageClean] = useState(() => normalizeRenderState(initialState).imageClean || null); // without watermark, for lighting edits
+    const [errorMsg, setErrorMsg] = useState(() => normalizeRenderState(initialState).errorMsg || '');
+    const [activeRefinement, setActiveRefinement] = useState(() => normalizeRenderState(initialState).activeRefinement || null);
     const [showSurvey, setShowSurvey] = useState(false);
-    const [renderSurveyData, setRenderSurveyData] = useState(null);
+    const [renderSurveyData, setRenderSurveyData] = useState(() => normalizeRenderState(initialState).surveyData || null);
     const launchHandledRef = useRef(launchSignal);
+    const ensureAdvancedAccess = React.useCallback((featureLabel = 'Exterior Render') => {
+        if (!isLocked) return true;
+        onLockedAction?.(featureLabel);
+        return false;
+    }, [isLocked, onLockedAction]);
 
     const applyWatermark = (imgSrc) => new Promise((resolve) => {
         const canvas = document.createElement('canvas'), ctx = canvas.getContext('2d'), img = new Image();
@@ -3076,14 +3183,17 @@ const Render3DPanel = ({
 
             const res = await fetch('/api/render', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                },
                 body: JSON.stringify(payload),
             });
 
             let data;
             try { data = await res.json(); } catch(_) { data = { success: false, message: `Server error ${res.status}` }; }
 
-            if (!data.success) {
+            if (!res.ok || !data.success) {
                 setErrorMsg(data.message || 'Unknown error from server');
                 setRenderStatus('error');
                 return;
@@ -3109,18 +3219,51 @@ const Render3DPanel = ({
         doRender(surveyData, null, null);
     };
 
-    const handleRender = () => { setActiveRefinement(null); setShowSurvey(true); };
-    const handleRegenerate = () => { setActiveRefinement(null); doRender(renderSurveyData, null, null); };
+    const handleRender = () => {
+        if (!ensureAdvancedAccess('Exterior Render')) return;
+        setActiveRefinement(null);
+        setShowSurvey(true);
+    };
+    const handleRegenerate = () => {
+        if (!ensureAdvancedAccess('Exterior Render')) return;
+        setActiveRefinement(null);
+        doRender(renderSurveyData, null, null);
+    };
 
     const handleRefinement = (ref) => {
+        if (!ensureAdvancedAccess('Exterior Render')) return;
         setActiveRefinement(ref.label);
         // Pass the clean (un-watermarked) existing image so backend can do lighting-only edit
         doRender(renderSurveyData, ref.hint, renderImageClean);
     };
 
     useEffect(() => {
+        const next = normalizeRenderState(initialState);
+        setRenderStatus(next.status);
+        setRenderImage(next.image || null);
+        setRenderImageClean(next.imageClean || null);
+        setErrorMsg(next.errorMsg || '');
+        setActiveRefinement(next.activeRefinement || null);
+        setRenderSurveyData(next.surveyData || null);
+        setShowSurvey(false);
+    }, [initialState]);
+
+    useEffect(() => {
         if (typeof onRenderStatusChange === 'function') onRenderStatusChange(renderStatus);
     }, [renderStatus, onRenderStatusChange]);
+
+    useEffect(() => {
+        if (typeof onRenderStateSnapshot === 'function') {
+            onRenderStateSnapshot({
+                status: renderStatus,
+                image: renderImage,
+                imageClean: renderImageClean,
+                surveyData: renderSurveyData,
+                activeRefinement,
+                errorMsg,
+            });
+        }
+    }, [renderStatus, renderImage, renderImageClean, renderSurveyData, activeRefinement, errorMsg, onRenderStateSnapshot]);
 
     useEffect(() => {
         if (!launchSignal || launchSignal === launchHandledRef.current) return;
@@ -3134,13 +3277,15 @@ const Render3DPanel = ({
             {showLaunchButton ? (
                 <button onClick={handleRender}
                     className="w-full py-3.5 cta-hero cta-glow text-[10px]">
-                    Generate Gemini Exterior Study
+                    {isLocked ? 'Unlock Exterior Render' : 'Generate Exterior Render'}
                 </button>
             ) : (
                 <div className="p-4 rounded-[16px] border border-black/8 bg-white/72">
-                    <p className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>Gemini exterior study</p>
+                    <p className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>Exterior render</p>
                     <p className="text-[11px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
-                        Use the main action bar above to open render options and generate the exterior study from this plan.
+                        {isLocked
+                            ? 'Unlock advanced features with a passkey to generate and download precise exterior renders from this plan.'
+                            : 'Use the main action bar above to open render options and generate the exterior render from this plan.'}
                     </p>
                 </div>
             )}
@@ -3152,7 +3297,7 @@ const Render3DPanel = ({
             <div className="flex items-center gap-3 text-blue">
                 <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"/>
                 <span className="mono text-[9px] uppercase tracking-widest animate-pulse">
-                    {activeRefinement ? `Adjusting lighting: ${activeRefinement}...` : 'Rendering with Gemini...'}
+                    {activeRefinement ? `Adjusting lighting: ${activeRefinement}...` : 'Rendering exterior view...'}
                 </span>
             </div>
             <p className="mono text-[8px] text-mid opacity-50">
@@ -3167,7 +3312,10 @@ const Render3DPanel = ({
             <div className="p-4 bg-red/5 border border-red/20 rounded-sm">
                 <p className="mono text-[9px] font-bold text-red uppercase mb-1">Render Failed</p>
                 <p className="text-[10px] text-mid leading-relaxed mb-3" style={{wordBreak:'break-word'}}>{errorMsg}</p>
-                <button onClick={() => setShowSurvey(true)}
+                <button onClick={() => {
+                    if (!ensureAdvancedAccess('Exterior Render')) return;
+                    setShowSurvey(true);
+                }}
                     className="mono text-[9px] uppercase tracking-widest px-3 py-1.5 bg-ink text-white rounded-sm hover:bg-blue transition-colors">
                     Retry
                 </button>
@@ -3178,16 +3326,22 @@ const Render3DPanel = ({
     if (renderStatus === 'ready') return (
         <div>
             <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData}/>
-            <SmartImage src={renderImage} className="w-full object-cover rounded-[16px] shadow-xl" alt="Gemini exterior study"/>
+            <SmartImage src={renderImage} className="w-full object-cover rounded-[16px] shadow-xl" alt="Exterior render"/>
             {/* Toolbar */}
             <div className="flex items-center gap-2 mt-2 mb-3 flex-wrap">
                 <span className="mono text-[8px] uppercase tracking-widest text-mid">
-                    {activeRefinement ? `Lighting: ${activeRefinement}` : 'Gemini exterior study'}
+                    {activeRefinement ? `Lighting: ${activeRefinement}` : 'Exterior render'}
                 </span>
-                <button onClick={() => { const l=document.createElement('a'); l.href=renderImage; l.download=buildPlanExportFilename(formData, '3d render', 'png'); l.click(); }}
+                <button onClick={() => {
+                    if (!ensureAdvancedAccess('Exterior Render')) return;
+                    const l=document.createElement('a'); l.href=renderImage; l.download=buildPlanExportFilename(formData, '3d render', 'png'); l.click();
+                }}
                     className="ml-auto mono text-[9px] text-blue underline">Download</button>
                 <button onClick={handleRegenerate} className="mono text-[9px] text-mid underline">Regenerate</button>
-                <button onClick={() => setShowSurvey(true)} className="mono text-[9px] text-mid underline">Options</button>
+                <button onClick={() => {
+                    if (!ensureAdvancedAccess('Exterior Render')) return;
+                    setShowSurvey(true);
+                }} className="mono text-[9px] text-mid underline">Options</button>
             </div>
 
             {/* Lighting refinement chips Ã¢â‚¬" lighting only, architecture unchanged */}
@@ -3230,7 +3384,7 @@ const DEFAULT_FORM_DATA = {
     bedroomConfigs: null,
     shape:'Rectangular', garage:'1 Car Garage', materials:'Craftsman (Wood & Stone)',
     openConcept:'Open Concept (Combined)', masterLocation:'Level 2 (Upper)', kitchenPlacement:'Rear of House',
-    features:'', frontFacing:'South', lotContext:'Suburban standard lot',
+    features:'1 Study', frontFacing:'South', lotContext:'Suburban standard lot',
     laundryLocation:'Level 1 (near garage/mud)', ceilingHeight:'Standard (9 ft)',
     indoorOutdoor:'Moderate (some connection)', naturalLight:'Balanced windows',
     accessibilityNeeds:'None', budgetTier:'Mid ($200-300/sqft)', freeformWishes:'',
@@ -4062,30 +4216,89 @@ const InteractiveCanvas = ({ children }) => {
 
 // â"€â"€â"€ DESIGN GENERATOR â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const DesignGenerator = ({ onOpenModal }) => {
+    const initialSessionRef = useRef(getInitialStudioSession());
+    const initialSession = initialSessionRef.current;
     const [isUnlocked, setIsUnlocked] = useState(false);
+    const [accessToken, setAccessToken] = useState(null);
+    const [accessTokenExpiry, setAccessTokenExpiry] = useState(null);
     const [passkeyInput, setPasskeyInput] = useState('');
     const [unlockStatus, setUnlockStatus] = useState('idle');
 
-    const [formData, setFormData] = useState(() => ({ ...DEFAULT_FORM_DATA }));
+    const [formData, setFormData] = useState(() => ({ ...DEFAULT_FORM_DATA, ...(initialSession?.formData || {}) }));
 
-    const [status, setStatus] = useState('idle');
-    const [planSvg, setPlanSvg] = useState(null);
-    const [planSpec, setPlanSpec] = useState(null);
-    const [refinementHistory, setRefinementHistory] = useState([]);
-    const [refinementsLeft, setRefinementsLeft] = useState(10);
+    const [status, setStatus] = useState(() => initialSession?.status || 'idle');
+    const [planSvg, setPlanSvg] = useState(() => initialSession?.planSvg || null);
+    const [planSpec, setPlanSpec] = useState(() => initialSession?.planSpec || null);
+    const [refinementHistory, setRefinementHistory] = useState(() => initialSession?.refinementHistory || []);
+    const [refinementsLeft, setRefinementsLeft] = useState(() => Number.isFinite(initialSession?.refinementsLeft) ? initialSession.refinementsLeft : 10);
     const [zoomImage, setZoomImage] = useState(null);
-    const [galleryId, setGalleryId] = useState(null);
-    const [planScore, setPlanScore] = useState(null);
-    const [footprintInfo, setFootprintInfo] = useState(null);
-    const [alternatives, setAlternatives] = useState([]);
+    const [galleryId, setGalleryId] = useState(() => initialSession?.galleryId || null);
+    const [planScore, setPlanScore] = useState(() => initialSession?.planScore ?? null);
+    const [footprintInfo, setFootprintInfo] = useState(() => initialSession?.footprintInfo ?? null);
+    const [alternatives, setAlternatives] = useState(() => initialSession?.alternatives || []);
     const [showAlternatives, setShowAlternatives] = useState(false);
     const [isExportingEstimateXlsx, setIsExportingEstimateXlsx] = useState(false);
     const [renderLaunchSignal, setRenderLaunchSignal] = useState(0);
-    const [renderPanelStatus, setRenderPanelStatus] = useState('idle');
+    const [renderPanelStatus, setRenderPanelStatus] = useState(() => normalizeRenderState(initialSession?.renderState).status);
+    const [renderState, setRenderState] = useState(() => normalizeRenderState(initialSession?.renderState));
 
     useEffect(() => {
-        try { const s = JSON.parse(localStorage.getItem('keystone_unlock')||'null'); if (s?.unlocked && s?.ts && (Date.now() - s.ts < 30 * 24 * 60 * 60 * 1000)) setIsUnlocked(true); else if (s?.unlocked && (!s?.ts || Date.now() - s.ts >= 30 * 24 * 60 * 60 * 1000)) localStorage.removeItem('keystone_unlock'); } catch {}
+        try {
+            const s = JSON.parse(localStorage.getItem(STUDIO_UNLOCK_KEY) || 'null');
+            const expiresAt = s?.expiresAt ? Date.parse(s.expiresAt) : NaN;
+            if (s?.token && Number.isFinite(expiresAt) && expiresAt > Date.now()) {
+                setIsUnlocked(true);
+                setAccessToken(s.token);
+                setAccessTokenExpiry(s.expiresAt);
+            } else if (s) {
+                localStorage.removeItem(STUDIO_UNLOCK_KEY);
+            }
+        } catch {}
     }, []);
+
+    useEffect(() => {
+        const snapshot = {
+            version: 1,
+            savedAt: new Date().toISOString(),
+            formData,
+            status: status === 'loading-plan' || status === 'refining'
+                ? (planSvg ? 'plan-ready' : 'idle')
+                : status,
+            planSvg,
+            planSpec,
+            refinementHistory,
+            refinementsLeft,
+            galleryId,
+            planScore,
+            footprintInfo,
+            alternatives: Array.isArray(alternatives) ? alternatives.slice(0, 6) : [],
+            renderState: renderState?.image
+                ? {
+                    ...renderState,
+                    image: null,
+                    imageClean: null,
+                    status: 'ready',
+                    errorMsg: '',
+                  }
+                : {
+                    ...createEmptyRenderState(),
+                    surveyData: renderState?.surveyData || null,
+                  },
+        };
+        try {
+            localStorage.setItem(STUDIO_SESSION_KEY, JSON.stringify(snapshot));
+        } catch {}
+    }, [formData, status, planSvg, planSpec, refinementHistory, refinementsLeft, galleryId, planScore, footprintInfo, alternatives, renderState]);
+
+    const promptUnlock = (featureLabel = 'advanced features') => {
+        alert(`Unlock advanced features with a passkey to use ${featureLabel}.`);
+    };
+
+    const requireAdvancedAccess = (featureLabel) => {
+        if (accessToken) return true;
+        promptUnlock(featureLabel);
+        return false;
+    };
 
     const handleUnlock = async (e) => {
         e.preventDefault();
@@ -4095,7 +4308,21 @@ const DesignGenerator = ({ onOpenModal }) => {
         try {
             const res = await fetch('/api/verify', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ passkey:key }) });
             const data = await res.json().catch(() => null);
-            if (res.ok && data?.success) { setIsUnlocked(true); setUnlockStatus('idle'); try { localStorage.setItem('keystone_unlock', JSON.stringify({unlocked:true,ts:Date.now()})); } catch {} return; }
+            if (res.ok && data?.success && data?.token) {
+                setIsUnlocked(true);
+                setAccessToken(data.token);
+                setAccessTokenExpiry(data.expiresAt || null);
+                setUnlockStatus('idle');
+                try {
+                    localStorage.setItem(STUDIO_UNLOCK_KEY, JSON.stringify({
+                        unlocked: true,
+                        token: data.token,
+                        expiresAt: data.expiresAt || null,
+                        ts: Date.now(),
+                    }));
+                } catch {}
+                return;
+            }
             setUnlockStatus(`error:${data?.message||'Invalid passkey.'}`);
         } catch { setUnlockStatus('error:Network error.'); }
     };
@@ -4115,11 +4342,14 @@ const DesignGenerator = ({ onOpenModal }) => {
             setPlanScore(data.score ?? null);
             setFootprintInfo(data.footprintInfo ?? null);
             setAlternatives(data.alternatives || []);
+            setRenderState(createEmptyRenderState());
+            setRenderPanelStatus('idle');
             setStatus('plan-ready');
         } catch(err) { alert('Error: ' + err.message); setStatus('idle'); }
     };
 
     const handleRefine = async (instruction) => {
+        if (!requireAdvancedAccess('refinements')) return;
         if (refinementsLeft <= 0) return;
         setStatus('refining');
         // Optimistically add user message to history
@@ -4127,7 +4357,10 @@ const DesignGenerator = ({ onOpenModal }) => {
         try {
             const res = await fetch('/api/plan/refine', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                },
                 body: JSON.stringify({
                     surveyData: formData,
                     currentPlanSpec: planSpec,
@@ -4153,6 +4386,8 @@ const DesignGenerator = ({ onOpenModal }) => {
             setPlanSvg(data.svg);
             setPlanSpec(data.planSpec ? { ...data.planSpec, estimate: data.estimate || data.planSpec?.estimate || null } : null);
             if (data.galleryId) setGalleryId(data.galleryId);
+            setRenderState(createEmptyRenderState());
+            setRenderPanelStatus('idle');
             setRefinementHistory(prev => [...prev, { role:'assistant', content: summary }]);
             setRefinementsLeft(prev => prev - 1);
             setStatus('plan-ready');
@@ -4170,6 +4405,7 @@ const DesignGenerator = ({ onOpenModal }) => {
             elevations: planSpec?.elevations || null,
             formData,
             footprintInfo,
+            renderImage: renderState?.image || null,
         }) || await svgToPngDataUrl(planSvg, {
             background: '#F6F4EF',
             pixelRatio: 3,
@@ -4184,11 +4420,29 @@ const DesignGenerator = ({ onOpenModal }) => {
     } catch (err) {
         console.error('[downloadBlueprint]', err);
         alert('Download failed.');
-    }
+        }
+    };
+
+    const downloadElevations = async () => {
+        if (!planSpec?.elevations) { alert('No elevations to export yet.'); return; }
+        try {
+            const pngUrl = await composeElevationReferenceSheet(planSpec.elevations);
+            if (!pngUrl) throw new Error('Unable to build elevation sheet');
+            const link = document.createElement('a');
+            link.href = pngUrl;
+            link.download = buildPlanExportFilename(formData, 'elevation set', 'png');
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (err) {
+            console.error('[downloadElevations]', err);
+            alert('Elevation export failed.');
+        }
     };
 
     const downloadDxf = () => {
         if (!planSpec || !planSpec.levels) { alert('No plan to export.'); return; }
+        if (!requireAdvancedAccess('CAD export (DXF)')) return;
         try {
             const dxfString = buildPresentationDxf(planSpec);
             const blob = new Blob([dxfString], { type: 'application/dxf' });
@@ -4206,40 +4460,35 @@ const DesignGenerator = ({ onOpenModal }) => {
         }
     };
 
-    const downloadEstimateCsv = () => {
-        const estimate = planSpec?.estimate || null;
-        if (!estimate) { alert('No estimate to export yet.'); return; }
-        try {
-            const csv = estimateToCsv(estimate);
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = buildPlanExportFilename(formData, 'planning estimate', 'csv');
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
-        } catch (err) {
-            console.error('[downloadEstimateCsv]', err);
-            alert('Estimate CSV export failed: ' + err.message);
-        }
+    const downloadRenderImage = () => {
+        if (!requireAdvancedAccess('Exterior Render')) return;
+        if (!renderState?.image) { alert('Generate an exterior render first.'); return; }
+        const link = document.createElement('a');
+        link.href = renderState.image;
+        link.download = buildPlanExportFilename(formData, 'exterior render', 'png');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
     };
 
     const downloadEstimateXlsx = async () => {
         const estimate = planSpec?.estimate || null;
         if (!planSpec || !estimate) { alert('No estimate to export yet.'); return; }
+        if (!requireAdvancedAccess('Cost Estimate XLSX')) return;
         setIsExportingEstimateXlsx(true);
         try {
             const res = await fetch('/api/estimate/xlsx', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+                },
                 body: JSON.stringify({
                     surveyData: formData,
                     planSpec,
                     estimate,
                     exportMeta: {
-                        projectName: 'Keystone Planning Estimate',
+                        projectName: 'Keystone Cost Estimate',
                         generatedAt: new Date().toISOString(),
                     },
                 }),
@@ -4263,7 +4512,7 @@ const DesignGenerator = ({ onOpenModal }) => {
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = buildPlanExportFilename(formData, 'planning estimate', 'xlsx');
+            a.download = buildPlanExportFilename(formData, 'cost estimate', 'xlsx');
             document.body.appendChild(a);
             a.click();
             a.remove();
@@ -4281,6 +4530,7 @@ const DesignGenerator = ({ onOpenModal }) => {
             alert('Generate a plan first.');
             return;
         }
+        if (!requireAdvancedAccess('Exterior Render')) return;
         if (renderPanelStatus === 'loading') return;
         setRenderLaunchSignal((value) => value + 1);
     };
@@ -4300,11 +4550,25 @@ const DesignGenerator = ({ onOpenModal }) => {
         renderPanelStatus === 'loading'
             ? 'Rendering 3D...'
             : renderPanelStatus === 'ready'
-                ? '3D Render Options'
-                : 'Generate 3D Render';
+                ? 'Exterior Render Options'
+                : 'Generate Exterior Render';
 
     const isLoading = status === 'loading-plan' || status === 'refining';
-    const resetSampleBrief = () => setFormData({ ...DEFAULT_FORM_DATA });
+    const resetSampleBrief = () => {
+        setFormData({ ...DEFAULT_FORM_DATA });
+        setStatus('idle');
+        setPlanSvg(null);
+        setPlanSpec(null);
+        setRefinementHistory([]);
+        setRefinementsLeft(10);
+        setGalleryId(null);
+        setPlanScore(null);
+        setFootprintInfo(null);
+        setAlternatives([]);
+        setRenderState(createEmptyRenderState());
+        setRenderPanelStatus('idle');
+        try { localStorage.removeItem(STUDIO_SESSION_KEY); } catch {}
+    };
 
     return (
         <section id="generator" className="py-14 md:py-[4.75rem] px-4 md:px-10" style={{background:'linear-gradient(180deg, #ECE3D3 0%, #F7F2E9 58%, #F3EEE6 100%)'}}>
@@ -4324,49 +4588,49 @@ const DesignGenerator = ({ onOpenModal }) => {
                     )}
                 </AnimatePresence>
 
-                {/* Passkey gate */}
+                {/* Advanced feature unlock */}
                 {!isUnlocked && (
                     <div className="studio-access-grid mb-8">
                         <div className="dream-panel studio-access-card p-6 md:p-8">
                             <div className="w-11 h-11 bg-white/10 rounded-full flex items-center justify-center mb-5">
                                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                             </div>
-                            <span className="section-label" style={{color:'rgba(244,239,230,0.56)'}}>Private beta access</span>
+                            <span className="section-label" style={{color:'rgba(244,239,230,0.56)'}}>Unlock advanced features</span>
                             <h3 className="cg text-white mt-4" style={{fontSize:'clamp(1.9rem, 3vw, 2.6rem)',letterSpacing:'-0.05em',textTransform:'uppercase',lineHeight:0.94}}>
-                                Unlock the same passkey-based workflow firms share with clients.
+                                Floor plans and elevations are free. Renders, DXF, refinements, and the cost estimate unlock with a passkey.
                             </h3>
                             <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(244,239,230,0.66)'}}>
-                                Use a passkey if you already have one, or request a guided walkthrough if you want to see how the client link and architect handoff work in practice.
+                                Start with the sample brief or create your own. If you want the advanced package during the trial phase, request access and we will send you a passkey.
                             </p>
                             <form onSubmit={handleUnlock} className="space-y-3 mt-6">
                                 <input type="password" placeholder="Enter access code" className="text-center tracking-[0.2em]" value={passkeyInput} onChange={e=>setPasskeyInput(e.target.value)} required style={{background:'rgba(255,255,255,0.92)',borderColor:'rgba(255,255,255,0.2)'}}/>
-                                <button type="submit" disabled={unlockStatus==='loading'} className="cta-hero cta-glow w-full">{unlockStatus==='loading'?'Verifying...':'Unlock Live Studio'}</button>
+                                <button type="submit" disabled={unlockStatus==='loading'} className="cta-hero cta-glow w-full">{unlockStatus==='loading'?'Verifying...':'Unlock Advanced Tools'}</button>
                             </form>
                             {unlockStatus.startsWith('error:') && <p className="mt-3 mono text-[9px] uppercase font-bold text-red">{unlockStatus.replace('error:','')}</p>}
                             <div className="grid grid-cols-2 gap-3 mt-6">
                                 <div className="studio-metric">
-                                    <strong>3</strong>
-                                    <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>live outputs</span>
+                                    <strong>Free</strong>
+                                    <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>plan + elevations</span>
                                 </div>
                                 <div className="studio-metric">
-                                    <strong>1</strong>
-                                    <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>sample brief loaded</span>
+                                    <strong>4</strong>
+                                    <span className="text-[11px] uppercase tracking-[0.18em]" style={{color:'rgba(244,239,230,0.5)'}}>advanced tools</span>
                                 </div>
                             </div>
                             <div className="mt-6 pt-5 border-t border-white/10">
-                                <p className="text-[11px]" style={{color:'rgba(244,239,230,0.6)'}}>Need guided access for your firm first?</p>
+                                <p className="text-[11px]" style={{color:'rgba(244,239,230,0.6)'}}>Need a trial passkey?</p>
                                 <button onClick={onOpenModal} className="mt-3 cta-hero cta-glow-soft">
-                                    Request Access
+                                    Request Trial Access
                                 </button>
                             </div>
                         </div>
                         <div className="paper-panel studio-preview-card p-5 md:p-6">
                             <span className="section-label" style={{color:'rgba(10,10,12,0.44)'}}>What opens up</span>
                             <h3 className="cg mt-4" style={{fontSize:'clamp(1.85rem, 3vw, 2.5rem)',lineHeight:0.95,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                What the architect gets back is already sitting inside the product.
+                                The house starts feeling real before you ever learn drafting software.
                             </h3>
                             <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.64)'}}>
-                                One client intake becomes a structured brief, a blueprint first, and a Gemini study second. The goal is not spectacle. It is a stronger first discussion for the studio.
+                                Tell Keystone what you want, how you want to live, and what matters most. The result is a floor plan first, elevations second, and the advanced package when you unlock it.
                             </p>
                             <div className="studio-preview-rail mt-5">
                                 {LIVE_STUDIO_PREVIEW.map((item) => (
@@ -4399,30 +4663,33 @@ const DesignGenerator = ({ onOpenModal }) => {
                     </div>
                 )}
 
-                <div className={`transition-opacity ${!isUnlocked ? 'opacity-10 pointer-events-none blur-sm select-none' : ''}`}>
+                <div className="transition-opacity">
                     <div className="paper-panel p-4 md:p-5 mb-4">
                         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
                             <div>
                                 <div className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(10,10,12,0.42)'}}>Main actions</div>
                                 <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.64)'}}>
-                                    Use this command bar to render, export, and package the current plan without jumping between panels.
+                                    Free today: floor plan and elevations. Unlock advanced features for the Exterior Render, CAD Export (DXF), refinements, and the Cost Estimate workbook.
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-3">
-                                <button onClick={launchRenderSurvey} disabled={!planSvg || isLoading || renderPanelStatus === 'loading'} className={actionButtonClass(!planSvg || isLoading || renderPanelStatus === 'loading')} style={actionButtonStyle(!planSvg || isLoading || renderPanelStatus === 'loading')}>
+                                <button onClick={launchRenderSurvey} disabled={!planSpec || !planSvg || isLoading || renderPanelStatus === 'loading'} className={actionButtonClass(!planSpec || !planSvg || isLoading || renderPanelStatus === 'loading')} style={actionButtonStyle(!planSpec || !planSvg || isLoading || renderPanelStatus === 'loading')}>
                                     {renderActionLabel}
                                 </button>
                                 <button onClick={downloadBlueprint} disabled={!planSvg || isLoading} className={actionButtonClass(!planSvg || isLoading)} style={actionButtonStyle(!planSvg || isLoading)}>
                                     Download PNG
                                 </button>
+                                <button onClick={downloadElevations} disabled={!planSpec?.elevations || isLoading} className={actionButtonClass(!planSpec?.elevations || isLoading)} style={actionButtonStyle(!planSpec?.elevations || isLoading)}>
+                                    Elevations PNG
+                                </button>
+                                <button onClick={downloadRenderImage} disabled={!renderState?.image || isLoading} className={actionButtonClass(!renderState?.image || isLoading)} style={actionButtonStyle(!renderState?.image || isLoading)}>
+                                    Exterior Render PNG
+                                </button>
                                 <button onClick={downloadDxf} disabled={!planSpec || isLoading} className={actionButtonClass(!planSpec || isLoading)} style={actionButtonStyle(!planSpec || isLoading)}>
                                     Export DXF
                                 </button>
-                                <button onClick={downloadEstimateCsv} disabled={!planSpec?.estimate || isLoading} className={actionButtonClass(!planSpec?.estimate || isLoading)} style={actionButtonStyle(!planSpec?.estimate || isLoading)}>
-                                    Estimate CSV
-                                </button>
                                 <button onClick={downloadEstimateXlsx} disabled={!planSpec?.estimate || isLoading || isExportingEstimateXlsx} className={actionButtonClass(!planSpec?.estimate || isLoading || isExportingEstimateXlsx)} style={actionButtonStyle(!planSpec?.estimate || isLoading || isExportingEstimateXlsx)}>
-                                    {isExportingEstimateXlsx ? 'Building XLSX...' : 'Estimate XLSX'}
+                                    {isExportingEstimateXlsx ? 'Building XLSX...' : 'Cost Estimate XLSX'}
                                 </button>
                             </div>
                         </div>
@@ -4493,6 +4760,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                         elevations={planSpec?.elevations}
                                         formData={formData}
                                         footprintInfo={footprintInfo}
+                                        renderImage={renderState?.image || null}
                                     />
                                 </InteractiveCanvas>
                             )}
@@ -4539,9 +4807,18 @@ const DesignGenerator = ({ onOpenModal }) => {
                                         )}
                                     </div>
                                 </div>
-                                <div className="paper-panel">
-                                    <RefinementPanel planSpec={planSpec} formData={formData} refinementsLeft={refinementsLeft} refinementHistory={refinementHistory} onRefine={handleRefine} isLoading={isLoading}/>
-                                </div>
+                                {isUnlocked ? (
+                                    <div className="paper-panel">
+                                        <RefinementPanel planSpec={planSpec} formData={formData} refinementsLeft={refinementsLeft} refinementHistory={refinementHistory} onRefine={handleRefine} isLoading={isLoading}/>
+                                    </div>
+                                ) : (
+                                    <div className="paper-panel p-5">
+                                        <p className="mono text-[8px] uppercase tracking-[0.2em]" style={{color:'rgba(10,10,12,0.42)'}}>Advanced refinement</p>
+                                        <p className="text-[11px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.64)'}}>
+                                            Free mode gives you the first plan and elevations. Unlock advanced access to refine, export DXF, generate renders, and download the Cost Estimate workbook.
+                                        </p>
+                                    </div>
+                                )}
                                 <ElevationsPanel elevations={planSpec?.elevations} formData={formData} onOpenPreview={img=>setZoomImage(img)}/>
                                 <div className="paper-panel">
                                     <Render3DPanel
@@ -4551,16 +4828,21 @@ const DesignGenerator = ({ onOpenModal }) => {
                                         elevations={planSpec?.elevations}
                                         galleryId={galleryId}
                                         onRenderReady={img=>setZoomImage(img)}
+                                        onRenderStateSnapshot={setRenderState}
                                         launchSignal={renderLaunchSignal}
                                         showLaunchButton={false}
                                         onRenderStatusChange={setRenderPanelStatus}
+                                        accessToken={accessToken}
+                                        initialState={renderState}
+                                        isLocked={!isUnlocked}
+                                        onLockedAction={promptUnlock}
                                     />
                                 </div>
                             </>
                         ) : (
                             <div className="paper-panel p-6 text-center text-mid flex flex-col items-center justify-center h-full">
                                 <svg className="w-8 h-8 mb-3 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-                                <p className="text-[11px] leading-relaxed">Once you generate a plan, export options, AI refinement tools, structural metrics, and the planning estimate will appear here.</p>
+                                <p className="text-[11px] leading-relaxed">Once you generate a plan, this side shows the summary, refinements, elevations, render controls, and the cost estimate.</p>
                             </div>
                         )}
                     </div>
@@ -4573,7 +4855,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                 <div>
                                     <span className="section-label">Plan Summary + Estimate</span>
                                     <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
-                                        Review the plan summary and the MVP planning estimate together below the main studio workspace.
+                                        Review the plan summary and the concept-level Cost Estimate together below the main studio workspace.
                                     </p>
                                 </div>
                                 <span className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
@@ -4585,7 +4867,25 @@ const DesignGenerator = ({ onOpenModal }) => {
                             <div className="border-r border-black/5">
                                 <PlanSummaryPanel planSpec={planSpec}/>
                             </div>
-                            <EstimatePanel estimate={planSpec?.estimate}/>
+                            {isUnlocked ? (
+                                <EstimatePanel estimate={planSpec?.estimate}/>
+                            ) : (
+                                <div className="paper-panel mt-4 overflow-hidden">
+                                    <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
+                                        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                                            <div>
+                                                <p className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.82)'}}>Cost estimate</p>
+                                                <p className="text-[13px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
+                                                    Unlock advanced features to view and download the concept-level Cost Estimate workbook for this plan.
+                                                </p>
+                                            </div>
+                                            <button onClick={onOpenModal} className="cta-hero cta-glow-soft">
+                                                Unlock Advanced Features
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -4616,6 +4916,8 @@ const DesignGenerator = ({ onOpenModal }) => {
                                                     setPlanSpec(alt.planSpec);
                                                     setPlanScore(alt.score);
                                                     setFootprintInfo(alt.footprintInfo);
+                                                    setRenderState(createEmptyRenderState());
+                                                    setRenderPanelStatus('idle');
                                                     // Swap: current becomes an alternative
                                                     const newAlts = [
                                                         { svg: planSvg, planSpec, score: planScore, footprintInfo },
@@ -4663,14 +4965,14 @@ const HOME_NAV_ITEMS = [
     { label:'Platform', kind:'section', value:'work' },
     { label:'How It Works', kind:'path', value:'/how-floor-plans-work' },
     { label:'Roadmap', kind:'path', value:'/roadmap' },
-    { label:'B2B Workflow', kind:'path', value:'/b2b-workflow' },
+    { label:'Guided Workflow', kind:'path', value:'/b2b-workflow' },
     { label:'FAQ', kind:'path', value:'/faq' },
 ];
 const PAGE_NAV_LINKS = [
     ['Home', '/'],
     ['How It Works', '/how-floor-plans-work'],
     ['Roadmap', '/roadmap'],
-    ['B2B Workflow', '/b2b-workflow'],
+    ['Guided Workflow', '/b2b-workflow'],
     ['FAQ', '/faq'],
     ['Live Studio', '/#generator'],
 ];
@@ -4684,7 +4986,7 @@ const FOOTER_SECTION_LINKS = [
 ];
 const RESOURCE_PAGE_LINKS = [
     ['How Floor Plans Work', '/how-floor-plans-work'],
-    ['B2B Workflow', '/b2b-workflow'],
+    ['Guided Workflow', '/b2b-workflow'],
     ['Roadmap', '/roadmap'],
     ['FAQ', '/faq'],
     ['Privacy', '/privacy'],
@@ -4693,8 +4995,8 @@ const RESOURCE_PAGE_LINKS = [
 const PLATFORM_PAGE_CARDS = [
     {
         eyebrow: 'Methodology',
-        title: 'How Keystone turns client intent into a first working floor plan.',
-        body: 'The floor-plan page replaces the old case-study framing with a clearer explanation of intake structure, plan logic, output review, and professional limits.',
+        title: 'How Keystone turns what you want into a first working floor plan.',
+        body: 'The floor-plan page explains the intake, plan logic, output review, and professional limits in plain language.',
         href: '/how-floor-plans-work',
         cta: 'View Methodology',
         image: ASSETS.exampleBlueprint,
@@ -4703,18 +5005,18 @@ const PLATFORM_PAGE_CARDS = [
     },
     {
         eyebrow: 'Studio workflow',
-        title: 'A B2B handoff shaped for architecture firms, not generic software funnels.',
-        body: 'See how the client link, passkey, structured brief, generated plan, elevation set, export package, and optional Gemini study fit together inside a professional practice.',
+        title: 'See how the guided brief becomes a plan, elevations, and the optional advanced package.',
+        body: 'Follow the path from plain-language survey to floor plan, elevations, exterior render, cost estimate, and export-ready files.',
         href: '/b2b-workflow',
         cta: 'View Workflow',
         image: ASSETS.workflow.planReview,
-        alt: 'Architect reviewing a Keystone floor plan on screen and paper',
-        stat: 'Firm-led',
+        alt: 'Home planning workflow inside Keystone',
+        stat: 'Step by step',
     },
     {
         eyebrow: 'Product roadmap',
         title: 'What is live today, what is next, and where 3D, scheduling, and estimates fit.',
-        body: 'The roadmap page separates live capability like elevations, vector DXF export, and the MVP planning estimate from what is still next, like scheduling and deeper 3D tools.',
+        body: 'The roadmap page separates live capability like elevations, CAD export, and the Cost Estimate from what is still next, like scheduling and deeper 3D tools.',
         href: '/roadmap',
         cta: 'View Roadmap',
         image: ASSETS.roadmap.overview,
@@ -4723,94 +5025,94 @@ const PLATFORM_PAGE_CARDS = [
     },
 ];
 const LIVE_NOW_FEATURES = [
-    'Client-guided brief capture',
+    'Guided brief in plain language',
     'Generated floor plan + blueprint image',
     'Elevation views',
-    'MVP quantity takeoff + cost estimate',
-    'Vector DXF export',
-    'Gemini-powered exterior study',
+    'Cost Estimate workbook',
+    'CAD Export (DXF)',
+    'Exterior Render',
 ];
 const HERO_SIGNAL_CARDS = [
     {
         label: 'Live today',
-        value: 'Brief -> plan -> elevations -> export',
-        note: 'One client brief becomes a real review package before the meeting starts.',
+        value: 'Brief -> plan -> elevations -> cost',
+        note: 'One guided brief becomes a real home concept package without drafting knowledge.',
     },
     {
         label: 'Best fit',
-        value: 'Residential architecture firms',
-        note: 'Built for B2B studios that want stronger first meetings and less unpaid drift.',
+        value: 'First-time home builders',
+        note: 'Built for people who know what they want in a house, but not how to draw it.',
     },
     {
-        label: 'Commercial model',
-        value: 'Firm-led rollout',
-        note: 'Start with one active lead, then expand the workflow across the studio.',
+        label: 'Trial phase',
+        value: 'Free floor plan + elevations',
+        note: 'The advanced package unlocks during the trial phase with a passkey after request.',
     },
 ];
 const SAMPLE_SESSION_STEPS = [
     {
         number: '01',
-        title: 'Firm shares the link',
-        body: 'The studio sends a guided intake link and passkey before the first meeting so the client can do the early thinking in structure.',
+        title: 'Tell Keystone what you want',
+        body: 'Answer the guided survey in plain language instead of trying to explain your dream house in technical terms.',
     },
     {
         number: '02',
-        title: 'Client brief captured',
-        body: 'Room count, area target, light priorities, and lot cues arrive in a format the architect can review later instead of re-extracting live.',
+        title: 'Your brief becomes a real layout',
+        body: 'Room count, area target, light priorities, and lot cues become a working floor plan and elevations you can actually react to.',
     },
     {
         number: '03',
-        title: 'Plan generated and saved',
-        body: 'Keystone scores multiple footprint options, keeps the strongest one, and prepares the plan, elevations, estimate, and export files before kickoff.',
+        title: 'Review the first package',
+        body: 'Keystone scores multiple footprint options, keeps the strongest one, and prepares the plan, elevations, and core summary together.',
     },
     {
         number: '04',
-        title: 'Meeting starts ahead',
-        body: 'If the studio wants it, the same approved geometry also becomes a Gemini study so the client reacts to mood while the architect reacts to plan.',
+        title: 'Unlock the advanced package',
+        body: 'With a passkey, the same approved geometry can also become an Exterior Render, Cost Estimate workbook, and CAD export.',
     },
 ];
 const GENERATOR_FLOW_STEPS = [
-    { label: 'Unlock', body: 'Open the same passkey-based workflow a firm can share with its clients.' },
-    { label: 'Answer', body: 'Move through the guided intake a client would complete before the first architect meeting.' },
-    { label: 'Compare', body: 'Review the strongest plan and alternatives the architect would see before kickoff.' },
-    { label: 'Export', body: 'Download the blueprint, elevations, MVP planning estimate, and vector DXF, then optionally create a Gemini exterior study from the same brief.' },
+    { label: 'Answer', body: 'Move through the guided intake in plain language.' },
+    { label: 'Compare', body: 'Review the strongest plan and alternatives side by side.' },
+    { label: 'Export', body: 'Download the blueprint and elevation sheet immediately.' },
+    { label: 'Unlock', body: 'Use a passkey later for renders, refinements, the Cost Estimate workbook, and CAD export.' },
 ];
 const GENERATOR_UNLOCK_PREVIEW = [
-    { label: 'Structured brief', body: 'The firm can review exactly what the client entered before anyone sits down together.' },
-    { label: 'Plan + elevations', body: 'A scored plan and matching elevation views can be saved immediately for the meeting.' },
-    { label: 'Estimate + export', body: 'The same brief can also create an MVP quantity takeoff, early cost range, vector DXF export, and an optional Gemini exterior image.' },
+    { label: 'Free', body: 'Generate the floor plan and elevation set without needing a passkey.' },
+    { label: 'Unlocked', body: 'Add refinements, Exterior Render, Cost Estimate, and CAD export after you request trial access.' },
+    { label: 'Made for people', body: 'You do not need a technical background to describe the house you want.' },
 ];
 const LIVE_STUDIO_PREVIEW = [
     {
         label: 'Plan + elevation set',
-        title: 'The architect gets a real review package before kickoff.',
-        body: 'A scored plan and matching elevations give the studio real geometry to critique instead of relying on raw intake notes.',
+        title: 'You get a real concept package, not just a mood board.',
+        body: 'A scored plan and matching elevations make the house easier to understand before anyone opens CAD.',
         image: ASSETS.exampleBlueprint,
         alt: 'Keystone generated blueprint preview',
     },
     {
-        label: 'Client-facing visual anchor',
-        title: 'Mood can be added without losing the plan.',
-        body: 'The paired exterior study gives the client something emotional to respond to while the architect stays spatially grounded.',
+        label: 'Exterior render',
+        title: 'Mood can be added without losing the house.',
+        body: 'The render stays grounded in the same geometry, so the house still matches the plan and elevations.',
         image: ASSETS.exampleRender,
         alt: 'Keystone exterior study preview',
     },
 ];
 const SERVICE_BENEFITS = [
     {
-        eyebrow: 'Before the meeting',
-        title: 'The architect opens with clearer intent.',
-        body: 'The client has already described rooms, goals, light, and taste in a format the studio can actually use.',
+        eyebrow: 'Before you build',
+        title: 'You can finally see what you have been describing.',
+        body: 'Rooms, light, lifestyle, and priorities become something visual instead of a vague idea in your head.',
     },
     {
-        eyebrow: 'Protect studio time',
-        title: 'Unpaid discovery hours stop leaking into fog.',
-        body: 'Keystone is designed to keep early qualification from becoming free-form consulting before the relationship is real.',
+        eyebrow: 'No technical barrier',
+        title: 'You do not need drafting language to use it.',
+        body: 'The survey is written for real people, so the process feels understandable from the first screen.',
     },
     {
         eyebrow: 'Clear next step',
-        title: 'Both sides leave with a real artifact.',
-        body: 'A saved plan export and optional visual study give the architect and the client something specific to continue from.',
+        title: 'You leave with something real to compare and discuss.',
+        body: 'A saved plan, elevation set, and optional advanced package give you something specific to refine with confidence.',
     },
 ];
 const navHref = (item, home = false) => item.kind === 'section' ? (home ? `#${item.value}` : homeSectionHref(item.value)) : item.value;
@@ -4822,7 +5124,7 @@ const SiteFooter = ({ home = false }) => (
                 <div>
                     <BrandLockup href="/" reverse compact/>
                     <p className="text-sm leading-relaxed mt-4" style={{color:'rgba(244,239,230,0.58)'}}>
-                        Keystone helps residential firms start the first meeting with a client brief, a floor plan, elevations, and export files already prepared.
+                        Keystone helps homeowners and first-time home builders turn what they want into a floor plan, elevations, an exterior render, and an early cost estimate.
                     </p>
                 </div>
                 <div>
@@ -4871,12 +5173,12 @@ const PageNav = ({ onOpenModal }) => (
                 <a key={href} href={href} className="transition-colors hover:text-black">{label}</a>
             ))}
             <button onClick={onOpenModal} className="cta-hero cta-glow-soft px-5 py-3 text-[11px]">
-                Request Access
+                Unlock Advanced Features
             </button>
         </div>
         <div className="md:hidden flex items-center gap-2">
             <a href="/#generator" className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(9,9,9,0.56)'}}>Live Studio</a>
-            <button onClick={onOpenModal} className="cta-hero cta-glow-soft px-4 py-2 text-[10px]">Request Access</button>
+            <button onClick={onOpenModal} className="cta-hero cta-glow-soft px-4 py-2 text-[10px]">Unlock</button>
         </div>
     </nav>
 );
@@ -4901,18 +5203,31 @@ const DreamApp = () => {
     const [isMenuOpen, setMenuOpen] = useState(false);
     const [heroVisible, setHeroVisible] = useState(true);
     const [isStudioOpen, setStudioOpen] = useState(false);
-    usePageTitle('Keystone AI - Floor Plans in 60 Seconds');
+    const [hasStudioMounted, setHasStudioMounted] = useState(false);
+    usePageTitle('Keystone AI - Home Design in Plain Language');
 
     useEffect(() => {
         const handler = () => setStudioOpen(true);
-        const escHandler = (e) => { if (e.key === 'Escape') setStudioOpen(false); };
         document.addEventListener('keystone:open-studio', handler);
-        document.addEventListener('keydown', escHandler);
         return () => {
             document.removeEventListener('keystone:open-studio', handler);
-            document.removeEventListener('keydown', escHandler);
         };
     }, []);
+
+    useEffect(() => {
+        const openFromHash = () => {
+            if (window.location.hash === '#generator') {
+                setStudioOpen(true);
+            }
+        };
+        openFromHash();
+        window.addEventListener('hashchange', openFromHash);
+        return () => window.removeEventListener('hashchange', openFromHash);
+    }, []);
+
+    useEffect(() => {
+        if (isStudioOpen) setHasStudioMounted(true);
+    }, [isStudioOpen]);
 
     useEffect(() => {
         if (isStudioOpen) document.body.classList.add('studio-open');
@@ -4923,106 +5238,107 @@ const DreamApp = () => {
     const featuredWorks = [
         {
             eyebrow: 'Generated floor plan',
-            title: 'A plan the architect can react to before kickoff.',
-            body: 'Room count, circulation intent, and footprint goals become a real plan instead of a vague transcript taken in the room.',
+            title: 'A plan you can react to before talking to a professional.',
+            body: 'Room count, circulation intent, and footprint goals become a real plan instead of a vague description.',
             image: ASSETS.exampleBlueprint,
             alt: 'Keystone generated floor plan',
         },
         {
-            eyebrow: 'Gemini exterior study',
-            title: 'An atmosphere the client can actually feel.',
-            body: 'The same brief can produce a visual anchor that helps the client respond emotionally while the architect stays tied to the plan.',
+            eyebrow: 'Exterior render',
+            title: 'An exterior you can actually feel.',
+            body: 'The same brief can produce a visual anchor that helps you respond emotionally while still staying tied to the same house.',
             image: ASSETS.exampleRender,
-            alt: 'Keystone Gemini exterior study',
+            alt: 'Keystone exterior render',
         },
         {
             eyebrow: 'Elevation set',
             title: 'The plan now comes with facade views too.',
-            body: 'Matching elevations make the output feel closer to a real architectural review package before the meeting begins.',
+            body: 'Matching elevations make the output feel closer to a real home concept package before you ever open CAD.',
             image: ASSETS.exampleElevationSheet,
             alt: 'Keystone generated elevation sheet',
         },
     ];
     const trustCards = [
         {
-            eyebrow: 'Firm workflow',
-            title: 'Sold to the studio, used by the client.',
-            body: 'The firm shares the link and passkey, the client completes the guided brief, and the architect reviews the output before the meeting.',
+            eyebrow: 'Plain-language workflow',
+            title: 'Made for people, not just technical teams.',
+            body: 'You answer the brief in everyday language and Keystone translates it into a plan package you can actually understand.',
         },
         {
             eyebrow: 'Live today',
-            title: 'Plan, elevations, estimate, DXF export, and Gemini study.',
-            body: 'Keystone currently covers guided intake, floor plan generation, elevation views, an MVP planning estimate, vector DXF export, and Gemini exterior study generation from the same brief.',
+            title: 'Plan, elevations, Cost Estimate, DXF export, and Exterior Render.',
+            body: 'Keystone currently covers guided intake, floor plan generation, elevation views, a concept-level Cost Estimate, CAD Export (DXF), and an Exterior Render from the same brief.',
         },
         {
             eyebrow: 'Coming next',
             title: 'Scheduling and deeper 3D remain on the roadmap.',
-            body: 'Planning-grade quantity takeoff and cost range are now live. Scheduling and deeper viewer tools are still being kept on the roadmap until they are ready.',
+            body: 'The Cost Estimate is now live. Scheduling, richer viewer tools, and deeper quantity logic are still on the roadmap until they are ready.',
         },
     ];
     const outcomeCards = [
         {
-            eyebrow: 'Before the meeting',
-            title: 'A more prepared client arrives.',
-            body: 'Taste, light, priorities, and rough footprint intent are already translated into something your team can react to together.',
-            stat: '1 link',
+            eyebrow: 'Before you build',
+            title: 'You start with something real.',
+            body: 'Taste, light, priorities, and rough footprint intent are already translated into something you can compare and discuss.',
+            stat: '1 brief',
         },
         {
             eyebrow: 'Inside the studio',
             title: 'The blank page disappears.',
-            body: 'Instead of starting from raw notes, your team begins with a structured brief, a plan, and an optional visual anchor worth discussing.',
+            body: 'Instead of starting from raw notes, you begin with a structured brief, a plan, and an optional visual anchor worth discussing.',
             stat: '<60s',
         },
         {
-            eyebrow: 'Across the pipeline',
-            title: 'Early hours stay protected.',
-            body: 'Keystone helps firms qualify seriousness faster, save unpaid exploration time, and move active leads into real design momentum.',
-            stat: 'B2B',
+            eyebrow: 'Across the process',
+            title: 'Early confusion starts shrinking.',
+            body: 'Keystone helps homeowners make clearer decisions before they spend heavily on drawings, revisions, and miscommunication.',
+            stat: 'Clearer',
         },
     ];
     const marqueeItems = [
-        'Architect-first discovery',
+        'Home design, made understandable',
         'Live floor plan generation',
         'Elevation views',
-        'MVP planning estimate',
-        'Vector DXF export',
-        'Gemini exterior studies',
-        'Client-ready visual anchors',
+        'Cost estimate',
+        'CAD Export (DXF)',
+        'Exterior renders',
+        'Made for first-time home builders',
     ];
     const serviceCards = [
         {
             number: '01',
-            title: 'Firm sends the link',
-            body: 'The architect shares a guided link and passkey before kickoff so the client can complete the early thinking asynchronously.',
+            title: 'You answer the guided brief',
+            body: 'Instead of trying to speak in drafting terms, you describe your future home in plain language.',
         },
         {
             number: '02',
-            title: 'Client brief becomes a review package',
-            body: 'That intake becomes a first residential layout your team can review, export, and use as the basis for the real conversation.',
+            title: 'The brief becomes a house concept',
+            body: 'That intake becomes a first residential layout you can review, export, and use as the basis for the real conversation.',
         },
         {
             number: '03',
-            title: 'Architect walks in prepared',
-            body: 'Before the meeting starts, the firm can already review the brief, save the plan, elevation set, estimate, and DXF, and optionally add a Gemini study for emotional context.',
+            title: 'The advanced package unlocks when you need it',
+            body: 'Once you request trial access, the same plan can also produce an Exterior Render, Cost Estimate workbook, and CAD export.',
         },
     ];
     const studioMetrics = [
         { value: '<60s', label: 'first floor plan' },
         { value: '4 views', label: 'elevation set' },
-        { value: 'MVP', label: 'cost estimate' },
+        { value: 'XLSX', label: 'cost estimate' },
         { value: 'DXF', label: 'cad export' },
-        { value: 'Gemini', label: '3D exterior study' },
+        { value: '3D', label: 'exterior render' },
     ];
     const sessionStack = [
-        'Client-facing intake link',
-        'Passkey-controlled access',
+        'Guided survey in plain language',
+        'Free floor plan + elevations',
+        'Passkey-controlled advanced tools',
         'Scored footprint alternatives',
         'Blueprint image export',
         'Elevation SVG set',
-        'MVP planning estimate',
-        'Vector DXF export',
-        'Firm-visible session history',
-        'Gemini exterior study',
+        'Cost Estimate workbook',
+        'CAD Export (DXF)',
+        'Saved studio session state',
+        'Exterior render',
         'Recent-session gallery proof',
     ];
     const studioTeam = [
@@ -5030,7 +5346,7 @@ const DreamApp = () => {
             name: 'Sujan Acharya',
             role: 'Founder and CEO',
             image: ASSETS.team.sujan,
-            bio: 'Civil engineering and construction management background. Built Keystone after watching firms lose weekends to unpaid discovery work.',
+            bio: 'Civil engineering and construction management background. Built Keystone after seeing how hard it is for families to explain the house they want without getting lost in technical language.',
         },
         {
             name: 'Rhythm Bhattarai',
@@ -5042,7 +5358,7 @@ const DreamApp = () => {
             name: 'Subrat Acharya',
             role: 'CFO',
             image: ASSETS.team.subrat,
-            bio: 'Financial operator focused on keeping Keystone rigorous, durable, and built for steady studio adoption.',
+            bio: 'Financial operator focused on keeping Keystone rigorous, durable, and realistic for homeowners trying to make confident early decisions.',
         },
     ];
     const roadmapCards = [
@@ -5054,39 +5370,39 @@ const DreamApp = () => {
     ];
     const quoteCards = [
         {
-            quote: 'The best use case is a firm that wants to send one link before the first serious meeting and walk in with something concrete already on screen.',
-            name: 'Workflow fit',
-            firm: 'B2B motion',
+            quote: 'The strongest use case right now is the homeowner who knows what they want, but needs help seeing it clearly for the first time.',
+            name: 'Who it is for',
+            firm: 'Product direction',
         },
         {
-            quote: 'The live promise stays disciplined on purpose: guided intake, generated plan, elevations, MVP planning estimate, vector DXF export, and optional Gemini study. Scheduling and deeper quantity logic come next, but only when they are real.',
+            quote: 'The live promise stays disciplined on purpose: guided intake, generated plan, elevations, a Cost Estimate, CAD export, and an optional Exterior Render. Scheduling and deeper quantity logic come next, but only when they are real.',
             name: 'Scope discipline',
             firm: 'Product truth',
         },
     ];
     const pricingTiers = [
         {
-            tag: 'Guided demo',
+            tag: 'Trial phase',
             price: '$0',
-            unit: 'for qualified firms',
-            desc: 'A guided walkthrough of the firm workflow so your team can see the client link, plan generation, elevation views, export path, and Gemini study together.',
-            cta: 'Request Access',
+            unit: 'demo floor plan generation',
+            desc: 'Currently in trial phase. Start with one free floor plan and the matching elevations, then request access if you want the advanced package.',
+            cta: 'Request Trial Access',
             featured: false,
         },
         {
             tag: 'Single session',
             price: '$149',
-            unit: 'per live run',
-            desc: 'A complete Keystone session for one active lead, from client brief capture through architect-ready plan, elevations, export, and optional Gemini study.',
-            cta: 'Open Live Studio',
+            unit: '1 project',
+            desc: 'After launch: one complete Keystone session for one home project, with unlimited refining and unlimited exterior renders.',
+            cta: 'Join Launch List',
             featured: true,
         },
         {
             tag: 'Studio pack',
-            price: '$1,199',
-            unit: '10 sessions',
-            desc: 'For firms that want Keystone to become a repeatable pre-meeting rhythm across multiple active residential leads.',
-            cta: 'Request Access',
+            price: '$1,099',
+            unit: '10 projects',
+            desc: 'After launch: a 10-pack for repeat use across multiple home concepts, with the same advanced package available in every project.',
+            cta: 'Join Launch List',
             featured: false,
         },
     ];
@@ -5134,7 +5450,7 @@ const DreamApp = () => {
                                 <a key={item.label} href={navHref(item, true)} className="transition-colors hover:text-black">{item.label}</a>
                             ))}
                             <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow px-5 py-3 text-[11px]">
-                                Request Access
+                                Unlock Advanced Features
                             </button>
                         </div>
                     </motion.nav>
@@ -5157,25 +5473,25 @@ const DreamApp = () => {
                                         <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} transition={{delay:0.12}} className="mb-6">
                                             <span className="hero-badge">
                                                 <span className="hero-badge-dot"/>
-                                                Architect-first discovery
+                                                Home design, made understandable
                                             </span>
                                         </motion.div>
 
                                         <motion.h1 initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.18}}
                                             className="cg leading-[0.84]"
                                             style={{fontSize:'clamp(3.2rem,7.4vw,6.8rem)',letterSpacing:'-0.065em',textTransform:'uppercase',color:'var(--ink)'}}>
-                                            <span className="block">Start the</span>
+                                            <span className="block">Describe the</span>
                                             <span className="block">
-                                                <BlurText text="first meeting" delay={55} direction="bottom" tag="span"
+                                                <BlurText text="house you want" delay={55} direction="bottom" tag="span"
                                                     className="serif hero-accent-word" style={{ color: '#FF7040' }}/>
                                             </span>
-                                            <span className="block" style={{color:'rgba(78,69,61,0.78)'}}>with a real plan.</span>
+                                            <span className="block" style={{color:'rgba(78,69,61,0.78)'}}>and see it take shape.</span>
                                         </motion.h1>
 
                                         <motion.p initial={{opacity:0,y:14}} animate={{opacity:1,y:0}} transition={{delay:0.48}}
                                             className="mt-6 max-w-[46rem] leading-relaxed"
                                             style={{fontSize:'clamp(1rem,1.8vw,1.12rem)',color:'rgba(32,26,21,0.68)'}}>
-                                            Keystone helps residential firms start the first meeting with a client brief, a floor plan, elevations, and an optional exterior study already prepared.
+                                            Keystone helps homeowners and first-time home builders turn what they want into a floor plan, elevations, an Exterior Render, and an early Cost Estimate without needing a technical background.
                                         </motion.p>
 
                                         <motion.div initial={{opacity:0,y:14}} animate={{opacity:1,y:0}} transition={{delay:0.62}}
@@ -5187,8 +5503,8 @@ const DreamApp = () => {
                                                     Try it now
                                                 </span>
                                             </StarBorderBtn>
-                                            <button onClick={() => setModalOpen(true)} data-cursor-text="Request access" className="cta-hero cta-glow-soft">
-                                                Request Access
+                                            <button onClick={() => setModalOpen(true)} data-cursor-text="Unlock advanced features" className="cta-hero cta-glow-soft">
+                                                Unlock Advanced Features
                                             </button>
                                         </motion.div>
 
@@ -5226,10 +5542,10 @@ const DreamApp = () => {
                                         }}/>
                                         <span className="section-label" style={{color:'rgba(245,240,233,0.55)'}}>Inside the room</span>
                                         <h2 className="cg text-white mt-4" style={{fontSize:'clamp(1.7rem,3.1vw,2.6rem)',lineHeight:0.92,textTransform:'uppercase',letterSpacing:'-0.055em'}}>
-                                            A first pass that already feels worth discussing.
+                                            A first pass that already feels worth building on.
                                         </h2>
                                         <p className="mt-3 text-sm leading-relaxed" style={{color:'rgba(244,239,230,0.6)'}}>
-                                            Clients arrive with something they can point to. Your team arrives with something they can shape.
+                                            You arrive at the next conversation with something you can point to, compare, and refine instead of starting from a blank page.
                                         </p>
                                         <div className="grid grid-cols-2 gap-3 mt-6">
                                             {studioMetrics.map((metric) => (
@@ -5240,7 +5556,7 @@ const DreamApp = () => {
                                             ))}
                                         </div>
                                         <div className="mt-5 pt-4 border-t border-white/10">
-                                            <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.46)'}}>Method before meeting</p>
+                                            <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.46)'}}>How it works</p>
                                             <a href="/how-floor-plans-work" data-cursor-text="Open methodology page" className="inline-block mt-3 text-sm transition-colors hover:text-orange-300" style={{color:'rgba(255,255,255,0.88)'}}>
                                                 See how Keystone makes floor plans â†’
                                             </a>
@@ -5267,11 +5583,11 @@ const DreamApp = () => {
                                         </Reveal>
                                         <Reveal y={16} delay={0.16}>
                                         <p className="mt-4 text-sm md:text-base leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
-                                            The fastest way to trust Keystone is to watch the workflow happen in sequence: client brief, generated plan, elevations, export-ready DXF, and optional Gemini study before the first architect meeting.
+                                            The fastest way to trust Keystone is to watch the workflow happen in sequence: guided brief, generated plan, elevations, Cost Estimate, CAD export, and optional Exterior Render from the same house.
                                         </p>
                                         <div className="mt-6 flex flex-wrap gap-3">
                                             <StarBorderBtn onClick={() => scrollTo('generator')}>
-                                                <span>Open Live Studio</span>
+                                                <span>Try Free Floor Plan</span>
                                                 <span className="cta-live-mark"><span className="cta-live-dot"/>Now</span>
                                             </StarBorderBtn>
                                             <a href="/how-floor-plans-work" data-cursor-text="Open methodology page" className="cta-secondary">How Floor Plans Work</a>
@@ -5324,14 +5640,14 @@ const DreamApp = () => {
                                                 <div className="bc-dot" style={{background:'#FF5F57'}}/>
                                                 <div className="bc-dot" style={{background:'#FFBD2E'}}/>
                                                 <div className="bc-dot" style={{background:'#28C840'}}/>
-                                                <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / 3D EXTERIOR STUDY</span>
+                                                <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>KEYSTONE AI / EXTERIOR RENDER</span>
                                             </div>
                                             <div className="proof-browser-screen" style={{minHeight:'100%'}}>
-                                                <SmartImage src={ASSETS.exampleRender} alt="Keystone sample exterior study" style={{width:'100%',height:'100%',minHeight:'320px',objectFit:'cover',display:'block'}}/>
+                                                <SmartImage src={ASSETS.exampleRender} alt="Keystone sample exterior render" style={{width:'100%',height:'100%',minHeight:'320px',objectFit:'cover',display:'block'}}/>
                                                 <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg, rgba(9,9,9,0.02) 0%, rgba(9,9,9,0.48) 100%)'}}/>
                                                 <div className="proof-caption" style={{position:'absolute',left:0,right:0,bottom:0,borderTop:'none',color:'rgba(255,255,255,0.72)',background:'linear-gradient(180deg, transparent, rgba(9,9,9,0.58))'}}>
                                                     <span className="proof-dot" style={{background:'var(--accent)'}}/>
-                                                    The same brief, now felt as atmosphere
+                                                    The same brief, now felt as a real house
                                                 </div>
                                             </div>
                                         </motion.div>
@@ -5386,7 +5702,7 @@ const DreamApp = () => {
                                                     Try the real workflow, not a teaser.
                                                 </h2>
                                                 <p className="mt-5 max-w-2xl text-base leading-relaxed" style={{color:'rgba(9,9,9,0.62)'}}>
-                                                    The same client-to-studio logic behind the hero is right below. Open the live studio, walk through the guided intake, shape a plan, and see what the architect gets back before kickoff.
+                                                    The same guided workflow behind the hero is right below. Open the live studio, walk through the survey, shape a plan, and see how much you can understand before a formal design meeting.
                                                 </p>
                                             </div>
                                             <div className="flex justify-start lg:justify-end">
@@ -5394,7 +5710,7 @@ const DreamApp = () => {
                                                     <span>Open Live Studio</span>
                                                     <span className="cta-live-mark">
                                                         <span className="cta-live-dot"/>
-                                                        Try it now
+                                                    Free today
                                                     </span>
                                                 </StarBorderBtn>
                                             </div>
@@ -5406,12 +5722,23 @@ const DreamApp = () => {
                     </section>
 
                     {/* Studio fullscreen modal */}
-                    <AnimatePresence>
-                        {isStudioOpen && (
-                            <motion.div key="studio-modal" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
-                                transition={{duration:0.18}} className="studio-modal-overlay">
-                                <motion.div initial={{y:32,opacity:0}} animate={{y:0,opacity:1}} exit={{y:16,opacity:0}}
-                                    transition={{duration:0.22,ease:[0.22,1,0.36,1]}} className="studio-modal-window">
+                    {hasStudioMounted && (
+                        <div
+                            className="studio-modal-overlay"
+                            style={{
+                                opacity: isStudioOpen ? 1 : 0,
+                                pointerEvents: isStudioOpen ? 'auto' : 'none',
+                                transition: 'opacity 180ms ease',
+                            }}
+                        >
+                            <div
+                                className="studio-modal-window"
+                                style={{
+                                    transform: isStudioOpen ? 'translateY(0px)' : 'translateY(16px)',
+                                    opacity: isStudioOpen ? 1 : 0,
+                                    transition: 'transform 220ms cubic-bezier(0.22,1,0.36,1), opacity 220ms cubic-bezier(0.22,1,0.36,1)',
+                                }}
+                            >
                                     <div className="studio-modal-topbar">
                                         <div style={{display:'flex',alignItems:'center',gap:10}}>
                                             <img src={ASSETS.icon} alt="Keystone" style={{width:22,height:22,opacity:0.85}}/>
@@ -5427,10 +5754,9 @@ const DreamApp = () => {
                                     <div className="studio-modal-body">
                                         <DesignGenerator onOpenModal={() => setModalOpen(true)}/>
                                     </div>
-                                </motion.div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                            </div>
+                        </div>
+                    )}
 
                     <Gallery onOpenModal={() => setModalOpen(true)}/>
 
@@ -5476,7 +5802,7 @@ const DreamApp = () => {
                                 </div>
                                 <Reveal y={16} delay={0.18}>
                                 <p className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.58)'}}>
-                                    Keystone works when the client, the architect, and the next decision all feel less vague. These are the business-level shifts the workflow is built to create for firms.
+                                    Keystone works when the person planning the home, the future professional team, and the next decision all feel less vague. These are the shifts the workflow is built to create.
                                 </p>
                                 </Reveal>
                             </div>
@@ -5521,7 +5847,7 @@ const DreamApp = () => {
                                 </div>
                                 <Reveal y={16} delay={0.16}>
                                     <p className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.6)'}}>
-                                        The homepage keeps the live product story. These pages go deeper into the floor-plan method, the firm workflow, and the roadmap without flattening everything into one long scroll.
+                                        The homepage keeps the live product story. These pages go deeper into the floor-plan method, the guided workflow, and the roadmap without flattening everything into one long scroll.
                                     </p>
                                 </Reveal>
                             </div>
@@ -5561,18 +5887,18 @@ const DreamApp = () => {
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-12 items-end">
                                 <div>
                                     <Reveal y={12}>
-                                        <span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Firm workflow</span>
+                                        <span className="section-label" style={{color:'rgba(10,10,12,0.45)'}}>Your workflow</span>
                                         <div className="orange-line mt-3"/>
                                     </Reveal>
                                     <Reveal y={32} delay={0.08}>
                                     <h2 className="cg mt-6" style={{fontSize:'clamp(2.8rem, 7vw, 5.4rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        A <GradientText>calmer way</GradientText> to move from first inquiry to architect-ready intent.
+                                        A <GradientText>calmer way</GradientText> to move from first idea to a real house concept.
                                     </h2>
                                     </Reveal>
                                 </div>
                                 <Reveal y={16} delay={0.18}>
                                 <p className="text-sm md:text-base leading-relaxed text-mid">
-                                    Keystone is not trying to replace architectural judgment. It gives firms a better handoff from client curiosity to the first serious design conversation.
+                                    Keystone is not trying to replace professional judgment. It gives homeowners a clearer starting point before they spend heavily on drawings and revisions.
                                 </p>
                                 </Reveal>
                             </div>
@@ -5594,7 +5920,7 @@ const DreamApp = () => {
                                 <SpotlightCard spotlightColor="rgba(255,106,55,0.1)" className="paper-panel p-6 md:p-7 self-start">
                                     <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'var(--accent)',opacity:0.8}}>Inside every session</div>
                                     <div className="orange-line mt-3 mb-4"/>
-                                    <h3 className="cg mt-5 text-[2.1rem] leading-[0.95]">The studio stack clients never see, but your team will feel.</h3>
+                                    <h3 className="cg mt-5 text-[2.1rem] leading-[0.95]">The full package that makes the house easier to understand.</h3>
                                     <div className="flex flex-wrap gap-2 mt-6">
                                         {sessionStack.map((item) => (
                                             <span key={item} className="session-stack-pill">{item}</span>
@@ -5642,12 +5968,12 @@ const DreamApp = () => {
                                 </Reveal>
                                 <Reveal y={32} delay={0.08}>
                                 <h2 className="cg mt-6" style={{fontSize:'clamp(2.4rem, 5.6vw, 4.5rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                    <GradientText>Clear pricing</GradientText> before your team commits the hours.
+                                    <GradientText>Clear pricing</GradientText> before you commit the money.
                                 </h2>
                                 </Reveal>
                                 <Reveal y={16} delay={0.18}>
                                 <p className="mt-5 text-base leading-relaxed" style={{color:'var(--mid)'}}>
-                                    Start with a guided demo, try one live client session, or turn Keystone into a repeatable pre-meeting rhythm without a dead-month subscription.
+                                    Start with the free trial floor plan, then move into the paid session model once the product is ready for launch.
                                 </p>
                                 </Reveal>
                             </div>
@@ -5679,7 +6005,7 @@ const DreamApp = () => {
                                                         <div className="mono text-[10px] uppercase tracking-[0.22em] mt-2" style={{color:'rgba(10,10,12,0.42)'}}>{tier.unit}</div>
                                                         <p className="mt-5 text-sm leading-relaxed flex-1" style={{color:'var(--mid)'}}>{tier.desc}</p>
                                                         <button onClick={() => setModalOpen(true)}
-                                                            className={`cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.tag === 'Guided demo' ? 'cta-glow-soft' : ''}`}>
+                                                            className={`cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.tag === 'Trial phase' ? 'cta-glow-soft' : ''}`}>
                                                             {tier.cta}
                                                         </button>
                                                     </SpotlightCard>
@@ -5720,10 +6046,10 @@ const DreamApp = () => {
                                             Built by people who have felt the discovery gap up close.
                                         </h2>
                                         <p className="mt-6 max-w-2xl text-base leading-relaxed" style={{color:'rgba(244,239,230,0.72)'}}>
-                                            Keystone began from a simple frustration: talented architects were burning unpaid hours trying to pull clarity out of clients who had not yet learned how to describe what they wanted.
+                                            Keystone began from a simple frustration: too many people knew the home they wanted emotionally, but did not know how to describe it clearly enough to move the design forward.
                                         </p>
                                         <p className="mt-4 max-w-2xl text-base leading-relaxed" style={{color:'rgba(244,239,230,0.72)'}}>
-                                            The product is designed to let the client do some of that thinking before the meeting so the architect can spend the kickoff shaping ideas instead of extracting basics.
+                                            The product is designed to help people do some of that thinking before the formal design meeting, so the next conversation can shape ideas instead of extracting basics.
                                         </p>
                                         <div className="mt-8 pt-6 border-t border-white/10">
                                             <p className="cg text-white" style={{fontSize:'clamp(1.6rem, 3vw, 2.6rem)',lineHeight:1.08}}>
@@ -5789,7 +6115,7 @@ const DreamApp = () => {
                             </Reveal>
                             <Reveal y={16} delay={0.22}>
                                 <p className="mt-5 max-w-2xl mx-auto text-base md:text-lg leading-relaxed" style={{color:'rgba(9,9,9,0.62)'}}>
-                                    If the goal is to help residential clients arrive better prepared while protecting your studio's time, Keystone is ready for a real conversation.
+                                    If you want to walk into the first builder or architect conversation with something real in hand, Keystone is ready to help you start there.
                                 </p>
                             </Reveal>
                             <Reveal y={20} delay={0.34}>
@@ -5802,7 +6128,7 @@ const DreamApp = () => {
                                         </span>
                                     </StarBorderBtn>
                                     <button onClick={() => setModalOpen(true)} className="cta-hero cta-glow-soft">
-                                        Request Access
+                                        Unlock Advanced Features
                                     </button>
                                 </div>
                             </Reveal>
@@ -5818,7 +6144,7 @@ const DreamApp = () => {
 const HowFloorPlansWorkPage = () => {
     usePageTitle('Keystone AI - How Floor Plans Work');
     const caseFacts = [
-        ['Input', 'Firm-issued structured brief'],
+        ['Input', 'Guided home brief'],
         ['Core engine', 'Deterministic layout + validation'],
         ['Output', 'Plan + elevations + DXF + optional render'],
         ['Boundary', 'Concept study, not permit docs'],
@@ -5827,13 +6153,13 @@ const HowFloorPlansWorkPage = () => {
         'Area, stories, bedrooms, baths, garage type, and broad footprint bias are captured before discovery starts.',
         'The brief records layout intent such as primary-suite level, kitchen position, laundry placement, and open-concept preference.',
         'Frontage, lot context, light preference, indoor-outdoor intent, and accessibility needs shape the first zoning pass.',
-        'The architect receives a working plan artifact before kickoff instead of reconstructing the brief live from scattered notes.',
+        'You leave the brief with a working plan artifact instead of trying to reconstruct the house from scattered notes later.',
     ];
     const processSteps = [
         {
             step: '01',
             title: 'The survey is normalized into a usable brief',
-            body: 'The intake does not stay as loose text. Keystone converts the client answers into structured constraints such as story count, area target, garage type, primary-suite level, bathroom rules, frontage, and lot context.',
+            body: 'The intake does not stay as loose text. Keystone converts your survey answers into structured constraints such as story count, area target, garage type, primary-suite level, bathroom rules, frontage, and lot context.',
         },
         {
             step: '02',
@@ -5857,8 +6183,8 @@ const HowFloorPlansWorkPage = () => {
         },
         {
             step: '06',
-            title: 'The firm receives the plan and optional render',
-            body: 'The floor plan, elevation set, and vector DXF are exported first. Gemini can then be used as an optional exterior study layered on top of the approved plan geometry rather than replacing the core floor-plan logic.',
+            title: 'The concept package is exported',
+            body: 'The floor plan, elevation set, and CAD export (DXF) are exported first. The Exterior Render can then be used as an optional image layer on top of the approved plan geometry rather than replacing the core floor-plan logic.',
         },
     ];
     const planInputs = [
@@ -5903,7 +6229,7 @@ const HowFloorPlansWorkPage = () => {
                                         How Keystone turns client intent into a first working floor plan.
                                     </h1>
                                     <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
-                                        This page explains the actual floor-plan workflow behind Keystone. A firm sends the client a guided brief, Keystone normalizes that information into plan constraints, explores footprint options, builds a room program, lays out the plan, validates circulation, and only then prepares the export and optional Gemini exterior study.
+                                        This page explains the actual floor-plan workflow behind Keystone. A guided brief is normalized into plan constraints, footprint options are explored, a room program is built, the plan is laid out, circulation is validated, and only then are the export package and optional Exterior Render prepared.
                                     </p>
                                     <div className="grid sm:grid-cols-2 gap-3 mt-8 max-w-3xl">
                                         {caseFacts.map(([label, value]) => (
@@ -5915,13 +6241,13 @@ const HowFloorPlansWorkPage = () => {
                                     </div>
                                     <div className="mt-8 flex flex-wrap gap-3">
                                         <a href="/#generator" className="cta-hero cta-glow">Open Live Studio</a>
-                                        <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
+                                        <button onClick={openModal} className="cta-hero cta-glow-soft">Unlock Advanced Features</button>
                                     </div>
                                 </div>
                                 <aside className="dream-panel p-6 md:p-7 overflow-hidden relative">
                                     <span className="section-label" style={{color:'rgba(245,240,233,0.58)'}}>What goes in</span>
                                     <h2 className="cg text-white mt-5" style={{fontSize:'clamp(1.8rem,3vw,2.6rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        Enough specificity to help the architect before the meeting, not just during it.
+                                        Enough specificity to help you explain your future home before the meeting, not just during it.
                                     </h2>
                                     <div className="grid gap-3 mt-6">
                                         {intakeSignals.map((item) => (
@@ -5937,7 +6263,7 @@ const HowFloorPlansWorkPage = () => {
                                     <div className="mt-8 pt-5 border-t border-white/10">
                                         <p className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(244,239,230,0.46)'}}>Outcome</p>
                                         <p className="text-sm leading-relaxed mt-3" style={{color:'rgba(244,239,230,0.7)'}}>
-                                            The architect starts with a plan that has already been structured, zoned, and checked for basic circulation. If the team wants an image, Gemini comes after that as an optional exterior study rather than the core planning method.
+                                            The plan is already structured, zoned, and checked for basic circulation. If you want an image, the Exterior Render comes after that as an optional layer rather than the core planning method.
                                         </p>
                                     </div>
                                 </aside>
@@ -5962,7 +6288,7 @@ const HowFloorPlansWorkPage = () => {
                                         </div>
                                         <div className="proof-caption">
                                             <span className="proof-dot" style={{background:'var(--blue)'}}/>
-                                            Keystone turns the brief into a working plan artifact the firm can review, critique, and annotate before kickoff.
+                                            Keystone turns the brief into a working plan artifact you can review, share, and react to before the next design conversation.
                                         </div>
                                     </div>
                                     <div className="proof-browser">
@@ -5970,14 +6296,14 @@ const HowFloorPlansWorkPage = () => {
                                             <div className="bc-dot" style={{background:'#FF5F57'}}/>
                                             <div className="bc-dot" style={{background:'#FFBD2E'}}/>
                                             <div className="bc-dot" style={{background:'#28C840'}}/>
-                                            <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>SAMPLE SESSION / GEMINI EXTERIOR STUDY</span>
+                                            <span className="mono text-[8px] ml-3" style={{color:'rgba(255,255,255,0.32)',letterSpacing:'0.16em'}}>SAMPLE SESSION / EXTERIOR RENDER</span>
                                         </div>
                                         <div className="proof-browser-screen render">
-                                            <SmartImage src={ASSETS.exampleRender} alt="Sample Gemini exterior study" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                                            <SmartImage src={ASSETS.exampleRender} alt="Sample exterior render" style={{width:'100%',height:'100%',objectFit:'cover'}}/>
                                         </div>
                                         <div className="proof-caption">
                                             <span className="proof-dot" style={{background:'var(--accent)'}}/>
-                                            Gemini is optional and comes after the plan, giving the client an exterior mood to react to without replacing the floor-plan logic.
+                                            The Exterior Render is optional and comes after the plan, giving you an exterior mood to react to without replacing the floor-plan logic.
                                         </div>
                                     </div>
                                 </div>
@@ -5991,7 +6317,7 @@ const HowFloorPlansWorkPage = () => {
                                 <div>
                                     <span className="section-label" style={{color:'rgba(10,10,12,0.42)'}}>Method</span>
                                     <h2 className="cg mt-6" style={{fontSize:'clamp(2.4rem, 5vw, 4.3rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        The value is not mystery. It is a tighter planning sequence before the architect enters the room.
+                                        The value is not mystery. It is a clearer planning sequence before the real project conversation begins.
                                     </h2>
                                 </div>
                                 <div className="grid md:grid-cols-2 gap-4">
@@ -6058,11 +6384,11 @@ const HowFloorPlansWorkPage = () => {
                                     <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(255,106,55,0.8)'}}>Important boundary</div>
                                     <h3 className="cg text-white mt-5 text-[2rem] leading-[0.95]">Keystone helps start the design discussion. It does not replace architectural responsibility.</h3>
                                     <p className="mt-5 text-sm leading-relaxed" style={{color:'rgba(244,239,230,0.7)'}}>
-                                        The output is a concept aid for discovery and kickoff. It is not a permit-ready drawing set, not a stamped document, and not a substitute for architect or engineer review. Gemini can support the exterior mood, but it is not the core floor-plan engine.
+                                        The output is a concept aid for discovery and kickoff. It is not a permit-ready drawing set, not a stamped document, and not a substitute for architect, engineer, or builder review. The Exterior Render can support the exterior mood, but it is not the core floor-plan engine.
                                     </p>
                                     <div className="mt-6 flex flex-col gap-3">
                                         <a href="/#generator" className="cta-secondary text-center">Open Live Studio</a>
-                                        <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
+                                        <button onClick={openModal} className="cta-hero cta-glow-soft">Unlock Advanced Features</button>
                                     </div>
                                 </SpotlightCard>
                             </div>
@@ -6077,37 +6403,37 @@ const HowFloorPlansWorkPage = () => {
 const CaseStudyPage = () => <HowFloorPlansWorkPage/>;
 
 const B2BWorkflowPage = () => {
-    usePageTitle('Keystone AI - B2B Workflow');
+    usePageTitle('Keystone AI - Guided Workflow');
     const workflowStages = [
         {
             step: '01',
-            title: 'The firm sends a guided link',
-            body: 'Keystone is sold to the studio and shared with the client before the first serious meeting. The architect controls when the workflow starts and who sees it.',
+            title: 'You open the guided brief',
+            body: 'Keystone starts with a survey written for normal people, so the process begins with clarity instead of technical guesswork.',
             image: ASSETS.workflow.firmLaunch,
         },
         {
             step: '02',
-            title: 'The client fills out structured intent',
-            body: 'Room needs, lot cues, light preferences, and style signals arrive in a format the studio can review later instead of pulling everything out live on the call.',
+            title: 'You fill out structured intent',
+            body: 'Room needs, lot cues, light preferences, and style signals arrive in a format that can later be reviewed by you, your family, and any professional you bring in.',
             image: ASSETS.workflow.clientIntake,
         },
         {
             step: '03',
             title: 'Keystone returns a plan, elevations, and export',
-            body: 'The generated plan becomes a working artifact the team can download as a blueprint image, matching elevations, and vector DXF export before the kickoff conversation even begins.',
+            body: 'The generated plan becomes a working artifact you can download as a blueprint image, matching elevations, and CAD Export (DXF) before the next design conversation even begins.',
             image: ASSETS.workflow.planExport,
         },
         {
             step: '04',
-            title: 'The architect walks in prepared',
-            body: 'An optional Gemini exterior study can support emotional alignment, but the operational win is simpler: the firm begins with more clarity and less drift.',
+            title: 'The next conversation starts ahead',
+            body: 'An optional Exterior Render can support emotional alignment, but the deeper win is simpler: the process begins with more clarity and less drift.',
             image: ASSETS.workflow.kickoffMeeting,
         },
     ];
     const operatorBenefits = [
-        'More serious kickoff meetings with less unpaid discovery time',
-        'A clearer client handoff before the architect starts shaping options',
-        'A stronger internal review artifact for firms that want consistency',
+        'A clearer first design conversation',
+        'An easier handoff into professional design work later',
+        'A stronger concept artifact for family discussion, review, and budgeting',
     ];
     const supportGallery = [ASSETS.workflow.collage, ASSETS.exampleElevationSheet, ASSETS.roadmap.cadExport, ASSETS.exampleRender];
 
@@ -6119,18 +6445,18 @@ const B2BWorkflowPage = () => {
                         <div className="site-shell py-16 md:py-24 relative z-10">
                             <div className="grid xl:grid-cols-[minmax(0,1fr)_360px] gap-8 items-start">
                                 <div>
-                                    <span className="section-label">B2B workflow</span>
+                                    <span className="section-label">Guided workflow</span>
                                     <h1 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 6rem)',lineHeight:0.9,letterSpacing:'-0.06em',textTransform:'uppercase',color:'var(--ink)'}}>
-                                        A pre-meeting workflow designed for architecture firms.
+                                        A guided workflow designed to make home design easier to understand.
                                     </h1>
                                     <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
-                                        Keystone is not a generic lead form or portfolio gimmick. It is a firm-led process that helps clients arrive with structured intent so the architect can start the first serious conversation further ahead.
+                                        Keystone is not a generic lead form or a gallery trick. It is a guided process that helps people arrive at the first serious design conversation with more structure, less drift, and something real to react to.
                                     </p>
                                     <div className="grid sm:grid-cols-3 gap-3 mt-8 max-w-3xl">
                                         {[
-                                            ['Buyer', 'Residential firms'],
+                                            ['Buyer', 'Home builders'],
                                             ['Live today', 'Brief + plan + elevations + DXF'],
-                                            ['Rollout', 'Firm-led access'],
+                                            ['Trial', 'Free + unlocked'],
                                         ].map(([label, value]) => (
                                             <div key={label} className="paper-panel p-4 md:p-5">
                                                 <div className="mono text-[9px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>{label}</div>
@@ -6144,7 +6470,7 @@ const B2BWorkflowPage = () => {
                                         <SmartImage src={ASSETS.workflow.planReview} alt="Architect reviewing a Keystone floor plan on screen and paper" style={{width:'100%',height:'260px',objectFit:'cover',display:'block'}}/>
                                     </div>
                                     <div className="mt-5">
-                                        <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>What firms get</div>
+                                        <div className="mono text-[10px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>What you get</div>
                                         <div className="grid gap-3 mt-4">
                                             {LIVE_NOW_FEATURES.map((item) => (
                                                 <div key={item} className="flex items-start gap-3 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.68)'}}>
@@ -6189,12 +6515,12 @@ const B2BWorkflowPage = () => {
                                 <div>
                                     <span className="section-label" style={{color:'rgba(255,106,55,0.72)'}}>Why it matters</span>
                                     <h2 className="cg text-white mt-6" style={{fontSize:'clamp(2.4rem, 5vw, 4.4rem)',lineHeight:0.92,letterSpacing:'-0.05em',textTransform:'uppercase'}}>
-                                        More signal before the architect spends real time.
+                                        More signal before you spend real money or step into a serious design conversation.
                                     </h2>
                                     <div className="grid sm:grid-cols-2 gap-3 mt-8">
                                         {supportGallery.map((image, index) => (
                                             <div key={image} className="rounded-[18px] overflow-hidden" style={{border:'1px solid rgba(255,255,255,0.08)'}}>
-                                                <SmartImage src={image} alt={`B2B workflow support visual ${index + 1}`} style={{width:'100%',height:'220px',objectFit:'cover',display:'block'}}/>
+                                                <SmartImage src={image} alt={`Guided workflow support visual ${index + 1}`} style={{width:'100%',height:'220px',objectFit:'cover',display:'block'}}/>
                                             </div>
                                         ))}
                                     </div>
@@ -6214,11 +6540,11 @@ const B2BWorkflowPage = () => {
                                     <SpotlightCard spotlightColor="rgba(255,106,55,0.12)" className="paper-panel p-6 md:p-7">
                                         <div className="mono text-[10px] uppercase tracking-[0.24em]" style={{color:'rgba(10,10,12,0.42)'}}>Scope discipline</div>
                                         <p className="mt-4 text-sm leading-relaxed" style={{color:'rgba(10,10,12,0.68)'}}>
-                                            Keystone is intentionally narrow today: structured intake, generated plan, elevation views, an MVP planning estimate, vector DXF export, and optional Gemini study. Scheduling and deeper viewer tools stay on the roadmap until they are truly live.
+                                            Keystone is intentionally narrow today: structured intake, generated plan, elevation views, a Cost Estimate, CAD export (DXF), and an optional Exterior Render. Scheduling and deeper viewer tools stay on the roadmap until they are truly live.
                                         </p>
                                         <div className="mt-6 flex flex-col gap-3">
                                             <a href="/roadmap" className="cta-secondary text-center">View Roadmap</a>
-                                            <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
+                                            <button onClick={openModal} className="cta-hero cta-glow-soft">Unlock Advanced Features</button>
                                         </div>
                                     </SpotlightCard>
                                 </div>
@@ -6237,14 +6563,14 @@ const RoadmapPage = () => {
         {
             phase: 'Live today',
             title: 'Guided brief capture',
-            body: 'The client-facing intake link already turns loose preferences into structured discovery data before kickoff.',
+            body: 'The guided intake already turns loose preferences into structured discovery data before the first serious design conversation.',
             image: ASSETS.workflow.clientIntake,
             status: 'Live',
         },
         {
             phase: 'Live today',
             title: 'Generated plan + blueprint image',
-            body: 'Keystone already returns a usable floor plan and a clean blueprint image the firm can download and review.',
+            body: 'Keystone already returns a usable floor plan and a clean blueprint image you can download, share, and review.',
             image: ASSETS.workflow.planExport,
             status: 'Live',
         },
@@ -6257,8 +6583,8 @@ const RoadmapPage = () => {
         },
         {
             phase: 'Live today',
-            title: 'Gemini exterior study',
-            body: 'An optional exterior study is already available to give the client a visual anchor during the early conversation.',
+            title: 'Exterior render',
+            body: 'An optional exterior render is already available to give the household a visual anchor during the early conversation.',
             image: ASSETS.roadmap.exteriorStudy,
             status: 'Live',
         },
@@ -6272,7 +6598,7 @@ const RoadmapPage = () => {
         {
             phase: 'Live today',
             title: 'Planning estimate layer',
-            body: 'The generated plan now includes a concept-level quantity takeoff and early cost range so the team can discuss geometry and commercial context together.',
+            body: 'The generated plan now includes a concept-level quantity takeoff and early cost range so the household can discuss geometry and budget together.',
             image: ASSETS.roadmap.overview,
             status: 'Live',
         },
@@ -6286,9 +6612,9 @@ const RoadmapPage = () => {
     ];
     const roadmapTracks = [
         ['Estimates', 'Tie quantity logic to early project conversations without overselling precision.'],
-        ['Scheduling', 'Help firms preview timing dependencies once the product truth is ready for it.'],
+        ['Scheduling', 'Help homeowners understand timing dependencies once the product truth is ready for it.'],
         ['3D viewer', 'Add richer interactive viewing only after the core plan, elevation, and export workflow is solid.'],
-        ['White-labeling', 'Let studios present Keystone inside their own professional brand language.'],
+        ['White-labeling', 'Later, let professionals present Keystone inside their own brand language.'],
     ];
 
     return (
@@ -6304,7 +6630,7 @@ const RoadmapPage = () => {
                                         What Keystone does now, and what the platform is growing toward next.
                                     </h1>
                                     <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
-                                        This roadmap keeps a strict line between live capability and planned capability. It shows the platform direction around deeper quantity logic, scheduling, and 3D viewing while keeping live features like elevations, the MVP planning estimate, and DXF export clearly separate from roadmap items.
+                                        This roadmap keeps a strict line between live capability and planned capability. It shows the platform direction around deeper quantity logic, scheduling, and 3D viewing while keeping live features like elevations, the Cost Estimate, and DXF export clearly separate from roadmap items.
                                     </p>
                                 </div>
                                 <SpotlightCard spotlightColor="rgba(255,106,55,0.1)" className="paper-panel p-6 md:p-7">
@@ -6376,8 +6702,8 @@ const RoadmapPage = () => {
                                 </div>
                             </div>
                             <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                                <a href="/b2b-workflow" className="cta-secondary text-center">View B2B Workflow</a>
-                                <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
+                                <a href="/b2b-workflow" className="cta-secondary text-center">View Guided Workflow</a>
+                                <button onClick={openModal} className="cta-hero cta-glow-soft">Unlock Advanced Features</button>
                             </div>
                         </div>
                     </section>
@@ -6392,43 +6718,47 @@ const FAQPage = () => {
     const faqItems = [
         {
             question: 'What is live in Keystone right now?',
-            answer: 'The live workflow today includes guided brief capture, floor plan generation, elevation views, an MVP planning estimate, vector DXF export, high-resolution plan download, and Gemini-powered exterior study generation from the same project brief.',
+            answer: 'The live workflow today includes guided brief capture, floor plan generation, elevation views, a concept-level Cost Estimate workbook, CAD Export (DXF), high-resolution plan download, and Exterior Render generation from the same project brief.',
         },
         {
-            question: 'Who is Keystone actually sold to?',
-            answer: 'Keystone is a B2B product for residential architecture and design-led firms. The firm adopts it, then shares the guided workflow with clients before the first serious meeting.',
+            question: 'Who is Keystone for right now?',
+            answer: 'Keystone is currently being shaped for homeowners and first-time home builders who want to describe the house they want without needing technical drafting knowledge.',
         },
         {
-            question: 'Can a firm send Keystone to a client before the first meeting?',
-            answer: 'Yes. That is the core workflow. The firm shares the link and access code, the client completes the guided brief, and the architect reviews the results before kickoff.',
+            question: 'Do I need a technical background to use it?',
+            answer: 'No. That is the point of the guided brief. Keystone is designed so you can talk about your rooms, priorities, and preferences in plain language.',
         },
         {
-            question: 'What does the architect receive before the meeting?',
-            answer: 'The firm can review the completed brief, the generated floor plan, the elevation views, the MVP planning estimate, the downloadable blueprint image, the vector DXF export, and the Gemini exterior study if one was generated for that session.',
+            question: 'What do I get from the free mode?',
+            answer: 'Free mode gives you the generated floor plan, the elevation views, and the high-resolution blueprint download.',
         },
         {
-            question: 'Does Keystone replace the architect?',
-            answer: 'No. Keystone is an early discovery tool. It helps generate an initial plan and visual anchor, but design judgment still belongs to the architect and project team.',
+            question: 'What unlocks with a passkey?',
+            answer: 'The passkey unlocks advanced refinements, the Exterior Render, the Cost Estimate workbook, and CAD Export (DXF) during the current trial phase.',
+        },
+        {
+            question: 'Does Keystone replace an architect or builder?',
+            answer: 'No. Keystone is an early home-design and discovery tool. It helps you arrive with a clearer starting point, but professional design judgment still matters for any real project.',
         },
         {
             question: 'Are these outputs construction documents?',
             answer: 'No. Keystone outputs are concept aids only. They are not permit-ready drawings, stamped documents, engineering deliverables, or final construction instructions.',
         },
         {
-            question: 'Are CAD files, quantity takeoff, or cost estimates live today?',
-            answer: 'Elevation views, vector DXF export, and an MVP concept-level planning estimate are live today. Native DWG production, scheduling, and deeper downstream quantity logic still belong to the later workflow.',
+            question: 'Are CAD files and cost estimates live today?',
+            answer: 'The Cost Estimate workbook and CAD Export (DXF) are live today inside the advanced package. Native DWG production, scheduling, and deeper downstream quantity logic still belong to the later workflow.',
         },
         {
             question: 'Why is access private right now?',
-            answer: 'Keystone is still being introduced through guided access so the workflow, onboarding, and firm fit stay strong while the product is maturing.',
+            answer: 'Keystone is still in a controlled trial phase so the expensive features stay protected while the product is maturing.',
         },
         {
             question: 'How long does it take?',
-            answer: 'The first floor plan is designed to arrive quickly, often in under a minute. Gemini exterior studies take longer, but still fit inside an early-stage pre-meeting session.',
+            answer: 'The first floor plan is designed to arrive quickly, often in under a minute. Exterior renders take longer, but still fit inside an early-stage design session.',
         },
         {
             question: 'How should I think about data and privacy?',
-            answer: 'Project inputs and generated outputs are used to operate the service, support firm access, and improve product quality. The current privacy page explains the starter policy in more detail.',
+            answer: 'Project inputs and generated outputs are used to operate the service, support access requests, and improve product quality. The current privacy page explains the starter policy in more detail.',
         },
     ];
 
@@ -6442,10 +6772,10 @@ const FAQPage = () => {
                                 <div>
                                     <span className="section-label">FAQ</span>
                                     <h1 className="cg mt-6" style={{fontSize:'clamp(3rem, 7vw, 5.8rem)',lineHeight:0.9,letterSpacing:'-0.06em',textTransform:'uppercase'}}>
-                                        Questions serious firms ask before they open Keystone.
+                                        Questions first-time home builders ask before they trust Keystone.
                                     </h1>
                                     <p className="mt-6 max-w-3xl text-base md:text-lg leading-relaxed" style={{color:'rgba(32,26,21,0.72)'}}>
-                                        These answers stay anchored to what is actually live right now, how firms use the workflow, and what is still on the roadmap.
+                                        These answers stay anchored to what is actually live right now, how the free and unlocked modes work, and what is still on the roadmap.
                                     </p>
                                 </div>
                                 <aside className="paper-panel p-6 md:p-7">
@@ -6463,7 +6793,7 @@ const FAQPage = () => {
                                         <a href={`mailto:${CONTACT_EMAIL}`} className="inline-block mt-3 text-sm" style={{color:'var(--ink)'}}>{CONTACT_EMAIL}</a>
                                         <div className="mt-5 flex flex-col gap-3">
                                             <a href="/how-floor-plans-work" className="cta-secondary text-center">How Floor Plans Work</a>
-                                            <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
+                                            <button onClick={openModal} className="cta-hero cta-glow-soft">Unlock Advanced Features</button>
                                         </div>
                                     </div>
                                 </aside>
@@ -6519,7 +6849,7 @@ const LegalPage = ({ eyebrow, title, intro, sections }) => (
                                 <a href={`mailto:${CONTACT_EMAIL}`} className="inline-block mt-2 text-sm" style={{color:'var(--ink)'}}>{CONTACT_EMAIL}</a>
                                 <div className="mt-5 flex flex-col gap-3">
                                     <a href="/#generator" className="cta-secondary text-center">Open Live Studio</a>
-                                    <button onClick={openModal} className="cta-hero cta-glow-soft">Request Access</button>
+                                    <button onClick={openModal} className="cta-hero cta-glow-soft">Unlock Advanced Features</button>
                                 </div>
                             </aside>
                         </div>
@@ -6552,14 +6882,14 @@ const PrivacyPage = () => {
         {
             title: 'Information we collect',
             body: [
-                'We may collect contact details you send through access forms, firm details, client or project brief information submitted through the product, and the outputs generated from those inputs.',
+                'We may collect contact details you send through access forms, project brief information submitted through the product, and the outputs generated from those inputs.',
                 'We may also collect limited technical data such as basic usage logs, browser information, and service diagnostics needed to keep the product working.',
             ],
         },
         {
             title: 'How the information is used',
             body: [
-                'We use information to operate Keystone, respond to access requests, let firms review submitted briefs and outputs, improve output quality, maintain security, and understand whether the product is reliable for firms using it.',
+                'We use information to operate Keystone, respond to access requests, improve output quality, maintain security, and understand whether the product is reliable for real homeowner use.',
                 'We do not treat your project data as public marketing material without permission.',
             ],
         },
@@ -6581,7 +6911,7 @@ const PrivacyPage = () => {
             title: 'Your choices',
             body: [
                 'You can choose not to submit forms or project details, though that may limit access to Keystone.',
-                'You may also contact us to ask questions about access, stored contact details, client-submitted project data, or deletion requests.',
+                'You may also contact us to ask questions about access, stored contact details, submitted project data, or deletion requests.',
             ],
         },
         {
@@ -6607,7 +6937,7 @@ const TermsPage = () => {
         {
             title: 'Nature of the service',
             body: [
-                'Keystone is a B2B design-assist product for early residential discovery. It helps firms collect client inputs, generate conceptual floor plans, prepare elevations and an MVP planning estimate, create downloadable images and DXF exports, and produce Gemini-powered exterior studies from project briefs.',
+                'Keystone is an early-stage home design and discovery product. It helps people describe what they want in a house, generate conceptual floor plans, prepare elevations and a concept-level Cost Estimate, create downloadable images and DXF exports, and produce Exterior Renders from project briefs.',
                 'The service is offered on an early-stage basis and may evolve, change, pause, or improve over time.',
             ],
         },
@@ -6615,7 +6945,7 @@ const TermsPage = () => {
             title: 'Professional responsibility',
             body: [
                 'Keystone does not replace licensed design professionals. All outputs must be reviewed, interpreted, and validated by qualified professionals before they are used in any meaningful project context.',
-                'You are responsible for how you use outputs inside your own practice or process.',
+                'You are responsible for how you use outputs inside your own planning, budgeting, or design process.',
             ],
         },
         {
@@ -6629,7 +6959,7 @@ const TermsPage = () => {
             title: 'User responsibilities',
             body: [
                 'You agree to provide information you have the right to use and to avoid unlawful, infringing, or harmful inputs.',
-                'If Keystone access is private or code-based, you are responsible for safeguarding that access, sharing it only as intended, and handling client access responsibly inside your own firm workflow.',
+                'If Keystone access is private or code-based, you are responsible for safeguarding that access and sharing it only as intended.',
             ],
         },
         {

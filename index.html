@@ -1,21 +1,21 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Keystone AI - Floor Plans in 60 Seconds</title>
-    <meta name="description" content="Residential floor plan generator in 60 seconds. Keystone helps architecture firms send a guided client link before kickoff — structured brief, generated blueprint, and optional Gemini 3D exterior study.">
+    <title>Keystone AI - Home Design in Plain Language</title>
+    <meta name="description" content="Keystone helps homeowners and first-time home builders describe the house they want and turn it into a floor plan, elevations, an exterior render, and an early cost estimate.">
     <meta name="theme-color" content="#AD3300">
     <!-- Open Graph / Social sharing -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://keystone-api-97830102261.us-central1.run.app/">
-    <meta property="og:title" content="Keystone AI — Floor Plans in 60 Seconds">
-    <meta property="og:description" content="Residential floor plan generator for architecture firms. Structured brief capture, AI-generated blueprint, downloadable PNG, and optional Gemini 3D exterior study.">
+    <meta property="og:title" content="Keystone AI - Home Design in Plain Language">
+    <meta property="og:description" content="Keystone helps homeowners and first-time home builders describe the house they want and turn it into a floor plan, elevations, an exterior render, and an early cost estimate.">
     <meta property="og:image" content="https://keystone-api-97830102261.us-central1.run.app/images/og-preview.png">
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Keystone AI — Floor Plans in 60 Seconds">
-    <meta name="twitter:description" content="Residential floor plan generator for architecture firms. Structured brief capture, AI-generated blueprint, downloadable PNG, and optional Gemini 3D exterior study.">
+    <meta name="twitter:title" content="Keystone AI - Home Design in Plain Language">
+    <meta name="twitter:description" content="Keystone helps homeowners and first-time home builders describe the house they want and turn it into a floor plan, elevations, an exterior render, and an early cost estimate.">
     <meta name="twitter:image" content="https://keystone-api-97830102261.us-central1.run.app/images/og-preview.png">
     <link rel="icon" href="images/keystone-logo-mark.svg" type="image/svg+xml">
     <script defer crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -129,7 +129,7 @@
         ::-webkit-scrollbar { width: 3px; }
         ::-webkit-scrollbar-thumb { background: rgba(9,9,9,0.34); }
 
-        /* ── HERO ── */
+        /* â”€â”€ HERO â”€â”€ */
         .hero-wrap {
             background: var(--ink);
             position: relative;
@@ -261,7 +261,7 @@
             to { transform: rotate(360deg) scale(1.04); }
         }
 
-        /* ── CTA BUTTON ── */
+        /* â”€â”€ CTA BUTTON â”€â”€ */
         .cta-hero {
             background: var(--ink);
             color: var(--paper);
@@ -373,7 +373,7 @@
             100% { box-shadow: 0 0 0 0 rgba(255,255,255,0); }
         }
 
-        /* ── FLOATING MOBILE CTA ── */
+        /* â”€â”€ FLOATING MOBILE CTA â”€â”€ */
         .mobile-cta-float {
             position: fixed;
             bottom: 80px;
@@ -532,7 +532,7 @@
             transform: translateY(0) scale(1);
         }
 
-        /* ── MOBILE NAV ── */
+        /* â”€â”€ MOBILE NAV â”€â”€ */
         .bottom-nav {
             background: rgba(245,240,233,0.94);
             backdrop-filter: blur(24px);
@@ -540,7 +540,7 @@
             border-top: 1px solid rgba(9,9,9,0.08);
         }
 
-        /* ── INPUTS ── */
+        /* â”€â”€ INPUTS â”€â”€ */
         input, select, textarea {
             background: white !important;
             border: 1.5px solid rgba(0,0,0,0.1) !important;
@@ -558,11 +558,11 @@
             box-shadow: 0 0 0 3px rgba(27,79,130,0.1) !important;
         }
 
-        /* ── STEP ANIM ── */
+        /* â”€â”€ STEP ANIM â”€â”€ */
         .step-in { animation: stepIn 0.22s ease forwards; }
         @keyframes stepIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
 
-        /* ── ROOM BADGE ── */
+        /* â”€â”€ ROOM BADGE â”€â”€ */
         .room-badge {
             display: inline-flex; align-items: center; gap: 4px;
             padding: 3px 9px;
@@ -574,37 +574,37 @@
         }
         .room-badge.active { background: var(--ink); color: white; border-color: var(--ink); }
 
-        /* ── SPEC PANEL ── */
+        /* â”€â”€ SPEC PANEL â”€â”€ */
         .spec-panel { background: rgba(27,79,130,0.05); border-left: 2px solid var(--blue); padding: 9px 13px; }
         .spec-label { font-size: 7px; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 700; opacity: 0.38; }
         .spec-value { font-size: 12px; font-weight: 600; margin-top: 2px; }
 
-        /* ── REFINE MSG ── */
+        /* â”€â”€ REFINE MSG â”€â”€ */
         .refine-msg { border-left: 2px solid var(--blue); padding: 4px 9px; margin-bottom: 4px; font-size: 10px; opacity: 0.6; }
         .refine-msg.user { border-color: var(--ink); }
 
-        /* ── SAFE AREA ── */
+        /* â”€â”€ SAFE AREA â”€â”€ */
         .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
 
-        /* ── PLAN GLOW ── */
+        /* â”€â”€ PLAN GLOW â”€â”€ */
         .plan-glow { box-shadow: 0 4px 40px rgba(27,79,130,0.18), 0 20px 60px rgba(0,0,0,0.22); }
 
-        /* ── SECTION RULE ── */
+        /* â”€â”€ SECTION RULE â”€â”€ */
         .rule { width: 44px; height: 2px; background: var(--blue); display: block; }
 
-        /* ── STAT ── */
+        /* â”€â”€ STAT â”€â”€ */
         .stat-n { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-style: italic; line-height: 1; }
 
-        /* ── PRICE CARD ── */
+        /* â”€â”€ PRICE CARD â”€â”€ */
         .price-card { border: 1.5px solid var(--border); background: white; border-radius: 6px; transition: transform 0.2s, box-shadow 0.2s; }
         .price-card:hover { transform: translateY(-5px); box-shadow: 0 20px 60px rgba(0,0,0,0.1); }
         .price-card.featured { background: var(--ink); border-color: var(--blue); color: white; }
         .price-card.free-card { background: linear-gradient(135deg, #F0F8FF 0%, #E8F2FC 100%); border-color: var(--blue); }
 
-        /* ── HORIZONTAL SCROLL ── */
+        /* â”€â”€ HORIZONTAL SCROLL â”€â”€ */
         .h-scroll-track { display: flex; gap: 1.5rem; padding: 0 2rem; }
 
-        /* ── SHOWCASE BROWSER CHROME ── */
+        /* â”€â”€ SHOWCASE BROWSER CHROME â”€â”€ */
         .browser-chrome {
             background: #1e1e24;
             border-radius: 10px 10px 0 0;
@@ -615,7 +615,7 @@
         }
         .bc-dot { width: 10px; height: 10px; border-radius: 50%; }
 
-        /* ── BADGE ── */
+        /* â”€â”€ BADGE â”€â”€ */
         .badge {
             display: inline-block;
             padding: 6px 10px;
@@ -629,10 +629,10 @@
             color: rgba(9,9,9,0.62);
         }
 
-        /* ── TESTIMONIAL ── */
+        /* â”€â”€ TESTIMONIAL â”€â”€ */
         .testimonial { border-left: 3px solid var(--blue); padding: 1rem 1.5rem; background: white; border-radius: 0 6px 6px 0; }
 
-        /* ── FEATURE ROW ── */
+        /* â”€â”€ FEATURE ROW â”€â”€ */
         .feature-check { color: var(--blue); font-weight: 700; font-size: 1rem; flex-shrink: 0; }
 
         /* Animation for count-up on scroll */
@@ -1266,7 +1266,7 @@
             }
         }
 
-        /* ── PAGE LOAD VEIL ── */
+        /* â”€â”€ PAGE LOAD VEIL â”€â”€ */
         .page-veil {
             position: fixed;
             inset: 0;
@@ -1283,7 +1283,7 @@
             .page-veil { animation-duration: 0.01ms !important; }
         }
 
-        /* ── SCROLL PROGRESS BAR ── */
+        /* â”€â”€ SCROLL PROGRESS BAR â”€â”€ */
         .scroll-progress-bar {
             position: fixed;
             top: 0;
@@ -1300,11 +1300,11 @@
             .scroll-progress-bar { transition: none; }
         }
 
-        /* ── TEXT SELECTION ── */
+        /* â”€â”€ TEXT SELECTION â”€â”€ */
         ::selection { background: transparent; color: var(--accent); }
         ::-moz-selection { background: transparent; color: var(--accent); }
 
-        /* ── SURVEY SECTION ── */
+        /* â”€â”€ SURVEY SECTION â”€â”€ */
         .survey-qr-frame {
             background: linear-gradient(180deg, rgba(255,255,255,0.88), rgba(255,255,255,0.72));
             border: 1px solid rgba(10,10,12,0.08);
@@ -1394,11 +1394,11 @@
             box-shadow: 0 16px 36px rgba(255,106,55,0.08), 0 1px 0 rgba(255,255,255,0.8) inset;
         }
 
-        /* ══════════════════════════════════════════════════════════════
-           REACT-BITS ADAPTED COMPONENTS — Orange/White Brand System
-        ══════════════════════════════════════════════════════════════ */
+        /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+           REACT-BITS ADAPTED COMPONENTS â€” Orange/White Brand System
+        â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-        /* ── SPOTLIGHT CARD ── */
+        /* â”€â”€ SPOTLIGHT CARD â”€â”€ */
         .spotlight-card {
             position: relative;
             overflow: hidden;
@@ -1416,7 +1416,7 @@
         }
         .spotlight-card:hover::before { opacity: 1; }
 
-        /* ── STAR BORDER BUTTON ── */
+        /* â”€â”€ STAR BORDER BUTTON â”€â”€ */
         .star-border-wrap {
             position: relative;
             display: inline-flex;
@@ -1449,7 +1449,7 @@
             to   { transform: rotate(360deg); }
         }
 
-        /* ── GLARE CARD ── */
+        /* â”€â”€ GLARE CARD â”€â”€ */
         .glare-card {
             position: relative;
             overflow: hidden;
@@ -1478,14 +1478,14 @@
             opacity: 1;
         }
 
-        /* ── TILT CARD ── */
+        /* â”€â”€ TILT CARD â”€â”€ */
         .tilt-wrap {
             transition: transform 0.36s var(--ease-smooth);
             transform-style: preserve-3d;
             will-change: transform;
         }
 
-        /* ── BLUR TEXT ── */
+        /* â”€â”€ BLUR TEXT â”€â”€ */
         .blur-text-wrap {
             display: flex;
             flex-wrap: wrap;
@@ -1493,7 +1493,7 @@
         }
         .blur-word { display: inline-block; }
 
-        /* ── ANIMATED GRADIENT TEXT ── */
+        /* â”€â”€ ANIMATED GRADIENT TEXT â”€â”€ */
         .gradient-text-anim {
             background-image: linear-gradient(90deg,
                 #FF5A1F 0%,
@@ -1513,7 +1513,7 @@
             100% { background-position: 100% 50%; }
         }
 
-        /* ── FLOATING ORBS BACKGROUND ── */
+        /* â”€â”€ FLOATING ORBS BACKGROUND â”€â”€ */
         .orb-bg {
             position: absolute;
             inset: 0;
@@ -1557,7 +1557,7 @@
             100% { transform: translate(5%,-9%) scale(1.11); }
         }
 
-        /* ── ORANGE ACCENT LINE ── */
+        /* â”€â”€ ORANGE ACCENT LINE â”€â”€ */
         .orange-line {
             display: block;
             width: 48px;
@@ -1567,7 +1567,7 @@
             margin-bottom: 1.1rem;
         }
 
-        /* ── HERO BADGE ── */
+        /* â”€â”€ HERO BADGE â”€â”€ */
         .hero-badge {
             display: inline-flex;
             align-items: center;
@@ -1591,7 +1591,7 @@
             flex-shrink: 0;
         }
 
-        /* ── OUTCOME CARDS ── */
+        /* â”€â”€ OUTCOME CARDS â”€â”€ */
         .outcome-card {
             padding: 1.75rem;
             border-radius: 20px;
@@ -1620,7 +1620,7 @@
             .outcome-card:hover::before { opacity: 1; }
         }
 
-        /* ── SERVICE CARD V2 ── */
+        /* â”€â”€ SERVICE CARD V2 â”€â”€ */
         .service-card-v2 {
             background: white;
             border: 1px solid rgba(10,10,12,0.06);
@@ -1651,7 +1651,7 @@
             margin-bottom: 1rem;
         }
 
-        /* ── PRICING FEATURED ── */
+        /* â”€â”€ PRICING FEATURED â”€â”€ */
         .pricing-featured {
             background: linear-gradient(155deg, #FF7240 0%, #FF4D1D 100%) !important;
             border: 1px solid rgba(255,220,200,0.28) !important;
@@ -1659,7 +1659,7 @@
             box-shadow: 0 32px 64px rgba(255,77,29,0.3), 0 8px 16px rgba(255,77,29,0.16) !important;
         }
 
-        /* ── ANIMATED BORDER FOR HERO PANEL ── */
+        /* â”€â”€ ANIMATED BORDER FOR HERO PANEL â”€â”€ */
         .animated-border {
             position: relative;
         }
@@ -1697,21 +1697,21 @@
             @keyframes abSpin { to { --ab-angle: 360deg; } }
         }
 
-        /* ── SECTION DIVIDER ── */
+        /* â”€â”€ SECTION DIVIDER â”€â”€ */
         .section-divider {
             width: 100%;
             height: 1px;
             background: linear-gradient(90deg, transparent, rgba(255,106,55,0.18), transparent);
         }
 
-        /* ── FLOAT IN ANIMATIONS ── */
+        /* â”€â”€ FLOAT IN ANIMATIONS â”€â”€ */
         @keyframes floatUp {
             from { opacity: 0; transform: translateY(28px); }
             to   { opacity: 1; transform: translateY(0); }
         }
         .float-up { animation: floatUp 0.65s var(--ease-smooth) both; }
 
-        /* ── SHINE TEXT ── */
+        /* â”€â”€ SHINE TEXT â”€â”€ */
         .shine-text {
             background-image: linear-gradient(
                 120deg,
@@ -1732,7 +1732,7 @@
             to   { background-position:   0% center; }
         }
 
-        /* ── PARTICLE CANVAS ── */
+        /* â”€â”€ PARTICLE CANVAS â”€â”€ */
         .particle-canvas {
             position: absolute;
             inset: 0;
@@ -1742,18 +1742,18 @@
             z-index: 1;
         }
 
-        /* ── FINAL CTA SECTION ── */
+        /* â”€â”€ FINAL CTA SECTION â”€â”€ */
         .final-cta-section {
             position: relative;
         }
 
-        /* ── NAV ORANGE ACCENT ── */
+        /* â”€â”€ NAV ORANGE ACCENT â”€â”€ */
         .nav-subtitle-orange {
             color: var(--accent);
             opacity: 0.72;
         }
 
-        /* ── QUOTE CARD ORANGE ── */
+        /* â”€â”€ QUOTE CARD ORANGE â”€â”€ */
         .quote-card-v2 {
             border-radius: 18px;
             border: 1px solid rgba(255,106,55,0.1);
@@ -1770,7 +1770,7 @@
             border-bottom: 1px solid rgba(255,106,55,0.1) !important;
         }
 
-        /* ── HERO V2 ── */
+        /* â”€â”€ HERO V2 â”€â”€ */
         .hero-v2-bg {
             background: linear-gradient(155deg, #FFFDF9 0%, #FFF8F2 45%, #FFFAF6 100%);
         }
@@ -1810,7 +1810,7 @@
             .orb, .star-border-ring, .tilt-wrap { animation: none !important; transform: none !important; }
         }
 
-        /* ── MAGIC BENTO ── */
+        /* â”€â”€ MAGIC BENTO â”€â”€ */
         :root {
             --mb-accent: rgba(255,106,55,1);
             --mb-glow: rgba(255,106,55,0.2);
@@ -1883,7 +1883,7 @@
         .global-spotlight { mix-blend-mode: screen; will-change: transform, opacity; z-index: 200 !important; pointer-events: none; }
         .waves-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 
-        /* ── STUDIO FULLSCREEN MODAL ── */
+        /* â”€â”€ STUDIO FULLSCREEN MODAL â”€â”€ */
         .studio-modal-overlay {
             position: fixed;
             inset: 0;
@@ -1937,7 +1937,7 @@
         /* When studio modal is open, prevent body scroll */
         body.studio-open { overflow: hidden; }
 
-        /* ── CAD STUDIO ENHANCEMENTS ── */
+        /* â”€â”€ CAD STUDIO ENHANCEMENTS â”€â”€ */
         /* Left panel: "The Brief" */
         .cad-panel-brief {
             background: linear-gradient(180deg, rgba(255,255,255,0.78), rgba(255,255,255,0.56));
@@ -2033,7 +2033,7 @@
         .cad-crosshair::before { left: 50%; top: 0; bottom: 0; width: 1px; }
         .cad-crosshair::after  { top: 50%; left: 0; right: 0; height: 1px; }
 
-        /* Metric chip — right panel */
+        /* Metric chip â€” right panel */
         .cad-metric-chip {
             display: flex;
             align-items: center;
@@ -2127,6 +2127,6 @@
         }, { passive: true });
     })();
 </script>
-<script defer src="app.js?v=20260327-blueprint-elevations"></script>
+<script defer src="app.js?v=20260329-phase0-consumer-pivot"></script>
 </body>
 </html>

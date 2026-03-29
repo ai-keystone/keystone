@@ -45,6 +45,8 @@ const ASSETS = {
   exampleElevationSheet: "images/keystone_default_elevations.png",
   exampleRender: "images/keystone_study_render.png"
 };
+
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ HELPERS Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const scrollTo = id => {
   if (id === 'generator') {
     document.dispatchEvent(new CustomEvent('keystone:open-studio'));
@@ -56,9 +58,49 @@ const scrollTo = id => {
 };
 const BRAND_DISPLAY_NAME = 'Keystone AI';
 const BRAND_NAME = 'Keystone AI Studio';
-const BRAND_TAGLINE = 'Architect-first discovery';
+const BRAND_TAGLINE = 'Home design, made understandable';
 const CONTACT_EMAIL = 'aikeystone559@gmail.com';
 const LEGAL_UPDATED_AT = 'March 14, 2026';
+const STUDIO_UNLOCK_KEY = 'keystone_unlock';
+const STUDIO_SESSION_KEY = 'keystone_studio_session';
+const createEmptyRenderState = () => ({
+  status: 'idle',
+  image: null,
+  imageClean: null,
+  surveyData: null,
+  activeRefinement: null,
+  errorMsg: ''
+});
+const normalizeRenderState = state => {
+  const base = {
+    ...createEmptyRenderState(),
+    ...(state || {})
+  };
+  if (!base.image) {
+    return {
+      ...createEmptyRenderState(),
+      surveyData: base.surveyData || null
+    };
+  }
+  return {
+    ...base,
+    status: base.status && base.status !== 'loading' && base.status !== 'survey' ? base.status : 'ready'
+  };
+};
+const getStoredJson = key => {
+  if (typeof window === 'undefined') return null;
+  try {
+    return JSON.parse(window.localStorage.getItem(key) || 'null');
+  } catch {
+    return null;
+  }
+};
+const getInitialStudioSession = () => {
+  const stored = getStoredJson(STUDIO_SESSION_KEY);
+  if (!stored || typeof stored !== 'object') return null;
+  if (stored.version !== 1) return null;
+  return stored;
+};
 const getCurrentPath = () => {
   const raw = (window.location.pathname || '/').replace(/\/+$/, '') || '/';
   return raw === '/index.html' ? '/' : raw;
@@ -67,7 +109,7 @@ const homeSectionHref = id => id === 'hero' ? '/' : `/#${id}`;
 const SmartImage = ({
   eager = false,
   ...props
-}) => React.createElement("img", _extends({
+}) => /*#__PURE__*/React.createElement("img", _extends({
   loading: eager ? 'eager' : 'lazy',
   decoding: "async",
   fetchPriority: eager ? 'high' : 'auto'
@@ -82,9 +124,9 @@ const BrandLockup = ({
 }) => {
   const textColor = reverse ? 'text-white' : '';
   const subtitleColor = reverse ? 'rgba(244,239,230,0.56)' : 'rgba(9,9,9,0.42)';
-  const content = React.createElement("div", {
+  const content = /*#__PURE__*/React.createElement("div", {
     className: `flex items-center gap-3 ${className}`
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: ASSETS.logoMark,
     alt: BRAND_DISPLAY_NAME,
     eager: true,
@@ -93,20 +135,20 @@ const BrandLockup = ({
       height: compact ? '30px' : '34px',
       flexShrink: 0
     }
-  }), !markOnly && React.createElement("div", null, React.createElement("span", {
+  }), !markOnly && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: `brand-wordmark block leading-none ${textColor}`,
     style: {
       fontSize: compact ? '1.08rem' : '1.18rem',
       letterSpacing: '0.04em'
     }
-  }, BRAND_DISPLAY_NAME), React.createElement("div", {
+  }, BRAND_DISPLAY_NAME), /*#__PURE__*/React.createElement("div", {
     className: "mono text-[8px] uppercase tracking-[0.22em] mt-1",
     style: {
       color: subtitleColor
     }
   }, BRAND_TAGLINE)));
   if (!href) return content;
-  return React.createElement("a", {
+  return /*#__PURE__*/React.createElement("a", {
     href: href,
     onClick: onClick
   }, content);
@@ -118,13 +160,13 @@ const usePageTitle = title => {
 };
 const CloseIcon = ({
   className = 'w-4 h-4'
-}) => React.createElement("svg", {
+}) => /*#__PURE__*/React.createElement("svg", {
   className: className,
   fill: "none",
   stroke: "currentColor",
   viewBox: "0 0 24 24",
   "aria-hidden": "true"
-}, React.createElement("path", {
+}, /*#__PURE__*/React.createElement("path", {
   strokeLinecap: "round",
   strokeLinejoin: "round",
   strokeWidth: "1.8",
@@ -132,13 +174,13 @@ const CloseIcon = ({
 }));
 const CheckIcon = ({
   className = 'w-3 h-3'
-}) => React.createElement("svg", {
+}) => /*#__PURE__*/React.createElement("svg", {
   className: className,
   fill: "none",
   stroke: "currentColor",
   viewBox: "0 0 24 24",
   "aria-hidden": "true"
-}, React.createElement("path", {
+}, /*#__PURE__*/React.createElement("path", {
   strokeLinecap: "round",
   strokeLinejoin: "round",
   strokeWidth: "2.2",
@@ -193,7 +235,7 @@ const ClickSparkGlobal = ({
     });
     return () => window.removeEventListener('pointerdown', spawn);
   }, [sparkColor, sparkCount, sparkRadius, sparkSize, duration]);
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     ref: layerRef,
     className: "click-spark-layer",
     "aria-hidden": "true"
@@ -285,13 +327,13 @@ const DotGridHero = ({
       window.removeEventListener('pointerleave', onLeave);
     };
   }, [activeColor, baseColor, dotSize, gap, proximity]);
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "hero-dot-grid",
     "aria-hidden": "true"
-  }, React.createElement("canvas", {
+  }, /*#__PURE__*/React.createElement("canvas", {
     ref: canvasRef,
     className: "hero-dot-grid-canvas"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "hero-dot-grid-vignette"
   }));
 };
@@ -334,7 +376,7 @@ const GradualBlur = ({
       let gradient = `transparent ${p1}%, black ${p2}%`;
       if (p3 <= 100) gradient += `, black ${p3}%`;
       if (p4 <= 100) gradient += `, transparent ${p4}%`;
-      items.push(React.createElement("div", {
+      items.push(/*#__PURE__*/React.createElement("div", {
         key: i,
         style: {
           position: 'absolute',
@@ -358,11 +400,11 @@ const GradualBlur = ({
     zIndex
   };
   style[position] = 0;
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: `gradual-blur ${className}`,
     style: style,
     "aria-hidden": "true"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "gradual-blur-inner",
     style: {
       position: 'relative',
@@ -454,18 +496,18 @@ const LaserCursor = () => {
     };
   }, [enabled]);
   if (!enabled) return null;
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     ref: cursorRef,
     className: `laser-cursor${label ? ' has-label' : ''}`,
     "aria-hidden": "true"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     ref: beamRef,
     className: "laser-cursor-trail"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "laser-cursor-ring"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "laser-cursor-core"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "laser-cursor-label"
   }, label || 'Explore'));
 };
@@ -511,26 +553,32 @@ const SectionRail = () => {
     update();
     return () => window.removeEventListener('scroll', update);
   }, []);
-  return React.createElement("aside", {
+  return /*#__PURE__*/React.createElement("aside", {
     className: "section-rail",
     "aria-label": "Page sections"
-  }, items.map(item => React.createElement("button", {
+  }, items.map(item => /*#__PURE__*/React.createElement("button", {
     key: item.id,
     type: "button",
     onClick: () => scrollTo(item.id),
     "data-cursor-text": `Go ${item.label}`,
     className: `section-rail-link${activeId === item.id ? ' is-active' : ''}`
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "section-rail-dot"
-  }), React.createElement("span", null, item.label))));
+  }), /*#__PURE__*/React.createElement("span", null, item.label))));
 };
+
+// â"€â"€â"€ SCROLL PROGRESS â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// (handled by vanilla JS in index.html â€" no React overhead needed)
+
+// â"€â"€â"€ REVEAL WRAPPER â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+// Elegant scroll-triggered entrance. Use for headings, standalone cards, etc.
 const Reveal = ({
   children,
   delay = 0,
   y = 28,
   className = '',
   style = {}
-}) => React.createElement(motion.div, {
+}) => /*#__PURE__*/React.createElement(motion.div, {
   initial: {
     opacity: 0,
     y
@@ -551,6 +599,10 @@ const Reveal = ({
   className: className,
   style: style
 }, children);
+
+// â"€â"€â"€ REACT-BITS ADAPTED COMPONENTS â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+
+// SpotlightCard â€" mouse-tracking radial spotlight
 const SpotlightCard = ({
   children,
   className = '',
@@ -565,13 +617,15 @@ const SpotlightCard = ({
     ref.current.style.setProperty('--mouse-y', `${e.clientY - r.top}px`);
     ref.current.style.setProperty('--spotlight-color', spotlightColor);
   };
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     ref: ref,
     onMouseMove: handleMove,
     className: `spotlight-card ${className}`,
     style: style
   }, children);
 };
+
+// TiltCard â€" 3D perspective tilt on hover
 const TiltCard = ({
   children,
   className = '',
@@ -589,7 +643,7 @@ const TiltCard = ({
     const ry = (e.clientX - r.left - r.width / 2) / (r.width / 2) * maxTilt;
     ref.current.style.transform = `perspective(860px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(1.015)`;
   };
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     ref: ref,
     className: `tilt-wrap ${className}`,
     style: {
@@ -599,6 +653,8 @@ const TiltCard = ({
     onMouseLeave: reset
   }, children);
 };
+
+// BlurText â€" scroll-triggered word-by-word blur reveal
 const BlurText = ({
   text = '',
   delay = 65,
@@ -624,11 +680,11 @@ const BlurText = ({
   }, []);
   const words = text.split(' ');
   const yFrom = direction === 'bottom' ? 28 : -28;
-  return React.createElement(Tag, {
+  return /*#__PURE__*/React.createElement(Tag, {
     ref: ref,
     className: `blur-text-wrap ${className}`,
     style: style
-  }, words.map((word, i) => React.createElement(motion.span, {
+  }, words.map((word, i) => /*#__PURE__*/React.createElement(motion.span, {
     key: i,
     className: "blur-word",
     initial: {
@@ -648,19 +704,23 @@ const BlurText = ({
     }
   }, word)));
 };
+
+// GradientText â€" animated orange gradient text wrapper
 const GradientText = ({
   children,
   className = ''
-}) => React.createElement("span", {
+}) => /*#__PURE__*/React.createElement("span", {
   className: `gradient-text-anim ${className}`
 }, children);
+
+// StarBorderBtn â€" CTA button with animated rotating glow ring
 const StarBorderBtn = ({
   children,
   onClick,
   className = ''
-}) => React.createElement("div", {
+}) => /*#__PURE__*/React.createElement("div", {
   className: `star-border-wrap ${className}`
-}, React.createElement("button", {
+}, /*#__PURE__*/React.createElement("button", {
   type: "button",
   onClick: onClick,
   className: "cta-hero cta-glow cta-live",
@@ -669,16 +729,20 @@ const StarBorderBtn = ({
     zIndex: 1
   }
 }, children));
-const OrbBackground = () => React.createElement("div", {
+
+// OrbBackground â€" CSS animated floating orb blobs
+const OrbBackground = () => /*#__PURE__*/React.createElement("div", {
   className: "orb-bg",
   "aria-hidden": "true"
-}, React.createElement("div", {
+}, /*#__PURE__*/React.createElement("div", {
   className: "orb orb-1"
-}), React.createElement("div", {
+}), /*#__PURE__*/React.createElement("div", {
   className: "orb orb-2"
-}), React.createElement("div", {
+}), /*#__PURE__*/React.createElement("div", {
   className: "orb orb-3"
 }));
+
+// FloatingParticles â€" canvas-based drifting particle field
 const FloatingParticles = ({
   count = 55,
   color = '255,106,55',
@@ -736,11 +800,13 @@ const FloatingParticles = ({
       window.removeEventListener('resize', onResize);
     };
   }, [count, color]);
-  return React.createElement("canvas", {
+  return /*#__PURE__*/React.createElement("canvas", {
     ref: canvasRef,
     className: `particle-canvas ${className}`
   });
 };
+
+// CountUp â€" scroll-triggered animated number counter
 const CountUp = ({
   to,
   duration = 1600,
@@ -771,11 +837,13 @@ const CountUp = ({
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, [to, duration]);
-  return React.createElement("span", {
+  return /*#__PURE__*/React.createElement("span", {
     ref: ref,
     className: className
   }, n, suffix);
 };
+
+// â"€â"€â"€ SPLASH CURSOR (WebGL fluid simulation) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const SplashCursor = ({
   SIM_RESOLUTION = 32,
   DYE_RESOLUTION = 1440,
@@ -796,6 +864,7 @@ const SplashCursor = ({
   },
   TRANSPARENT = true
 }) => {
+  // WebGL fluid sim disabled â€" causes GL_INVALID_OPERATION feedback-loop errors on some GPUs
   return null;
   const canvasRef = useRef(null);
   const animationFrameId = useRef(null);
@@ -1272,6 +1341,7 @@ const SplashCursor = ({
       return r;
     }
     function genColor() {
+      // Orange/amber biased palette
       const hue = 0.04 + Math.random() * 0.08;
       const {
         r,
@@ -1414,7 +1484,7 @@ const SplashCursor = ({
       window.removeEventListener('touchend', handleTouchEnd);
     };
   }, []);
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'fixed',
       top: 0,
@@ -1425,7 +1495,7 @@ const SplashCursor = ({
       height: '100%'
     },
     "aria-hidden": "true"
-  }, React.createElement("canvas", {
+  }, /*#__PURE__*/React.createElement("canvas", {
     ref: canvasRef,
     style: {
       width: '100%',
@@ -1433,6 +1503,8 @@ const SplashCursor = ({
     }
   }));
 };
+
+// â"€â"€â"€ WAVES (Perlin noise animated wave lines) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const Waves = ({
   lineColor = 'rgba(255,106,55,0.35)',
   waveSpeedX = 0.015,
@@ -1500,6 +1572,7 @@ const Waves = ({
       left: 0,
       top: 0
     };
+    // Perlin noise
     const grad3 = [{
       x: 1,
       y: 1,
@@ -1740,7 +1813,7 @@ const Waves = ({
       window.removeEventListener('touchmove', onTouchMove);
     };
   }, []);
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     ref: containerRef,
     className: className,
     style: {
@@ -1751,20 +1824,22 @@ const Waves = ({
       ...style
     },
     "aria-hidden": "true"
-  }, React.createElement("canvas", {
+  }, /*#__PURE__*/React.createElement("canvas", {
     ref: canvasRef,
     className: "waves-canvas"
   }));
 };
+
+// â"€â"€â"€ MAGIC BENTO (interactive particle bento grid) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const keystoneBentoCards = [{
   color: '#0D0806',
   title: 'Floor Plans in <60s',
-  description: 'From guided client brief to architect-ready layout, instantly',
+  description: 'From guided brief to a real layout, instantly',
   label: 'Speed',
   svgHtml: '<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="74" height="50" rx="2" stroke="#FF6A37" stroke-width="1.2" opacity="0.4"/><rect x="3" y="3" width="42" height="30" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><rect x="45" y="3" width="32" height="30" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><rect x="3" y="33" width="26" height="20" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><rect x="29" y="33" width="48" height="20" rx="1" stroke="#FF9A5C" stroke-width="1.4"/><line x1="16" y1="3" x2="16" y2="33" stroke="#FF6A37" stroke-width="0.8" opacity="0.35"/><line x1="45" y1="33" x2="45" y2="53" stroke="#FF6A37" stroke-width="0.8" opacity="0.35"/></svg>'
 }, {
   color: '#0D0806',
-  title: 'Gemini Exterior',
+  title: 'Exterior Render',
   description: 'Atmosphere visualized from the same brief',
   label: 'Vision',
   svgHtml: '<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><polygon points="40,6 70,27 70,53 10,53 10,27" stroke="#FF9A5C" stroke-width="1.4" fill="none" stroke-linejoin="round"/><polygon points="40,6 70,27 10,27" stroke="#FF6A37" stroke-width="1.2" fill="rgba(255,106,55,0.07)" stroke-linejoin="round"/><rect x="32" y="36" width="16" height="17" rx="1" stroke="#FF9A5C" stroke-width="1.2"/><rect x="14" y="30" width="12" height="10" rx="1" stroke="#FF9A5C" stroke-width="1" opacity="0.65"/><rect x="54" y="30" width="12" height="10" rx="1" stroke="#FF9A5C" stroke-width="1" opacity="0.65"/><circle cx="65" cy="13" r="5" stroke="#FF6A37" stroke-width="1" opacity="0.55"/><line x1="65" y1="6" x2="65" y2="4" stroke="#FF6A37" stroke-width="1" opacity="0.45"/><line x1="72" y1="13" x2="74" y2="13" stroke="#FF6A37" stroke-width="1" opacity="0.45"/><line x1="58" y1="13" x2="56" y2="13" stroke="#FF6A37" stroke-width="1" opacity="0.45"/></svg>'
@@ -1783,7 +1858,7 @@ const keystoneBentoCards = [{
 }, {
   color: '#0D0806',
   title: 'Passkey Access',
-  description: 'Firm-controlled client link with secure entry',
+  description: 'Advanced tools stay protected behind secure entry',
   label: 'Security',
   svgHtml: '<svg viewBox="0 0 80 56" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="22" y="27" width="36" height="26" rx="4" stroke="#FF6A37" stroke-width="1.4"/><path d="M29 27 V20 C29 11 51 11 51 20 V27" stroke="#FF9A5C" stroke-width="1.4" fill="none"/><circle cx="40" cy="38" r="4" stroke="#FF9A5C" stroke-width="1.4"/><line x1="40" y1="42" x2="40" y2="46" stroke="#FF9A5C" stroke-width="1.4" stroke-linecap="round"/><line x1="29" y1="17" x2="25" y2="14" stroke="#FF6A37" stroke-width="1" opacity="0.5"/><line x1="51" y1="17" x2="55" y2="14" stroke="#FF6A37" stroke-width="1" opacity="0.5"/><line x1="40" y1="11" x2="40" y2="7" stroke="#FF6A37" stroke-width="1" opacity="0.5"/></svg>'
 }, {
@@ -1910,7 +1985,7 @@ const BentoParticleCard = ({
       clearParticles();
     };
   }, []);
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     ref: cardRef,
     className: `${className} particle-container`,
     style: {
@@ -2018,14 +2093,14 @@ const MagicBento = ({
     window.addEventListener('resize', check);
     return () => window.removeEventListener('resize', check);
   }, []);
-  return React.createElement(React.Fragment, null, !isMobile && React.createElement(BentoGlobalSpotlight, {
+  return /*#__PURE__*/React.createElement(React.Fragment, null, !isMobile && /*#__PURE__*/React.createElement(BentoGlobalSpotlight, {
     gridRef: gridRef,
     spotlightRadius: spotlightRadius,
     glowColor: glowColor
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "card-grid bento-section",
     ref: gridRef
-  }, cards.map((card, i) => React.createElement(BentoParticleCard, {
+  }, cards.map((card, i) => /*#__PURE__*/React.createElement(BentoParticleCard, {
     key: i,
     className: `magic-bento-card magic-bento-card--text-autohide magic-bento-card--border-glow`,
     style: {
@@ -2034,20 +2109,20 @@ const MagicBento = ({
     particleCount: isMobile ? 0 : particleCount,
     glowColor: glowColor,
     clickEffect: !isMobile && clickEffect
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "magic-bento-card__header"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "magic-bento-card__label"
-  }, card.label)), card.svgHtml && React.createElement("div", {
+  }, card.label)), card.svgHtml && /*#__PURE__*/React.createElement("div", {
     className: "magic-bento-card__graphic",
     dangerouslySetInnerHTML: {
       __html: card.svgHtml
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "magic-bento-card__content"
-  }, React.createElement("h2", {
+  }, /*#__PURE__*/React.createElement("h2", {
     className: "magic-bento-card__title"
-  }, card.title), React.createElement("p", {
+  }, card.title), /*#__PURE__*/React.createElement("p", {
     className: "magic-bento-card__description"
   }, card.description))))));
 };
@@ -2062,24 +2137,24 @@ const SurveySection = ({
       setTimeout(() => setCopied(false), 2400);
     });
   };
-  return React.createElement("section", {
+  return /*#__PURE__*/React.createElement("section", {
     id: "research",
     className: "defer-section py-16 md:py-24",
     style: {
       background: 'var(--cream)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "site-shell"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "max-w-2xl mx-auto text-center"
-  }, React.createElement(Reveal, {
+  }, /*#__PURE__*/React.createElement(Reveal, {
     y: 12
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "section-label justify-center"
-  }, "Research / Beta Program")), React.createElement(Reveal, {
+  }, "Research / Beta Program")), /*#__PURE__*/React.createElement(Reveal, {
     y: 32,
     delay: 0.08
-  }, React.createElement("h2", {
+  }, /*#__PURE__*/React.createElement("h2", {
     className: "cg mt-5 magic-gradient-text",
     style: {
       fontSize: 'clamp(2.6rem,5.5vw,4.2rem)',
@@ -2088,30 +2163,30 @@ const SurveySection = ({
       textTransform: 'uppercase',
       color: 'var(--ink)'
     }
-  }, "Help us build", React.createElement("br", null), "the right tool.")), React.createElement(Reveal, {
+  }, "Help us build", /*#__PURE__*/React.createElement("br", null), "the right tool.")), /*#__PURE__*/React.createElement(Reveal, {
     y: 16,
     delay: 0.14
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mt-5 leading-relaxed mx-auto",
     style: {
       color: 'rgba(9,9,9,0.58)',
       maxWidth: '30rem',
       fontSize: '1rem'
     }
-  }, "A brief study with residential architects and designers. Your responses directly shape Keystone's roadmap and pricing.")), React.createElement(Reveal, {
+  }, "Join the early trial list and help shape Keystone for homeowners and first-time home builders.")), /*#__PURE__*/React.createElement(Reveal, {
     y: 24,
     delay: 0.22
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mt-10 mx-auto inline-block survey-qr-frame",
     style: {
       padding: '2rem 2.4rem'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.28em] mb-4",
     style: {
       color: 'rgba(9,9,9,0.36)'
     }
-  }, "Scan to participate"), React.createElement("div", {
+  }, "Scan to participate"), /*#__PURE__*/React.createElement("div", {
     className: "rounded-[18px] overflow-hidden mx-auto",
     style: {
       width: '220px',
@@ -2120,7 +2195,7 @@ const SurveySection = ({
       padding: '12px',
       boxShadow: '0 0 0 1px rgba(9,9,9,0.06), 0 8px 24px rgba(9,9,9,0.06)'
     }
-  }, React.createElement("img", {
+  }, /*#__PURE__*/React.createElement("img", {
     src: ASSETS.qrCode,
     alt: "Qualtrics research survey QR code",
     style: {
@@ -2128,49 +2203,49 @@ const SurveySection = ({
       height: '100%',
       objectFit: 'contain'
     }
-  })), React.createElement("p", {
+  })), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-[13px]",
     style: {
       color: 'rgba(9,9,9,0.48)'
     }
-  }, "For residential architects & designers"))), React.createElement(Reveal, {
+  }, "For homeowners, builders, and early design explorers"))), /*#__PURE__*/React.createElement(Reveal, {
     y: 12,
     delay: 0.30
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex justify-center gap-3 flex-wrap mt-6"
   }, [{
     val: '~3 min',
     lbl: 'to complete'
   }, {
-    val: '10',
-    lbl: 'questions'
+    val: '1',
+    lbl: 'trial request'
   }, {
-    val: '100%',
-    lbl: 'anonymous'
-  }].map(item => React.createElement("div", {
+    val: 'early',
+    lbl: 'access'
+  }].map(item => /*#__PURE__*/React.createElement("div", {
     key: item.lbl,
     className: "paper-panel px-5 py-3 flex items-center gap-2"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "cg",
     style: {
       fontSize: '1.3rem',
       color: 'var(--accent)',
       letterSpacing: '-0.03em'
     }
-  }, item.val), React.createElement("span", {
+  }, item.val), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[10px] uppercase tracking-[0.18em]",
     style: {
       color: 'rgba(9,9,9,0.44)'
     }
-  }, item.lbl))))), React.createElement(Reveal, {
+  }, item.lbl))))), /*#__PURE__*/React.createElement(Reveal, {
     y: 12,
     delay: 0.38
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mt-8 flex flex-col sm:flex-row gap-3 justify-center"
-  }, React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: copyLink,
     className: "cta-secondary flex items-center gap-2"
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     width: "14",
     height: "14",
     viewBox: "0 0 24 24",
@@ -2179,15 +2254,15 @@ const SurveySection = ({
     strokeWidth: "2",
     strokeLinecap: "round",
     strokeLinejoin: "round"
-  }, React.createElement("rect", {
+  }, /*#__PURE__*/React.createElement("rect", {
     x: "9",
     y: "9",
     width: "13",
     height: "13",
     rx: "2"
-  }), React.createElement("path", {
+  }), /*#__PURE__*/React.createElement("path", {
     d: "M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"
-  })), copied ? 'Link copied!' : 'Copy share link'), React.createElement("button", {
+  })), copied ? 'Link copied!' : 'Copy share link'), /*#__PURE__*/React.createElement("button", {
     onClick: onJoin,
     className: "cta-hero cta-glow-soft"
   }, "Get Beta Access"))))));
@@ -2211,13 +2286,13 @@ const HeroFloatingBlueprint = () => {
     stiffness: 60,
     damping: 22
   });
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "absolute inset-0 hidden lg:block pointer-events-none overflow-hidden",
     style: {
       perspective: '900px',
       perspectiveOrigin: '72% 38%'
     }
-  }, React.createElement(motion.div, {
+  }, /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0,
       rotateX: -6,
@@ -2240,7 +2315,7 @@ const HeroFloatingBlueprint = () => {
       transformStyle: 'preserve-3d'
     },
     className: "absolute right-[-4%] top-[8%] w-[52%]"
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     viewBox: "0 0 520 460",
     fill: "none",
     xmlns: "http://www.w3.org/2000/svg",
@@ -2248,25 +2323,25 @@ const HeroFloatingBlueprint = () => {
       width: '100%',
       height: 'auto'
     }
-  }, React.createElement("defs", null, React.createElement("pattern", {
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("pattern", {
     id: "bpDot",
     x: "0",
     y: "0",
     width: "24",
     height: "24",
     patternUnits: "userSpaceOnUse"
-  }, React.createElement("circle", {
+  }, /*#__PURE__*/React.createElement("circle", {
     cx: "12",
     cy: "12",
     r: "0.9",
     fill: "rgba(27,79,130,0.18)"
-  }))), React.createElement("rect", {
+  }))), /*#__PURE__*/React.createElement("rect", {
     x: "0",
     y: "0",
     width: "520",
     height: "460",
     fill: "url(#bpDot)"
-  }), React.createElement("rect", {
+  }), /*#__PURE__*/React.createElement("rect", {
     x: "52",
     y: "48",
     width: "418",
@@ -2274,7 +2349,7 @@ const HeroFloatingBlueprint = () => {
     stroke: "rgba(27,79,130,0.52)",
     strokeWidth: "2.2",
     fill: "rgba(27,79,130,0.018)"
-  }), React.createElement("rect", {
+  }), /*#__PURE__*/React.createElement("rect", {
     x: "52",
     y: "48",
     width: "254",
@@ -2282,7 +2357,7 @@ const HeroFloatingBlueprint = () => {
     stroke: "rgba(27,79,130,0.36)",
     strokeWidth: "1.4",
     fill: "rgba(27,79,130,0.022)"
-  }), React.createElement("rect", {
+  }), /*#__PURE__*/React.createElement("rect", {
     x: "306",
     y: "48",
     width: "164",
@@ -2290,7 +2365,7 @@ const HeroFloatingBlueprint = () => {
     stroke: "rgba(27,79,130,0.36)",
     strokeWidth: "1.4",
     fill: "rgba(27,79,130,0.022)"
-  }), React.createElement("rect", {
+  }), /*#__PURE__*/React.createElement("rect", {
     x: "52",
     y: "244",
     width: "104",
@@ -2298,7 +2373,7 @@ const HeroFloatingBlueprint = () => {
     stroke: "rgba(27,79,130,0.28)",
     strokeWidth: "1.2",
     fill: "none"
-  }), React.createElement("rect", {
+  }), /*#__PURE__*/React.createElement("rect", {
     x: "156",
     y: "244",
     width: "200",
@@ -2306,7 +2381,7 @@ const HeroFloatingBlueprint = () => {
     stroke: "rgba(27,79,130,0.36)",
     strokeWidth: "1.4",
     fill: "rgba(27,79,130,0.022)"
-  }), React.createElement("rect", {
+  }), /*#__PURE__*/React.createElement("rect", {
     x: "356",
     y: "244",
     width: "114",
@@ -2314,46 +2389,46 @@ const HeroFloatingBlueprint = () => {
     stroke: "rgba(27,79,130,0.36)",
     strokeWidth: "1.4",
     fill: "rgba(27,79,130,0.022)"
-  }), React.createElement("path", {
+  }), /*#__PURE__*/React.createElement("path", {
     d: "M52 196 Q82 196 82 226",
     stroke: "rgba(27,79,130,0.3)",
     strokeWidth: "1",
     fill: "none",
     strokeDasharray: "3,3"
-  }), React.createElement("path", {
+  }), /*#__PURE__*/React.createElement("path", {
     d: "M156 310 Q186 310 186 340",
     stroke: "rgba(27,79,130,0.3)",
     strokeWidth: "1",
     fill: "none",
     strokeDasharray: "3,3"
-  }), React.createElement("path", {
+  }), /*#__PURE__*/React.createElement("path", {
     d: "M306 196 Q306 166 336 166",
     stroke: "rgba(27,79,130,0.3)",
     strokeWidth: "1",
     fill: "none",
     strokeDasharray: "3,3"
-  }), React.createElement("line", {
+  }), /*#__PURE__*/React.createElement("line", {
     x1: "130",
     y1: "48",
     x2: "190",
     y2: "48",
     stroke: "rgba(27,79,130,0.5)",
     strokeWidth: "2.8"
-  }), React.createElement("line", {
+  }), /*#__PURE__*/React.createElement("line", {
     x1: "340",
     y1: "48",
     x2: "400",
     y2: "48",
     stroke: "rgba(27,79,130,0.5)",
     strokeWidth: "2.8"
-  }), React.createElement("line", {
+  }), /*#__PURE__*/React.createElement("line", {
     x1: "200",
     y1: "398",
     x2: "300",
     y2: "398",
     stroke: "rgba(27,79,130,0.5)",
     strokeWidth: "2.8"
-  }), React.createElement("text", {
+  }), /*#__PURE__*/React.createElement("text", {
     x: "178",
     y: "154",
     fontSize: "10",
@@ -2361,7 +2436,7 @@ const HeroFloatingBlueprint = () => {
     textAnchor: "middle",
     fontFamily: "IBM Plex Mono, monospace",
     letterSpacing: "2"
-  }, "LIVING"), React.createElement("text", {
+  }, "LIVING"), /*#__PURE__*/React.createElement("text", {
     x: "388",
     y: "154",
     fontSize: "10",
@@ -2369,7 +2444,7 @@ const HeroFloatingBlueprint = () => {
     textAnchor: "middle",
     fontFamily: "IBM Plex Mono, monospace",
     letterSpacing: "2"
-  }, "KITCHEN"), React.createElement("text", {
+  }, "KITCHEN"), /*#__PURE__*/React.createElement("text", {
     x: "256",
     y: "328",
     fontSize: "10",
@@ -2377,7 +2452,7 @@ const HeroFloatingBlueprint = () => {
     textAnchor: "middle",
     fontFamily: "IBM Plex Mono, monospace",
     letterSpacing: "2"
-  }, "PRIMARY"), React.createElement("text", {
+  }, "PRIMARY"), /*#__PURE__*/React.createElement("text", {
     x: "413",
     y: "328",
     fontSize: "10",
@@ -2385,7 +2460,7 @@ const HeroFloatingBlueprint = () => {
     textAnchor: "middle",
     fontFamily: "IBM Plex Mono, monospace",
     letterSpacing: "2"
-  }, "BED 2"), React.createElement("line", {
+  }, "BED 2"), /*#__PURE__*/React.createElement("line", {
     x1: "52",
     y1: "30",
     x2: "470",
@@ -2393,7 +2468,7 @@ const HeroFloatingBlueprint = () => {
     stroke: "rgba(27,79,130,0.22)",
     strokeWidth: "0.7",
     strokeDasharray: "4,5"
-  }), React.createElement("line", {
+  }), /*#__PURE__*/React.createElement("line", {
     x1: "34",
     y1: "48",
     x2: "34",
@@ -2401,37 +2476,37 @@ const HeroFloatingBlueprint = () => {
     stroke: "rgba(27,79,130,0.22)",
     strokeWidth: "0.7",
     strokeDasharray: "4,5"
-  }), React.createElement("line", {
+  }), /*#__PURE__*/React.createElement("line", {
     x1: "48",
     y1: "30",
     x2: "48",
     y2: "42",
     stroke: "rgba(27,79,130,0.3)",
     strokeWidth: "0.8"
-  }), React.createElement("line", {
+  }), /*#__PURE__*/React.createElement("line", {
     x1: "472",
     y1: "30",
     x2: "472",
     y2: "42",
     stroke: "rgba(27,79,130,0.3)",
     strokeWidth: "0.8"
-  }), React.createElement("line", {
+  }), /*#__PURE__*/React.createElement("line", {
     x1: "34",
     y1: "44",
     x2: "46",
     y2: "44",
     stroke: "rgba(27,79,130,0.3)",
     strokeWidth: "0.8"
-  }), React.createElement("line", {
+  }), /*#__PURE__*/React.createElement("line", {
     x1: "34",
     y1: "400",
     x2: "46",
     y2: "400",
     stroke: "rgba(27,79,130,0.3)",
     strokeWidth: "0.8"
-  }), React.createElement("g", {
+  }), /*#__PURE__*/React.createElement("g", {
     transform: "translate(68, 258)"
-  }, [0, 1, 2, 3, 4, 5, 6, 7].map(i => React.createElement("line", {
+  }, [0, 1, 2, 3, 4, 5, 6, 7].map(i => /*#__PURE__*/React.createElement("line", {
     key: i,
     x1: "0",
     y1: i * 9,
@@ -2439,7 +2514,7 @@ const HeroFloatingBlueprint = () => {
     y2: i * 9,
     stroke: "rgba(27,79,130,0.28)",
     strokeWidth: "0.8"
-  })), React.createElement("rect", {
+  })), /*#__PURE__*/React.createElement("rect", {
     x: "0",
     y: "0",
     width: "72",
@@ -2447,63 +2522,63 @@ const HeroFloatingBlueprint = () => {
     stroke: "rgba(27,79,130,0.32)",
     strokeWidth: "0.9",
     fill: "none"
-  })), React.createElement("g", {
+  })), /*#__PURE__*/React.createElement("g", {
     transform: "translate(492, 28)"
-  }, React.createElement("circle", {
+  }, /*#__PURE__*/React.createElement("circle", {
     cx: "0",
     cy: "0",
     r: "11",
     stroke: "rgba(27,79,130,0.28)",
     strokeWidth: "0.9",
     fill: "none"
-  }), React.createElement("text", {
+  }), /*#__PURE__*/React.createElement("text", {
     x: "0",
     y: "-14",
     fontSize: "8",
     fill: "rgba(27,79,130,0.42)",
     textAnchor: "middle",
     fontFamily: "IBM Plex Mono, monospace"
-  }, "N"), React.createElement("polygon", {
+  }, "N"), /*#__PURE__*/React.createElement("polygon", {
     points: "0,-8 -4,4 0,1 4,4",
     fill: "rgba(27,79,130,0.38)",
     stroke: "none"
-  }), React.createElement("polygon", {
+  }), /*#__PURE__*/React.createElement("polygon", {
     points: "0,8 -4,-4 0,-1 4,-4",
     fill: "rgba(27,79,130,0.18)",
     stroke: "none"
-  })), React.createElement("g", {
+  })), /*#__PURE__*/React.createElement("g", {
     transform: "translate(52, 432)"
-  }, React.createElement("rect", {
+  }, /*#__PURE__*/React.createElement("rect", {
     x: "0",
     y: "0",
     width: "120",
     height: "5",
     fill: "rgba(27,79,130,0.22)"
-  }), React.createElement("rect", {
+  }), /*#__PURE__*/React.createElement("rect", {
     x: "0",
     y: "0",
     width: "30",
     height: "5",
     fill: "rgba(27,79,130,0.4)"
-  }), React.createElement("rect", {
+  }), /*#__PURE__*/React.createElement("rect", {
     x: "60",
     y: "0",
     width: "30",
     height: "5",
     fill: "rgba(27,79,130,0.4)"
-  }), React.createElement("text", {
+  }), /*#__PURE__*/React.createElement("text", {
     x: "0",
     y: "16",
     fontSize: "8",
     fill: "rgba(27,79,130,0.38)",
     fontFamily: "IBM Plex Mono, monospace"
-  }, "0"), React.createElement("text", {
+  }, "0"), /*#__PURE__*/React.createElement("text", {
     x: "58",
     y: "16",
     fontSize: "8",
     fill: "rgba(27,79,130,0.38)",
     fontFamily: "IBM Plex Mono, monospace"
-  }, "20"), React.createElement("text", {
+  }, "20"), /*#__PURE__*/React.createElement("text", {
     x: "116",
     y: "16",
     fontSize: "8",
@@ -2511,11 +2586,13 @@ const HeroFloatingBlueprint = () => {
     fontFamily: "IBM Plex Mono, monospace"
   }, "40 ft")))));
 };
+
+// â"€â"€â"€ MOBILE NAV â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const MobileNavBar = ({
   onOpenMenu
-}) => React.createElement("div", {
+}) => /*#__PURE__*/React.createElement("div", {
   className: "fixed bottom-0 left-0 w-full bottom-nav z-[90] md:hidden pb-safe"
-}, React.createElement("div", {
+}, /*#__PURE__*/React.createElement("div", {
   className: "grid grid-cols-5 h-[60px] items-center"
 }, [{
   svg: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6",
@@ -2534,45 +2611,45 @@ const MobileNavBar = ({
   label: 'Menu',
   id: null
 }].map((item, i) => {
-  if (!item) return React.createElement("div", {
+  if (!item) return /*#__PURE__*/React.createElement("div", {
     key: i,
     className: "flex justify-center relative",
     style: {
       top: '-14px'
     }
-  }, React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: () => scrollTo('generator'),
     className: "w-13 h-13 bg-ink rounded-full flex items-center justify-center text-white shadow-xl active:scale-90 transition-transform",
     style: {
       width: '52px',
       height: '52px'
     }
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     className: "w-5 h-5",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "1.5",
     d: "M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
   }))));
-  return React.createElement("button", {
+  return /*#__PURE__*/React.createElement("button", {
     key: i,
     onClick: item.id ? () => scrollTo(item.id) : onOpenMenu,
     className: "flex flex-col items-center justify-center gap-1 text-black/45 active:text-black transition-colors"
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     className: "w-[18px] h-[18px]",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "1.5",
     d: item.svg
-  })), React.createElement("span", {
+  })), /*#__PURE__*/React.createElement("span", {
     className: "text-[7px] uppercase font-bold tracking-wider"
   }, item.label));
 })));
@@ -2580,7 +2657,7 @@ const MobileMenuOverlay = ({
   isOpen,
   onClose,
   onJoin
-}) => React.createElement(AnimatePresence, null, isOpen && React.createElement(motion.div, {
+}) => /*#__PURE__*/React.createElement(AnimatePresence, null, isOpen && /*#__PURE__*/React.createElement(motion.div, {
   initial: {
     opacity: 0,
     y: "100%"
@@ -2602,29 +2679,29 @@ const MobileMenuOverlay = ({
   style: {
     background: 'linear-gradient(180deg, rgba(10,10,10,0.995), rgba(18,18,18,0.995))'
   }
-}, React.createElement("div", {
+}, /*#__PURE__*/React.createElement("div", {
   className: "flex justify-between items-center px-6 py-5 border-b border-white/8"
-}, React.createElement(BrandLockup, {
+}, /*#__PURE__*/React.createElement(BrandLockup, {
   href: "/",
   reverse: true,
   compact: true,
   onClick: onClose
-}), React.createElement("button", {
+}), /*#__PURE__*/React.createElement("button", {
   onClick: onClose,
   className: "w-9 h-9 bg-white/10 rounded-full flex items-center justify-center"
-}, React.createElement("svg", {
+}, /*#__PURE__*/React.createElement("svg", {
   className: "w-4 h-4",
   fill: "none",
   stroke: "currentColor",
   viewBox: "0 0 24 24"
-}, React.createElement("path", {
+}, /*#__PURE__*/React.createElement("path", {
   strokeLinecap: "round",
   strokeLinejoin: "round",
   strokeWidth: "2",
   d: "M6 18L18 6M6 6l12 12"
-})))), React.createElement("div", {
+})))), /*#__PURE__*/React.createElement("div", {
   className: "flex-1 px-6 py-6 flex flex-col gap-0"
-}, [['Platform', 'work'], ['Services', 'services'], ['Pricing', 'pricing'], ['Live Studio', 'generator'], ['Studio', 'studio'], ['Sessions', 'gallery']].map(([label, id], i) => React.createElement("button", {
+}, [['Platform', 'work'], ['Services', 'services'], ['Pricing', 'pricing'], ['Live Studio', 'generator'], ['Studio', 'studio'], ['Sessions', 'gallery']].map(([label, id], i) => /*#__PURE__*/React.createElement("button", {
   key: id,
   onClick: () => {
     scrollTo(id);
@@ -2635,37 +2712,39 @@ const MobileMenuOverlay = ({
     letterSpacing: '-0.05em',
     textTransform: 'uppercase'
   }
-}, label, React.createElement("span", {
+}, label, /*#__PURE__*/React.createElement("span", {
   className: "mono text-sm text-white/20"
-}, "0", i + 1))), React.createElement("div", {
+}, "0", i + 1))), /*#__PURE__*/React.createElement("div", {
   className: "grid grid-cols-2 gap-2 mt-5"
-}, React.createElement("a", {
+}, /*#__PURE__*/React.createElement("a", {
   href: "/how-floor-plans-work",
   className: "mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors"
-}, "How It Works"), React.createElement("a", {
+}, "How It Works"), /*#__PURE__*/React.createElement("a", {
   href: "/b2b-workflow",
   className: "mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors"
-}, "B2B Workflow"), React.createElement("a", {
+}, "Guided Workflow"), /*#__PURE__*/React.createElement("a", {
   href: "/roadmap",
   className: "mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors"
-}, "Roadmap"), React.createElement("a", {
+}, "Roadmap"), /*#__PURE__*/React.createElement("a", {
   href: "/faq",
   className: "mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors"
-}, "FAQ")), React.createElement("div", {
+}, "FAQ")), /*#__PURE__*/React.createElement("div", {
   className: "mt-auto pt-8 grid gap-3"
-}, React.createElement("button", {
+}, /*#__PURE__*/React.createElement("button", {
   onClick: () => {
     scrollTo('generator');
     onClose();
   },
   className: "cta-hero cta-glow w-full text-center py-4"
-}, "Open Live Studio"), React.createElement("button", {
+}, "Open Live Studio"), /*#__PURE__*/React.createElement("button", {
   onClick: () => {
     onJoin();
     onClose();
   },
   className: "cta-hero cta-glow-soft w-full text-center py-4"
-}, "Request Access")))));
+}, "Unlock Advanced Features")))));
+
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ JOIN MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const JoinModal = ({
   isOpen,
   onClose
@@ -2674,10 +2753,10 @@ const JoinModal = ({
     fullName: '',
     firmName: '',
     email: '',
-    volume: '1-10 Projects',
+    volume: '0-6 months',
     questions: ''
   });
-  const [status, setStatus] = React.useState('idle');
+  const [status, setStatus] = React.useState('idle'); // idle | loading | success
   const update = e => setFormData(p => ({
     ...p,
     [e.target.name]: e.target.value
@@ -2717,7 +2796,7 @@ const JoinModal = ({
           fullName: '',
           firmName: '',
           email: '',
-          volume: '1-10 Projects',
+          volume: '0-6 months',
           questions: ''
         });
       }, 2600);
@@ -2726,7 +2805,7 @@ const JoinModal = ({
       setStatus('idle');
     }
   };
-  return React.createElement(AnimatePresence, null, isOpen && React.createElement(motion.div, {
+  return /*#__PURE__*/React.createElement(AnimatePresence, null, isOpen && /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0
     },
@@ -2738,7 +2817,7 @@ const JoinModal = ({
     },
     onClick: onClose,
     className: "fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/85 backdrop-blur-sm p-0 md:p-6"
-  }, React.createElement(motion.div, {
+  }, /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       y: 50,
       opacity: 0
@@ -2762,12 +2841,12 @@ const JoinModal = ({
       border: '1px solid rgba(10,10,12,0.08)',
       boxShadow: '0 28px 90px rgba(9,9,9,0.34)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: '3px',
       background: 'linear-gradient(90deg, var(--accent), var(--accent-2))'
     }
-  }), React.createElement("button", {
+  }), /*#__PURE__*/React.createElement("button", {
     onClick: onClose,
     "aria-label": "Close access request",
     className: "absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center transition-colors z-10",
@@ -2776,38 +2855,38 @@ const JoinModal = ({
       color: 'rgba(10,10,12,0.72)',
       border: '1px solid rgba(10,10,12,0.08)'
     }
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     width: "14",
     height: "14",
     viewBox: "0 0 14 14",
     fill: "none",
     "aria-hidden": "true"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     d: "M3 3L11 11M11 3L3 11",
     stroke: "currentColor",
     strokeWidth: "1.5",
     strokeLinecap: "round"
-  }))), React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "p-6 md:p-8 overflow-y-auto",
     style: {
       maxHeight: '90vh',
       color: 'var(--ink)'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "badge mb-3 inline-block"
-  }, "Request Access"), React.createElement("h2", {
+  }, "Unlock Advanced Features"), /*#__PURE__*/React.createElement("h2", {
     className: "cg text-3xl mb-1 mt-2",
     style: {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase',
       color: 'var(--ink)'
     }
-  }, "Access the live studio."), React.createElement("p", {
+  }, "Request a trial passkey."), /*#__PURE__*/React.createElement("p", {
     className: "text-sm mt-2 mb-6 leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.7)'
     }
-  }, "Qualified residential architecture firms can see how the B2B workflow works in practice: send the client a guided link, collect a structured brief, and review outputs before the first meeting."), status === 'success' ? React.createElement(motion.div, {
+  }, "The free trial already includes the floor plan and elevations. Fill this out if you want access to the advanced package: Exterior Render, refinements, Cost Estimate workbook, and CAD export."), status === 'success' ? /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       scale: 0.9,
       opacity: 0
@@ -2817,9 +2896,9 @@ const JoinModal = ({
       opacity: 1
     },
     className: "flex flex-col items-center text-center py-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "w-16 h-16 rounded-full bg-blue flex items-center justify-center mb-4"
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     width: "28",
     height: "28",
     viewBox: "0 0 24 24",
@@ -2828,74 +2907,76 @@ const JoinModal = ({
     strokeWidth: "2.5",
     strokeLinecap: "round",
     strokeLinejoin: "round"
-  }, React.createElement("polyline", {
+  }, /*#__PURE__*/React.createElement("polyline", {
     points: "20 6 9 17 4 12"
-  }))), React.createElement("h3", {
+  }))), /*#__PURE__*/React.createElement("h3", {
     className: "cg text-2xl",
     style: {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "You're in the queue."), React.createElement("p", {
+  }, "You're on the list."), /*#__PURE__*/React.createElement("p", {
     className: "text-mid text-sm mt-2"
-  }, "We will follow up with studio access details and next steps for your firm shortly.")) : React.createElement("form", {
+  }, "We will follow up with trial access details and next steps shortly.")) : /*#__PURE__*/React.createElement("form", {
     onSubmit: handleSubmit,
     className: "space-y-4"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-3"
-  }, React.createElement("div", null, React.createElement("label", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "mono text-[7px] uppercase tracking-widest text-mid block mb-1"
-  }, "Full Name"), React.createElement("input", {
+  }, "Full Name"), /*#__PURE__*/React.createElement("input", {
     type: "text",
     name: "fullName",
     value: formData.fullName,
     onChange: update,
     required: true,
     placeholder: "Jane Doe"
-  })), React.createElement("div", null, React.createElement("label", {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "mono text-[7px] uppercase tracking-widest text-mid block mb-1"
-  }, "Firm Name"), React.createElement("input", {
+  }, "Project Name"), /*#__PURE__*/React.createElement("input", {
     type: "text",
     name: "firmName",
     value: formData.firmName,
     onChange: update,
     required: true,
-    placeholder: "Firm LLC"
-  }))), React.createElement("div", null, React.createElement("label", {
+    placeholder: "Dream House / Family Home"
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "mono text-[7px] uppercase tracking-widest text-mid block mb-1"
-  }, "Business Email"), React.createElement("input", {
+  }, "Email"), /*#__PURE__*/React.createElement("input", {
     type: "email",
     name: "email",
     value: formData.email,
     onChange: update,
     required: true,
-    placeholder: "jane@firm.com"
-  })), React.createElement("div", null, React.createElement("label", {
+    placeholder: "jane@email.com"
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "mono text-[7px] uppercase tracking-widest text-mid block mb-1"
-  }, "Annual Project Volume"), React.createElement("select", {
+  }, "Expected Build Timeline"), /*#__PURE__*/React.createElement("select", {
     name: "volume",
     value: formData.volume,
     onChange: update
-  }, React.createElement("option", null, "1-10 Projects"), React.createElement("option", null, "10-30 Projects"), React.createElement("option", null, "30+ Projects"))), React.createElement("div", null, React.createElement("label", {
+  }, /*#__PURE__*/React.createElement("option", null, "0-6 months"), /*#__PURE__*/React.createElement("option", null, "6-12 months"), /*#__PURE__*/React.createElement("option", null, "12+ months"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "mono text-[7px] uppercase tracking-widest text-mid block mb-1"
-  }, "Questions / Notes"), React.createElement("textarea", {
+  }, "Questions / Notes"), /*#__PURE__*/React.createElement("textarea", {
     name: "questions",
     rows: "2",
     value: formData.questions,
     onChange: update,
-    placeholder: "Optional..."
-  })), React.createElement("button", {
+    placeholder: "Tell us what kind of house you are planning..."
+  })), /*#__PURE__*/React.createElement("button", {
     type: "submit",
     disabled: status === 'loading',
     className: "cta-hero w-full py-4 text-base disabled:opacity-60"
-  }, status === 'loading' ? 'Sending...' : 'Request Access'), React.createElement("p", {
+  }, status === 'loading' ? 'Sending...' : 'Request Trial Access'), /*#__PURE__*/React.createElement("p", {
     className: "text-center mono text-[9px] text-mid"
-  }, "No spam - no credit card - fast follow-up"), React.createElement("button", {
+  }, "No spam \u2022 no credit card \u2022 fast follow-up"), /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: onClose,
     className: "w-full py-3 text-[11px] uppercase tracking-[0.22em] mono text-mid border border-black/10 rounded-full hover:bg-black/4 transition-colors"
   }, "Not now, go back"))))));
 };
+
+// PLAN SUMMARY Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const svgMarkupToDataUri = svgMarkup => {
   if (!svgMarkup || typeof svgMarkup !== 'string') return null;
   const svg = svgMarkup.includes('xmlns=') ? svgMarkup : svgMarkup.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ');
@@ -2932,25 +3013,27 @@ const BlueprintPresentationSheet = ({
   planSvg,
   elevations,
   formData,
-  footprintInfo
+  footprintInfo,
+  renderImage
 }) => {
   if (!planSvg) return null;
   const views = getElevationViews(elevations);
+  const showSideRail = views.length > 0 || !!renderImage;
   const area = extractPrimaryNumber(formData?.totalArea, footprintInfo?.widthFt && footprintInfo?.heightFt ? String(footprintInfo.widthFt * footprintInfo.heightFt) : '');
   const styleLabel = elevations?.meta?.styleLabel || formData?.materials || 'Residential';
   const roofKind = String(elevations?.meta?.roofKind || 'gabled').replace(/_/g, ' ');
   const facing = String(formData?.frontFacing || elevations?.meta?.frontEdge || '').trim();
   const summaryBits = [area ? `${area} SQ FT` : null, formData?.bedrooms ? String(formData.bedrooms).toUpperCase() : null, formData?.bathrooms ? String(formData.bathrooms).toUpperCase() : null, facing ? `${facing.toUpperCase()} FACING` : null].filter(Boolean);
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     style: {
       background: '#f6f1e8',
       border: '1px solid rgba(120,102,82,0.18)',
       borderRadius: 24,
       padding: 24,
       boxShadow: '0 24px 60px rgba(0,0,0,0.14)',
-      width: views.length ? 1420 : 'auto'
+      width: showSideRail ? 1480 : 'auto'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'flex-start',
@@ -2958,7 +3041,7 @@ const BlueprintPresentationSheet = ({
       gap: 20,
       marginBottom: 18
     }
-  }, React.createElement("div", null, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 10,
@@ -2966,7 +3049,7 @@ const BlueprintPresentationSheet = ({
       textTransform: 'uppercase',
       color: 'rgba(173,51,0,0.88)'
     }
-  }, "Keystone AI"), React.createElement("div", {
+  }, "Keystone AI"), /*#__PURE__*/React.createElement("div", {
     className: "cg",
     style: {
       fontSize: '2rem',
@@ -2976,7 +3059,7 @@ const BlueprintPresentationSheet = ({
       color: 'var(--ink)',
       marginTop: 6
     }
-  }, "Plan + Elevation Sheet"), React.createElement("div", {
+  }, "Plan, Elevations + Exterior Render"), /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 10,
@@ -2985,7 +3068,7 @@ const BlueprintPresentationSheet = ({
       color: 'rgba(10,10,12,0.42)',
       marginTop: 8
     }
-  }, summaryBits.join('  |  ') || 'Residential concept set')), React.createElement("div", {
+  }, summaryBits.join('  |  ') || 'Residential concept set')), /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 10,
@@ -2995,14 +3078,14 @@ const BlueprintPresentationSheet = ({
       color: 'rgba(10,10,12,0.5)',
       lineHeight: 1.7
     }
-  }, React.createElement("div", null, styleLabel), React.createElement("div", null, roofKind))), React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, styleLabel), /*#__PURE__*/React.createElement("div", null, roofKind))), /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'grid',
-      gridTemplateColumns: views.length ? 'minmax(0,1fr) 352px' : 'minmax(0,1fr)',
+      gridTemplateColumns: showSideRail ? 'minmax(0,1fr) 392px' : 'minmax(0,1fr)',
       gap: 20,
       alignItems: 'start'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       background: '#fffdf9',
       border: '1px solid rgba(120,102,82,0.12)',
@@ -3010,18 +3093,54 @@ const BlueprintPresentationSheet = ({
       padding: 18,
       boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.6)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "presentation-plan-svg",
     dangerouslySetInnerHTML: {
       __html: planSvg
     }
-  })), views.length ? React.createElement("div", {
+  })), showSideRail ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 12
+    }
+  }, renderImage ? /*#__PURE__*/React.createElement("div", {
+    style: {
+      background: '#fffdf9',
+      border: '1px solid rgba(120,102,82,0.12)',
+      borderRadius: 16,
+      padding: '12px 12px 10px',
+      minHeight: 218,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 8,
+      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.58)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mono",
+    style: {
+      fontSize: 8,
+      letterSpacing: '0.18em',
+      textTransform: 'uppercase',
+      color: 'rgba(10,10,12,0.48)'
+    }
+  }, "Exterior render"), /*#__PURE__*/React.createElement("img", {
+    src: renderImage,
+    alt: "Exterior render preview",
+    style: {
+      width: '100%',
+      height: 220,
+      objectFit: 'cover',
+      borderRadius: 12,
+      border: '1px solid rgba(120,102,82,0.12)'
+    }
+  })) : null, views.length ? /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
       gap: 12
     }
-  }, views.map(view => React.createElement("div", {
+  }, views.map(view => /*#__PURE__*/React.createElement("div", {
     key: view.key,
     style: {
       background: '#fffdf9',
@@ -3034,7 +3153,7 @@ const BlueprintPresentationSheet = ({
       gap: 8,
       boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.58)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono",
     style: {
       fontSize: 8,
@@ -3042,7 +3161,7 @@ const BlueprintPresentationSheet = ({
       textTransform: 'uppercase',
       color: 'rgba(10,10,12,0.48)'
     }
-  }, view.label, " elevation"), React.createElement("div", {
+  }, view.label, " elevation"), /*#__PURE__*/React.createElement("div", {
     className: "presentation-elevation-svg",
     style: {
       flex: 1,
@@ -3053,7 +3172,7 @@ const BlueprintPresentationSheet = ({
     dangerouslySetInnerHTML: {
       __html: elevations[view.key]
     }
-  })))) : null));
+  })))) : null) : null));
 };
 const ElevationsPanel = ({
   elevations,
@@ -3081,38 +3200,38 @@ const ElevationsPanel = ({
     link.download = buildPlanExportFilename(formData, `${activeView.label} elevation`, 'svg');
     link.click();
   };
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "paper-panel"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "p-4 border-b border-black/5 bg-white/40 flex items-start justify-between gap-3"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label"
-  }, "Elevations"), React.createElement("p", {
+  }, "Elevations"), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] leading-relaxed mt-2",
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, "Deterministic facade views derived from the plan geometry, vertical model, and survey style.")), React.createElement("div", {
+  }, "Deterministic facade views derived from the plan geometry, vertical model, and survey style.")), /*#__PURE__*/React.createElement("div", {
     className: "mono text-[8px] uppercase tracking-[0.22em] text-right",
     style: {
       color: 'rgba(10,10,12,0.46)'
     }
-  }, styleLabel, React.createElement("br", null), roofKind)), React.createElement("div", {
+  }, styleLabel, /*#__PURE__*/React.createElement("br", null), roofKind)), /*#__PURE__*/React.createElement("div", {
     className: "p-4"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "rounded-[18px] border border-black/8 bg-white overflow-hidden shadow-sm"
-  }, activeSrc ? React.createElement("img", {
+  }, activeSrc ? /*#__PURE__*/React.createElement("img", {
     src: activeSrc,
     alt: `${activeView.label} elevation`,
     className: "w-full h-auto cursor-zoom-in",
     onClick: () => onOpenPreview && onOpenPreview(activeSrc)
-  }) : React.createElement("div", {
+  }) : /*#__PURE__*/React.createElement("div", {
     className: "p-8 text-center text-mid text-[11px]"
-  }, "Elevation preview unavailable.")), React.createElement("div", {
+  }, "Elevation preview unavailable.")), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-2 mt-3"
   }, availableViews.map(view => {
     const selected = activeView?.key === view.key;
-    return React.createElement("button", {
+    return /*#__PURE__*/React.createElement("button", {
       key: view.key,
       type: "button",
       onClick: () => setActiveKey(view.key),
@@ -3121,28 +3240,28 @@ const ElevationsPanel = ({
         borderColor: selected ? 'rgba(27,79,130,0.32)' : 'rgba(10,10,12,0.08)',
         background: selected ? 'rgba(27,79,130,0.06)' : 'rgba(255,255,255,0.9)'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "mono text-[8px] uppercase tracking-[0.18em]",
       style: {
         color: selected ? 'rgba(27,79,130,0.92)' : 'rgba(10,10,12,0.52)'
       }
-    }, view.label, " view"), React.createElement("div", {
+    }, view.label, " view"), /*#__PURE__*/React.createElement("div", {
       className: "text-[11px] mt-1",
       style: {
         color: 'rgba(10,10,12,0.72)'
       }
     }, view.key === 'frontSvg' ? 'Primary street-facing facade' : view.key === 'rearSvg' ? 'Rear massing and glazing' : view.key === 'leftSvg' ? 'Left-side profile' : 'Right-side profile'));
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3 mt-3 flex-wrap"
-  }, React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: downloadActive,
     className: "mono text-[9px] text-blue underline"
-  }, "Download active view"), React.createElement("span", {
+  }, "Download active view"), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] uppercase tracking-[0.18em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, supportLabel, " is also used to ground the 3D exterior study."))));
+  }, supportLabel, " is also used to ground the Exterior Render."))));
 };
 const PlanSummaryPanel = ({
   planSpec
@@ -3154,48 +3273,48 @@ const PlanSummaryPanel = ({
     const t = r.label || r.type;
     roomCounts[t] = (roomCounts[t] || 0) + 1;
   });
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "paper-panel p-4 md:p-5 mt-4"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col md:flex-row md:items-end md:justify-between gap-3"
-  }, React.createElement("div", null, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[8px] uppercase tracking-[0.24em]",
     style: {
       color: 'rgba(27,79,130,0.82)'
     }
-  }, "Generated plan summary"), React.createElement("p", {
+  }, "Generated plan summary"), /*#__PURE__*/React.createElement("p", {
     className: "text-[13px] leading-relaxed mt-2",
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, "This is the live floor plan output currently available in Keystone today.")), React.createElement("div", {
+  }, "This is the live floor plan output currently available in Keystone today.")), /*#__PURE__*/React.createElement("div", {
     className: "mono text-[8px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "Download-ready PNG")), React.createElement("div", {
+  }, "Download-ready PNG")), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-3 gap-2 mb-4 mt-4"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "spec-panel"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "spec-label"
-  }, "Area"), React.createElement("div", {
+  }, "Area"), /*#__PURE__*/React.createElement("div", {
     className: "spec-value"
-  }, (planSpec.totalAreaSqFt || 0).toLocaleString(), " sqft")), React.createElement("div", {
+  }, (planSpec.totalAreaSqFt || 0).toLocaleString(), " sqft")), /*#__PURE__*/React.createElement("div", {
     className: "spec-panel"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "spec-label"
-  }, "Stories"), React.createElement("div", {
+  }, "Stories"), /*#__PURE__*/React.createElement("div", {
     className: "spec-value"
-  }, planSpec.stories)), React.createElement("div", {
+  }, planSpec.stories)), /*#__PURE__*/React.createElement("div", {
     className: "spec-panel"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "spec-label"
-  }, "Levels"), React.createElement("div", {
+  }, "Levels"), /*#__PURE__*/React.createElement("div", {
     className: "spec-value"
-  }, (planSpec.levels || []).length))), React.createElement("div", {
+  }, (planSpec.levels || []).length))), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap gap-1.5"
-  }, Object.entries(roomCounts).map(([label, count]) => React.createElement("span", {
+  }, Object.entries(roomCounts).map(([label, count]) => /*#__PURE__*/React.createElement("span", {
     key: label,
     className: "room-badge active",
     style: {
@@ -3203,6 +3322,8 @@ const PlanSummaryPanel = ({
     }
   }, label, count > 1 ? ` x${count}` : ''))));
 };
+
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ REFINEMENT PANEL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const formatUsd = value => {
   const n = Number(value);
   if (!Number.isFinite(n)) return '-';
@@ -3239,191 +3360,191 @@ const EstimatePanel = ({
   const assemblies = Array.isArray(estimate.takeoff?.assemblies) ? estimate.takeoff.assemblies : [];
   const assumptions = Array.isArray(estimate.assumptions?.notes) ? estimate.assumptions.notes : [];
   const bathCount = Number(summary.bathCount || 0);
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "paper-panel mt-4 overflow-hidden"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "p-4 md:p-5 border-b border-black/5 bg-white/40"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col md:flex-row md:items-end md:justify-between gap-3"
-  }, React.createElement("div", null, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[8px] uppercase tracking-[0.24em]",
     style: {
       color: 'rgba(27,79,130,0.82)'
     }
-  }, "Planning estimate"), React.createElement("p", {
+  }, "Cost estimate"), /*#__PURE__*/React.createElement("p", {
     className: "text-[13px] leading-relaxed mt-2",
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, "MVP planning-grade quantity takeoff and cost range generated directly from the live plan geometry.")), React.createElement("span", {
+  }, "Concept-level quantity takeoff and cost range generated directly from the live plan geometry.")), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "USD \u2022 ", summary.rateFamily || 'MID', " rates"))), React.createElement("div", {
+  }, "USD \u2022 ", summary.rateFamily || 'MID', " rates"))), /*#__PURE__*/React.createElement("div", {
     className: "p-4 md:p-5"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 xl:grid-cols-5 gap-2 mb-4"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "spec-panel",
     style: {
       gridColumn: 'span 2'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "spec-label"
-  }, "Planning cost range"), React.createElement("div", {
+  }, "Cost range"), /*#__PURE__*/React.createElement("div", {
     className: "spec-value",
     style: {
       fontSize: '1rem'
     }
-  }, formatUsd(costRange?.total?.low), " - ", formatUsd(costRange?.total?.high)), React.createElement("div", {
+  }, formatUsd(costRange?.total?.low), " - ", formatUsd(costRange?.total?.high)), /*#__PURE__*/React.createElement("div", {
     className: "mono text-[8px] uppercase mt-1",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "Target ", formatUsd(costRange?.total?.target))), React.createElement("div", {
+  }, "Target ", formatUsd(costRange?.total?.target))), /*#__PURE__*/React.createElement("div", {
     className: "spec-panel"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "spec-label"
-  }, "Conditioned area"), React.createElement("div", {
+  }, "Conditioned area"), /*#__PURE__*/React.createElement("div", {
     className: "spec-value"
-  }, formatQuantity(summary.conditionedAreaSqFt, 'sqft'))), React.createElement("div", {
+  }, formatQuantity(summary.conditionedAreaSqFt, 'sqft'))), /*#__PURE__*/React.createElement("div", {
     className: "spec-panel"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "spec-label"
-  }, "Roof area"), React.createElement("div", {
+  }, "Roof area"), /*#__PURE__*/React.createElement("div", {
     className: "spec-value"
-  }, formatQuantity(summary.estimatedRoofSurfaceAreaSqFt, 'sqft'))), React.createElement("div", {
+  }, formatQuantity(summary.estimatedRoofSurfaceAreaSqFt, 'sqft'))), /*#__PURE__*/React.createElement("div", {
     className: "spec-panel"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "spec-label"
-  }, "Windows"), React.createElement("div", {
+  }, "Windows"), /*#__PURE__*/React.createElement("div", {
     className: "spec-value"
-  }, formatQuantity(summary.windowCount, 'total')), React.createElement("div", {
+  }, formatQuantity(summary.windowCount, 'total')), /*#__PURE__*/React.createElement("div", {
     className: "mono text-[8px] uppercase mt-1",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, formatQuantity(summary.roughGlazingAreaSqFt, 'sqft glazing'))), React.createElement("div", {
+  }, formatQuantity(summary.roughGlazingAreaSqFt, 'sqft glazing'))), /*#__PURE__*/React.createElement("div", {
     className: "spec-panel"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "spec-label"
-  }, "Baths"), React.createElement("div", {
+  }, "Baths"), /*#__PURE__*/React.createElement("div", {
     className: "spec-value"
-  }, bathCount))), React.createElement("div", {
+  }, bathCount))), /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-2 gap-4"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "rounded-[18px] border border-black/8 overflow-hidden bg-white/72"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "px-4 py-3 border-b border-black/6"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[8px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.46)'
     }
-  }, "Cost line items")), React.createElement("div", {
+  }, "Cost line items")), /*#__PURE__*/React.createElement("div", {
     className: "overflow-x-auto"
-  }, React.createElement("table", {
+  }, /*#__PURE__*/React.createElement("table", {
     className: "w-full text-left"
-  }, React.createElement("thead", null, React.createElement("tr", {
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
     className: "mono text-[8px] uppercase tracking-[0.18em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, React.createElement("th", {
+  }, /*#__PURE__*/React.createElement("th", {
     className: "px-4 py-2"
-  }, "Item"), React.createElement("th", {
+  }, "Item"), /*#__PURE__*/React.createElement("th", {
     className: "px-2 py-2"
-  }, "Qty"), React.createElement("th", {
+  }, "Qty"), /*#__PURE__*/React.createElement("th", {
     className: "px-2 py-2"
-  }, "Target"))), React.createElement("tbody", null, lineItems.map(item => React.createElement("tr", {
+  }, "Target"))), /*#__PURE__*/React.createElement("tbody", null, lineItems.map(item => /*#__PURE__*/React.createElement("tr", {
     key: item.key,
     className: "border-t border-black/5 text-[11px]",
     style: {
       color: 'rgba(10,10,12,0.78)'
     }
-  }, React.createElement("td", {
+  }, /*#__PURE__*/React.createElement("td", {
     className: "px-4 py-2.5"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "font-medium"
-  }, item.label), item.notes && React.createElement("div", {
+  }, item.label), item.notes && /*#__PURE__*/React.createElement("div", {
     className: "text-[10px] mt-0.5",
     style: {
       color: 'rgba(10,10,12,0.46)'
     }
-  }, item.notes)), React.createElement("td", {
+  }, item.notes)), /*#__PURE__*/React.createElement("td", {
     className: "px-2 py-2.5"
-  }, formatQuantity(item.quantity, item.unit === 'percent' ? '%' : item.unit)), React.createElement("td", {
+  }, formatQuantity(item.quantity, item.unit === 'percent' ? '%' : item.unit)), /*#__PURE__*/React.createElement("td", {
     className: "px-2 py-2.5 font-medium"
-  }, formatUsd(item.target)))))))), React.createElement("div", {
+  }, formatUsd(item.target)))))))), /*#__PURE__*/React.createElement("div", {
     className: "rounded-[18px] border border-black/8 overflow-hidden bg-white/72"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "px-4 py-3 border-b border-black/6"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[8px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.46)'
     }
-  }, "Quantity takeoff")), React.createElement("div", {
+  }, "Quantity takeoff")), /*#__PURE__*/React.createElement("div", {
     className: "overflow-x-auto"
-  }, React.createElement("table", {
+  }, /*#__PURE__*/React.createElement("table", {
     className: "w-full text-left"
-  }, React.createElement("thead", null, React.createElement("tr", {
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", {
     className: "mono text-[8px] uppercase tracking-[0.18em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, React.createElement("th", {
+  }, /*#__PURE__*/React.createElement("th", {
     className: "px-4 py-2"
-  }, "Item"), React.createElement("th", {
+  }, "Item"), /*#__PURE__*/React.createElement("th", {
     className: "px-2 py-2"
-  }, "Quantity"))), React.createElement("tbody", null, assemblies.map(item => React.createElement("tr", {
+  }, "Quantity"))), /*#__PURE__*/React.createElement("tbody", null, assemblies.map(item => /*#__PURE__*/React.createElement("tr", {
     key: item.key,
     className: "border-t border-black/5 text-[11px]",
     style: {
       color: 'rgba(10,10,12,0.78)'
     }
-  }, React.createElement("td", {
+  }, /*#__PURE__*/React.createElement("td", {
     className: "px-4 py-2.5"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "font-medium"
-  }, item.label), item.notes && React.createElement("div", {
+  }, item.label), item.notes && /*#__PURE__*/React.createElement("div", {
     className: "text-[10px] mt-0.5",
     style: {
       color: 'rgba(10,10,12,0.46)'
     }
-  }, item.notes)), React.createElement("td", {
+  }, item.notes)), /*#__PURE__*/React.createElement("td", {
     className: "px-2 py-2.5"
-  }, formatQuantity(item.quantity, item.unit))))))))), React.createElement("div", {
+  }, formatQuantity(item.quantity, item.unit))))))))), /*#__PURE__*/React.createElement("div", {
     className: "rounded-[18px] border border-black/8 bg-white/64 p-4 mt-4"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[8px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.46)'
     }
-  }, "Assumptions"), React.createElement("div", {
+  }, "Assumptions"), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap gap-2 mt-3"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "room-badge active",
     style: {
       cursor: 'default'
     }
-  }, "Concept / planning estimate"), React.createElement("span", {
+  }, "Concept / cost estimate"), /*#__PURE__*/React.createElement("span", {
     className: "room-badge active",
     style: {
       cursor: 'default'
     }
-  }, "Roof: ", String(summary.roofKind || 'gabled').replace(/_/g, ' ')), React.createElement("span", {
+  }, "Roof: ", String(summary.roofKind || 'gabled').replace(/_/g, ' ')), /*#__PURE__*/React.createElement("span", {
     className: "room-badge active",
     style: {
       cursor: 'default'
     }
-  }, "Budget: ", summary.budgetTier || 'MID')), React.createElement("div", {
+  }, "Budget: ", summary.budgetTier || 'MID')), /*#__PURE__*/React.createElement("div", {
     className: "mt-3 text-[12px] leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, assumptions.map(note => React.createElement("p", {
+  }, assumptions.map(note => /*#__PURE__*/React.createElement("p", {
     key: note,
     className: "mt-1 first:mt-0"
   }, note))))));
@@ -3439,6 +3560,8 @@ const RefinementPanel = ({
 }) => {
   const [custom, setCustom] = React.useState('');
   const historyRef = React.useRef(null);
+
+  // Auto-scroll history to bottom when new messages arrive
   React.useEffect(() => {
     if (historyRef.current) historyRef.current.scrollTop = historyRef.current.scrollHeight;
   }, [refinementHistory]);
@@ -3451,13 +3574,13 @@ const RefinementPanel = ({
   };
   const disabled = isLoading || refinementsLeft <= 0;
   const countColor = refinementsLeft > 5 ? 'var(--blue)' : refinementsLeft > 2 ? 'var(--gold)' : 'var(--red)';
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "border-t border-black/8"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between px-4 md:px-5 pt-4 pb-2"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       width: '6px',
       height: '6px',
@@ -3465,97 +3588,97 @@ const RefinementPanel = ({
       background: 'var(--accent)',
       display: 'inline-block'
     }
-  }), React.createElement("p", {
+  }), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[8px] uppercase tracking-[0.24em] font-bold",
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, "Studio notes")), React.createElement("span", {
+  }, "Studio notes")), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[9px] font-bold",
     style: {
       color: countColor
     }
-  }, refinementsLeft, "/10 edits left")), React.createElement("div", {
+  }, refinementsLeft, "/10 edits left")), /*#__PURE__*/React.createElement("div", {
     className: "px-4 md:px-5 pb-3"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "text-[12px] leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, "Use quick edits to explore the floor plan before you export it or move into the Gemini exterior study.")), refinementHistory.length > 0 && React.createElement("div", {
+  }, "Use quick edits to explore the floor plan before you export it or move into the Exterior Render.")), refinementHistory.length > 0 && /*#__PURE__*/React.createElement("div", {
     ref: historyRef,
     className: "mx-4 md:mx-5 mb-3 max-h-40 overflow-y-auto rounded-[14px]",
     style: {
       background: 'rgba(255,255,255,0.86)',
       border: '1px solid rgba(10,10,12,0.08)'
     }
-  }, refinementHistory.map((msg, i) => React.createElement("div", {
+  }, refinementHistory.map((msg, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: "px-3 py-2.5 border-b last:border-0",
     style: {
       borderColor: 'rgba(10,10,12,0.06)'
     }
-  }, msg.role === 'user' && React.createElement("div", {
+  }, msg.role === 'user' && /*#__PURE__*/React.createElement("div", {
     className: "flex gap-2 items-start"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "mono text-[7px] uppercase pt-0.5 flex-shrink-0 font-bold",
     style: {
       color: 'rgba(173,51,0,0.92)'
     }
-  }, "You"), React.createElement("span", {
+  }, "You"), /*#__PURE__*/React.createElement("span", {
     className: "text-[11px] leading-snug",
     style: {
       color: 'rgba(10,10,12,0.82)'
     }
-  }, msg.content)), msg.role === 'assistant' && React.createElement("div", {
+  }, msg.content)), msg.role === 'assistant' && /*#__PURE__*/React.createElement("div", {
     className: "flex gap-2 items-start"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "mono text-[7px] uppercase pt-0.5 flex-shrink-0 font-bold",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "Studio"), React.createElement("span", {
+  }, "Studio"), /*#__PURE__*/React.createElement("span", {
     className: "text-[11px] leading-snug",
     style: {
       color: 'rgba(27,79,130,0.92)'
     }
-  }, "Updated: ", msg.content)), msg.role === 'error' && React.createElement("div", {
+  }, "Updated: ", msg.content)), msg.role === 'error' && /*#__PURE__*/React.createElement("div", {
     className: "flex gap-2 items-start"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "mono text-[7px] uppercase pt-0.5 flex-shrink-0 font-bold",
     style: {
       color: 'rgba(255,133,119,0.92)'
     }
-  }, "Error"), React.createElement("span", {
+  }, "Error"), /*#__PURE__*/React.createElement("span", {
     className: "text-[11px] leading-snug",
     style: {
       color: 'rgba(255,178,164,0.92)'
     }
-  }, msg.content)))), isLoading && React.createElement("div", {
+  }, msg.content)))), isLoading && /*#__PURE__*/React.createElement("div", {
     className: "px-3 py-2 flex items-center gap-2"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "w-3 h-3 border-2 border-blue border-t-transparent rounded-full animate-spin flex-shrink-0"
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] uppercase tracking-widest animate-pulse",
     style: {
       color: 'rgba(10,10,12,0.46)'
     }
-  }, "Updating the plan..."))), isLoading && refinementHistory.length === 0 && React.createElement("div", {
+  }, "Updating the plan..."))), isLoading && refinementHistory.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "mx-4 md:mx-5 mb-3 px-3 py-2 flex items-center gap-2 rounded-[14px]",
     style: {
       background: 'rgba(255,255,255,0.82)',
       border: '1px solid rgba(10,10,12,0.08)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "w-3 h-3 border-2 border-blue border-t-transparent rounded-full animate-spin flex-shrink-0"
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] uppercase tracking-widest animate-pulse",
     style: {
       color: 'rgba(10,10,12,0.46)'
     }
-  }, "Updating the plan...")), React.createElement("div", {
+  }, "Updating the plan...")), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap gap-1.5 px-4 md:px-5 mb-3"
-  }, REFINEMENT_SUGGESTIONS.map((s, i) => React.createElement("button", {
+  }, REFINEMENT_SUGGESTIONS.map((s, i) => /*#__PURE__*/React.createElement("button", {
     key: i,
     disabled: disabled,
     onClick: () => onRefine(s),
@@ -3565,10 +3688,10 @@ const RefinementPanel = ({
       background: 'rgba(255,255,255,0.72)',
       color: 'rgba(10,10,12,0.74)'
     }
-  }, s))), React.createElement("form", {
+  }, s))), /*#__PURE__*/React.createElement("form", {
     onSubmit: handleCustom,
     className: "flex gap-2 px-4 md:px-5 pb-5"
-  }, React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("input", {
     type: "text",
     value: custom,
     onChange: e => setCustom(e.target.value),
@@ -3579,17 +3702,19 @@ const RefinementPanel = ({
       background: 'rgba(255,255,255,0.92)',
       borderColor: 'rgba(255,255,255,0.18)'
     }
-  }), React.createElement("button", {
+  }), /*#__PURE__*/React.createElement("button", {
     type: "submit",
     disabled: disabled || !custom.trim(),
     className: "px-4 py-2 cta-hero cta-glow-soft text-[9px] disabled:opacity-30 whitespace-nowrap"
-  }, "Apply")), refinementsLeft === 0 && React.createElement("p", {
+  }, "Apply")), refinementsLeft === 0 && /*#__PURE__*/React.createElement("p", {
     className: "mono text-[9px] font-bold uppercase px-4 md:px-5 pb-4",
     style: {
       color: 'rgba(255,133,119,0.92)'
     }
   }, "Included edits used. Request guided access if you need a deeper session."));
 };
+
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ RENDER SURVEY MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const buildRenderSurveyDefaults = (baseSurveyData = {}, initialData = {}) => ({
   zipCode: '',
   lotContext: '',
@@ -3621,13 +3746,13 @@ const RenderSurveyModal = ({
   const BtnRow = ({
     field,
     options
-  }) => React.createElement("div", {
+  }) => /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap gap-1.5"
   }, options.map(opt => {
     const val = typeof opt === 'string' ? opt : opt.val;
     const label = typeof opt === 'string' ? opt : opt.label;
     const sel = data[field] === val;
-    return React.createElement("button", {
+    return /*#__PURE__*/React.createElement("button", {
       key: val,
       type: "button",
       onClick: () => upd(field, val),
@@ -3641,10 +3766,10 @@ const RenderSurveyModal = ({
   }));
   const Lbl = ({
     children
-  }) => React.createElement("label", {
+  }) => /*#__PURE__*/React.createElement("label", {
     className: "mono text-[7px] uppercase tracking-widest text-mid block mb-1.5"
   }, children);
-  return React.createElement(AnimatePresence, null, isOpen && React.createElement(motion.div, {
+  return /*#__PURE__*/React.createElement(AnimatePresence, null, isOpen && /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0
     },
@@ -3655,7 +3780,7 @@ const RenderSurveyModal = ({
       opacity: 0
     },
     className: "fixed inset-0 z-[150] flex items-end md:items-center justify-center bg-black/88 backdrop-blur-sm p-0 md:p-6"
-  }, React.createElement(motion.div, {
+  }, /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       y: 40,
       opacity: 0
@@ -3678,12 +3803,12 @@ const RenderSurveyModal = ({
       border: '1px solid rgba(10,10,12,0.08)',
       boxShadow: '0 30px 96px rgba(9,9,9,0.36)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: '3px',
       background: 'linear-gradient(90deg,var(--blue),var(--red))'
     }
-  }), React.createElement("button", {
+  }), /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: onClose,
     "aria-label": "Close render options",
@@ -3693,29 +3818,29 @@ const RenderSurveyModal = ({
       color: 'rgba(10,10,12,0.72)',
       border: '1px solid rgba(10,10,12,0.08)'
     }
-  }, React.createElement(CloseIcon, {
+  }, /*#__PURE__*/React.createElement(CloseIcon, {
     className: "w-4 h-4"
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "p-6 overflow-y-auto",
     style: {
       maxHeight: '85vh',
       color: 'var(--ink)'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "badge mb-3 inline-block"
-  }, "3D Render Options"), React.createElement("h2", {
+  }, "3D Render Options"), /*#__PURE__*/React.createElement("h2", {
     className: "cg text-2xl italic mb-1",
     style: {
       color: 'var(--ink)'
     }
-  }, "Customize Your Render."), React.createElement("p", {
+  }, "Customize Your Render."), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] mb-5 leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.7)'
     }
-  }, "These options shape site context, lighting, landscaping, and presentation mood. The house style, roof, and massing stay grounded by your floor plan and elevation set."), React.createElement("div", {
+  }, "These options shape site context, lighting, landscaping, and presentation mood. The house style, roof, and massing stay grounded by your floor plan and elevation set."), /*#__PURE__*/React.createElement("div", {
     className: "space-y-4"
-  }, React.createElement("div", null, React.createElement(Lbl, null, "Project ZIP Code"), React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Project ZIP Code"), /*#__PURE__*/React.createElement("input", {
     type: "text",
     placeholder: "e.g. 78701",
     maxLength: "10",
@@ -3724,12 +3849,12 @@ const RenderSurveyModal = ({
     style: {
       maxWidth: '180px'
     }
-  }), React.createElement("p", {
+  }), /*#__PURE__*/React.createElement("p", {
     className: "text-[9px] mt-1",
     style: {
       color: 'rgba(10,10,12,0.56)'
     }
-  }, "Helps set regional context - climate, terrain, neighborhood character")), React.createElement("div", null, React.createElement(Lbl, null, "Lot / Site Context Override"), React.createElement(BtnRow, {
+  }, "Helps set regional context - climate, terrain, neighborhood character")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Lot / Site Context Override"), /*#__PURE__*/React.createElement(BtnRow, {
     field: "lotContext",
     options: [{
       val: '',
@@ -3753,27 +3878,27 @@ const RenderSurveyModal = ({
       val: 'Waterfront lot',
       label: 'Waterfront'
     }]
-  }), React.createElement("p", {
+  }), /*#__PURE__*/React.createElement("p", {
     className: "text-[9px] mt-1",
     style: {
       color: 'rgba(10,10,12,0.56)'
     }
-  }, "Leave on \u201CUse Plan Survey\u201D unless the render needs a different site framing.")), React.createElement("div", null, React.createElement(Lbl, null, "Neighborhood / Context"), React.createElement(BtnRow, {
+  }, "Leave on \u201CUse Plan Survey\u201D unless the render needs a different site framing.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Neighborhood / Context"), /*#__PURE__*/React.createElement(BtnRow, {
     field: "contextDensity",
     options: ['Detached neighboring homes', 'Close urban neighbors', 'Open rural edge', 'Tree-lined residential street', 'View-oriented sparse context']
-  })), React.createElement("div", null, React.createElement(Lbl, null, "Topography / Site Grade"), React.createElement(BtnRow, {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Topography / Site Grade"), /*#__PURE__*/React.createElement(BtnRow, {
     field: "topography",
     options: ['Mostly flat site', 'Gentle front slope', 'Gentle rear slope', 'Hillside / stepped terrain']
-  })), React.createElement("div", null, React.createElement(Lbl, null, "Season / Vegetation"), React.createElement(BtnRow, {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Season / Vegetation"), /*#__PURE__*/React.createElement(BtnRow, {
     field: "season",
     options: ['Spring', 'Summer', 'Fall', 'Winter (Snow)']
-  })), React.createElement("div", null, React.createElement(Lbl, null, "Time of Day / Lighting"), React.createElement(BtnRow, {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Time of Day / Lighting"), /*#__PURE__*/React.createElement(BtnRow, {
     field: "timeOfDay",
     options: ['Sunrise', 'Midday', 'Golden Hour', 'Overcast', 'Night']
-  })), React.createElement("div", null, React.createElement(Lbl, null, "Sky / Weather"), React.createElement(BtnRow, {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Sky / Weather"), /*#__PURE__*/React.createElement(BtnRow, {
     field: "weather",
     options: ['Clear sky', 'Soft clouds', 'Overcast sky', 'Stormy atmosphere', 'Snowy air']
-  })), React.createElement("div", null, React.createElement(Lbl, null, "Immediate Surroundings"), React.createElement(BtnRow, {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Immediate Surroundings"), /*#__PURE__*/React.createElement(BtnRow, {
     field: "surroundings",
     options: [{
       val: 'Suburban neighborhood',
@@ -3794,16 +3919,16 @@ const RenderSurveyModal = ({
       val: 'Clean new-build street presence',
       label: 'New Build'
     }]
-  })), React.createElement("div", null, React.createElement(Lbl, null, "Driveway / Hardscape"), React.createElement(BtnRow, {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Driveway / Hardscape"), /*#__PURE__*/React.createElement(BtnRow, {
     field: "drivewayStyle",
     options: ['Concrete driveway', 'Exposed aggregate concrete', 'Paver driveway', 'Gravel driveway', 'Minimal hardscape']
-  })), React.createElement("div", null, React.createElement(Lbl, null, "Landscaping"), React.createElement(BtnRow, {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Lbl, null, "Landscaping"), /*#__PURE__*/React.createElement(BtnRow, {
     field: "landscaping",
     options: ['Foundation plantings + lawn', 'Native plantings', 'Desert xeriscaping', 'Formal hedges', 'Wildflower meadow', 'Minimal / gravel']
-  }))), React.createElement("button", {
+  }))), /*#__PURE__*/React.createElement("button", {
     onClick: () => onSubmit(data),
     className: "w-full mt-6 py-3.5 bg-ink text-white mono text-[10px] uppercase tracking-[0.18em] font-bold hover:bg-blue transition-colors rounded-sm"
-  }, "Generate Exterior Study")))));
+  }, "Generate Exterior Render")))));
 };
 const svgToPngDataUrl = (svgMarkup, options = {}) => new Promise((resolve, reject) => {
   try {
@@ -3931,7 +4056,8 @@ const composeBlueprintPresentationSheet = async ({
   planSvg,
   elevations,
   formData,
-  footprintInfo
+  footprintInfo,
+  renderImage
 }) => {
   if (!planSvg) return null;
   const planSrc = await svgToPngDataUrl(planSvg, {
@@ -3940,6 +4066,7 @@ const composeBlueprintPresentationSheet = async ({
   });
   const planImage = await loadImageElement(planSrc);
   const views = getElevationViews(elevations);
+  const renderAsset = renderImage ? await loadImageElement(renderImage) : null;
   const elevationImages = await Promise.all(views.map(async view => ({
     ...view,
     image: await loadImageElement(await svgToPngDataUrl(elevations[view.key], {
@@ -3952,11 +4079,14 @@ const composeBlueprintPresentationSheet = async ({
   const gap = 22;
   const planBoxW = 1120;
   const planBoxH = 720;
-  const sideW = views.length ? 360 : 0;
+  const sideW = views.length || renderAsset ? 392 : 0;
   const cardGap = 14;
   const cardW = sideW ? (sideW - cardGap) / 2 : 0;
   const cardH = 168;
-  const sideH = views.length ? Math.ceil(views.length / 2) * cardH + (Math.ceil(views.length / 2) - 1) * cardGap : 0;
+  const renderCardH = renderAsset ? 248 : 0;
+  const elevationRows = views.length ? Math.ceil(views.length / 2) : 0;
+  const elevationGridH = views.length ? elevationRows * cardH + (elevationRows - 1) * cardGap : 0;
+  const sideH = (renderAsset ? renderCardH : 0) + (renderAsset && views.length ? cardGap : 0) + elevationGridH;
   const contentH = Math.max(planBoxH, sideH);
   const canvas = document.createElement('canvas');
   canvas.width = pad * 2 + planBoxW + (sideW ? gap + sideW : 0);
@@ -3974,7 +4104,7 @@ const composeBlueprintPresentationSheet = async ({
   ctx.fillText('KEYSTONE AI', pad, pad + 14);
   ctx.fillStyle = '#111';
   ctx.font = '700 28px Georgia, serif';
-  ctx.fillText('Plan + Elevation Sheet', pad, pad + 46);
+  ctx.fillText('Plan, Elevations + Exterior Render', pad, pad + 46);
   ctx.font = '12px ui-monospace, SFMono-Regular, Menlo, monospace';
   ctx.fillStyle = '#6f6558';
   ctx.fillText(summaryBits.join(' | ') || 'Residential concept set', pad, pad + 70);
@@ -3994,11 +4124,32 @@ const composeBlueprintPresentationSheet = async ({
   const drawPlanX = planX + (planBoxW - drawPlanW) / 2;
   const drawPlanY = planY + (planBoxH - drawPlanH) / 2;
   ctx.drawImage(planImage, drawPlanX, drawPlanY, drawPlanW, drawPlanH);
+  if (renderAsset) {
+    const renderX = pad + planBoxW + gap;
+    const renderY = pad + headerH;
+    ctx.fillStyle = '#fffdf9';
+    ctx.fillRect(renderX, renderY, sideW, renderCardH);
+    ctx.strokeStyle = '#d3c9b8';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(renderX, renderY, sideW, renderCardH);
+    ctx.fillStyle = '#534b40';
+    ctx.font = '700 10px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.fillText('EXTERIOR RENDER', renderX + 10, renderY + 16);
+    const availableW = sideW - 18;
+    const availableH = renderCardH - 30;
+    const scale = Math.min(availableW / renderAsset.width, availableH / renderAsset.height);
+    const drawW = renderAsset.width * scale;
+    const drawH = renderAsset.height * scale;
+    const drawX = renderX + (sideW - drawW) / 2;
+    const drawY = renderY + 22 + (availableH - drawH) / 2;
+    ctx.drawImage(renderAsset, drawX, drawY, drawW, drawH);
+  }
+  const elevationsTop = pad + headerH + (renderAsset ? renderCardH + cardGap : 0);
   elevationImages.forEach((entry, index) => {
     const col = index % 2;
     const row = Math.floor(index / 2);
     const x = pad + planBoxW + gap + col * (cardW + cardGap);
-    const y = pad + headerH + row * (cardH + cardGap);
+    const y = elevationsTop + row * (cardH + cardGap);
     ctx.fillStyle = '#fffdf9';
     ctx.fillRect(x, y, cardW, cardH);
     ctx.strokeStyle = '#d3c9b8';
@@ -4591,6 +4742,8 @@ const buildPresentationDxf = planSpec => {
   lines.push('0\nEOF');
   return lines.join('\r\n');
 };
+
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ 3D RENDER PANEL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const RENDER_REFINEMENTS = [{
   label: 'Golden Hour',
   hint: 'warm late-afternoon sunlight, long shadows, golden orange sky. Only change the lighting and sky; keep the house architecture identical.'
@@ -4611,18 +4764,28 @@ const Render3DPanel = ({
   elevations,
   galleryId,
   onRenderReady,
+  onRenderStateSnapshot,
   launchSignal = 0,
   showLaunchButton = true,
-  onRenderStatusChange
+  onRenderStatusChange,
+  accessToken = null,
+  initialState = null,
+  isLocked = false,
+  onLockedAction
 }) => {
-  const [renderStatus, setRenderStatus] = useState('idle');
-  const [renderImage, setRenderImage] = useState(null);
-  const [renderImageClean, setRenderImageClean] = useState(null);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [activeRefinement, setActiveRefinement] = useState(null);
+  const [renderStatus, setRenderStatus] = useState(() => normalizeRenderState(initialState).status); // idle|survey|loading|error|ready
+  const [renderImage, setRenderImage] = useState(() => normalizeRenderState(initialState).image || null);
+  const [renderImageClean, setRenderImageClean] = useState(() => normalizeRenderState(initialState).imageClean || null); // without watermark, for lighting edits
+  const [errorMsg, setErrorMsg] = useState(() => normalizeRenderState(initialState).errorMsg || '');
+  const [activeRefinement, setActiveRefinement] = useState(() => normalizeRenderState(initialState).activeRefinement || null);
   const [showSurvey, setShowSurvey] = useState(false);
-  const [renderSurveyData, setRenderSurveyData] = useState(null);
+  const [renderSurveyData, setRenderSurveyData] = useState(() => normalizeRenderState(initialState).surveyData || null);
   const launchHandledRef = useRef(launchSignal);
+  const ensureAdvancedAccess = React.useCallback((featureLabel = 'Exterior Render') => {
+    if (!isLocked) return true;
+    onLockedAction?.(featureLabel);
+    return false;
+  }, [isLocked, onLockedAction]);
   const applyWatermark = imgSrc => new Promise(resolve => {
     const canvas = document.createElement('canvas'),
       ctx = canvas.getContext('2d'),
@@ -4668,14 +4831,19 @@ const Render3DPanel = ({
         planSpec,
         galleryId,
         lightingHint: lightingHint || null,
+        // Pass existing render (without watermark) for lighting-only edits
         existingRenderImage: existingImageForLighting || null,
+        // Ground new renders against the generated floor plan image
         planImage,
         elevationSheetImage
       };
       const res = await fetch('/api/render', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(accessToken ? {
+            Authorization: `Bearer ${accessToken}`
+          } : {})
         },
         body: JSON.stringify(payload)
       });
@@ -4688,13 +4856,13 @@ const Render3DPanel = ({
           message: `Server error ${res.status}`
         };
       }
-      if (!data.success) {
+      if (!res.ok || !data.success) {
         setErrorMsg(data.message || 'Unknown error from server');
         setRenderStatus('error');
         return;
       }
       const imgSrc = data.image.startsWith('data:') ? data.image : `data:image/jpeg;base64,${data.image}`;
-      setRenderImageClean(imgSrc);
+      setRenderImageClean(imgSrc); // store clean copy for future lighting edits
       const watermarked = await applyWatermark(imgSrc);
       setRenderImage(watermarked);
       setRenderStatus('ready');
@@ -4712,116 +4880,149 @@ const Render3DPanel = ({
     doRender(surveyData, null, null);
   };
   const handleRender = () => {
+    if (!ensureAdvancedAccess('Exterior Render')) return;
     setActiveRefinement(null);
     setShowSurvey(true);
   };
   const handleRegenerate = () => {
+    if (!ensureAdvancedAccess('Exterior Render')) return;
     setActiveRefinement(null);
     doRender(renderSurveyData, null, null);
   };
   const handleRefinement = ref => {
+    if (!ensureAdvancedAccess('Exterior Render')) return;
     setActiveRefinement(ref.label);
+    // Pass the clean (un-watermarked) existing image so backend can do lighting-only edit
     doRender(renderSurveyData, ref.hint, renderImageClean);
   };
   useEffect(() => {
+    const next = normalizeRenderState(initialState);
+    setRenderStatus(next.status);
+    setRenderImage(next.image || null);
+    setRenderImageClean(next.imageClean || null);
+    setErrorMsg(next.errorMsg || '');
+    setActiveRefinement(next.activeRefinement || null);
+    setRenderSurveyData(next.surveyData || null);
+    setShowSurvey(false);
+  }, [initialState]);
+  useEffect(() => {
     if (typeof onRenderStatusChange === 'function') onRenderStatusChange(renderStatus);
   }, [renderStatus, onRenderStatusChange]);
+  useEffect(() => {
+    if (typeof onRenderStateSnapshot === 'function') {
+      onRenderStateSnapshot({
+        status: renderStatus,
+        image: renderImage,
+        imageClean: renderImageClean,
+        surveyData: renderSurveyData,
+        activeRefinement,
+        errorMsg
+      });
+    }
+  }, [renderStatus, renderImage, renderImageClean, renderSurveyData, activeRefinement, errorMsg, onRenderStateSnapshot]);
   useEffect(() => {
     if (!launchSignal || launchSignal === launchHandledRef.current) return;
     launchHandledRef.current = launchSignal;
     handleRender();
   }, [launchSignal]);
-  if (renderStatus === 'idle') return React.createElement(React.Fragment, null, React.createElement(RenderSurveyModal, {
+  if (renderStatus === 'idle') return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(RenderSurveyModal, {
     isOpen: showSurvey,
     onClose: () => setShowSurvey(false),
     onSubmit: handleSurveySubmit,
     initialData: renderSurveyData,
     baseSurveyData: formData
-  }), showLaunchButton ? React.createElement("button", {
+  }), showLaunchButton ? /*#__PURE__*/React.createElement("button", {
     onClick: handleRender,
     className: "w-full py-3.5 cta-hero cta-glow text-[10px]"
-  }, "Generate Gemini Exterior Study") : React.createElement("div", {
+  }, isLocked ? 'Unlock Exterior Render' : 'Generate Exterior Render') : /*#__PURE__*/React.createElement("div", {
     className: "p-4 rounded-[16px] border border-black/8 bg-white/72"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[8px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "Gemini exterior study"), React.createElement("p", {
+  }, "Exterior render"), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] leading-relaxed mt-2",
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, "Use the main action bar above to open render options and generate the exterior study from this plan.")));
-  if (renderStatus === 'loading') return React.createElement("div", {
+  }, isLocked ? 'Unlock advanced features with a passkey to generate and download precise exterior renders from this plan.' : 'Use the main action bar above to open render options and generate the exterior render from this plan.')));
+  if (renderStatus === 'loading') return /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col items-center gap-3 py-5"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-3 text-blue"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[9px] uppercase tracking-widest animate-pulse"
-  }, activeRefinement ? `Adjusting lighting: ${activeRefinement}...` : 'Rendering with Gemini...')), React.createElement("p", {
+  }, activeRefinement ? `Adjusting lighting: ${activeRefinement}...` : 'Rendering exterior view...')), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[8px] text-mid opacity-50"
   }, activeRefinement ? 'Changing lighting only - architecture unchanged' : 'Usually 15-30 seconds'));
-  if (renderStatus === 'error') return React.createElement(React.Fragment, null, React.createElement(RenderSurveyModal, {
+  if (renderStatus === 'error') return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(RenderSurveyModal, {
     isOpen: showSurvey,
     onClose: () => setShowSurvey(false),
     onSubmit: handleSurveySubmit,
     initialData: renderSurveyData,
     baseSurveyData: formData
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "p-4 bg-red/5 border border-red/20 rounded-sm"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[9px] font-bold text-red uppercase mb-1"
-  }, "Render Failed"), React.createElement("p", {
+  }, "Render Failed"), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] text-mid leading-relaxed mb-3",
     style: {
       wordBreak: 'break-word'
     }
-  }, errorMsg), React.createElement("button", {
-    onClick: () => setShowSurvey(true),
+  }, errorMsg), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (!ensureAdvancedAccess('Exterior Render')) return;
+      setShowSurvey(true);
+    },
     className: "mono text-[9px] uppercase tracking-widest px-3 py-1.5 bg-ink text-white rounded-sm hover:bg-blue transition-colors"
   }, "Retry")));
-  if (renderStatus === 'ready') return React.createElement("div", null, React.createElement(RenderSurveyModal, {
+  if (renderStatus === 'ready') return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(RenderSurveyModal, {
     isOpen: showSurvey,
     onClose: () => setShowSurvey(false),
     onSubmit: handleSurveySubmit,
     initialData: renderSurveyData,
     baseSurveyData: formData
-  }), React.createElement(SmartImage, {
+  }), /*#__PURE__*/React.createElement(SmartImage, {
     src: renderImage,
     className: "w-full object-cover rounded-[16px] shadow-xl",
-    alt: "Gemini exterior study"
-  }), React.createElement("div", {
+    alt: "Exterior render"
+  }), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mt-2 mb-3 flex-wrap"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] uppercase tracking-widest text-mid"
-  }, activeRefinement ? `Lighting: ${activeRefinement}` : 'Gemini exterior study'), React.createElement("button", {
+  }, activeRefinement ? `Lighting: ${activeRefinement}` : 'Exterior render'), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
+      if (!ensureAdvancedAccess('Exterior Render')) return;
       const l = document.createElement('a');
       l.href = renderImage;
       l.download = buildPlanExportFilename(formData, '3d render', 'png');
       l.click();
     },
     className: "ml-auto mono text-[9px] text-blue underline"
-  }, "Download"), React.createElement("button", {
+  }, "Download"), /*#__PURE__*/React.createElement("button", {
     onClick: handleRegenerate,
     className: "mono text-[9px] text-mid underline"
-  }, "Regenerate"), React.createElement("button", {
-    onClick: () => setShowSurvey(true),
+  }, "Regenerate"), /*#__PURE__*/React.createElement("button", {
+    onClick: () => {
+      if (!ensureAdvancedAccess('Exterior Render')) return;
+      setShowSurvey(true);
+    },
     className: "mono text-[9px] text-mid underline"
-  }, "Options")), React.createElement("div", {
+  }, "Options")), /*#__PURE__*/React.createElement("div", {
     className: "border-t border-black/5 pt-3"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between mb-2"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[7px] uppercase tracking-widest text-mid"
-  }, "Lighting & Mood"), React.createElement("p", {
+  }, "Lighting & Mood"), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[7px] text-mid/40"
-  }, "Architecture stays unchanged")), React.createElement("div", {
+  }, "Architecture stays unchanged")), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-2 flex-wrap"
-  }, RENDER_REFINEMENTS.map(ref => React.createElement("button", {
+  }, RENDER_REFINEMENTS.map(ref => /*#__PURE__*/React.createElement("button", {
     key: ref.label,
     onClick: () => handleRefinement(ref),
     className: "flex items-center gap-1.5 px-3 py-1.5 border rounded-sm transition-all mono text-[9px] font-bold uppercase tracking-wide",
@@ -4833,6 +5034,8 @@ const Render3DPanel = ({
   }, ref.label)))));
   return null;
 };
+
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ SURVEY FORM Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const SURVEY_STEPS = [{
   id: 'basics',
   title: 'Basic Requirements',
@@ -4873,7 +5076,7 @@ const DEFAULT_FORM_DATA = {
   openConcept: 'Open Concept (Combined)',
   masterLocation: 'Level 2 (Upper)',
   kitchenPlacement: 'Rear of House',
-  features: '',
+  features: '1 Study',
   frontFacing: 'South',
   lotContext: 'Suburban standard lot',
   laundryLocation: 'Level 1 (near garage/mud)',
@@ -4927,7 +5130,7 @@ const SurveyForm = ({
     field,
     options,
     cols = 2
-  }) => React.createElement("div", {
+  }) => /*#__PURE__*/React.createElement("div", {
     className: "grid gap-2",
     style: {
       gridTemplateColumns: `repeat(${cols},1fr)`
@@ -4937,22 +5140,24 @@ const SurveyForm = ({
     const label = typeof opt === 'string' ? opt : opt.label;
     const desc = typeof opt === 'object' ? opt.desc : null;
     const sel = formData[field] === val;
-    return React.createElement("button", {
+    return /*#__PURE__*/React.createElement("button", {
       key: val,
       type: "button",
       "aria-pressed": sel,
       onClick: () => upd(field, val),
       className: "py-3 px-3 border text-left rounded-sm transition-all",
       style: choiceStyle(sel)
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       className: "text-[11px] font-semibold leading-tight"
-    }, label), desc && React.createElement("div", {
+    }, label), desc && /*#__PURE__*/React.createElement("div", {
       className: "text-[9px] mt-0.5 leading-tight",
       style: {
         opacity: sel ? 0.74 : 0.42
       }
     }, desc));
   }));
+
+  // Toggle-chip button for multi-select style (features)
   const ToggleChip = ({
     value,
     label,
@@ -4962,6 +5167,7 @@ const SurveyForm = ({
     const selected = (formData[field] || '').toLowerCase().includes(label.toLowerCase());
     const toggle = () => {
       const current = formData[field] || '';
+      // Parse existing features into an array
       const parts = current.split(',').map(s => s.trim()).filter(Boolean);
       if (selected) {
         const next = parts.filter(p => !p.toLowerCase().includes(label.toLowerCase())).join(', ');
@@ -4971,18 +5177,18 @@ const SurveyForm = ({
         upd(field, next);
       }
     };
-    return React.createElement("button", {
+    return /*#__PURE__*/React.createElement("button", {
       type: "button",
       "aria-pressed": selected,
       onClick: toggle,
       className: "flex items-center gap-1.5 px-3 py-2 border rounded-sm transition-all text-[10px] font-semibold",
       style: choiceStyle(selected)
-    }, icon ? React.createElement("span", {
+    }, icon ? /*#__PURE__*/React.createElement("span", {
       className: "mono text-[9px] uppercase tracking-[0.18em]",
       style: {
         opacity: selected ? 0.76 : 0.6
       }
-    }, icon) : null, label, selected && React.createElement(CheckIcon, {
+    }, icon) : null, label, selected && /*#__PURE__*/React.createElement(CheckIcon, {
       className: "w-3 h-3",
       style: {
         opacity: 0.82
@@ -4991,9 +5197,11 @@ const SurveyForm = ({
   };
   const Lbl = ({
     children
-  }) => React.createElement("label", {
+  }) => /*#__PURE__*/React.createElement("label", {
     className: "mono text-[7px] uppercase tracking-widest text-mid block mb-1.5"
   }, children);
+
+  // Footprint shape visual options
   const FootprintOption = ({
     val,
     label,
@@ -5001,21 +5209,22 @@ const SurveyForm = ({
     ratio
   }) => {
     const sel = formData.shape === val;
+    // ratio: [w, h] proportional
     const [fw, fh] = ratio;
-    return React.createElement("button", {
+    return /*#__PURE__*/React.createElement("button", {
       type: "button",
       "aria-pressed": sel,
       onClick: () => upd('shape', val),
       className: "p-3 border rounded-sm transition-all flex flex-col items-center gap-2",
       style: choiceStyle(sel)
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         height: '36px'
       }
-    }, React.createElement("div", {
+    }, /*#__PURE__*/React.createElement("div", {
       style: {
         width: `${fw * 28}px`,
         height: `${fh * 28}px`,
@@ -5023,19 +5232,21 @@ const SurveyForm = ({
         background: sel ? 'rgba(255,255,255,0.08)' : 'rgba(27,79,130,0.06)',
         borderRadius: '2px'
       }
-    })), React.createElement("div", {
+    })), /*#__PURE__*/React.createElement("div", {
       className: "text-[10px] font-semibold leading-tight text-center"
-    }, label), React.createElement("div", {
+    }, label), /*#__PURE__*/React.createElement("div", {
       className: `text-[8px] leading-tight text-center ${sel ? 'opacity-50' : 'opacity-40'}`
     }, desc));
   };
+
+  // Lot context visual option (like street/front but for lot type)
   const LotOption = ({
     val,
     label,
     svgContent
   }) => {
     const sel = formData.lotContext === val;
-    return React.createElement("button", {
+    return /*#__PURE__*/React.createElement("button", {
       type: "button",
       "aria-pressed": sel,
       onClick: () => upd('lotContext', val),
@@ -5043,14 +5254,14 @@ const SurveyForm = ({
       style: {
         background: sel ? 'rgba(27,79,130,0.05)' : 'white'
       }
-    }, React.createElement("svg", {
+    }, /*#__PURE__*/React.createElement("svg", {
       viewBox: "0 0 60 40",
       width: "60",
       height: "40",
       style: {
         display: 'block'
       }
-    }, svgContent), React.createElement("div", {
+    }, svgContent), /*#__PURE__*/React.createElement("div", {
       className: "text-[9px] font-semibold leading-tight text-center",
       style: {
         color: sel ? 'var(--blue)' : 'var(--ink)'
@@ -5061,36 +5272,36 @@ const SurveyForm = ({
     const bedCount = parseInt(formData.bedrooms) || 3;
     switch (field) {
       case 'totalArea':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Total Floor Area (Sq Ft)"), React.createElement("input", {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Total Floor Area (Sq Ft)"), /*#__PURE__*/React.createElement("input", {
           type: "number",
           placeholder: "e.g. 2400",
           value: formData.totalArea,
           onChange: e => upd('totalArea', e.target.value),
           min: "600",
           max: "10000"
-        }), React.createElement("p", {
+        }), /*#__PURE__*/React.createElement("p", {
           className: "text-[9px] text-mid/60"
         }, "Total finished sq ft across all levels"));
       case 'stories':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Number of Stories"), React.createElement(BtnGrid, {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Number of Stories"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "stories",
           options: ['1 Story', '2 Stories']
         }));
       case 'bedrooms':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Bedrooms"), React.createElement("div", {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Bedrooms"), /*#__PURE__*/React.createElement("div", {
           className: "flex gap-2"
         }, [1, 2, 3, 4, 5].map(n => {
           const selected = formData.bedrooms === `${n} Bed`;
-          return React.createElement("button", {
+          return /*#__PURE__*/React.createElement("button", {
             key: n,
             type: "button",
             "aria-pressed": selected,
@@ -5100,14 +5311,14 @@ const SurveyForm = ({
           }, n);
         })));
       case 'bathrooms':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Full Bathrooms"), React.createElement("div", {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Full Bathrooms"), /*#__PURE__*/React.createElement("div", {
           className: "flex gap-2"
         }, [1, 2, 3, 4, 5].map(n => {
           const selected = formData.bathrooms === `${n} Bath`;
-          return React.createElement("button", {
+          return /*#__PURE__*/React.createElement("button", {
             key: n,
             type: "button",
             "aria-pressed": selected,
@@ -5115,7 +5326,7 @@ const SurveyForm = ({
             className: "flex-1 h-11 border text-sm font-bold rounded-sm transition-all",
             style: choiceStyle(selected)
           }, n);
-        })), React.createElement("p", {
+        })), /*#__PURE__*/React.createElement("p", {
           className: "text-[9px] text-mid/60"
         }, "Half baths added automatically"));
       case 'privateBaths':
@@ -5146,33 +5357,33 @@ const SurveyForm = ({
             const privateCount = next.slice(1, bedCount).filter(c => c.privateBath === 'Yes').length;
             upd('privateBaths', `${privateCount}`);
           };
-          return React.createElement("div", {
+          return /*#__PURE__*/React.createElement("div", {
             key: field,
             className: "space-y-3 p-3 bg-blue/4 border border-blue/15 rounded-sm"
-          }, React.createElement(Lbl, null, "Bedroom Configuration"), React.createElement("p", {
+          }, /*#__PURE__*/React.createElement(Lbl, null, "Bedroom Configuration"), /*#__PURE__*/React.createElement("p", {
             className: "text-[10px] text-mid mb-1"
           }, "Set private bathroom and closet type for each bedroom."), bedLabels.map((label, idx) => {
             const cfg = (formData.bedroomConfigs || configs)[idx] || {
               privateBath: idx === 0 ? 'Yes' : 'No',
               closet: idx === 0 ? 'Walk-in' : 'Standard'
             };
-            return React.createElement("div", {
+            return /*#__PURE__*/React.createElement("div", {
               key: idx,
               className: "p-2.5 bg-white/60 border border-black/5 rounded-sm space-y-2"
-            }, React.createElement("div", {
+            }, /*#__PURE__*/React.createElement("div", {
               className: "text-[10px] font-bold uppercase tracking-wider",
               style: {
                 color: 'var(--blue)'
               }
-            }, label), React.createElement("div", {
+            }, label), /*#__PURE__*/React.createElement("div", {
               className: "flex gap-3 items-center"
-            }, React.createElement("span", {
+            }, /*#__PURE__*/React.createElement("span", {
               className: "text-[9px] font-medium text-mid w-16 shrink-0"
-            }, "En-Suite"), React.createElement("div", {
+            }, "En-Suite"), /*#__PURE__*/React.createElement("div", {
               className: "flex gap-1.5 flex-1"
             }, ['Yes', 'No'].map(v => {
               const sel = cfg.privateBath === v;
-              return React.createElement("button", {
+              return /*#__PURE__*/React.createElement("button", {
                 key: v,
                 type: "button",
                 "aria-pressed": sel,
@@ -5183,15 +5394,15 @@ const SurveyForm = ({
                 className: "flex-1 h-8 border text-[10px] font-bold rounded-sm",
                 style: choiceStyle(sel, 'blue')
               }, v);
-            }))), React.createElement("div", {
+            }))), /*#__PURE__*/React.createElement("div", {
               className: "flex gap-3 items-center"
-            }, React.createElement("span", {
+            }, /*#__PURE__*/React.createElement("span", {
               className: "text-[9px] font-medium text-mid w-16 shrink-0"
-            }, "Closet"), React.createElement("div", {
+            }, "Closet"), /*#__PURE__*/React.createElement("div", {
               className: "flex gap-1.5 flex-1"
             }, ['Walk-in', 'Standard'].map(v => {
               const sel = cfg.closet === v;
-              return React.createElement("button", {
+              return /*#__PURE__*/React.createElement("button", {
                 key: v,
                 type: "button",
                 "aria-pressed": sel,
@@ -5203,15 +5414,15 @@ const SurveyForm = ({
                 style: choiceStyle(sel, 'blue')
               }, v);
             }))));
-          }), React.createElement("p", {
+          }), /*#__PURE__*/React.createElement("p", {
             className: "text-[9px] text-mid/50"
           }, "Primary bedroom always gets an en-suite. Remaining baths are shared."));
         }
       case 'garage':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Garage"), React.createElement(BtnGrid, {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Garage"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "garage",
           options: [{
             val: 'No Garage',
@@ -5228,45 +5439,45 @@ const SurveyForm = ({
           }]
         }));
       case 'shape':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Footprint Shape"), React.createElement("div", {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Footprint Shape"), /*#__PURE__*/React.createElement("div", {
           className: "grid grid-cols-2 gap-2"
-        }, React.createElement(FootprintOption, {
+        }, /*#__PURE__*/React.createElement(FootprintOption, {
           val: "Rectangular (Wide)",
           label: "Wide Rectangle",
           desc: "Width > depth - more street frontage",
           ratio: [1.6, 1]
-        }), React.createElement(FootprintOption, {
+        }), /*#__PURE__*/React.createElement(FootprintOption, {
           val: "Rectangular (Deep)",
           label: "Deep Rectangle",
           desc: "Depth > width - narrow lot",
           ratio: [1, 1.4]
-        }), React.createElement(FootprintOption, {
+        }), /*#__PURE__*/React.createElement(FootprintOption, {
           val: "Square",
           label: "Square",
           desc: "Equal width and depth",
           ratio: [1, 1]
-        }), React.createElement(FootprintOption, {
+        }), /*#__PURE__*/React.createElement(FootprintOption, {
           val: "Rectangular",
           label: "Standard Rect",
           desc: "Classic proportions",
           ratio: [1.3, 1]
         })));
       case 'frontFacing':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-2"
-        }, React.createElement(Lbl, null, "Street / Front Faces"), React.createElement("div", {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Street / Front Faces"), /*#__PURE__*/React.createElement("div", {
           className: "flex items-center justify-center"
-        }, React.createElement("div", {
+        }, /*#__PURE__*/React.createElement("div", {
           className: "relative",
           style: {
             width: '210px',
             height: '210px'
           }
-        }, React.createElement("svg", {
+        }, /*#__PURE__*/React.createElement("svg", {
           viewBox: "0 0 210 210",
           width: "210",
           height: "210",
@@ -5276,14 +5487,14 @@ const SurveyForm = ({
             left: 0,
             pointerEvents: 'none'
           }
-        }, React.createElement("circle", {
+        }, /*#__PURE__*/React.createElement("circle", {
           cx: "105",
           cy: "105",
           r: "100",
           fill: "none",
           stroke: "rgba(100,100,100,0.1)",
           strokeWidth: "1"
-        }), React.createElement("circle", {
+        }), /*#__PURE__*/React.createElement("circle", {
           cx: "105",
           cy: "105",
           r: "68",
@@ -5291,7 +5502,7 @@ const SurveyForm = ({
           stroke: "rgba(100,100,100,0.07)",
           strokeWidth: "1",
           strokeDasharray: "3 4"
-        }), [[105, 6, 105, 20], [105, 190, 105, 204], [6, 105, 20, 105], [190, 105, 204, 105]].map(([x1, y1, x2, y2], i) => React.createElement("line", {
+        }), [[105, 6, 105, 20], [105, 190, 105, 204], [6, 105, 20, 105], [190, 105, 204, 105]].map(([x1, y1, x2, y2], i) => /*#__PURE__*/React.createElement("line", {
           key: i,
           x1: x1,
           y1: y1,
@@ -5299,19 +5510,19 @@ const SurveyForm = ({
           y2: y2,
           stroke: "rgba(100,100,100,0.22)",
           strokeWidth: "1.5"
-        })), React.createElement("path", {
+        })), /*#__PURE__*/React.createElement("path", {
           d: "M 174 68 Q 200 105 174 142",
           fill: "none",
           stroke: "rgba(181,136,42,0.2)",
           strokeWidth: "1.5",
           strokeDasharray: "3 3"
-        }), React.createElement("text", {
+        }), /*#__PURE__*/React.createElement("text", {
           x: "188",
           y: "109",
           textAnchor: "middle",
           fontSize: "8",
           fill: "rgba(181,136,42,0.5)"
-        }, "sun")), React.createElement("div", {
+        }, "sun")), /*#__PURE__*/React.createElement("div", {
           style: {
             position: 'absolute',
             left: '50%',
@@ -5351,11 +5562,11 @@ const SurveyForm = ({
           };
           const arr = arrs[dir];
           const lp = lps[dir];
-          return React.createElement("svg", {
+          return /*#__PURE__*/React.createElement("svg", {
             viewBox: "0 0 76 68",
             width: "76",
             height: "68"
-          }, React.createElement("rect", {
+          }, /*#__PURE__*/React.createElement("rect", {
             x: "14",
             y: "26",
             width: "48",
@@ -5364,18 +5575,18 @@ const SurveyForm = ({
             fill: "#f3f2ee",
             stroke: "#2c2c2e",
             strokeWidth: "1.5"
-          }), React.createElement("polygon", {
+          }), /*#__PURE__*/React.createElement("polygon", {
             points: "8,28 38,7 68,28",
             fill: "#1a1a1a",
             opacity: "0.85"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "48",
             y: "10",
             width: "6",
             height: "10",
             fill: "#1a1a1a",
             opacity: "0.5"
-          }), dir === 'South' && React.createElement(React.Fragment, null, React.createElement("rect", {
+          }), dir === 'South' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
             x: "22",
             y: "42",
             width: "14",
@@ -5385,7 +5596,7 @@ const SurveyForm = ({
             stroke: "#333",
             strokeWidth: "0.8",
             opacity: "0.8"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "42",
             y: "48",
             width: "7",
@@ -5394,7 +5605,7 @@ const SurveyForm = ({
             fill: "#7a7060",
             stroke: "#333",
             strokeWidth: "0.8"
-          })), dir === 'North' && React.createElement(React.Fragment, null, React.createElement("rect", {
+          })), dir === 'North' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
             x: "22",
             y: "26",
             width: "14",
@@ -5404,7 +5615,7 @@ const SurveyForm = ({
             stroke: "#333",
             strokeWidth: "0.8",
             opacity: "0.8"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "42",
             y: "26",
             width: "7",
@@ -5412,7 +5623,7 @@ const SurveyForm = ({
             fill: "#7a7060",
             stroke: "#333",
             strokeWidth: "0.8"
-          })), dir === 'East' && React.createElement(React.Fragment, null, React.createElement("rect", {
+          })), dir === 'East' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
             x: "50",
             y: "34",
             width: "12",
@@ -5422,7 +5633,7 @@ const SurveyForm = ({
             stroke: "#333",
             strokeWidth: "0.8",
             opacity: "0.8"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "50",
             y: "52",
             width: "12",
@@ -5430,7 +5641,7 @@ const SurveyForm = ({
             fill: "#7a7060",
             stroke: "#333",
             strokeWidth: "0.8"
-          })), dir === 'West' && React.createElement(React.Fragment, null, React.createElement("rect", {
+          })), dir === 'West' && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
             x: "14",
             y: "34",
             width: "12",
@@ -5440,7 +5651,7 @@ const SurveyForm = ({
             stroke: "#333",
             strokeWidth: "0.8",
             opacity: "0.8"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "14",
             y: "52",
             width: "12",
@@ -5448,7 +5659,7 @@ const SurveyForm = ({
             fill: "#7a7060",
             stroke: "#333",
             strokeWidth: "0.8"
-          })), React.createElement("line", {
+          })), /*#__PURE__*/React.createElement("line", {
             x1: arr[0],
             y1: arr[1],
             x2: arr[2],
@@ -5456,12 +5667,12 @@ const SurveyForm = ({
             stroke: "#1B4F82",
             strokeWidth: "1.5",
             strokeDasharray: "2 2"
-          }), React.createElement("circle", {
+          }), /*#__PURE__*/React.createElement("circle", {
             cx: arr[0],
             cy: arr[1],
             r: "2.5",
             fill: "#1B4F82"
-          }), React.createElement("text", {
+          }), /*#__PURE__*/React.createElement("text", {
             x: lp.x,
             y: lp.y,
             textAnchor: lp.a,
@@ -5502,7 +5713,7 @@ const SurveyForm = ({
           h
         }) => {
           const sel = formData.frontFacing === dir;
-          return React.createElement("button", {
+          return /*#__PURE__*/React.createElement("button", {
             key: dir,
             type: "button",
             "aria-pressed": sel,
@@ -5526,13 +5737,13 @@ const SurveyForm = ({
               transition: 'all 0.12s',
               boxShadow: sel ? '0 2px 10px rgba(27,79,130,0.3)' : 'none'
             }
-          }, React.createElement("span", {
+          }, /*#__PURE__*/React.createElement("span", {
             style: {
               fontSize: '13px',
               fontWeight: '800',
               lineHeight: 1
             }
-          }, dir[0]), React.createElement("span", {
+          }, dir[0]), /*#__PURE__*/React.createElement("span", {
             style: {
               fontSize: '6px',
               fontWeight: '600',
@@ -5540,19 +5751,19 @@ const SurveyForm = ({
               marginTop: '1px'
             }
           }, dir));
-        }))), React.createElement("p", {
+        }))), /*#__PURE__*/React.createElement("p", {
           className: "mono text-[7px] text-mid/50 text-center"
         }, "South = most winter sun - East = morning light"));
       case 'lotContext':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-2"
-        }, React.createElement(Lbl, null, "Lot / Site Context"), React.createElement("div", {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Lot / Site Context"), /*#__PURE__*/React.createElement("div", {
           className: "grid grid-cols-3 gap-2"
-        }, React.createElement(LotOption, {
+        }, /*#__PURE__*/React.createElement(LotOption, {
           val: "Suburban standard lot",
           label: "Suburban",
-          svgContent: React.createElement(React.Fragment, null, React.createElement("rect", {
+          svgContent: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
             x: "5",
             y: "20",
             width: "50",
@@ -5560,7 +5771,7 @@ const SurveyForm = ({
             fill: "#c8e6c9",
             stroke: "#888",
             strokeWidth: "0.5"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "15",
             y: "8",
             width: "30",
@@ -5568,16 +5779,16 @@ const SurveyForm = ({
             fill: "#e8e4dc",
             stroke: "#555",
             strokeWidth: "1"
-          }), React.createElement("polygon", {
+          }), /*#__PURE__*/React.createElement("polygon", {
             points: "15,8 30,2 45,8",
             fill: "#555"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "10",
             y: "32",
             width: "40",
             height: "3",
             fill: "#aaa"
-          }), React.createElement("line", {
+          }), /*#__PURE__*/React.createElement("line", {
             x1: "0",
             y1: "35",
             x2: "60",
@@ -5585,10 +5796,10 @@ const SurveyForm = ({
             stroke: "#aaa",
             strokeWidth: "1"
           }))
-        }), React.createElement(LotOption, {
+        }), /*#__PURE__*/React.createElement(LotOption, {
           val: "Suburban corner lot",
           label: "Corner",
-          svgContent: React.createElement(React.Fragment, null, React.createElement("rect", {
+          svgContent: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
             x: "5",
             y: "15",
             width: "50",
@@ -5596,7 +5807,7 @@ const SurveyForm = ({
             fill: "#c8e6c9",
             stroke: "#888",
             strokeWidth: "0.5"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "8",
             y: "8",
             width: "25",
@@ -5604,17 +5815,17 @@ const SurveyForm = ({
             fill: "#e8e4dc",
             stroke: "#555",
             strokeWidth: "1"
-          }), React.createElement("polygon", {
+          }), /*#__PURE__*/React.createElement("polygon", {
             points: "8,8 20,2 33,8",
             fill: "#555"
-          }), React.createElement("line", {
+          }), /*#__PURE__*/React.createElement("line", {
             x1: "5",
             y1: "35",
             x2: "55",
             y2: "35",
             stroke: "#aaa",
             strokeWidth: "1.5"
-          }), React.createElement("line", {
+          }), /*#__PURE__*/React.createElement("line", {
             x1: "5",
             y1: "35",
             x2: "5",
@@ -5622,10 +5833,10 @@ const SurveyForm = ({
             stroke: "#aaa",
             strokeWidth: "1.5"
           }))
-        }), React.createElement(LotOption, {
+        }), /*#__PURE__*/React.createElement(LotOption, {
           val: "Urban tight lot",
           label: "Urban",
-          svgContent: React.createElement(React.Fragment, null, React.createElement("rect", {
+          svgContent: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
             x: "8",
             y: "5",
             width: "16",
@@ -5633,7 +5844,7 @@ const SurveyForm = ({
             fill: "#e8e4dc",
             stroke: "#555",
             strokeWidth: "1"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "26",
             y: "2",
             width: "12",
@@ -5641,7 +5852,7 @@ const SurveyForm = ({
             fill: "#ddd",
             stroke: "#777",
             strokeWidth: "0.7"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "40",
             y: "8",
             width: "14",
@@ -5649,7 +5860,7 @@ const SurveyForm = ({
             fill: "#d5cfc5",
             stroke: "#666",
             strokeWidth: "0.7"
-          }), React.createElement("line", {
+          }), /*#__PURE__*/React.createElement("line", {
             x1: "0",
             y1: "35",
             x2: "60",
@@ -5657,17 +5868,17 @@ const SurveyForm = ({
             stroke: "#aaa",
             strokeWidth: "1.5"
           }))
-        }), React.createElement(LotOption, {
+        }), /*#__PURE__*/React.createElement(LotOption, {
           val: "Rural acreage",
           label: "Rural",
-          svgContent: React.createElement(React.Fragment, null, React.createElement("rect", {
+          svgContent: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
             x: "0",
             y: "25",
             width: "60",
             height: "15",
             fill: "#a5d6a7",
             stroke: "none"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "18",
             y: "14",
             width: "24",
@@ -5675,41 +5886,41 @@ const SurveyForm = ({
             fill: "#e8e4dc",
             stroke: "#555",
             strokeWidth: "1"
-          }), React.createElement("polygon", {
+          }), /*#__PURE__*/React.createElement("polygon", {
             points: "18,14 30,7 42,14",
             fill: "#555"
-          }), React.createElement("circle", {
+          }), /*#__PURE__*/React.createElement("circle", {
             cx: "8",
             cy: "22",
             r: "5",
             fill: "#66bb6a"
-          }), React.createElement("circle", {
+          }), /*#__PURE__*/React.createElement("circle", {
             cx: "52",
             cy: "20",
             r: "6",
             fill: "#4caf50"
-          }), React.createElement("circle", {
+          }), /*#__PURE__*/React.createElement("circle", {
             cx: "46",
             cy: "23",
             r: "4",
             fill: "#81c784"
           }))
-        }), React.createElement(LotOption, {
+        }), /*#__PURE__*/React.createElement(LotOption, {
           val: "View focused site",
           label: "View Site",
-          svgContent: React.createElement(React.Fragment, null, React.createElement("rect", {
+          svgContent: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
             x: "0",
             y: "22",
             width: "60",
             height: "18",
             fill: "#b3e5fc",
             stroke: "none"
-          }), React.createElement("polyline", {
+          }), /*#__PURE__*/React.createElement("polyline", {
             points: "0,22 10,16 20,20 32,12 44,18 60,14",
             fill: "none",
             stroke: "#8d6e63",
             strokeWidth: "1.5"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "20",
             y: "12",
             width: "20",
@@ -5717,28 +5928,28 @@ const SurveyForm = ({
             fill: "#e8e4dc",
             stroke: "#555",
             strokeWidth: "1"
-          }), React.createElement("polygon", {
+          }), /*#__PURE__*/React.createElement("polygon", {
             points: "20,12 30,6 40,12",
             fill: "#555"
           }))
-        }), React.createElement(LotOption, {
+        }), /*#__PURE__*/React.createElement(LotOption, {
           val: "Waterfront lot",
           label: "Waterfront",
-          svgContent: React.createElement(React.Fragment, null, React.createElement("rect", {
+          svgContent: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
             x: "0",
             y: "24",
             width: "60",
             height: "16",
             fill: "#81d4fa",
             stroke: "none"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "0",
             y: "24",
             width: "60",
             height: "4",
             fill: "#4fc3f7",
             stroke: "none"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "15",
             y: "10",
             width: "28",
@@ -5746,10 +5957,10 @@ const SurveyForm = ({
             fill: "#e8e4dc",
             stroke: "#555",
             strokeWidth: "1"
-          }), React.createElement("polygon", {
+          }), /*#__PURE__*/React.createElement("polygon", {
             points: "15,10 29,4 43,10",
             fill: "#555"
-          }), React.createElement("rect", {
+          }), /*#__PURE__*/React.createElement("rect", {
             x: "26",
             y: "24",
             width: "4",
@@ -5758,10 +5969,10 @@ const SurveyForm = ({
           }))
         })));
       case 'openConcept':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Kitchen / Living / Dining"), React.createElement(BtnGrid, {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Kitchen / Living / Dining"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "openConcept",
           cols: 1,
           options: [{
@@ -5775,44 +5986,44 @@ const SurveyForm = ({
           }]
         }));
       case 'masterLocation':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Primary Suite Location"), React.createElement(BtnGrid, {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Primary Suite Location"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "masterLocation",
           options: formData.stories === '1 Story' ? ['Level 1 (Main)'] : ['Level 1 (Main)', 'Level 2 (Upper)']
         }));
       case 'kitchenPlacement':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Kitchen Location"), React.createElement(BtnGrid, {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Kitchen Location"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "kitchenPlacement",
           options: ['Rear of House', 'Front of House']
         }));
       case 'laundryLocation':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Laundry Location"), React.createElement(BtnGrid, {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Laundry Location"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "laundryLocation",
           cols: 1,
           options: formData.stories === '1 Story' ? ['Level 1 (near garage/mud)', 'No preference'] : ['Level 1 (near garage/mud)', 'Level 2 (near bedrooms)', 'No preference']
         }));
       case 'ceilingHeight':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Ceiling Height"), React.createElement(BtnGrid, {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Ceiling Height"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "ceilingHeight",
           cols: 3,
           options: ['Standard (9 ft)', 'Tall (10 ft)', 'Cathedral / Vaulted']
         }));
       case 'materials':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Exterior Style & Materials"), React.createElement(BtnGrid, {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Exterior Style & Materials"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "materials",
           cols: 1,
           options: [{
@@ -5838,30 +6049,30 @@ const SurveyForm = ({
           }]
         }));
       case 'indoorOutdoor':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Indoor / Outdoor Flow"), React.createElement(BtnGrid, {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Indoor / Outdoor Flow"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "indoorOutdoor",
           cols: 1,
           options: ['Minimal (enclosed feel)', 'Moderate (some connection)', 'Maximum (open to outdoors)']
         }));
       case 'naturalLight':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Natural Light Priority"), React.createElement(BtnGrid, {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Natural Light Priority"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "naturalLight",
           cols: 1,
           options: ['Balanced windows', 'Maximum glazing', 'Privacy first (fewer windows)']
         }));
       case 'features':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-2"
-        }, React.createElement(Lbl, null, "Special Rooms"), React.createElement("p", {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Special Rooms"), /*#__PURE__*/React.createElement("p", {
           className: "text-[9px] text-mid/60 mb-2"
-        }, "Tap to add special rooms to your plan. Default: none."), React.createElement("div", {
+        }, "Tap to add special rooms to your plan. Default: none."), /*#__PURE__*/React.createElement("div", {
           className: "flex flex-wrap gap-2"
         }, [{
           label: 'Study'
@@ -5883,35 +6094,35 @@ const SurveyForm = ({
           label: 'Guest Suite'
         }, {
           label: 'Playroom'
-        }].map(f => React.createElement(ToggleChip, {
+        }].map(f => /*#__PURE__*/React.createElement(ToggleChip, {
           key: f.label,
           field: "features",
           value: f.label,
           label: f.label,
           icon: f.icon
-        }))), (formData.features || '').trim() && React.createElement("div", {
+        }))), (formData.features || '').trim() && /*#__PURE__*/React.createElement("div", {
           className: "mt-1 p-2 bg-blue/5 border border-blue/15 rounded-sm"
-        }, React.createElement("span", {
+        }, /*#__PURE__*/React.createElement("span", {
           className: "mono text-[7px] uppercase text-blue"
-        }, "Selected: "), React.createElement("span", {
+        }, "Selected: "), /*#__PURE__*/React.createElement("span", {
           className: "text-[9px] text-ink"
-        }, formData.features), React.createElement("button", {
+        }, formData.features), /*#__PURE__*/React.createElement("button", {
           onClick: () => upd('features', ''),
           className: "ml-2 text-[9px] text-red/60 hover:text-red"
         }, "clear")));
       case 'accessibilityNeeds':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Accessibility Needs"), React.createElement(BtnGrid, {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Accessibility Needs"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "accessibilityNeeds",
           options: formData.stories === '2 Stories' ? ['None', 'Wheelchair accessible', 'Wide doorways'] : ['None', 'Wheelchair accessible', 'Wide doorways', 'Single-level preferred']
         }));
       case 'budgetTier':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Budget Tier"), React.createElement(BtnGrid, {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Budget Tier"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "budgetTier",
           cols: 1,
           options: [{
@@ -5929,10 +6140,10 @@ const SurveyForm = ({
           }]
         }));
       case 'freeformWishes':
-        return React.createElement("div", {
+        return /*#__PURE__*/React.createElement("div", {
           key: field,
           className: "space-y-1.5"
-        }, React.createElement(Lbl, null, "Anything Else? (optional)"), React.createElement("textarea", {
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Anything Else? (optional)"), /*#__PURE__*/React.createElement("textarea", {
           rows: "3",
           placeholder: "Specific wishes, must-haves, or notes...",
           value: formData.freeformWishes,
@@ -5944,57 +6155,57 @@ const SurveyForm = ({
   };
   const cur = SURVEY_STEPS[step];
   const isLast = step === SURVEY_STEPS.length - 1;
-  return React.createElement("div", null, React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "flex gap-1 mb-5"
-  }, SURVEY_STEPS.map((_, i) => React.createElement("div", {
+  }, SURVEY_STEPS.map((_, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: "flex-1 h-1 rounded-full transition-all duration-300",
     style: {
       background: i <= step ? 'var(--blue)' : 'rgba(0,0,0,0.07)'
     }
-  }))), React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "flex items-start justify-between gap-3 mb-4"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "mono text-[7px] uppercase tracking-widest text-mid"
-  }, "Step ", step + 1, " of ", SURVEY_STEPS.length), React.createElement("h3", {
+  }, "Step ", step + 1, " of ", SURVEY_STEPS.length), /*#__PURE__*/React.createElement("h3", {
     className: "cg text-2xl italic mt-0.5"
-  }, cur.title), React.createElement("p", {
+  }, cur.title), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] mt-1",
     style: {
       color: 'rgba(10,10,12,0.56)'
     }
-  }, cur.subtitle)), React.createElement("button", {
+  }, cur.subtitle)), /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: handleReset,
     className: "cta-secondary px-4 py-3 text-[9px]"
-  }, "Reset Sample")), React.createElement("div", {
+  }, "Reset Sample")), /*#__PURE__*/React.createElement("div", {
     className: "survey-step-row mb-5",
     "aria-label": "Survey steps"
-  }, SURVEY_STEPS.map((item, i) => React.createElement("button", {
+  }, SURVEY_STEPS.map((item, i) => /*#__PURE__*/React.createElement("button", {
     key: item.id,
     type: "button",
     onClick: () => setStep(i),
     className: `survey-step-pill ${i === step ? 'active' : ''}`,
     "aria-current": i === step ? 'step' : undefined
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] uppercase tracking-[0.22em] opacity-55"
-  }, "0", i + 1), React.createElement("span", null, item.title)))), React.createElement("p", {
+  }, "0", i + 1), /*#__PURE__*/React.createElement("span", null, item.title)))), /*#__PURE__*/React.createElement("p", {
     className: "survey-quick-note"
-  }, "The sample residential brief is already filled in, so you can move quickly and adjust only what matters."), React.createElement("div", {
+  }, "The sample residential brief is already filled in, so you can move quickly and adjust only what matters."), /*#__PURE__*/React.createElement("div", {
     className: "space-y-4 step-in",
     key: step
-  }, cur.fields.map(f => renderField(f))), React.createElement("div", {
+  }, cur.fields.map(f => renderField(f))), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-2.5 mt-5"
-  }, step > 0 && React.createElement("button", {
+  }, step > 0 && /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => setStep(s => s - 1),
     className: "px-5 py-3 border border-black/10 text-[11px] font-semibold hover:border-ink transition-colors rounded-sm"
-  }, "Back"), !isLast ? React.createElement("button", {
+  }, "Back"), !isLast ? /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => setStep(s => s + 1),
     className: "flex-1 py-3 text-[11px] font-bold uppercase tracking-wider transition-colors rounded-sm border",
     style: actionStyle('blue')
-  }, "Continue") : React.createElement("button", {
+  }, "Continue") : /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: onSubmit,
     disabled: isLoading,
@@ -6002,12 +6213,14 @@ const SurveyForm = ({
     style: actionStyle('ink')
   }, isLoading ? 'Generating...' : 'Generate Floor Plan')));
 };
+
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ GALLERY COMPONENT Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const Gallery = ({
   onOpenModal
 }) => {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState(null); // expanded entry
   const [zoomImg, setZoomImg] = useState(null);
   const sectionRef = useRef(null);
   const fetchControllerRef = useRef(null);
@@ -6043,6 +6256,7 @@ const Gallery = ({
     });
     if (sectionRef.current) observer.observe(sectionRef.current);
     document.addEventListener('visibilitychange', visibilityHandler);
+    // Refresh only while the section is visible and the tab is active.
     const t = setInterval(() => {
       if (document.visibilityState === 'visible' && isVisibleRef.current) fetchGallery();
     }, 45000);
@@ -6062,14 +6276,14 @@ const Gallery = ({
       minute: '2-digit'
     });
   };
-  return React.createElement("section", {
+  return /*#__PURE__*/React.createElement("section", {
     id: "gallery",
     ref: sectionRef,
     style: {
       background: 'linear-gradient(180deg, #FFFDFC 0%, #F5F0E9 100%)',
       padding: '4.5rem 0 5.5rem'
     }
-  }, React.createElement(AnimatePresence, null, zoomImg && React.createElement(motion.div, {
+  }, /*#__PURE__*/React.createElement(AnimatePresence, null, zoomImg && /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0
     },
@@ -6081,23 +6295,23 @@ const Gallery = ({
     },
     onClick: () => setZoomImg(null),
     className: "fixed inset-0 z-[200] bg-ink/93 backdrop-blur-lg flex items-center justify-center p-4 cursor-zoom-out"
-  }, typeof zoomImg === 'string' && zoomImg.startsWith('<svg') ? React.createElement("div", {
+  }, typeof zoomImg === 'string' && zoomImg.startsWith('<svg') ? /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-6 max-w-4xl w-full max-h-[90vh] overflow-auto rounded-sm shadow-2xl",
     dangerouslySetInnerHTML: {
       __html: zoomImg
     }
-  }) : React.createElement("img", {
+  }) : /*#__PURE__*/React.createElement("img", {
     src: zoomImg,
     className: "max-h-[90vh] max-w-full object-contain rounded-sm",
     alt: "Zoom"
-  }), React.createElement("button", {
+  }), /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => setZoomImg(null),
     "aria-label": "Close zoomed preview",
     className: "absolute top-4 right-4 text-white/40 hover:text-white"
-  }, React.createElement(CloseIcon, {
+  }, /*#__PURE__*/React.createElement(CloseIcon, {
     className: "w-6 h-6"
-  })))), React.createElement(AnimatePresence, null, selected && React.createElement(motion.div, {
+  })))), /*#__PURE__*/React.createElement(AnimatePresence, null, selected && /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0
     },
@@ -6111,7 +6325,7 @@ const Gallery = ({
     onClick: e => {
       if (e.target === e.currentTarget) setSelected(null);
     }
-  }, React.createElement(motion.div, {
+  }, /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       y: 40,
       opacity: 0
@@ -6129,40 +6343,40 @@ const Gallery = ({
       damping: 26
     },
     className: "bg-paper w-full md:max-w-4xl max-h-[90vh] overflow-y-auto rounded-t-2xl md:rounded-xl shadow-2xl"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       height: '3px',
       background: 'linear-gradient(90deg,var(--blue),var(--red))',
       borderRadius: '8px 8px 0 0'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "p-5 md:p-7"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-start justify-between mb-4"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "badge"
-  }, "Generated Plan"), React.createElement("h3", {
+  }, "Generated Plan"), /*#__PURE__*/React.createElement("h3", {
     className: "cg italic text-2xl mt-2"
-  }, selected.label || 'Floor Plan'), React.createElement("p", {
+  }, selected.label || 'Floor Plan'), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[8px] uppercase tracking-widest text-mid mt-1"
-  }, fmt(selected.createdAt))), React.createElement("button", {
+  }, fmt(selected.createdAt))), /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => setSelected(null),
     "aria-label": "Close session detail",
     className: "w-9 h-9 bg-black/6 rounded-full flex items-center justify-center hover:bg-black/12 transition-colors flex-shrink-0"
-  }, React.createElement(CloseIcon, {
+  }, /*#__PURE__*/React.createElement(CloseIcon, {
     className: "w-4 h-4"
-  }))), React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "gallery-detail-grid"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "border border-black/6 rounded-sm overflow-hidden cursor-zoom-in",
     style: {
       background: 'white'
     },
     onClick: () => setZoomImg(selected.svg)
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-1.5 px-3 py-2 border-b border-black/5"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       width: '5px',
       height: '5px',
@@ -6171,18 +6385,18 @@ const Gallery = ({
       flexShrink: 0,
       display: 'inline-block'
     }
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[7px] uppercase tracking-widest text-mid"
-  }, "2D Blueprint"), React.createElement("span", {
+  }, "2D Blueprint"), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[7px] text-mid ml-auto opacity-40"
-  }, "open")), React.createElement("div", {
+  }, "open")), /*#__PURE__*/React.createElement("div", {
     style: {
       height: '200px',
       overflow: 'hidden',
       position: 'relative',
       padding: '8px'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     dangerouslySetInnerHTML: {
       __html: selected.svg
     },
@@ -6193,14 +6407,14 @@ const Gallery = ({
       transformOrigin: 'top left',
       pointerEvents: 'none'
     }
-  }))), React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "border border-black/6 rounded-sm overflow-hidden flex flex-col",
     style: {
       background: '#f8f8f8'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-1.5 px-3 py-2 border-b border-black/5"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       width: '5px',
       height: '5px',
@@ -6209,11 +6423,11 @@ const Gallery = ({
       flexShrink: 0,
       display: 'inline-block'
     }
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[7px] uppercase tracking-widest text-mid"
-  }, "3D Render"), selected.renderImage && React.createElement("span", {
+  }, "3D Render"), selected.renderImage && /*#__PURE__*/React.createElement("span", {
     className: "mono text-[7px] text-mid ml-auto opacity-40"
-  }, "open")), selected.renderImage ? React.createElement("img", {
+  }, "open")), selected.renderImage ? /*#__PURE__*/React.createElement("img", {
     src: selected.renderImage,
     alt: "3D render",
     onClick: () => setZoomImg(selected.renderImage),
@@ -6223,43 +6437,43 @@ const Gallery = ({
       height: '200px',
       objectFit: 'cover'
     }
-  }) : React.createElement("div", {
+  }) : /*#__PURE__*/React.createElement("div", {
     className: "flex-1 flex flex-col items-center justify-center text-center",
     style: {
       height: '200px',
       opacity: 0.3
     }
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     className: "w-8 h-8 mb-2",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "1",
     d: "M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-  })), React.createElement("p", {
+  })), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[7px] uppercase tracking-widest"
-  }, "No render yet")))), selected.surveyData && React.createElement("div", {
+  }, "No render yet")))), selected.surveyData && /*#__PURE__*/React.createElement("div", {
     className: "mt-4 grid grid-cols-2 md:grid-cols-4 gap-2"
-  }, [['Area', selected.planSpec?.totalAreaSqFt ? `${selected.planSpec.totalAreaSqFt.toLocaleString()} sqft` : '-'], ['Stories', selected.surveyData.stories || '-'], ['Garage', selected.surveyData.garage || '-'], ['Style', (selected.surveyData.budgetTier || '-').split(' ')[0]]].map(([k, v]) => React.createElement("div", {
+  }, [['Area', selected.planSpec?.totalAreaSqFt ? `${selected.planSpec.totalAreaSqFt.toLocaleString()} sqft` : '-'], ['Stories', selected.surveyData.stories || '-'], ['Garage', selected.surveyData.garage || '-'], ['Style', (selected.surveyData.budgetTier || '-').split(' ')[0]]].map(([k, v]) => /*#__PURE__*/React.createElement("div", {
     key: k,
     className: "spec-panel"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "spec-label"
-  }, k), React.createElement("div", {
+  }, k), /*#__PURE__*/React.createElement("div", {
     className: "spec-value"
-  }, v)))))))), React.createElement("div", {
+  }, v)))))))), /*#__PURE__*/React.createElement("div", {
     className: "site-shell"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-[minmax(0,1fr)_280px] gap-6 items-end mb-10"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(10,10,12,0.44)'
     }
-  }, "Recent sessions"), React.createElement("h2", {
+  }, "Recent sessions"), /*#__PURE__*/React.createElement("h2", {
     className: "cg mt-5",
     style: {
       fontSize: 'clamp(2.2rem,4.8vw,3.6rem)',
@@ -6267,44 +6481,44 @@ const Gallery = ({
       textTransform: 'uppercase',
       lineHeight: 0.94
     }
-  }, "Recent sessions, not mockups."), React.createElement("p", {
+  }, "Recent sessions, not mockups."), /*#__PURE__*/React.createElement("p", {
     className: "text-mid text-sm mt-2"
-  }, "The last 10 plans generated by Keystone AI users, live from the server.")), React.createElement("div", {
+  }, "The last 10 plans generated by Keystone AI users, live from the server.")), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap gap-2 lg:justify-end"
-  }, React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: fetchGallery,
     className: "cta-secondary flex items-center gap-1.5 px-4 py-3"
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     className: "w-3 h-3",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "2",
     d: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-  })), "Refresh"), React.createElement("button", {
+  })), "Refresh"), /*#__PURE__*/React.createElement("button", {
     onClick: () => scrollTo('generator'),
     className: "cta-hero cta-glow-soft px-5 py-3"
-  }, "Open Live Studio"))), loading && React.createElement("div", {
+  }, "Open Live Studio"))), loading && /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-center py-20 gap-3 text-mid",
     role: "status",
     "aria-live": "polite"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[9px] uppercase tracking-widest"
-  }, "Loading gallery...")), !loading && entries.length === 0 && React.createElement("div", {
+  }, "Loading gallery...")), !loading && entries.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "paper-panel text-center py-20 px-6"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       marginBottom: '1rem',
       opacity: 0.3,
       display: 'flex',
       justifyContent: 'center'
     }
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     width: "40",
     height: "40",
     viewBox: "0 0 24 24",
@@ -6313,28 +6527,28 @@ const Gallery = ({
     strokeWidth: "1.5",
     strokeLinecap: "round",
     strokeLinejoin: "round"
-  }, React.createElement("rect", {
+  }, /*#__PURE__*/React.createElement("rect", {
     x: "3",
     y: "3",
     width: "18",
     height: "18",
     rx: "2"
-  }), React.createElement("path", {
+  }), /*#__PURE__*/React.createElement("path", {
     d: "M12 8v8M8 12h8"
-  }))), React.createElement("p", {
+  }))), /*#__PURE__*/React.createElement("p", {
     className: "cg text-2xl opacity-50",
     style: {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "No recent sessions yet."), React.createElement("p", {
+  }, "No recent sessions yet."), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[9px] uppercase tracking-widest text-mid mt-2 opacity-50"
-  }, "Be the first - generate a plan above."), React.createElement("button", {
+  }, "Be the first - generate a plan above."), /*#__PURE__*/React.createElement("button", {
     onClick: () => scrollTo('generator'),
     className: "cta-hero cta-glow mt-5 px-6 py-3"
-  }, "Open Live Studio")), !loading && entries.length > 0 && React.createElement("div", {
+  }, "Open Live Studio")), !loading && entries.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5"
-  }, entries.map((entry, i) => React.createElement(motion.div, {
+  }, entries.map((entry, i) => /*#__PURE__*/React.createElement(motion.div, {
     key: entry.id,
     initial: {
       opacity: 0,
@@ -6352,26 +6566,26 @@ const Gallery = ({
     },
     onClick: () => setSelected(entry),
     className: "group cursor-pointer paper-panel overflow-hidden hover:shadow-xl transition-all duration-200 hover:-translate-y-1"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'relative',
       borderBottom: '1px solid rgba(0,0,0,0.05)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'grid',
       gridTemplateColumns: entry.renderImage ? '1fr 1fr' : '1fr',
       height: '140px',
       background: 'white'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       overflow: 'hidden',
       position: 'relative',
       background: 'white',
       borderRight: entry.renderImage ? '1px solid rgba(0,0,0,0.06)' : 'none'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     dangerouslySetInnerHTML: {
       __html: entry.svg
     },
@@ -6382,19 +6596,19 @@ const Gallery = ({
       transformOrigin: 'top left',
       pointerEvents: 'none'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       bottom: '4px',
       left: '6px'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "mono text-[6px] uppercase tracking-widest opacity-30"
-  }, "Plan"))), entry.renderImage && React.createElement("div", {
+  }, "Plan"))), entry.renderImage && /*#__PURE__*/React.createElement("div", {
     style: {
       overflow: 'hidden'
     }
-  }, React.createElement("img", {
+  }, /*#__PURE__*/React.createElement("img", {
     src: entry.renderImage,
     alt: "3D",
     style: {
@@ -6402,36 +6616,38 @@ const Gallery = ({
       height: '140px',
       objectFit: 'cover'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       bottom: '4px',
       right: '6px'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "mono text-[6px] uppercase tracking-widest px-1.5 py-0.5 rounded-full font-bold",
     style: {
       background: 'rgba(181,136,42,0.85)',
       color: 'white'
     }
-  }, "3D")))), React.createElement("div", {
+  }, "3D")))), /*#__PURE__*/React.createElement("div", {
     className: "absolute inset-0 bg-blue/0 group-hover:bg-blue/5 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "bg-white/95 px-3 py-1.5 rounded-full shadow-sm mono text-[8px] uppercase tracking-widest text-blue font-bold"
-  }, "View Details"))), React.createElement("div", {
+  }, "View Details"))), /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '0.75rem 1rem'
     }
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "cg italic text-base leading-tight mb-0.5"
-  }, entry.label || 'Custom Plan'), React.createElement("p", {
+  }, entry.label || 'Custom Plan'), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[7px] uppercase tracking-widest text-mid opacity-60"
-  }, fmt(entry.createdAt)))))), !loading && entries.length > 0 && React.createElement("div", {
+  }, fmt(entry.createdAt)))))), !loading && entries.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "text-center mt-10"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[8px] uppercase tracking-widest text-mid opacity-40"
   }, "Showing ", entries.length, " recent sessions - refreshes quietly while this section is visible"))));
 };
+
+// â"€â"€â"€ INTERACTIVE CANVAS (pan/zoom blueprint viewport) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const InteractiveCanvas = ({
   children
 }) => {
@@ -6515,7 +6731,7 @@ const InteractiveCanvas = ({
   const bg = blueprintMode ? '#0d1b2a' : '#161b24';
   const gridColor = blueprintMode ? 'rgba(100,149,237,0.12)' : 'rgba(255,255,255,0.05)';
   const gridSz = Math.round(40 * scale);
-  const toolbarBtn = (onClick, title, content, active) => React.createElement("button", {
+  const toolbarBtn = (onClick, title, content, active) => /*#__PURE__*/React.createElement("button", {
     onClick: onClick,
     title: title,
     style: {
@@ -6533,7 +6749,7 @@ const InteractiveCanvas = ({
       fontWeight: 'bold'
     }
   }, content);
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     ref: containerRef,
     style: {
       position: 'relative',
@@ -6546,7 +6762,7 @@ const InteractiveCanvas = ({
     onMouseMove: onMouseMove,
     onMouseUp: onMouseUp,
     onMouseLeave: onMouseUp
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       inset: 0,
@@ -6555,7 +6771,7 @@ const InteractiveCanvas = ({
       backgroundSize: `${gridSz}px ${gridSz}px`,
       backgroundPosition: `${offset.x % gridSz}px ${offset.y % gridSz}px`
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       inset: 0,
@@ -6567,14 +6783,14 @@ const InteractiveCanvas = ({
       transition: isDragging ? 'none' : 'transform 0.06s ease',
       willChange: 'transform'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     ref: contentRef,
     style: {
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center'
     }
-  }, children)), React.createElement("div", {
+  }, children)), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       bottom: 14,
@@ -6594,18 +6810,18 @@ const InteractiveCanvas = ({
   }, toolbarBtn(e => {
     e.stopPropagation();
     setScale(s => Math.max(s * 0.8, 0.2));
-  }, 'Zoom Out', React.createElement("svg", {
+  }, 'Zoom Out', /*#__PURE__*/React.createElement("svg", {
     width: "13",
     height: "13",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "2",
     d: "M20 12H4"
-  }))), React.createElement("span", {
+  }))), /*#__PURE__*/React.createElement("span", {
     className: "mono",
     style: {
       fontSize: 8,
@@ -6617,18 +6833,18 @@ const InteractiveCanvas = ({
   }, Math.round(scale * 100), "%"), toolbarBtn(e => {
     e.stopPropagation();
     setScale(s => Math.min(s * 1.25, 5));
-  }, 'Zoom In', React.createElement("svg", {
+  }, 'Zoom In', /*#__PURE__*/React.createElement("svg", {
     width: "13",
     height: "13",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "2",
     d: "M12 4v16m8-8H4"
-  }))), React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       width: 1,
       height: 16,
@@ -6638,18 +6854,18 @@ const InteractiveCanvas = ({
   }), toolbarBtn(e => {
     e.stopPropagation();
     resetView();
-  }, 'Fit to View', React.createElement("svg", {
+  }, 'Fit to View', /*#__PURE__*/React.createElement("svg", {
     width: "13",
     height: "13",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "2",
     d: "M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
-  }))), React.createElement("div", {
+  }))), /*#__PURE__*/React.createElement("div", {
     style: {
       width: 1,
       height: 16,
@@ -6659,18 +6875,18 @@ const InteractiveCanvas = ({
   }), toolbarBtn(e => {
     e.stopPropagation();
     setBlueprintMode(m => !m);
-  }, blueprintMode ? 'White Mode' : 'Blueprint Mode', React.createElement("svg", {
+  }, blueprintMode ? 'White Mode' : 'Blueprint Mode', /*#__PURE__*/React.createElement("svg", {
     width: "13",
     height: "13",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "2",
     d: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-  })), blueprintMode)), React.createElement("div", {
+  })), blueprintMode)), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       top: 10,
@@ -6685,35 +6901,87 @@ const InteractiveCanvas = ({
     }
   }, blueprintMode ? 'Blueprint View - Drag to Pan | Scroll to Zoom' : 'Drag to Pan | Scroll to Zoom'));
 };
+
+// â"€â"€â"€ DESIGN GENERATOR â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 const DesignGenerator = ({
   onOpenModal
 }) => {
+  const initialSessionRef = useRef(getInitialStudioSession());
+  const initialSession = initialSessionRef.current;
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [accessToken, setAccessToken] = useState(null);
+  const [accessTokenExpiry, setAccessTokenExpiry] = useState(null);
   const [passkeyInput, setPasskeyInput] = useState('');
   const [unlockStatus, setUnlockStatus] = useState('idle');
   const [formData, setFormData] = useState(() => ({
-    ...DEFAULT_FORM_DATA
+    ...DEFAULT_FORM_DATA,
+    ...(initialSession?.formData || {})
   }));
-  const [status, setStatus] = useState('idle');
-  const [planSvg, setPlanSvg] = useState(null);
-  const [planSpec, setPlanSpec] = useState(null);
-  const [refinementHistory, setRefinementHistory] = useState([]);
-  const [refinementsLeft, setRefinementsLeft] = useState(10);
+  const [status, setStatus] = useState(() => initialSession?.status || 'idle');
+  const [planSvg, setPlanSvg] = useState(() => initialSession?.planSvg || null);
+  const [planSpec, setPlanSpec] = useState(() => initialSession?.planSpec || null);
+  const [refinementHistory, setRefinementHistory] = useState(() => initialSession?.refinementHistory || []);
+  const [refinementsLeft, setRefinementsLeft] = useState(() => Number.isFinite(initialSession?.refinementsLeft) ? initialSession.refinementsLeft : 10);
   const [zoomImage, setZoomImage] = useState(null);
-  const [galleryId, setGalleryId] = useState(null);
-  const [planScore, setPlanScore] = useState(null);
-  const [footprintInfo, setFootprintInfo] = useState(null);
-  const [alternatives, setAlternatives] = useState([]);
+  const [galleryId, setGalleryId] = useState(() => initialSession?.galleryId || null);
+  const [planScore, setPlanScore] = useState(() => initialSession?.planScore ?? null);
+  const [footprintInfo, setFootprintInfo] = useState(() => initialSession?.footprintInfo ?? null);
+  const [alternatives, setAlternatives] = useState(() => initialSession?.alternatives || []);
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [isExportingEstimateXlsx, setIsExportingEstimateXlsx] = useState(false);
   const [renderLaunchSignal, setRenderLaunchSignal] = useState(0);
-  const [renderPanelStatus, setRenderPanelStatus] = useState('idle');
+  const [renderPanelStatus, setRenderPanelStatus] = useState(() => normalizeRenderState(initialSession?.renderState).status);
+  const [renderState, setRenderState] = useState(() => normalizeRenderState(initialSession?.renderState));
   useEffect(() => {
     try {
-      const s = JSON.parse(localStorage.getItem('keystone_unlock') || 'null');
-      if (s?.unlocked && s?.ts && Date.now() - s.ts < 30 * 24 * 60 * 60 * 1000) setIsUnlocked(true);else if (s?.unlocked && (!s?.ts || Date.now() - s.ts >= 30 * 24 * 60 * 60 * 1000)) localStorage.removeItem('keystone_unlock');
+      const s = JSON.parse(localStorage.getItem(STUDIO_UNLOCK_KEY) || 'null');
+      const expiresAt = s?.expiresAt ? Date.parse(s.expiresAt) : NaN;
+      if (s?.token && Number.isFinite(expiresAt) && expiresAt > Date.now()) {
+        setIsUnlocked(true);
+        setAccessToken(s.token);
+        setAccessTokenExpiry(s.expiresAt);
+      } else if (s) {
+        localStorage.removeItem(STUDIO_UNLOCK_KEY);
+      }
     } catch {}
   }, []);
+  useEffect(() => {
+    const snapshot = {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      formData,
+      status: status === 'loading-plan' || status === 'refining' ? planSvg ? 'plan-ready' : 'idle' : status,
+      planSvg,
+      planSpec,
+      refinementHistory,
+      refinementsLeft,
+      galleryId,
+      planScore,
+      footprintInfo,
+      alternatives: Array.isArray(alternatives) ? alternatives.slice(0, 6) : [],
+      renderState: renderState?.image ? {
+        ...renderState,
+        image: null,
+        imageClean: null,
+        status: 'ready',
+        errorMsg: ''
+      } : {
+        ...createEmptyRenderState(),
+        surveyData: renderState?.surveyData || null
+      }
+    };
+    try {
+      localStorage.setItem(STUDIO_SESSION_KEY, JSON.stringify(snapshot));
+    } catch {}
+  }, [formData, status, planSvg, planSpec, refinementHistory, refinementsLeft, galleryId, planScore, footprintInfo, alternatives, renderState]);
+  const promptUnlock = (featureLabel = 'advanced features') => {
+    alert(`Unlock advanced features with a passkey to use ${featureLabel}.`);
+  };
+  const requireAdvancedAccess = featureLabel => {
+    if (accessToken) return true;
+    promptUnlock(featureLabel);
+    return false;
+  };
   const handleUnlock = async e => {
     e.preventDefault();
     const key = (passkeyInput || '').trim();
@@ -6733,12 +7001,16 @@ const DesignGenerator = ({
         })
       });
       const data = await res.json().catch(() => null);
-      if (res.ok && data?.success) {
+      if (res.ok && data?.success && data?.token) {
         setIsUnlocked(true);
+        setAccessToken(data.token);
+        setAccessTokenExpiry(data.expiresAt || null);
         setUnlockStatus('idle');
         try {
-          localStorage.setItem('keystone_unlock', JSON.stringify({
+          localStorage.setItem(STUDIO_UNLOCK_KEY, JSON.stringify({
             unlocked: true,
+            token: data.token,
+            expiresAt: data.expiresAt || null,
             ts: Date.now()
           }));
         } catch {}
@@ -6776,6 +7048,8 @@ const DesignGenerator = ({
       setPlanScore(data.score ?? null);
       setFootprintInfo(data.footprintInfo ?? null);
       setAlternatives(data.alternatives || []);
+      setRenderState(createEmptyRenderState());
+      setRenderPanelStatus('idle');
       setStatus('plan-ready');
     } catch (err) {
       alert('Error: ' + err.message);
@@ -6783,8 +7057,10 @@ const DesignGenerator = ({
     }
   };
   const handleRefine = async instruction => {
+    if (!requireAdvancedAccess('refinements')) return;
     if (refinementsLeft <= 0) return;
     setStatus('refining');
+    // Optimistically add user message to history
     setRefinementHistory(prev => [...prev, {
       role: 'user',
       content: instruction
@@ -6793,7 +7069,10 @@ const DesignGenerator = ({
       const res = await fetch('/api/plan/refine', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(accessToken ? {
+            Authorization: `Bearer ${accessToken}`
+          } : {})
         },
         body: JSON.stringify({
           surveyData: formData,
@@ -6803,6 +7082,8 @@ const DesignGenerator = ({
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
+
+      // Build a human-readable summary of what changed
       const changes = data.appliedChanges || [];
       const summary = changes.length > 0 ? changes.map(c => {
         const room = planSpec.levels?.flatMap(l => l.rooms || []).find(r => r.id === c.id);
@@ -6818,6 +7099,8 @@ const DesignGenerator = ({
         estimate: data.estimate || data.planSpec?.estimate || null
       } : null);
       if (data.galleryId) setGalleryId(data.galleryId);
+      setRenderState(createEmptyRenderState());
+      setRenderPanelStatus('idle');
       setRefinementHistory(prev => [...prev, {
         role: 'assistant',
         content: summary
@@ -6839,7 +7122,8 @@ const DesignGenerator = ({
         planSvg,
         elevations: planSpec?.elevations || null,
         formData,
-        footprintInfo
+        footprintInfo,
+        renderImage: renderState?.image || null
       })) || (await svgToPngDataUrl(planSvg, {
         background: '#F6F4EF',
         pixelRatio: 3
@@ -6855,11 +7139,31 @@ const DesignGenerator = ({
       alert('Download failed.');
     }
   };
+  const downloadElevations = async () => {
+    if (!planSpec?.elevations) {
+      alert('No elevations to export yet.');
+      return;
+    }
+    try {
+      const pngUrl = await composeElevationReferenceSheet(planSpec.elevations);
+      if (!pngUrl) throw new Error('Unable to build elevation sheet');
+      const link = document.createElement('a');
+      link.href = pngUrl;
+      link.download = buildPlanExportFilename(formData, 'elevation set', 'png');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('[downloadElevations]', err);
+      alert('Elevation export failed.');
+    }
+  };
   const downloadDxf = () => {
     if (!planSpec || !planSpec.levels) {
       alert('No plan to export.');
       return;
     }
+    if (!requireAdvancedAccess('CAD export (DXF)')) return;
     try {
       const dxfString = buildPresentationDxf(planSpec);
       const blob = new Blob([dxfString], {
@@ -6878,29 +7182,18 @@ const DesignGenerator = ({
       alert('DXF export failed: ' + err.message);
     }
   };
-  const downloadEstimateCsv = () => {
-    const estimate = planSpec?.estimate || null;
-    if (!estimate) {
-      alert('No estimate to export yet.');
+  const downloadRenderImage = () => {
+    if (!requireAdvancedAccess('Exterior Render')) return;
+    if (!renderState?.image) {
+      alert('Generate an exterior render first.');
       return;
     }
-    try {
-      const csv = estimateToCsv(estimate);
-      const blob = new Blob([csv], {
-        type: 'text/csv;charset=utf-8;'
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = buildPlanExportFilename(formData, 'planning estimate', 'csv');
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('[downloadEstimateCsv]', err);
-      alert('Estimate CSV export failed: ' + err.message);
-    }
+    const link = document.createElement('a');
+    link.href = renderState.image;
+    link.download = buildPlanExportFilename(formData, 'exterior render', 'png');
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
   const downloadEstimateXlsx = async () => {
     const estimate = planSpec?.estimate || null;
@@ -6908,19 +7201,23 @@ const DesignGenerator = ({
       alert('No estimate to export yet.');
       return;
     }
+    if (!requireAdvancedAccess('Cost Estimate XLSX')) return;
     setIsExportingEstimateXlsx(true);
     try {
       const res = await fetch('/api/estimate/xlsx', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(accessToken ? {
+            Authorization: `Bearer ${accessToken}`
+          } : {})
         },
         body: JSON.stringify({
           surveyData: formData,
           planSpec,
           estimate,
           exportMeta: {
-            projectName: 'Keystone Planning Estimate',
+            projectName: 'Keystone Cost Estimate',
             generatedAt: new Date().toISOString()
           }
         })
@@ -6942,7 +7239,7 @@ const DesignGenerator = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = buildPlanExportFilename(formData, 'planning estimate', 'xlsx');
+      a.download = buildPlanExportFilename(formData, 'cost estimate', 'xlsx');
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -6959,6 +7256,7 @@ const DesignGenerator = ({
       alert('Generate a plan first.');
       return;
     }
+    if (!requireAdvancedAccess('Exterior Render')) return;
     if (renderPanelStatus === 'loading') return;
     setRenderLaunchSignal(value => value + 1);
   };
@@ -6969,20 +7267,36 @@ const DesignGenerator = ({
     opacity: 0.68,
     boxShadow: 'none'
   } : undefined;
-  const renderActionLabel = renderPanelStatus === 'loading' ? 'Rendering 3D...' : renderPanelStatus === 'ready' ? '3D Render Options' : 'Generate 3D Render';
+  const renderActionLabel = renderPanelStatus === 'loading' ? 'Rendering 3D...' : renderPanelStatus === 'ready' ? 'Exterior Render Options' : 'Generate Exterior Render';
   const isLoading = status === 'loading-plan' || status === 'refining';
-  const resetSampleBrief = () => setFormData({
-    ...DEFAULT_FORM_DATA
-  });
-  return React.createElement("section", {
+  const resetSampleBrief = () => {
+    setFormData({
+      ...DEFAULT_FORM_DATA
+    });
+    setStatus('idle');
+    setPlanSvg(null);
+    setPlanSpec(null);
+    setRefinementHistory([]);
+    setRefinementsLeft(10);
+    setGalleryId(null);
+    setPlanScore(null);
+    setFootprintInfo(null);
+    setAlternatives([]);
+    setRenderState(createEmptyRenderState());
+    setRenderPanelStatus('idle');
+    try {
+      localStorage.removeItem(STUDIO_SESSION_KEY);
+    } catch {}
+  };
+  return /*#__PURE__*/React.createElement("section", {
     id: "generator",
     className: "py-14 md:py-[4.75rem] px-4 md:px-10",
     style: {
       background: 'linear-gradient(180deg, #ECE3D3 0%, #F7F2E9 58%, #F3EEE6 100%)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "site-shell"
-  }, React.createElement(AnimatePresence, null, zoomImage && React.createElement(motion.div, {
+  }, /*#__PURE__*/React.createElement(AnimatePresence, null, zoomImage && /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0
     },
@@ -6994,44 +7308,44 @@ const DesignGenerator = ({
     },
     onClick: () => setZoomImage(null),
     className: "fixed inset-0 z-[200] bg-ink/93 backdrop-blur-lg flex items-center justify-center p-4 cursor-zoom-out"
-  }, typeof zoomImage === 'string' && zoomImage.startsWith('<svg') ? React.createElement("div", {
+  }, typeof zoomImage === 'string' && zoomImage.startsWith('<svg') ? /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-4 md:p-8 max-w-5xl w-full max-h-[90vh] overflow-auto shadow-2xl rounded-sm",
     dangerouslySetInnerHTML: {
       __html: zoomImage
     }
-  }) : React.createElement("img", {
+  }) : /*#__PURE__*/React.createElement("img", {
     src: zoomImage,
     className: "max-h-[90vh] max-w-full object-contain rounded-sm",
     alt: "Zoom"
-  }), React.createElement("button", {
+  }), /*#__PURE__*/React.createElement("button", {
     type: "button",
     onClick: () => setZoomImage(null),
     "aria-label": "Close zoomed plan",
     className: "absolute top-4 right-4 text-white/40 hover:text-white"
-  }, React.createElement(CloseIcon, {
+  }, /*#__PURE__*/React.createElement(CloseIcon, {
     className: "w-6 h-6"
-  })))), !isUnlocked && React.createElement("div", {
+  })))), !isUnlocked && /*#__PURE__*/React.createElement("div", {
     className: "studio-access-grid mb-8"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "dream-panel studio-access-card p-6 md:p-8"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "w-11 h-11 bg-white/10 rounded-full flex items-center justify-center mb-5"
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     className: "w-5 h-5 text-white",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "2",
     d: "M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-  }))), React.createElement("span", {
+  }))), /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(244,239,230,0.56)'
     }
-  }, "Private beta access"), React.createElement("h3", {
+  }, "Unlock advanced features"), /*#__PURE__*/React.createElement("h3", {
     className: "cg text-white mt-4",
     style: {
       fontSize: 'clamp(1.9rem, 3vw, 2.6rem)',
@@ -7039,15 +7353,15 @@ const DesignGenerator = ({
       textTransform: 'uppercase',
       lineHeight: 0.94
     }
-  }, "Unlock the same passkey-based workflow firms share with clients."), React.createElement("p", {
+  }, "Floor plans and elevations are free. Renders, DXF, refinements, and the cost estimate unlock with a passkey."), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-sm leading-relaxed",
     style: {
       color: 'rgba(244,239,230,0.66)'
     }
-  }, "Use a passkey if you already have one, or request a guided walkthrough if you want to see how the client link and architect handoff work in practice."), React.createElement("form", {
+  }, "Start with the sample brief or create your own. If you want the advanced package during the trial phase, request access and we will send you a passkey."), /*#__PURE__*/React.createElement("form", {
     onSubmit: handleUnlock,
     className: "space-y-3 mt-6"
-  }, React.createElement("input", {
+  }, /*#__PURE__*/React.createElement("input", {
     type: "password",
     placeholder: "Enter access code",
     className: "text-center tracking-[0.2em]",
@@ -7058,46 +7372,46 @@ const DesignGenerator = ({
       background: 'rgba(255,255,255,0.92)',
       borderColor: 'rgba(255,255,255,0.2)'
     }
-  }), React.createElement("button", {
+  }), /*#__PURE__*/React.createElement("button", {
     type: "submit",
     disabled: unlockStatus === 'loading',
     className: "cta-hero cta-glow w-full"
-  }, unlockStatus === 'loading' ? 'Verifying...' : 'Unlock Live Studio')), unlockStatus.startsWith('error:') && React.createElement("p", {
+  }, unlockStatus === 'loading' ? 'Verifying...' : 'Unlock Advanced Tools')), unlockStatus.startsWith('error:') && /*#__PURE__*/React.createElement("p", {
     className: "mt-3 mono text-[9px] uppercase font-bold text-red"
-  }, unlockStatus.replace('error:', '')), React.createElement("div", {
+  }, unlockStatus.replace('error:', '')), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-3 mt-6"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "studio-metric"
-  }, React.createElement("strong", null, "3"), React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("strong", null, "Free"), /*#__PURE__*/React.createElement("span", {
     className: "text-[11px] uppercase tracking-[0.18em]",
     style: {
       color: 'rgba(244,239,230,0.5)'
     }
-  }, "live outputs")), React.createElement("div", {
+  }, "plan + elevations")), /*#__PURE__*/React.createElement("div", {
     className: "studio-metric"
-  }, React.createElement("strong", null, "1"), React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("strong", null, "4"), /*#__PURE__*/React.createElement("span", {
     className: "text-[11px] uppercase tracking-[0.18em]",
     style: {
       color: 'rgba(244,239,230,0.5)'
     }
-  }, "sample brief loaded"))), React.createElement("div", {
+  }, "advanced tools"))), /*#__PURE__*/React.createElement("div", {
     className: "mt-6 pt-5 border-t border-white/10"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "text-[11px]",
     style: {
       color: 'rgba(244,239,230,0.6)'
     }
-  }, "Need guided access for your firm first?"), React.createElement("button", {
+  }, "Need a trial passkey?"), /*#__PURE__*/React.createElement("button", {
     onClick: onOpenModal,
     className: "mt-3 cta-hero cta-glow-soft"
-  }, "Request Access"))), React.createElement("div", {
+  }, "Request Trial Access"))), /*#__PURE__*/React.createElement("div", {
     className: "paper-panel studio-preview-card p-5 md:p-6"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(10,10,12,0.44)'
     }
-  }, "What opens up"), React.createElement("h3", {
+  }, "What opens up"), /*#__PURE__*/React.createElement("h3", {
     className: "cg mt-4",
     style: {
       fontSize: 'clamp(1.85rem, 3vw, 2.5rem)',
@@ -7105,42 +7419,42 @@ const DesignGenerator = ({
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "What the architect gets back is already sitting inside the product."), React.createElement("p", {
+  }, "The house starts feeling real before you ever learn drafting software."), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.64)'
     }
-  }, "One client intake becomes a structured brief, a blueprint first, and a Gemini study second. The goal is not spectacle. It is a stronger first discussion for the studio."), React.createElement("div", {
+  }, "Tell Keystone what you want, how you want to live, and what matters most. The result is a floor plan first, elevations second, and the advanced package when you unlock it."), /*#__PURE__*/React.createElement("div", {
     className: "studio-preview-rail mt-5"
-  }, LIVE_STUDIO_PREVIEW.map(item => React.createElement("article", {
+  }, LIVE_STUDIO_PREVIEW.map(item => /*#__PURE__*/React.createElement("article", {
     key: item.label,
     className: "studio-preview-browser"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "proof-browser-top"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#FF5F57'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#FFBD2E'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#28C840'
     }
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] ml-3",
     style: {
       color: 'rgba(255,255,255,0.32)',
       letterSpacing: '0.16em'
     }
-  }, item.label)), React.createElement("div", {
+  }, item.label)), /*#__PURE__*/React.createElement("div", {
     className: "studio-preview-screen"
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: item.image,
     alt: item.alt,
     style: {
@@ -7149,89 +7463,94 @@ const DesignGenerator = ({
       objectFit: 'cover',
       display: 'block'
     }
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "studio-preview-copy"
-  }, React.createElement("strong", null, item.title), React.createElement("p", null, item.body))))), React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("strong", null, item.title), /*#__PURE__*/React.createElement("p", null, item.body))))), /*#__PURE__*/React.createElement("div", {
     className: "unlock-preview-grid mt-5"
-  }, GENERATOR_UNLOCK_PREVIEW.map(item => React.createElement("div", {
+  }, GENERATOR_UNLOCK_PREVIEW.map(item => /*#__PURE__*/React.createElement("div", {
     key: item.label,
     className: "unlock-preview-card",
     style: {
       background: 'rgba(255,255,255,0.64)',
       borderColor: 'rgba(10,10,12,0.08)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[8px] uppercase tracking-[0.2em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, item.label), React.createElement("p", {
+  }, item.label), /*#__PURE__*/React.createElement("p", {
     style: {
       color: 'rgba(10,10,12,0.66)'
     }
-  }, item.body)))))), React.createElement("div", {
-    className: `transition-opacity ${!isUnlocked ? 'opacity-10 pointer-events-none blur-sm select-none' : ''}`
-  }, React.createElement("div", {
+  }, item.body)))))), /*#__PURE__*/React.createElement("div", {
+    className: "transition-opacity"
+  }, /*#__PURE__*/React.createElement("div", {
     className: "paper-panel p-4 md:p-5 mb-4"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4"
-  }, React.createElement("div", null, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[8px] uppercase tracking-[0.24em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "Main actions"), React.createElement("p", {
+  }, "Main actions"), /*#__PURE__*/React.createElement("p", {
     className: "text-[12px] leading-relaxed mt-2",
     style: {
       color: 'rgba(10,10,12,0.64)'
     }
-  }, "Use this command bar to render, export, and package the current plan without jumping between panels.")), React.createElement("div", {
+  }, "Free today: floor plan and elevations. Unlock advanced features for the Exterior Render, CAD Export (DXF), refinements, and the Cost Estimate workbook.")), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap gap-3"
-  }, React.createElement("button", {
+  }, /*#__PURE__*/React.createElement("button", {
     onClick: launchRenderSurvey,
-    disabled: !planSvg || isLoading || renderPanelStatus === 'loading',
-    className: actionButtonClass(!planSvg || isLoading || renderPanelStatus === 'loading'),
-    style: actionButtonStyle(!planSvg || isLoading || renderPanelStatus === 'loading')
-  }, renderActionLabel), React.createElement("button", {
+    disabled: !planSpec || !planSvg || isLoading || renderPanelStatus === 'loading',
+    className: actionButtonClass(!planSpec || !planSvg || isLoading || renderPanelStatus === 'loading'),
+    style: actionButtonStyle(!planSpec || !planSvg || isLoading || renderPanelStatus === 'loading')
+  }, renderActionLabel), /*#__PURE__*/React.createElement("button", {
     onClick: downloadBlueprint,
     disabled: !planSvg || isLoading,
     className: actionButtonClass(!planSvg || isLoading),
     style: actionButtonStyle(!planSvg || isLoading)
-  }, "Download PNG"), React.createElement("button", {
+  }, "Download PNG"), /*#__PURE__*/React.createElement("button", {
+    onClick: downloadElevations,
+    disabled: !planSpec?.elevations || isLoading,
+    className: actionButtonClass(!planSpec?.elevations || isLoading),
+    style: actionButtonStyle(!planSpec?.elevations || isLoading)
+  }, "Elevations PNG"), /*#__PURE__*/React.createElement("button", {
+    onClick: downloadRenderImage,
+    disabled: !renderState?.image || isLoading,
+    className: actionButtonClass(!renderState?.image || isLoading),
+    style: actionButtonStyle(!renderState?.image || isLoading)
+  }, "Exterior Render PNG"), /*#__PURE__*/React.createElement("button", {
     onClick: downloadDxf,
     disabled: !planSpec || isLoading,
     className: actionButtonClass(!planSpec || isLoading),
     style: actionButtonStyle(!planSpec || isLoading)
-  }, "Export DXF"), React.createElement("button", {
-    onClick: downloadEstimateCsv,
-    disabled: !planSpec?.estimate || isLoading,
-    className: actionButtonClass(!planSpec?.estimate || isLoading),
-    style: actionButtonStyle(!planSpec?.estimate || isLoading)
-  }, "Estimate CSV"), React.createElement("button", {
+  }, "Export DXF"), /*#__PURE__*/React.createElement("button", {
     onClick: downloadEstimateXlsx,
     disabled: !planSpec?.estimate || isLoading || isExportingEstimateXlsx,
     className: actionButtonClass(!planSpec?.estimate || isLoading || isExportingEstimateXlsx),
     style: actionButtonStyle(!planSpec?.estimate || isLoading || isExportingEstimateXlsx)
-  }, isExportingEstimateXlsx ? 'Building XLSX...' : 'Estimate XLSX')))), React.createElement("div", {
+  }, isExportingEstimateXlsx ? 'Building XLSX...' : 'Cost Estimate XLSX')))), /*#__PURE__*/React.createElement("div", {
     className: `grid lg:grid-cols-[300px_minmax(0,1fr)_300px] gap-4 items-start`
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "cad-panel-brief"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "cad-panel-brief-header"
-  }, React.createElement("div", null, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[7px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.36)'
     }
-  }, "The Brief"), React.createElement("div", {
+  }, "The Brief"), /*#__PURE__*/React.createElement("div", {
     className: "cg text-sm font-bold",
     style: {
       letterSpacing: '-0.02em',
       marginTop: 1
     }
-  }, "Project Parameters")), isLoading ? React.createElement("div", {
+  }, "Project Parameters")), isLoading ? /*#__PURE__*/React.createElement("div", {
     className: "w-3 h-3 border-[2px] border-blue border-t-transparent rounded-full animate-spin"
-  }) : planSvg ? React.createElement("span", {
+  }) : planSvg ? /*#__PURE__*/React.createElement("span", {
     style: {
       display: 'inline-flex',
       alignItems: 'center',
@@ -7245,7 +7564,7 @@ const DesignGenerator = ({
       letterSpacing: '0.14em',
       textTransform: 'uppercase'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     style: {
       width: 5,
       height: 5,
@@ -7253,40 +7572,40 @@ const DesignGenerator = ({
       background: 'var(--blue)',
       display: 'inline-block'
     }
-  }), "Ready") : null), React.createElement("div", {
+  }), "Ready") : null), /*#__PURE__*/React.createElement("div", {
     className: "cad-panel-brief-body"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       padding: '8px 12px 12px'
     }
-  }, React.createElement(SurveyForm, {
+  }, /*#__PURE__*/React.createElement(SurveyForm, {
     formData: formData,
     setFormData: setFormData,
     onSubmit: handleGeneratePlan,
     isLoading: isLoading,
     onReset: resetSampleBrief
-  })))), React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement("div", {
     className: "cad-canvas-panel"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "cad-canvas-titleblock"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
       gap: 8
     }
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     width: "12",
     height: "12",
     fill: "none",
     stroke: "rgba(244,239,230,0.4)",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "1.5",
     d: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-  })), React.createElement("span", {
+  })), /*#__PURE__*/React.createElement("span", {
     className: "mono",
     style: {
       fontSize: 8,
@@ -7294,13 +7613,13 @@ const DesignGenerator = ({
       letterSpacing: '0.18em',
       textTransform: 'uppercase'
     }
-  }, planSvg && footprintInfo ? `${footprintInfo.widthFt}' x ${footprintInfo.heightFt}' | ${formData.stories || ''} | ${formData.bedrooms || ''}${planSpec?.elevations ? ' | elevation set' : ''}` : 'Blueprint Viewport')), planSvg && planScore != null ? React.createElement("div", {
+  }, planSvg && footprintInfo ? `${footprintInfo.widthFt}' x ${footprintInfo.heightFt}' | ${formData.stories || ''} | ${formData.bedrooms || ''}${planSpec?.elevations ? ' | elevation set' : ''}` : 'Blueprint Viewport')), planSvg && planScore != null ? /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
       gap: 6
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "mono",
     style: {
       fontSize: 7,
@@ -7308,14 +7627,14 @@ const DesignGenerator = ({
       letterSpacing: '0.14em',
       textTransform: 'uppercase'
     }
-  }, "AI Score"), React.createElement("span", {
+  }, "AI Score"), /*#__PURE__*/React.createElement("span", {
     className: "mono",
     style: {
       fontSize: 9,
       fontWeight: 700,
       color: planScore >= 70 ? '#4ade80' : planScore >= 40 ? '#facc15' : '#f87171'
     }
-  }, planScore, "/100")) : React.createElement("span", {
+  }, planScore, "/100")) : /*#__PURE__*/React.createElement("span", {
     className: "mono",
     style: {
       fontSize: 7,
@@ -7323,218 +7642,255 @@ const DesignGenerator = ({
       letterSpacing: '0.16em',
       textTransform: 'uppercase'
     }
-  }, "Keystone AI | Blueprint")), React.createElement("div", {
+  }, "Keystone AI | Blueprint")), /*#__PURE__*/React.createElement("div", {
     className: "cad-canvas-body"
-  }, status === 'idle' && React.createElement("div", {
+  }, status === 'idle' && /*#__PURE__*/React.createElement("div", {
     className: "flex-1 flex flex-col items-center justify-center p-12 text-center",
     style: {
       color: 'rgba(244,239,230,0.42)'
     },
     role: "status",
     "aria-live": "polite"
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     className: "w-16 h-16 mb-4 opacity-50",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "1",
     d: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-  })), React.createElement("p", {
+  })), /*#__PURE__*/React.createElement("p", {
     className: "cg text-2xl text-white",
     style: {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "Awaiting your brief"), React.createElement("p", {
+  }, "Awaiting your brief"), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[9px] uppercase tracking-widest mt-2"
-  }, "Complete the survey to generate the first plan")), isLoading && React.createElement("div", {
+  }, "Complete the survey to generate the first plan")), isLoading && /*#__PURE__*/React.createElement("div", {
     className: "flex-1 flex flex-col items-center justify-center p-12 text-white",
     role: "status",
     "aria-live": "polite"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "w-12 h-12 border-[3px] border-blue border-t-transparent rounded-full animate-spin mb-6"
-  }), React.createElement("p", {
+  }), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[10px] uppercase tracking-widest animate-pulse text-blue"
-  }, status === 'refining' ? 'Applying refinement...' : 'Generating floor plan...'), React.createElement("p", {
+  }, status === 'refining' ? 'Applying refinement...' : 'Generating floor plan...'), /*#__PURE__*/React.createElement("p", {
     className: "text-[9px] mt-2",
     style: {
       color: 'rgba(244,239,230,0.5)'
     }
-  }, "Usually under 5 seconds")), (status === 'plan-ready' || status === 'refining') && planSvg && React.createElement(InteractiveCanvas, null, React.createElement(BlueprintPresentationSheet, {
+  }, "Usually under 5 seconds")), (status === 'plan-ready' || status === 'refining') && planSvg && /*#__PURE__*/React.createElement(InteractiveCanvas, null, /*#__PURE__*/React.createElement(BlueprintPresentationSheet, {
     planSvg: planSvg,
     elevations: planSpec?.elevations,
     formData: formData,
-    footprintInfo: footprintInfo
-  })))), React.createElement("div", {
+    footprintInfo: footprintInfo,
+    renderImage: renderState?.image || null
+  })))), /*#__PURE__*/React.createElement("div", {
     className: "cad-panel-actions"
-  }, (status === 'plan-ready' || status === 'refining') && planSvg ? React.createElement(React.Fragment, null, React.createElement("div", {
+  }, (status === 'plan-ready' || status === 'refining') && planSvg ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     className: "paper-panel p-5"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col gap-3"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between mb-1"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "badge",
     style: {
       background: status === 'refining' ? '#fff6ed' : 'var(--paper)',
       borderColor: status === 'refining' ? 'var(--accent)' : 'var(--blue)'
     }
-  }, status === 'refining' ? 'Refining...' : 'Plan ready'), React.createElement("span", {
+  }, status === 'refining' ? 'Refining...' : 'Plan ready'), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[7px] uppercase tracking-[0.22em] text-mid font-bold"
-  }, refinementsLeft, " updates left")), footprintInfo && React.createElement("div", {
+  }, refinementsLeft, " updates left")), footprintInfo && /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       flexDirection: 'column',
       gap: 6
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "cad-metric-chip"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "label"
-  }, "Footprint"), React.createElement("span", {
+  }, "Footprint"), /*#__PURE__*/React.createElement("span", {
     className: "value"
-  }, footprintInfo.widthFt, "' x ", footprintInfo.heightFt, "'")), planScore != null && React.createElement("div", {
+  }, footprintInfo.widthFt, "' x ", footprintInfo.heightFt, "'")), planScore != null && /*#__PURE__*/React.createElement("div", {
     className: "cad-metric-chip",
     style: {
       flexDirection: 'column',
       alignItems: 'flex-start',
       gap: 4
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       justifyContent: 'space-between',
       width: '100%'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "label"
-  }, "AI Score"), React.createElement("span", {
+  }, "AI Score"), /*#__PURE__*/React.createElement("span", {
     className: "value",
     style: {
       color: planScore >= 70 ? '#16a34a' : planScore >= 40 ? '#b45309' : '#dc2626'
     }
-  }, planScore, " / 100")), React.createElement("div", {
+  }, planScore, " / 100")), /*#__PURE__*/React.createElement("div", {
     className: "cad-score-bar",
     style: {
       width: '100%'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "cad-score-fill",
     style: {
       width: `${Math.min(100, planScore)}%`
     }
-  })))), React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement("div", {
     className: "rounded-[14px] border border-black/8 bg-white/70 px-3 py-3"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[8px] uppercase tracking-[0.2em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "Action bar"), React.createElement("p", {
+  }, "Action bar"), /*#__PURE__*/React.createElement("p", {
     className: "text-[10px] leading-relaxed mt-2",
     style: {
       color: 'rgba(10,10,12,0.64)'
     }
-  }, "Main exports and the 3D render action now live in the orange command bar above the studio columns.")), alternatives.length > 0 && React.createElement("button", {
+  }, "Main exports and the 3D render action now live in the orange command bar above the studio columns.")), alternatives.length > 0 && /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowAlternatives(true),
     className: "w-full cta-secondary py-3 text-[10px]"
-  }, "View Alternatives (", alternatives.length, ")"))), React.createElement("div", {
+  }, "View Alternatives (", alternatives.length, ")"))), isUnlocked ? /*#__PURE__*/React.createElement("div", {
     className: "paper-panel"
-  }, React.createElement(RefinementPanel, {
+  }, /*#__PURE__*/React.createElement(RefinementPanel, {
     planSpec: planSpec,
     formData: formData,
     refinementsLeft: refinementsLeft,
     refinementHistory: refinementHistory,
     onRefine: handleRefine,
     isLoading: isLoading
-  })), React.createElement(ElevationsPanel, {
+  })) : /*#__PURE__*/React.createElement("div", {
+    className: "paper-panel p-5"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "mono text-[8px] uppercase tracking-[0.2em]",
+    style: {
+      color: 'rgba(10,10,12,0.42)'
+    }
+  }, "Advanced refinement"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[11px] leading-relaxed mt-2",
+    style: {
+      color: 'rgba(10,10,12,0.64)'
+    }
+  }, "Free mode gives you the first plan and elevations. Unlock advanced access to refine, export DXF, generate renders, and download the Cost Estimate workbook.")), /*#__PURE__*/React.createElement(ElevationsPanel, {
     elevations: planSpec?.elevations,
     formData: formData,
     onOpenPreview: img => setZoomImage(img)
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "paper-panel"
-  }, React.createElement(Render3DPanel, {
+  }, /*#__PURE__*/React.createElement(Render3DPanel, {
     planSpec: planSpec,
     formData: formData,
     planSvg: planSvg,
     elevations: planSpec?.elevations,
     galleryId: galleryId,
     onRenderReady: img => setZoomImage(img),
+    onRenderStateSnapshot: setRenderState,
     launchSignal: renderLaunchSignal,
     showLaunchButton: false,
-    onRenderStatusChange: setRenderPanelStatus
-  }))) : React.createElement("div", {
+    onRenderStatusChange: setRenderPanelStatus,
+    accessToken: accessToken,
+    initialState: renderState,
+    isLocked: !isUnlocked,
+    onLockedAction: promptUnlock
+  }))) : /*#__PURE__*/React.createElement("div", {
     className: "paper-panel p-6 text-center text-mid flex flex-col items-center justify-center h-full"
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     className: "w-8 h-8 mb-3 opacity-20",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "1",
     d: "M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
-  })), React.createElement("p", {
+  })), /*#__PURE__*/React.createElement("p", {
     className: "text-[11px] leading-relaxed"
-  }, "Once you generate a plan, export options, AI refinement tools, structural metrics, and the planning estimate will appear here.")))), (status === 'plan-ready' || status === 'refining') && planSvg && React.createElement("div", {
+  }, "Once you generate a plan, this side shows the summary, refinements, elevations, render controls, and the cost estimate.")))), (status === 'plan-ready' || status === 'refining') && planSvg && /*#__PURE__*/React.createElement("div", {
     className: "paper-panel mt-4 overflow-hidden"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "p-4 md:p-5 border-b border-black/5 bg-white/40"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex flex-col md:flex-row md:items-end md:justify-between gap-3"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label"
-  }, "Plan Summary + Estimate"), React.createElement("p", {
+  }, "Plan Summary + Estimate"), /*#__PURE__*/React.createElement("p", {
     className: "text-[12px] leading-relaxed mt-2",
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, "Review the plan summary and the MVP planning estimate together below the main studio workspace.")), React.createElement("span", {
+  }, "Review the plan summary and the concept-level Cost Estimate together below the main studio workspace.")), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "Footer review panel"))), React.createElement("div", {
+  }, "Footer review panel"))), /*#__PURE__*/React.createElement("div", {
     className: "grid xl:grid-cols-[minmax(320px,380px)_minmax(0,1fr)] gap-0"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "border-r border-black/5"
-  }, React.createElement(PlanSummaryPanel, {
+  }, /*#__PURE__*/React.createElement(PlanSummaryPanel, {
     planSpec: planSpec
-  })), React.createElement(EstimatePanel, {
+  })), isUnlocked ? /*#__PURE__*/React.createElement(EstimatePanel, {
     estimate: planSpec?.estimate
-  })))), showAlternatives && React.createElement("div", {
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "paper-panel mt-4 overflow-hidden"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "p-4 md:p-5 border-b border-black/5 bg-white/40"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col md:flex-row md:items-end md:justify-between gap-3"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
+    className: "mono text-[8px] uppercase tracking-[0.24em]",
+    style: {
+      color: 'rgba(27,79,130,0.82)'
+    }
+  }, "Cost estimate"), /*#__PURE__*/React.createElement("p", {
+    className: "text-[13px] leading-relaxed mt-2",
+    style: {
+      color: 'rgba(10,10,12,0.62)'
+    }
+  }, "Unlock advanced features to view and download the concept-level Cost Estimate workbook for this plan.")), /*#__PURE__*/React.createElement("button", {
+    onClick: onOpenModal,
+    className: "cta-hero cta-glow-soft"
+  }, "Unlock Advanced Features"))))))), showAlternatives && /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-[200] flex items-center justify-center p-4",
     style: {
       background: 'rgba(0,0,0,0.7)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "bg-paper rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between p-4 border-b border-black/10"
-  }, React.createElement("div", null, React.createElement("h3", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
     className: "font-semibold text-sm"
-  }, "Other Generated Plans"), React.createElement("p", {
+  }, "Other Generated Plans"), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[8px] text-mid mt-0.5 uppercase tracking-widest"
-  }, alternatives.length, " alternative footprints - click any to use it")), React.createElement("button", {
+  }, alternatives.length, " alternative footprints - click any to use it")), /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowAlternatives(false),
     className: "w-8 h-8 flex items-center justify-center rounded hover:bg-black/8 text-mid hover:text-ink transition-colors"
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     className: "w-4 h-4",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "2",
     d: "M6 18L18 6M6 6l12 12"
-  })))), React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement("div", {
     className: "overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4"
-  }, alternatives.map((alt, i) => React.createElement("div", {
+  }, alternatives.map((alt, i) => /*#__PURE__*/React.createElement("div", {
     key: i,
     className: "border border-black/10 rounded-lg overflow-hidden cursor-pointer hover:border-blue hover:shadow-md transition-all group",
     onClick: () => {
@@ -7542,6 +7898,9 @@ const DesignGenerator = ({
       setPlanSpec(alt.planSpec);
       setPlanScore(alt.score);
       setFootprintInfo(alt.footprintInfo);
+      setRenderState(createEmptyRenderState());
+      setRenderPanelStatus('idle');
+      // Swap: current becomes an alternative
       const newAlts = [{
         svg: planSvg,
         planSpec,
@@ -7551,7 +7910,7 @@ const DesignGenerator = ({
       setAlternatives(newAlts);
       setShowAlternatives(false);
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "bg-white p-2 overflow-hidden",
     style: {
       maxHeight: '180px'
@@ -7559,29 +7918,31 @@ const DesignGenerator = ({
     dangerouslySetInnerHTML: {
       __html: alt.svg || '<p style="padding:20px;color:#999;font-size:11px">Preview unavailable</p>'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "p-2 bg-paper/60 border-t border-black/5"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "mono text-[7px] text-mid"
-  }, alt.footprintInfo ? `${alt.footprintInfo.widthFt} x ${alt.footprintInfo.heightFt} ft` : `Option ${i + 2}`), alt.footprintInfo && React.createElement("span", {
+  }, alt.footprintInfo ? `${alt.footprintInfo.widthFt} x ${alt.footprintInfo.heightFt} ft` : `Option ${i + 2}`), alt.footprintInfo && /*#__PURE__*/React.createElement("span", {
     className: "mono text-[7px] text-mid"
-  }, "ratio ", alt.footprintInfo.aspectRatio?.toFixed(2))), alt.score !== undefined && React.createElement("div", {
+  }, "ratio ", alt.footprintInfo.aspectRatio?.toFixed(2))), alt.score !== undefined && /*#__PURE__*/React.createElement("div", {
     className: "mt-1 h-1 bg-black/8 rounded-full overflow-hidden"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "h-full bg-blue/60 rounded-full transition-all",
     style: {
       width: `${Math.min(100, alt.score)}%`
     }
-  })), React.createElement("p", {
+  })), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[7px] text-blue mt-1 group-hover:text-ink"
-  }, alt.score !== undefined ? `Score ${alt.score}/100` : '', " - Click to use"))))), React.createElement("div", {
+  }, alt.score !== undefined ? `Score ${alt.score}/100` : '', " - Click to use"))))), /*#__PURE__*/React.createElement("div", {
     className: "p-3 border-t border-black/10 bg-paper/40"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[7px] text-mid text-center"
   }, "The first plan shown is the highest-scoring design. Others are alternative footprints."))))));
 };
+
+// Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ APP Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const HOME_NAV_ITEMS = [{
   label: 'Platform',
   kind: 'section',
@@ -7595,7 +7956,7 @@ const HOME_NAV_ITEMS = [{
   kind: 'path',
   value: '/roadmap'
 }, {
-  label: 'B2B Workflow',
+  label: 'Guided Workflow',
   kind: 'path',
   value: '/b2b-workflow'
 }, {
@@ -7603,13 +7964,13 @@ const HOME_NAV_ITEMS = [{
   kind: 'path',
   value: '/faq'
 }];
-const PAGE_NAV_LINKS = [['Home', '/'], ['How It Works', '/how-floor-plans-work'], ['Roadmap', '/roadmap'], ['B2B Workflow', '/b2b-workflow'], ['FAQ', '/faq'], ['Live Studio', '/#generator']];
+const PAGE_NAV_LINKS = [['Home', '/'], ['How It Works', '/how-floor-plans-work'], ['Roadmap', '/roadmap'], ['Guided Workflow', '/b2b-workflow'], ['FAQ', '/faq'], ['Live Studio', '/#generator']];
 const FOOTER_SECTION_LINKS = [['Work', 'work'], ['Services', 'services'], ['Pricing', 'pricing'], ['Studio', 'studio'], ['Live Studio', 'generator'], ['Sessions', 'gallery']];
-const RESOURCE_PAGE_LINKS = [['How Floor Plans Work', '/how-floor-plans-work'], ['B2B Workflow', '/b2b-workflow'], ['Roadmap', '/roadmap'], ['FAQ', '/faq'], ['Privacy', '/privacy'], ['Terms', '/terms']];
+const RESOURCE_PAGE_LINKS = [['How Floor Plans Work', '/how-floor-plans-work'], ['Guided Workflow', '/b2b-workflow'], ['Roadmap', '/roadmap'], ['FAQ', '/faq'], ['Privacy', '/privacy'], ['Terms', '/terms']];
 const PLATFORM_PAGE_CARDS = [{
   eyebrow: 'Methodology',
-  title: 'How Keystone turns client intent into a first working floor plan.',
-  body: 'The floor-plan page replaces the old case-study framing with a clearer explanation of intake structure, plan logic, output review, and professional limits.',
+  title: 'How Keystone turns what you want into a first working floor plan.',
+  body: 'The floor-plan page explains the intake, plan logic, output review, and professional limits in plain language.',
   href: '/how-floor-plans-work',
   cta: 'View Methodology',
   image: ASSETS.exampleBlueprint,
@@ -7617,187 +7978,187 @@ const PLATFORM_PAGE_CARDS = [{
   stat: '4 steps'
 }, {
   eyebrow: 'Studio workflow',
-  title: 'A B2B handoff shaped for architecture firms, not generic software funnels.',
-  body: 'See how the client link, passkey, structured brief, generated plan, elevation set, export package, and optional Gemini study fit together inside a professional practice.',
+  title: 'See how the guided brief becomes a plan, elevations, and the optional advanced package.',
+  body: 'Follow the path from plain-language survey to floor plan, elevations, exterior render, cost estimate, and export-ready files.',
   href: '/b2b-workflow',
   cta: 'View Workflow',
   image: ASSETS.workflow.planReview,
-  alt: 'Architect reviewing a Keystone floor plan on screen and paper',
-  stat: 'Firm-led'
+  alt: 'Home planning workflow inside Keystone',
+  stat: 'Step by step'
 }, {
   eyebrow: 'Product roadmap',
   title: 'What is live today, what is next, and where 3D, scheduling, and estimates fit.',
-  body: 'The roadmap page separates live capability like elevations, vector DXF export, and the MVP planning estimate from what is still next, like scheduling and deeper 3D tools.',
+  body: 'The roadmap page separates live capability like elevations, CAD export, and the Cost Estimate from what is still next, like scheduling and deeper 3D tools.',
   href: '/roadmap',
   cta: 'View Roadmap',
   image: ASSETS.roadmap.overview,
   alt: 'Keystone roadmap overview collage with plans, 3D concept, and schedule cards',
   stat: 'Live + next'
 }];
-const LIVE_NOW_FEATURES = ['Client-guided brief capture', 'Generated floor plan + blueprint image', 'Elevation views', 'MVP quantity takeoff + cost estimate', 'Vector DXF export', 'Gemini-powered exterior study'];
+const LIVE_NOW_FEATURES = ['Guided brief in plain language', 'Generated floor plan + blueprint image', 'Elevation views', 'Cost Estimate workbook', 'CAD Export (DXF)', 'Exterior Render'];
 const HERO_SIGNAL_CARDS = [{
   label: 'Live today',
-  value: 'Brief -> plan -> elevations -> export',
-  note: 'One client brief becomes a real review package before the meeting starts.'
+  value: 'Brief -> plan -> elevations -> cost',
+  note: 'One guided brief becomes a real home concept package without drafting knowledge.'
 }, {
   label: 'Best fit',
-  value: 'Residential architecture firms',
-  note: 'Built for B2B studios that want stronger first meetings and less unpaid drift.'
+  value: 'First-time home builders',
+  note: 'Built for people who know what they want in a house, but not how to draw it.'
 }, {
-  label: 'Commercial model',
-  value: 'Firm-led rollout',
-  note: 'Start with one active lead, then expand the workflow across the studio.'
+  label: 'Trial phase',
+  value: 'Free floor plan + elevations',
+  note: 'The advanced package unlocks during the trial phase with a passkey after request.'
 }];
 const SAMPLE_SESSION_STEPS = [{
   number: '01',
-  title: 'Firm shares the link',
-  body: 'The studio sends a guided intake link and passkey before the first meeting so the client can do the early thinking in structure.'
+  title: 'Tell Keystone what you want',
+  body: 'Answer the guided survey in plain language instead of trying to explain your dream house in technical terms.'
 }, {
   number: '02',
-  title: 'Client brief captured',
-  body: 'Room count, area target, light priorities, and lot cues arrive in a format the architect can review later instead of re-extracting live.'
+  title: 'Your brief becomes a real layout',
+  body: 'Room count, area target, light priorities, and lot cues become a working floor plan and elevations you can actually react to.'
 }, {
   number: '03',
-  title: 'Plan generated and saved',
-  body: 'Keystone scores multiple footprint options, keeps the strongest one, and prepares the plan, elevations, estimate, and export files before kickoff.'
+  title: 'Review the first package',
+  body: 'Keystone scores multiple footprint options, keeps the strongest one, and prepares the plan, elevations, and core summary together.'
 }, {
   number: '04',
-  title: 'Meeting starts ahead',
-  body: 'If the studio wants it, the same approved geometry also becomes a Gemini study so the client reacts to mood while the architect reacts to plan.'
+  title: 'Unlock the advanced package',
+  body: 'With a passkey, the same approved geometry can also become an Exterior Render, Cost Estimate workbook, and CAD export.'
 }];
 const GENERATOR_FLOW_STEPS = [{
-  label: 'Unlock',
-  body: 'Open the same passkey-based workflow a firm can share with its clients.'
-}, {
   label: 'Answer',
-  body: 'Move through the guided intake a client would complete before the first architect meeting.'
+  body: 'Move through the guided intake in plain language.'
 }, {
   label: 'Compare',
-  body: 'Review the strongest plan and alternatives the architect would see before kickoff.'
+  body: 'Review the strongest plan and alternatives side by side.'
 }, {
   label: 'Export',
-  body: 'Download the blueprint, elevations, MVP planning estimate, and vector DXF, then optionally create a Gemini exterior study from the same brief.'
+  body: 'Download the blueprint and elevation sheet immediately.'
+}, {
+  label: 'Unlock',
+  body: 'Use a passkey later for renders, refinements, the Cost Estimate workbook, and CAD export.'
 }];
 const GENERATOR_UNLOCK_PREVIEW = [{
-  label: 'Structured brief',
-  body: 'The firm can review exactly what the client entered before anyone sits down together.'
+  label: 'Free',
+  body: 'Generate the floor plan and elevation set without needing a passkey.'
 }, {
-  label: 'Plan + elevations',
-  body: 'A scored plan and matching elevation views can be saved immediately for the meeting.'
+  label: 'Unlocked',
+  body: 'Add refinements, Exterior Render, Cost Estimate, and CAD export after you request trial access.'
 }, {
-  label: 'Estimate + export',
-  body: 'The same brief can also create an MVP quantity takeoff, early cost range, vector DXF export, and an optional Gemini exterior image.'
+  label: 'Made for people',
+  body: 'You do not need a technical background to describe the house you want.'
 }];
 const LIVE_STUDIO_PREVIEW = [{
   label: 'Plan + elevation set',
-  title: 'The architect gets a real review package before kickoff.',
-  body: 'A scored plan and matching elevations give the studio real geometry to critique instead of relying on raw intake notes.',
+  title: 'You get a real concept package, not just a mood board.',
+  body: 'A scored plan and matching elevations make the house easier to understand before anyone opens CAD.',
   image: ASSETS.exampleBlueprint,
   alt: 'Keystone generated blueprint preview'
 }, {
-  label: 'Client-facing visual anchor',
-  title: 'Mood can be added without losing the plan.',
-  body: 'The paired exterior study gives the client something emotional to respond to while the architect stays spatially grounded.',
+  label: 'Exterior render',
+  title: 'Mood can be added without losing the house.',
+  body: 'The render stays grounded in the same geometry, so the house still matches the plan and elevations.',
   image: ASSETS.exampleRender,
   alt: 'Keystone exterior study preview'
 }];
 const SERVICE_BENEFITS = [{
-  eyebrow: 'Before the meeting',
-  title: 'The architect opens with clearer intent.',
-  body: 'The client has already described rooms, goals, light, and taste in a format the studio can actually use.'
+  eyebrow: 'Before you build',
+  title: 'You can finally see what you have been describing.',
+  body: 'Rooms, light, lifestyle, and priorities become something visual instead of a vague idea in your head.'
 }, {
-  eyebrow: 'Protect studio time',
-  title: 'Unpaid discovery hours stop leaking into fog.',
-  body: 'Keystone is designed to keep early qualification from becoming free-form consulting before the relationship is real.'
+  eyebrow: 'No technical barrier',
+  title: 'You do not need drafting language to use it.',
+  body: 'The survey is written for real people, so the process feels understandable from the first screen.'
 }, {
   eyebrow: 'Clear next step',
-  title: 'Both sides leave with a real artifact.',
-  body: 'A saved plan export and optional visual study give the architect and the client something specific to continue from.'
+  title: 'You leave with something real to compare and discuss.',
+  body: 'A saved plan, elevation set, and optional advanced package give you something specific to refine with confidence.'
 }];
 const navHref = (item, home = false) => item.kind === 'section' ? home ? `#${item.value}` : homeSectionHref(item.value) : item.value;
 const SiteFooter = ({
   home = false
-}) => React.createElement("footer", {
+}) => /*#__PURE__*/React.createElement("footer", {
   style: {
     background: 'var(--night)',
     padding: '3.75rem 0',
     borderTop: '1px solid rgba(255,106,55,0.18)'
   }
-}, React.createElement("div", {
+}, /*#__PURE__*/React.createElement("div", {
   className: "site-shell"
-}, React.createElement("div", {
+}, /*#__PURE__*/React.createElement("div", {
   className: "grid md:grid-cols-[1.15fr_0.9fr_0.9fr_1fr] gap-8 items-start"
-}, React.createElement("div", null, React.createElement(BrandLockup, {
+}, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(BrandLockup, {
   href: "/",
   reverse: true,
   compact: true
-}), React.createElement("p", {
+}), /*#__PURE__*/React.createElement("p", {
   className: "text-sm leading-relaxed mt-4",
   style: {
     color: 'rgba(244,239,230,0.58)'
   }
-}, "Keystone helps residential firms start the first meeting with a client brief, a floor plan, elevations, and export files already prepared.")), React.createElement("div", null, React.createElement("p", {
+}, "Keystone helps homeowners and first-time home builders turn what they want into a floor plan, elevations, an exterior render, and an early cost estimate.")), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
   className: "mono text-[10px] uppercase tracking-[0.24em]",
   style: {
     color: 'rgba(244,239,230,0.34)'
   }
-}, "Explore"), React.createElement("div", {
+}, "Explore"), /*#__PURE__*/React.createElement("div", {
   className: "grid gap-3 mt-4 mono text-[10px] uppercase tracking-[0.22em]"
-}, FOOTER_SECTION_LINKS.map(([label, id]) => React.createElement("a", {
+}, FOOTER_SECTION_LINKS.map(([label, id]) => /*#__PURE__*/React.createElement("a", {
   key: id,
   href: home ? `#${id}` : homeSectionHref(id),
   className: "footer-link"
-}, label)))), React.createElement("div", null, React.createElement("p", {
+}, label)))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("p", {
   className: "mono text-[10px] uppercase tracking-[0.24em]",
   style: {
     color: 'rgba(244,239,230,0.34)'
   }
-}, "Read Next"), React.createElement("div", {
+}, "Read Next"), /*#__PURE__*/React.createElement("div", {
   className: "grid gap-3 mt-4 mono text-[10px] uppercase tracking-[0.22em]"
-}, RESOURCE_PAGE_LINKS.map(([label, href]) => React.createElement("a", {
+}, RESOURCE_PAGE_LINKS.map(([label, href]) => /*#__PURE__*/React.createElement("a", {
   key: href,
   href: href,
   className: "footer-link"
-}, label)))), React.createElement("div", {
+}, label)))), /*#__PURE__*/React.createElement("div", {
   style: {
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: '18px',
     background: 'rgba(255,255,255,0.04)',
     padding: '1.15rem'
   }
-}, React.createElement("p", {
+}, /*#__PURE__*/React.createElement("p", {
   className: "mono text-[10px] uppercase tracking-[0.24em]",
   style: {
     color: 'rgba(244,239,230,0.34)'
   }
-}, "Contact"), React.createElement("a", {
+}, "Contact"), /*#__PURE__*/React.createElement("a", {
   href: `mailto:${CONTACT_EMAIL}`,
   className: "inline-block mt-4 text-sm",
   style: {
     color: 'rgba(244,239,230,0.82)'
   }
-}, CONTACT_EMAIL), React.createElement("div", {
+}, CONTACT_EMAIL), /*#__PURE__*/React.createElement("div", {
   className: "grid gap-2 mt-5"
-}, LIVE_NOW_FEATURES.map(item => React.createElement("div", {
+}, LIVE_NOW_FEATURES.map(item => /*#__PURE__*/React.createElement("div", {
   key: item,
   className: "flex items-start gap-2 text-[12px] leading-relaxed",
   style: {
     color: 'rgba(244,239,230,0.56)'
   }
-}, React.createElement("span", {
+}, /*#__PURE__*/React.createElement("span", {
   className: "w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0",
   style: {
     background: 'var(--accent)'
   }
-}), React.createElement("span", null, item)))))), React.createElement("div", {
+}), /*#__PURE__*/React.createElement("span", null, item)))))), /*#__PURE__*/React.createElement("div", {
   className: "mt-10 pt-5 flex flex-col md:flex-row justify-between gap-4 mono text-[10px] uppercase tracking-[0.22em]",
   style: {
     color: 'rgba(244,239,230,0.26)'
   }
-}, React.createElement("span", null, "Copyright 2026 ", BRAND_DISPLAY_NAME), React.createElement("span", null, "Legal pages last updated ", LEGAL_UPDATED_AT))));
+}, /*#__PURE__*/React.createElement("span", null, "Copyright 2026 ", BRAND_DISPLAY_NAME), /*#__PURE__*/React.createElement("span", null, "Legal pages last updated ", LEGAL_UPDATED_AT))));
 const PageNav = ({
   onOpenModal
-}) => React.createElement("nav", {
+}) => /*#__PURE__*/React.createElement("nav", {
   className: "fixed top-0 w-full z-40 h-[64px] flex items-center justify-between px-5 md:px-10",
   style: {
     background: 'rgba(245,240,233,0.84)',
@@ -7805,133 +8166,142 @@ const PageNav = ({
     WebkitBackdropFilter: 'blur(20px)',
     borderBottom: '1px solid rgba(9,9,9,0.08)'
   }
-}, React.createElement(BrandLockup, {
+}, /*#__PURE__*/React.createElement(BrandLockup, {
   href: "/",
   compact: true
-}), React.createElement("div", {
+}), /*#__PURE__*/React.createElement("div", {
   className: "hidden md:flex items-center gap-6 mono text-[10px] uppercase tracking-[0.22em]",
   style: {
     color: 'rgba(9,9,9,0.54)'
   }
-}, PAGE_NAV_LINKS.map(([label, href]) => React.createElement("a", {
+}, PAGE_NAV_LINKS.map(([label, href]) => /*#__PURE__*/React.createElement("a", {
   key: href,
   href: href,
   className: "transition-colors hover:text-black"
-}, label)), React.createElement("button", {
+}, label)), /*#__PURE__*/React.createElement("button", {
   onClick: onOpenModal,
   className: "cta-hero cta-glow-soft px-5 py-3 text-[11px]"
-}, "Request Access")), React.createElement("div", {
+}, "Unlock Advanced Features")), /*#__PURE__*/React.createElement("div", {
   className: "md:hidden flex items-center gap-2"
-}, React.createElement("a", {
+}, /*#__PURE__*/React.createElement("a", {
   href: "/#generator",
   className: "mono text-[10px] uppercase tracking-[0.22em]",
   style: {
     color: 'rgba(9,9,9,0.56)'
   }
-}, "Live Studio"), React.createElement("button", {
+}, "Live Studio"), /*#__PURE__*/React.createElement("button", {
   onClick: onOpenModal,
   className: "cta-hero cta-glow-soft px-4 py-2 text-[10px]"
-}, "Request Access")));
+}, "Unlock")));
 const SubpageChrome = ({
   children
 }) => {
   const [isModalOpen, setModalOpen] = useState(false);
-  return React.createElement("div", null, React.createElement(JoinModal, {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(JoinModal, {
     isOpen: isModalOpen,
     onClose: () => setModalOpen(false)
-  }), React.createElement(PageNav, {
+  }), /*#__PURE__*/React.createElement(PageNav, {
     onOpenModal: () => setModalOpen(true)
-  }), React.createElement("main", {
+  }), /*#__PURE__*/React.createElement("main", {
     style: {
       paddingTop: '74px'
     }
   }, children({
     openModal: () => setModalOpen(true)
-  })), React.createElement(SiteFooter, null));
+  })), /*#__PURE__*/React.createElement(SiteFooter, null));
 };
 const DreamApp = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [heroVisible, setHeroVisible] = useState(true);
   const [isStudioOpen, setStudioOpen] = useState(false);
-  usePageTitle('Keystone AI - Floor Plans in 60 Seconds');
+  const [hasStudioMounted, setHasStudioMounted] = useState(false);
+  usePageTitle('Keystone AI - Home Design in Plain Language');
   useEffect(() => {
     const handler = () => setStudioOpen(true);
-    const escHandler = e => {
-      if (e.key === 'Escape') setStudioOpen(false);
-    };
     document.addEventListener('keystone:open-studio', handler);
-    document.addEventListener('keydown', escHandler);
     return () => {
       document.removeEventListener('keystone:open-studio', handler);
-      document.removeEventListener('keydown', escHandler);
     };
   }, []);
+  useEffect(() => {
+    const openFromHash = () => {
+      if (window.location.hash === '#generator') {
+        setStudioOpen(true);
+      }
+    };
+    openFromHash();
+    window.addEventListener('hashchange', openFromHash);
+    return () => window.removeEventListener('hashchange', openFromHash);
+  }, []);
+  useEffect(() => {
+    if (isStudioOpen) setHasStudioMounted(true);
+  }, [isStudioOpen]);
   useEffect(() => {
     if (isStudioOpen) document.body.classList.add('studio-open');else document.body.classList.remove('studio-open');
     return () => document.body.classList.remove('studio-open');
   }, [isStudioOpen]);
   const featuredWorks = [{
     eyebrow: 'Generated floor plan',
-    title: 'A plan the architect can react to before kickoff.',
-    body: 'Room count, circulation intent, and footprint goals become a real plan instead of a vague transcript taken in the room.',
+    title: 'A plan you can react to before talking to a professional.',
+    body: 'Room count, circulation intent, and footprint goals become a real plan instead of a vague description.',
     image: ASSETS.exampleBlueprint,
     alt: 'Keystone generated floor plan'
   }, {
-    eyebrow: 'Gemini exterior study',
-    title: 'An atmosphere the client can actually feel.',
-    body: 'The same brief can produce a visual anchor that helps the client respond emotionally while the architect stays tied to the plan.',
+    eyebrow: 'Exterior render',
+    title: 'An exterior you can actually feel.',
+    body: 'The same brief can produce a visual anchor that helps you respond emotionally while still staying tied to the same house.',
     image: ASSETS.exampleRender,
-    alt: 'Keystone Gemini exterior study'
+    alt: 'Keystone exterior render'
   }, {
     eyebrow: 'Elevation set',
     title: 'The plan now comes with facade views too.',
-    body: 'Matching elevations make the output feel closer to a real architectural review package before the meeting begins.',
+    body: 'Matching elevations make the output feel closer to a real home concept package before you ever open CAD.',
     image: ASSETS.exampleElevationSheet,
     alt: 'Keystone generated elevation sheet'
   }];
   const trustCards = [{
-    eyebrow: 'Firm workflow',
-    title: 'Sold to the studio, used by the client.',
-    body: 'The firm shares the link and passkey, the client completes the guided brief, and the architect reviews the output before the meeting.'
+    eyebrow: 'Plain-language workflow',
+    title: 'Made for people, not just technical teams.',
+    body: 'You answer the brief in everyday language and Keystone translates it into a plan package you can actually understand.'
   }, {
     eyebrow: 'Live today',
-    title: 'Plan, elevations, estimate, DXF export, and Gemini study.',
-    body: 'Keystone currently covers guided intake, floor plan generation, elevation views, an MVP planning estimate, vector DXF export, and Gemini exterior study generation from the same brief.'
+    title: 'Plan, elevations, Cost Estimate, DXF export, and Exterior Render.',
+    body: 'Keystone currently covers guided intake, floor plan generation, elevation views, a concept-level Cost Estimate, CAD Export (DXF), and an Exterior Render from the same brief.'
   }, {
     eyebrow: 'Coming next',
     title: 'Scheduling and deeper 3D remain on the roadmap.',
-    body: 'Planning-grade quantity takeoff and cost range are now live. Scheduling and deeper viewer tools are still being kept on the roadmap until they are ready.'
+    body: 'The Cost Estimate is now live. Scheduling, richer viewer tools, and deeper quantity logic are still on the roadmap until they are ready.'
   }];
   const outcomeCards = [{
-    eyebrow: 'Before the meeting',
-    title: 'A more prepared client arrives.',
-    body: 'Taste, light, priorities, and rough footprint intent are already translated into something your team can react to together.',
-    stat: '1 link'
+    eyebrow: 'Before you build',
+    title: 'You start with something real.',
+    body: 'Taste, light, priorities, and rough footprint intent are already translated into something you can compare and discuss.',
+    stat: '1 brief'
   }, {
     eyebrow: 'Inside the studio',
     title: 'The blank page disappears.',
-    body: 'Instead of starting from raw notes, your team begins with a structured brief, a plan, and an optional visual anchor worth discussing.',
+    body: 'Instead of starting from raw notes, you begin with a structured brief, a plan, and an optional visual anchor worth discussing.',
     stat: '<60s'
   }, {
-    eyebrow: 'Across the pipeline',
-    title: 'Early hours stay protected.',
-    body: 'Keystone helps firms qualify seriousness faster, save unpaid exploration time, and move active leads into real design momentum.',
-    stat: 'B2B'
+    eyebrow: 'Across the process',
+    title: 'Early confusion starts shrinking.',
+    body: 'Keystone helps homeowners make clearer decisions before they spend heavily on drawings, revisions, and miscommunication.',
+    stat: 'Clearer'
   }];
-  const marqueeItems = ['Architect-first discovery', 'Live floor plan generation', 'Elevation views', 'MVP planning estimate', 'Vector DXF export', 'Gemini exterior studies', 'Client-ready visual anchors'];
+  const marqueeItems = ['Home design, made understandable', 'Live floor plan generation', 'Elevation views', 'Cost estimate', 'CAD Export (DXF)', 'Exterior renders', 'Made for first-time home builders'];
   const serviceCards = [{
     number: '01',
-    title: 'Firm sends the link',
-    body: 'The architect shares a guided link and passkey before kickoff so the client can complete the early thinking asynchronously.'
+    title: 'You answer the guided brief',
+    body: 'Instead of trying to speak in drafting terms, you describe your future home in plain language.'
   }, {
     number: '02',
-    title: 'Client brief becomes a review package',
-    body: 'That intake becomes a first residential layout your team can review, export, and use as the basis for the real conversation.'
+    title: 'The brief becomes a house concept',
+    body: 'That intake becomes a first residential layout you can review, export, and use as the basis for the real conversation.'
   }, {
     number: '03',
-    title: 'Architect walks in prepared',
-    body: 'Before the meeting starts, the firm can already review the brief, save the plan, elevation set, estimate, and DXF, and optionally add a Gemini study for emotional context.'
+    title: 'The advanced package unlocks when you need it',
+    body: 'Once you request trial access, the same plan can also produce an Exterior Render, Cost Estimate workbook, and CAD export.'
   }];
   const studioMetrics = [{
     value: '<60s',
@@ -7940,21 +8310,21 @@ const DreamApp = () => {
     value: '4 views',
     label: 'elevation set'
   }, {
-    value: 'MVP',
+    value: 'XLSX',
     label: 'cost estimate'
   }, {
     value: 'DXF',
     label: 'cad export'
   }, {
-    value: 'Gemini',
-    label: '3D exterior study'
+    value: '3D',
+    label: 'exterior render'
   }];
-  const sessionStack = ['Client-facing intake link', 'Passkey-controlled access', 'Scored footprint alternatives', 'Blueprint image export', 'Elevation SVG set', 'MVP planning estimate', 'Vector DXF export', 'Firm-visible session history', 'Gemini exterior study', 'Recent-session gallery proof'];
+  const sessionStack = ['Guided survey in plain language', 'Free floor plan + elevations', 'Passkey-controlled advanced tools', 'Scored footprint alternatives', 'Blueprint image export', 'Elevation SVG set', 'Cost Estimate workbook', 'CAD Export (DXF)', 'Saved studio session state', 'Exterior render', 'Recent-session gallery proof'];
   const studioTeam = [{
     name: 'Sujan Acharya',
     role: 'Founder and CEO',
     image: ASSETS.team.sujan,
-    bio: 'Civil engineering and construction management background. Built Keystone after watching firms lose weekends to unpaid discovery work.'
+    bio: 'Civil engineering and construction management background. Built Keystone after seeing how hard it is for families to explain the house they want without getting lost in technical language.'
   }, {
     name: 'Rhythm Bhattarai',
     role: 'CTO',
@@ -7964,38 +8334,38 @@ const DreamApp = () => {
     name: 'Subrat Acharya',
     role: 'CFO',
     image: ASSETS.team.subrat,
-    bio: 'Financial operator focused on keeping Keystone rigorous, durable, and built for steady studio adoption.'
+    bio: 'Financial operator focused on keeping Keystone rigorous, durable, and realistic for homeowners trying to make confident early decisions.'
   }];
   const roadmapCards = ['Formatted XLSX estimate export', 'Deeper quantity logic by assembly', 'Scheduling and viewer depth', 'White-label studio branding', 'CRM handoff for qualified leads'];
   const quoteCards = [{
-    quote: 'The best use case is a firm that wants to send one link before the first serious meeting and walk in with something concrete already on screen.',
-    name: 'Workflow fit',
-    firm: 'B2B motion'
+    quote: 'The strongest use case right now is the homeowner who knows what they want, but needs help seeing it clearly for the first time.',
+    name: 'Who it is for',
+    firm: 'Product direction'
   }, {
-    quote: 'The live promise stays disciplined on purpose: guided intake, generated plan, elevations, MVP planning estimate, vector DXF export, and optional Gemini study. Scheduling and deeper quantity logic come next, but only when they are real.',
+    quote: 'The live promise stays disciplined on purpose: guided intake, generated plan, elevations, a Cost Estimate, CAD export, and an optional Exterior Render. Scheduling and deeper quantity logic come next, but only when they are real.',
     name: 'Scope discipline',
     firm: 'Product truth'
   }];
   const pricingTiers = [{
-    tag: 'Guided demo',
+    tag: 'Trial phase',
     price: '$0',
-    unit: 'for qualified firms',
-    desc: 'A guided walkthrough of the firm workflow so your team can see the client link, plan generation, elevation views, export path, and Gemini study together.',
-    cta: 'Request Access',
+    unit: 'demo floor plan generation',
+    desc: 'Currently in trial phase. Start with one free floor plan and the matching elevations, then request access if you want the advanced package.',
+    cta: 'Request Trial Access',
     featured: false
   }, {
     tag: 'Single session',
     price: '$149',
-    unit: 'per live run',
-    desc: 'A complete Keystone session for one active lead, from client brief capture through architect-ready plan, elevations, export, and optional Gemini study.',
-    cta: 'Open Live Studio',
+    unit: '1 project',
+    desc: 'After launch: one complete Keystone session for one home project, with unlimited refining and unlimited exterior renders.',
+    cta: 'Join Launch List',
     featured: true
   }, {
     tag: 'Studio pack',
-    price: '$1,199',
-    unit: '10 sessions',
-    desc: 'For firms that want Keystone to become a repeatable pre-meeting rhythm across multiple active residential leads.',
-    cta: 'Request Access',
+    price: '$1,099',
+    unit: '10 projects',
+    desc: 'After launch: a 10-pack for repeat use across multiple home concepts, with the same advanced package available in every project.',
+    cta: 'Join Launch List',
     featured: false
   }];
   useEffect(() => {
@@ -8007,12 +8377,12 @@ const DreamApp = () => {
     obs.observe(hero);
     return () => obs.disconnect();
   }, []);
-  return React.createElement("div", {
+  return /*#__PURE__*/React.createElement("div", {
     className: "pb-[60px] md:pb-0"
-  }, React.createElement(JoinModal, {
+  }, /*#__PURE__*/React.createElement(JoinModal, {
     isOpen: isModalOpen,
     onClose: () => setModalOpen(false)
-  }), React.createElement(ClickSparkGlobal, null), React.createElement(SplashCursor, {
+  }), /*#__PURE__*/React.createElement(ClickSparkGlobal, null), /*#__PURE__*/React.createElement(SplashCursor, {
     SIM_RESOLUTION: 32,
     DYE_RESOLUTION: 1440,
     DENSITY_DISSIPATION: 8,
@@ -8023,13 +8393,13 @@ const DreamApp = () => {
     SPLAT_FORCE: 3000,
     COLOR_UPDATE_SPEED: 8,
     TRANSPARENT: true
-  }), React.createElement(MobileNavBar, {
+  }), /*#__PURE__*/React.createElement(MobileNavBar, {
     onOpenMenu: () => setMenuOpen(true)
-  }), React.createElement(MobileMenuOverlay, {
+  }), /*#__PURE__*/React.createElement(MobileMenuOverlay, {
     isOpen: isMenuOpen,
     onClose: () => setMenuOpen(false),
     onJoin: () => setModalOpen(true)
-  }), React.createElement(SectionRail, null), React.createElement(AnimatePresence, null, !heroVisible && React.createElement(motion.div, {
+  }), /*#__PURE__*/React.createElement(SectionRail, null), /*#__PURE__*/React.createElement(AnimatePresence, null, !heroVisible && /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0,
       y: 20
@@ -8043,13 +8413,13 @@ const DreamApp = () => {
       y: 20
     },
     className: "mobile-cta-float md:hidden"
-  }, React.createElement(StarBorderBtn, {
+  }, /*#__PURE__*/React.createElement(StarBorderBtn, {
     onClick: () => scrollTo('generator')
-  }, React.createElement("span", null, "Open Live Studio"), React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "Open Live Studio"), /*#__PURE__*/React.createElement("span", {
     className: "cta-live-mark"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "cta-live-dot"
-  }), "Now")))), React.createElement("main", null, React.createElement(motion.nav, {
+  }), "Now")))), /*#__PURE__*/React.createElement("main", null, /*#__PURE__*/React.createElement(motion.nav, {
     initial: {
       opacity: 0,
       y: -64
@@ -8070,29 +8440,29 @@ const DreamApp = () => {
       WebkitBackdropFilter: 'blur(22px)',
       borderBottom: '1px solid rgba(255,106,55,0.1)'
     }
-  }, React.createElement(BrandLockup, {
+  }, /*#__PURE__*/React.createElement(BrandLockup, {
     href: "#hero",
     compact: true
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "hidden md:flex items-center gap-6 mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(9,9,9,0.52)'
     }
-  }, HOME_NAV_ITEMS.map(item => React.createElement("a", {
+  }, HOME_NAV_ITEMS.map(item => /*#__PURE__*/React.createElement("a", {
     key: item.label,
     href: navHref(item, true),
     className: "transition-colors hover:text-black"
-  }, item.label)), React.createElement("button", {
+  }, item.label)), /*#__PURE__*/React.createElement("button", {
     onClick: () => setModalOpen(true),
     className: "cta-hero cta-glow px-5 py-3 text-[11px]"
-  }, "Request Access"))), React.createElement("section", {
+  }, "Unlock Advanced Features"))), /*#__PURE__*/React.createElement("section", {
     id: "hero",
     className: "relative overflow-hidden hero-v2-bg",
     style: {
       minHeight: 'min(90svh, 920px)',
       paddingTop: '64px'
     }
-  }, React.createElement(OrbBackground, null), React.createElement(Waves, {
+  }, /*#__PURE__*/React.createElement(OrbBackground, null), /*#__PURE__*/React.createElement(Waves, {
     lineColor: "rgba(255,106,55,0.18)",
     waveSpeedX: 0.012,
     waveSpeedY: 0.012,
@@ -8103,11 +8473,11 @@ const DreamApp = () => {
     maxCursorMove: 90,
     xGap: 12,
     yGap: 36
-  }), React.createElement(FloatingParticles, {
+  }), /*#__PURE__*/React.createElement(FloatingParticles, {
     count: 55,
     color: "255,106,55",
     className: "opacity-50"
-  }), React.createElement(DotGridHero, null), React.createElement(GradualBlur, {
+  }), /*#__PURE__*/React.createElement(DotGridHero, null), /*#__PURE__*/React.createElement(GradualBlur, {
     target: "parent",
     position: "bottom",
     height: "7rem",
@@ -8116,14 +8486,14 @@ const DreamApp = () => {
     curve: "bezier",
     exponential: true,
     opacity: 1
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "site-shell relative z-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-[minmax(0,1.08fr)_400px] gap-8 lg:gap-12 items-center pt-10 pb-12 md:pt-14 md:pb-18",
     style: {
       minHeight: 'min(calc(86svh - 64px), 740px)'
     }
-  }, React.createElement("div", null, React.createElement(motion.div, {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0,
       y: 10
@@ -8136,11 +8506,11 @@ const DreamApp = () => {
       delay: 0.12
     },
     className: "mb-6"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "hero-badge"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "hero-badge-dot"
-  }), "Architect-first discovery")), React.createElement(motion.h1, {
+  }), "Home design, made understandable")), /*#__PURE__*/React.createElement(motion.h1, {
     initial: {
       opacity: 0
     },
@@ -8157,12 +8527,12 @@ const DreamApp = () => {
       textTransform: 'uppercase',
       color: 'var(--ink)'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "block"
-  }, "Start the"), React.createElement("span", {
+  }, "Describe the"), /*#__PURE__*/React.createElement("span", {
     className: "block"
-  }, React.createElement(BlurText, {
-    text: "first meeting",
+  }, /*#__PURE__*/React.createElement(BlurText, {
+    text: "house you want",
     delay: 55,
     direction: "bottom",
     tag: "span",
@@ -8170,12 +8540,12 @@ const DreamApp = () => {
     style: {
       color: '#FF7040'
     }
-  })), React.createElement("span", {
+  })), /*#__PURE__*/React.createElement("span", {
     className: "block",
     style: {
       color: 'rgba(78,69,61,0.78)'
     }
-  }, "with a real plan.")), React.createElement(motion.p, {
+  }, "and see it take shape.")), /*#__PURE__*/React.createElement(motion.p, {
     initial: {
       opacity: 0,
       y: 14
@@ -8192,7 +8562,7 @@ const DreamApp = () => {
       fontSize: 'clamp(1rem,1.8vw,1.12rem)',
       color: 'rgba(32,26,21,0.68)'
     }
-  }, "Keystone helps residential firms start the first meeting with a client brief, a floor plan, elevations, and an optional exterior study already prepared."), React.createElement(motion.div, {
+  }, "Keystone helps homeowners and first-time home builders turn what they want into a floor plan, elevations, an Exterior Render, and an early Cost Estimate without needing a technical background."), /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0,
       y: 14
@@ -8205,18 +8575,18 @@ const DreamApp = () => {
       delay: 0.62
     },
     className: "mt-8 flex flex-col sm:flex-row gap-3 items-start"
-  }, React.createElement(StarBorderBtn, {
+  }, /*#__PURE__*/React.createElement(StarBorderBtn, {
     onClick: () => scrollTo('generator'),
     "data-cursor-text": "Open studio"
-  }, React.createElement("span", null, "Open Live Studio"), React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "Open Live Studio"), /*#__PURE__*/React.createElement("span", {
     className: "cta-live-mark"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "cta-live-dot"
-  }), "Try it now")), React.createElement("button", {
+  }), "Try it now")), /*#__PURE__*/React.createElement("button", {
     onClick: () => setModalOpen(true),
-    "data-cursor-text": "Request access",
+    "data-cursor-text": "Unlock advanced features",
     className: "cta-hero cta-glow-soft"
-  }, "Request Access")), React.createElement(motion.div, {
+  }, "Unlock Advanced Features")), /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0
     },
@@ -8227,13 +8597,13 @@ const DreamApp = () => {
       delay: 0.76
     },
     className: "mt-6 flex flex-wrap gap-2"
-  }, LIVE_NOW_FEATURES.map(item => React.createElement("span", {
+  }, LIVE_NOW_FEATURES.map(item => /*#__PURE__*/React.createElement("span", {
     key: item,
     className: "marquee-pill marquee-pill-orange",
     style: {
       animation: 'none'
     }
-  }, item))), React.createElement(motion.div, {
+  }, item))), /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0,
       y: 14
@@ -8246,24 +8616,24 @@ const DreamApp = () => {
       delay: 0.88
     },
     className: "hero-proof-grid mt-8"
-  }, HERO_SIGNAL_CARDS.map(item => React.createElement(TiltCard, {
+  }, HERO_SIGNAL_CARDS.map(item => /*#__PURE__*/React.createElement(TiltCard, {
     key: item.label,
     maxTilt: 5
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.16)",
     className: "hero-proof-card cursor-target electric-border h-full",
     "data-cursor-text": item.label
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[9px] uppercase tracking-[0.22em]",
     style: {
       color: 'var(--accent)',
       opacity: 0.7
     }
-  }, item.label), React.createElement("h3", {
+  }, item.label), /*#__PURE__*/React.createElement("h3", {
     className: "hero-proof-value"
-  }, item.value), React.createElement("p", {
+  }, item.value), /*#__PURE__*/React.createElement("p", {
     className: "hero-proof-note"
-  }, item.note)))))), React.createElement(motion.aside, {
+  }, item.note)))))), /*#__PURE__*/React.createElement(motion.aside, {
     initial: {
       opacity: 0,
       x: 28
@@ -8276,22 +8646,22 @@ const DreamApp = () => {
       delay: 0.44
     },
     className: "dream-panel p-6 md:p-7 relative overflow-hidden animated-border"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "absolute inset-x-0 top-0 h-px",
     style: {
       background: 'rgba(255,255,255,0.12)'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "absolute right-0 bottom-0 w-64 h-64 pointer-events-none",
     style: {
       background: 'radial-gradient(circle at 80% 80%, rgba(255,106,55,0.12), transparent 60%)'
     }
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(245,240,233,0.55)'
     }
-  }, "Inside the room"), React.createElement("h2", {
+  }, "Inside the room"), /*#__PURE__*/React.createElement("h2", {
     className: "cg text-white mt-4",
     style: {
       fontSize: 'clamp(1.7rem,3.1vw,2.6rem)',
@@ -8299,59 +8669,59 @@ const DreamApp = () => {
       textTransform: 'uppercase',
       letterSpacing: '-0.055em'
     }
-  }, "A first pass that already feels worth discussing."), React.createElement("p", {
+  }, "A first pass that already feels worth building on."), /*#__PURE__*/React.createElement("p", {
     className: "mt-3 text-sm leading-relaxed",
     style: {
       color: 'rgba(244,239,230,0.6)'
     }
-  }, "Clients arrive with something they can point to. Your team arrives with something they can shape."), React.createElement("div", {
+  }, "You arrive at the next conversation with something you can point to, compare, and refine instead of starting from a blank page."), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-3 mt-6"
-  }, studioMetrics.map(metric => React.createElement("div", {
+  }, studioMetrics.map(metric => /*#__PURE__*/React.createElement("div", {
     key: metric.label,
     className: "studio-metric"
-  }, React.createElement("strong", null, metric.value), React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("strong", null, metric.value), /*#__PURE__*/React.createElement("span", {
     className: "text-[11px] uppercase tracking-[0.18em]",
     style: {
       color: 'rgba(244,239,230,0.46)'
     }
-  }, metric.label)))), React.createElement("div", {
+  }, metric.label)))), /*#__PURE__*/React.createElement("div", {
     className: "mt-5 pt-4 border-t border-white/10"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(244,239,230,0.46)'
     }
-  }, "Method before meeting"), React.createElement("a", {
+  }, "How it works"), /*#__PURE__*/React.createElement("a", {
     href: "/how-floor-plans-work",
     "data-cursor-text": "Open methodology page",
     className: "inline-block mt-3 text-sm transition-colors hover:text-orange-300",
     style: {
       color: 'rgba(255,255,255,0.88)'
     }
-  }, "See how Keystone makes floor plans \xE2\u2020\u2019")))))), React.createElement("section", {
+  }, "See how Keystone makes floor plans \xE2\u2020\u2019")))))), /*#__PURE__*/React.createElement("section", {
     id: "proof",
     className: "proof-shelf relative overflow-hidden"
-  }, React.createElement(OrbBackground, null), React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(OrbBackground, null), /*#__PURE__*/React.createElement("div", {
     className: "site-shell relative z-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "proof-frame p-4 md:p-6"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "proof-top-grid"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "p-2 md:p-4"
-  }, React.createElement(Reveal, {
+  }, /*#__PURE__*/React.createElement(Reveal, {
     y: 12
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(10,10,12,0.44)'
     }
-  }, "Sample session"), React.createElement("div", {
+  }, "Sample session"), /*#__PURE__*/React.createElement("div", {
     className: "orange-line mt-3"
-  })), React.createElement(Reveal, {
+  })), /*#__PURE__*/React.createElement(Reveal, {
     y: 28,
     delay: 0.08
-  }, React.createElement("h2", {
+  }, /*#__PURE__*/React.createElement("h2", {
     className: "cg mt-5",
     style: {
       fontSize: 'clamp(2.1rem, 4.6vw, 3.8rem)',
@@ -8359,31 +8729,31 @@ const DreamApp = () => {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "Real output. ", React.createElement(GradientText, {
+  }, "Real output. ", /*#__PURE__*/React.createElement(GradientText, {
     className: "serif"
-  }, "No imagination tax."))), React.createElement(Reveal, {
+  }, "No imagination tax."))), /*#__PURE__*/React.createElement(Reveal, {
     y: 16,
     delay: 0.16
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-sm md:text-base leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, "The fastest way to trust Keystone is to watch the workflow happen in sequence: client brief, generated plan, elevations, export-ready DXF, and optional Gemini study before the first architect meeting."), React.createElement("div", {
+  }, "The fastest way to trust Keystone is to watch the workflow happen in sequence: guided brief, generated plan, elevations, Cost Estimate, CAD export, and optional Exterior Render from the same house."), /*#__PURE__*/React.createElement("div", {
     className: "mt-6 flex flex-wrap gap-3"
-  }, React.createElement(StarBorderBtn, {
+  }, /*#__PURE__*/React.createElement(StarBorderBtn, {
     onClick: () => scrollTo('generator')
-  }, React.createElement("span", null, "Open Live Studio"), React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "Try Free Floor Plan"), /*#__PURE__*/React.createElement("span", {
     className: "cta-live-mark"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "cta-live-dot"
-  }), "Now")), React.createElement("a", {
+  }), "Now")), /*#__PURE__*/React.createElement("a", {
     href: "/how-floor-plans-work",
     "data-cursor-text": "Open methodology page",
     className: "cta-secondary"
-  }, "How Floor Plans Work")))), React.createElement("div", {
+  }, "How Floor Plans Work")))), /*#__PURE__*/React.createElement("div", {
     className: "proof-journey-rail mt-2 md:mt-0"
-  }, SAMPLE_SESSION_STEPS.map((item, index) => React.createElement(motion.article, {
+  }, SAMPLE_SESSION_STEPS.map((item, index) => /*#__PURE__*/React.createElement(motion.article, {
     key: item.number,
     initial: {
       opacity: 0,
@@ -8402,23 +8772,23 @@ const DreamApp = () => {
       delay: index * 0.07,
       ease: [0.22, 1, 0.36, 1]
     }
-  }, React.createElement(TiltCard, {
+  }, /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 4
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.13)",
     className: "proof-journey-card cursor-target h-full",
     "data-cursor-text": item.title
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "proof-journey-step",
     style: {
       background: 'var(--accent)',
       color: 'white'
     }
-  }, item.number), React.createElement("h3", null, item.title), React.createElement("p", null, item.body))))))), React.createElement("div", {
+  }, item.number), /*#__PURE__*/React.createElement("h3", null, item.title), /*#__PURE__*/React.createElement("p", null, item.body))))))), /*#__PURE__*/React.createElement("div", {
     className: "proof-browsers-grid mt-5"
-  }, React.createElement(TiltCard, {
+  }, /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 3
-  }, React.createElement(motion.div, {
+  }, /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0,
       y: 20
@@ -8433,34 +8803,34 @@ const DreamApp = () => {
     },
     className: "proof-browser cursor-target h-full",
     "data-cursor-text": "Preview plan"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "proof-browser-top"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#FF5F57'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#FFBD2E'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#28C840'
     }
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] ml-3",
     style: {
       color: 'rgba(255,255,255,0.32)',
       letterSpacing: '0.16em'
     }
-  }, "KEYSTONE AI / 2D FLOOR PLAN")), React.createElement("div", {
+  }, "KEYSTONE AI / 2D FLOOR PLAN")), /*#__PURE__*/React.createElement("div", {
     className: "proof-browser-screen plan"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "diagonal-accent"
-  }), React.createElement(SmartImage, {
+  }), /*#__PURE__*/React.createElement(SmartImage, {
     src: ASSETS.exampleBlueprint,
     alt: "Keystone sample floor plan",
     style: {
@@ -8468,16 +8838,16 @@ const DreamApp = () => {
       display: 'block',
       objectFit: 'contain'
     }
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "proof-caption"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "proof-dot",
     style: {
       background: 'var(--accent)'
     }
-  }), "Client footprint translated into a working blueprint"))), React.createElement(TiltCard, {
+  }), "Client footprint translated into a working blueprint"))), /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 3
-  }, React.createElement(motion.div, {
+  }, /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       opacity: 0,
       y: 20
@@ -8495,37 +8865,37 @@ const DreamApp = () => {
     },
     className: "proof-browser cursor-target h-full",
     "data-cursor-text": "Preview study"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "proof-browser-top"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#FF5F57'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#FFBD2E'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#28C840'
     }
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] ml-3",
     style: {
       color: 'rgba(255,255,255,0.32)',
       letterSpacing: '0.16em'
     }
-  }, "KEYSTONE AI / 3D EXTERIOR STUDY")), React.createElement("div", {
+  }, "KEYSTONE AI / EXTERIOR RENDER")), /*#__PURE__*/React.createElement("div", {
     className: "proof-browser-screen",
     style: {
       minHeight: '100%'
     }
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: ASSETS.exampleRender,
-    alt: "Keystone sample exterior study",
+    alt: "Keystone sample exterior render",
     style: {
       width: '100%',
       height: '100%',
@@ -8533,13 +8903,13 @@ const DreamApp = () => {
       objectFit: 'cover',
       display: 'block'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       inset: 0,
       background: 'linear-gradient(180deg, rgba(9,9,9,0.02) 0%, rgba(9,9,9,0.48) 100%)'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "proof-caption",
     style: {
       position: 'absolute',
@@ -8550,14 +8920,14 @@ const DreamApp = () => {
       color: 'rgba(255,255,255,0.72)',
       background: 'linear-gradient(180deg, transparent, rgba(9,9,9,0.58))'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "proof-dot",
     style: {
       background: 'var(--accent)'
     }
-  }), "The same brief, now felt as atmosphere"))))), React.createElement("div", {
+  }), "The same brief, now felt as a real house"))))), /*#__PURE__*/React.createElement("div", {
     className: "proof-card-row mt-4"
-  }, trustCards.map((item, index) => React.createElement(motion.div, {
+  }, trustCards.map((item, index) => /*#__PURE__*/React.createElement(motion.div, {
     key: item.title,
     initial: {
       opacity: 0,
@@ -8576,29 +8946,29 @@ const DreamApp = () => {
       delay: index * 0.06,
       ease: [0.22, 1, 0.36, 1]
     }
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.1)",
     className: "proof-mini-tile cursor-target h-full",
     "data-cursor-text": item.eyebrow
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'var(--accent)',
       opacity: 0.8
     }
-  }, item.eyebrow), React.createElement("p", {
+  }, item.eyebrow), /*#__PURE__*/React.createElement("p", {
     className: "cg mt-2 text-[1.15rem] leading-[1.02]",
     style: {
       color: 'var(--ink)'
     }
-  }, item.title), React.createElement("p", {
+  }, item.title), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.78)'
     }
-  }, item.body))))), React.createElement("div", {
+  }, item.body))))), /*#__PURE__*/React.createElement("div", {
     className: "proof-card-row mt-4"
-  }, featuredWorks.map((item, index) => React.createElement(motion.article, {
+  }, featuredWorks.map((item, index) => /*#__PURE__*/React.createElement(motion.article, {
     key: item.eyebrow,
     initial: {
       opacity: 0,
@@ -8617,9 +8987,9 @@ const DreamApp = () => {
     },
     className: "proof-feature-card cursor-target",
     "data-cursor-text": item.eyebrow
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "proof-feature-thumb"
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: item.image,
     alt: item.alt,
     style: {
@@ -8628,52 +8998,52 @@ const DreamApp = () => {
       objectFit: 'cover',
       display: 'block'
     }
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "proof-feature-copy"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'var(--accent)',
       opacity: 0.8
     }
-  }, item.eyebrow), React.createElement("h3", {
+  }, item.eyebrow), /*#__PURE__*/React.createElement("h3", {
     className: "cg mt-3 text-[1.3rem] leading-[0.98]",
     style: {
       color: 'var(--ink)'
     }
-  }, item.title), React.createElement("p", {
+  }, item.title), /*#__PURE__*/React.createElement("p", {
     className: "mt-3 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, item.body)))))))), React.createElement("section", {
+  }, item.body)))))))), /*#__PURE__*/React.createElement("section", {
     className: "defer-section py-12 md:py-14 relative overflow-hidden",
     style: {
       background: 'var(--paper)'
     }
-  }, React.createElement(FloatingParticles, {
+  }, /*#__PURE__*/React.createElement(FloatingParticles, {
     count: 30,
     color: "255,106,55",
     className: "opacity-30"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "site-shell relative z-10"
-  }, React.createElement(Reveal, {
+  }, /*#__PURE__*/React.createElement(Reveal, {
     y: 24
-  }, React.createElement(TiltCard, {
+  }, /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 2
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.12)",
     className: "paper-panel p-7 md:p-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-[minmax(0,1fr)_260px] gap-8 items-end"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(9,9,9,0.42)'
     }
-  }, "Live studio"), React.createElement("div", {
+  }, "Live studio"), /*#__PURE__*/React.createElement("div", {
     className: "orange-line mt-3 mb-5"
-  }), React.createElement("h2", {
+  }), /*#__PURE__*/React.createElement("h2", {
     className: "cg mt-6",
     style: {
       fontSize: 'clamp(2.6rem, 6vw, 4.8rem)',
@@ -8682,61 +9052,42 @@ const DreamApp = () => {
       textTransform: 'uppercase',
       color: 'var(--ink)'
     }
-  }, "Try the real workflow, not a teaser."), React.createElement("p", {
+  }, "Try the real workflow, not a teaser."), /*#__PURE__*/React.createElement("p", {
     className: "mt-5 max-w-2xl text-base leading-relaxed",
     style: {
       color: 'rgba(9,9,9,0.62)'
     }
-  }, "The same client-to-studio logic behind the hero is right below. Open the live studio, walk through the guided intake, shape a plan, and see what the architect gets back before kickoff.")), React.createElement("div", {
+  }, "The same guided workflow behind the hero is right below. Open the live studio, walk through the survey, shape a plan, and see how much you can understand before a formal design meeting.")), /*#__PURE__*/React.createElement("div", {
     className: "flex justify-start lg:justify-end"
-  }, React.createElement(StarBorderBtn, {
+  }, /*#__PURE__*/React.createElement(StarBorderBtn, {
     onClick: () => scrollTo('generator')
-  }, React.createElement("span", null, "Open Live Studio"), React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "Open Live Studio"), /*#__PURE__*/React.createElement("span", {
     className: "cta-live-mark"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "cta-live-dot"
-  }), "Try it now"))))))))), React.createElement(AnimatePresence, null, isStudioOpen && React.createElement(motion.div, {
-    key: "studio-modal",
-    initial: {
-      opacity: 0
-    },
-    animate: {
-      opacity: 1
-    },
-    exit: {
-      opacity: 0
-    },
-    transition: {
-      duration: 0.18
-    },
-    className: "studio-modal-overlay"
-  }, React.createElement(motion.div, {
-    initial: {
-      y: 32,
-      opacity: 0
-    },
-    animate: {
-      y: 0,
-      opacity: 1
-    },
-    exit: {
-      y: 16,
-      opacity: 0
-    },
-    transition: {
-      duration: 0.22,
-      ease: [0.22, 1, 0.36, 1]
-    },
-    className: "studio-modal-window"
-  }, React.createElement("div", {
+  }), "Free today"))))))))), hasStudioMounted && /*#__PURE__*/React.createElement("div", {
+    className: "studio-modal-overlay",
+    style: {
+      opacity: isStudioOpen ? 1 : 0,
+      pointerEvents: isStudioOpen ? 'auto' : 'none',
+      transition: 'opacity 180ms ease'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "studio-modal-window",
+    style: {
+      transform: isStudioOpen ? 'translateY(0px)' : 'translateY(16px)',
+      opacity: isStudioOpen ? 1 : 0,
+      transition: 'transform 220ms cubic-bezier(0.22,1,0.36,1), opacity 220ms cubic-bezier(0.22,1,0.36,1)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
     className: "studio-modal-topbar"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       display: 'flex',
       alignItems: 'center',
       gap: 10
     }
-  }, React.createElement("img", {
+  }, /*#__PURE__*/React.createElement("img", {
     src: ASSETS.icon,
     alt: "Keystone",
     style: {
@@ -8744,14 +9095,14 @@ const DreamApp = () => {
       height: 22,
       opacity: 0.85
     }
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "cg",
     style: {
       fontSize: '1rem',
       fontWeight: 700,
       letterSpacing: '-0.03em'
     }
-  }, "Live Studio"), React.createElement("span", {
+  }, "Live Studio"), /*#__PURE__*/React.createElement("span", {
     className: "mono",
     style: {
       fontSize: 8,
@@ -8760,61 +9111,61 @@ const DreamApp = () => {
       textTransform: 'uppercase',
       marginLeft: 4
     }
-  }, "Keystone AI")), React.createElement("button", {
+  }, "Keystone AI")), /*#__PURE__*/React.createElement("button", {
     className: "studio-modal-close",
     onClick: () => setStudioOpen(false),
     "aria-label": "Close Live Studio"
-  }, React.createElement("svg", {
+  }, /*#__PURE__*/React.createElement("svg", {
     width: "14",
     height: "14",
     fill: "none",
     stroke: "currentColor",
     viewBox: "0 0 24 24"
-  }, React.createElement("path", {
+  }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
     strokeLinejoin: "round",
     strokeWidth: "2",
     d: "M6 18L18 6M6 6l12 12"
-  })))), React.createElement("div", {
+  })))), /*#__PURE__*/React.createElement("div", {
     className: "studio-modal-body"
-  }, React.createElement(DesignGenerator, {
+  }, /*#__PURE__*/React.createElement(DesignGenerator, {
     onOpenModal: () => setModalOpen(true)
-  }))))), React.createElement(Gallery, {
+  })))), /*#__PURE__*/React.createElement(Gallery, {
     onOpenModal: () => setModalOpen(true)
-  }), React.createElement("section", {
+  }), /*#__PURE__*/React.createElement("section", {
     className: "relative py-5 border-y overflow-hidden",
     style: {
       background: 'linear-gradient(90deg,#FFF8F5,#FFF3ED,#FFF8F5)',
       borderColor: 'rgba(255,106,55,0.15)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "marquee-wrap"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "marquee-track px-5 md:px-10"
-  }, [...marqueeItems, ...marqueeItems].map((item, index) => React.createElement("span", {
+  }, [...marqueeItems, ...marqueeItems].map((item, index) => /*#__PURE__*/React.createElement("span", {
     key: `${item}-${index}`,
     className: "marquee-pill marquee-pill-orange"
-  }, item))))), React.createElement("section", {
+  }, item))))), /*#__PURE__*/React.createElement("section", {
     className: "defer-section py-12 md:py-16 relative overflow-hidden",
     style: {
       background: 'linear-gradient(180deg,#0A0806 0%,#130B05 100%)'
     }
-  }, React.createElement(FloatingParticles, {
+  }, /*#__PURE__*/React.createElement(FloatingParticles, {
     count: 30,
     color: "255,106,55",
     className: "opacity-20"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "site-shell relative z-10"
-  }, React.createElement(Reveal, {
+  }, /*#__PURE__*/React.createElement(Reveal, {
     y: 16
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(255,106,55,0.7)'
     }
-  }, "What's inside"), React.createElement("div", {
+  }, "What's inside"), /*#__PURE__*/React.createElement("div", {
     className: "orange-line mt-3 mb-2"
-  }), React.createElement("h2", {
+  }), /*#__PURE__*/React.createElement("h2", {
     className: "cg text-white mt-5",
     style: {
       fontSize: 'clamp(2rem,4.5vw,3.6rem)',
@@ -8823,33 +9174,33 @@ const DreamApp = () => {
       textTransform: 'uppercase',
       maxWidth: '32rem'
     }
-  }, "Every session. ", React.createElement(GradientText, null, "Six capabilities."))), React.createElement("div", {
+  }, "Every session. ", /*#__PURE__*/React.createElement(GradientText, null, "Six capabilities."))), /*#__PURE__*/React.createElement("div", {
     className: "mt-8"
-  }, React.createElement(MagicBento, {
+  }, /*#__PURE__*/React.createElement(MagicBento, {
     glowColor: "255,106,55",
     spotlightRadius: 420,
     particleCount: 10,
     clickEffect: true
-  })))), React.createElement("section", {
+  })))), /*#__PURE__*/React.createElement("section", {
     id: "work",
     className: "defer-section py-14 md:py-[4.75rem]",
     style: {
       background: 'var(--paper)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "site-shell"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-[minmax(0,1fr)_320px] gap-10 items-end mb-10 md:mb-12"
-  }, React.createElement("div", null, React.createElement(Reveal, {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Reveal, {
     y: 12
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "section-label"
-  }, "What changes"), React.createElement("div", {
+  }, "What changes"), /*#__PURE__*/React.createElement("div", {
     className: "orange-line mt-3"
-  })), React.createElement(Reveal, {
+  })), /*#__PURE__*/React.createElement(Reveal, {
     y: 32,
     delay: 0.08
-  }, React.createElement("h2", {
+  }, /*#__PURE__*/React.createElement("h2", {
     className: "cg mt-6",
     style: {
       fontSize: 'clamp(2.8rem, 7vw, 5.8rem)',
@@ -8858,17 +9209,17 @@ const DreamApp = () => {
       textTransform: 'uppercase',
       color: 'var(--ink)'
     }
-  }, "The point is not more content. ", React.createElement(GradientText, null, "Better-prepared"), " first meetings."))), React.createElement(Reveal, {
+  }, "The point is not more content. ", /*#__PURE__*/React.createElement(GradientText, null, "Better-prepared"), " first meetings."))), /*#__PURE__*/React.createElement(Reveal, {
     y: 16,
     delay: 0.18
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "text-sm md:text-base leading-relaxed",
     style: {
       color: 'rgba(9,9,9,0.58)'
     }
-  }, "Keystone works when the client, the architect, and the next decision all feel less vague. These are the business-level shifts the workflow is built to create for firms."))), React.createElement("div", {
+  }, "Keystone works when the person planning the home, the future professional team, and the next decision all feel less vague. These are the shifts the workflow is built to create."))), /*#__PURE__*/React.createElement("div", {
     className: "grid md:grid-cols-3 gap-4"
-  }, outcomeCards.map((item, index) => React.createElement(motion.article, {
+  }, outcomeCards.map((item, index) => /*#__PURE__*/React.createElement(motion.article, {
     key: item.eyebrow,
     initial: {
       opacity: 0,
@@ -8885,72 +9236,72 @@ const DreamApp = () => {
     transition: {
       delay: index * 0.08
     }
-  }, React.createElement(TiltCard, {
+  }, /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 5,
     style: {
       height: '100%'
     }
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.12)",
     className: "outcome-card p-6 md:p-7 flex flex-col justify-between min-h-[300px] h-full"
-  }, React.createElement("div", null, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'var(--accent)',
       opacity: 0.8
     }
-  }, item.eyebrow), React.createElement("h3", {
+  }, item.eyebrow), /*#__PURE__*/React.createElement("h3", {
     className: "cg mt-5 text-[2rem] leading-[0.94]",
     style: {
       color: 'var(--ink)'
     }
-  }, item.title), React.createElement("p", {
+  }, item.title), /*#__PURE__*/React.createElement("p", {
     className: "mt-5 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.66)'
     }
-  }, item.body)), React.createElement("div", {
+  }, item.body)), /*#__PURE__*/React.createElement("div", {
     className: "mt-10 pt-5",
     style: {
       borderTop: '1px solid rgba(255,106,55,0.15)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'var(--accent)',
       opacity: 0.7
     }
-  }, "Keystone signal"), React.createElement("div", {
+  }, "Keystone signal"), /*#__PURE__*/React.createElement("div", {
     className: "cg mt-3 text-[2.4rem] leading-none gradient-text-anim",
     style: {
       letterSpacing: '-0.06em'
     }
-  }, item.stat))))))))), React.createElement("section", {
+  }, item.stat))))))))), /*#__PURE__*/React.createElement("section", {
     className: "defer-section py-14 md:py-[4.75rem] relative overflow-hidden",
     style: {
       background: 'linear-gradient(180deg, #FFFDFC 0%, #F7F1E8 100%)'
     }
-  }, React.createElement(OrbBackground, null), React.createElement(FloatingParticles, {
+  }, /*#__PURE__*/React.createElement(OrbBackground, null), /*#__PURE__*/React.createElement(FloatingParticles, {
     count: 28,
     color: "255,106,55",
     className: "opacity-24"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "site-shell relative z-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-[280px_minmax(0,1fr)] gap-8 items-end"
-  }, React.createElement("div", null, React.createElement(Reveal, {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Reveal, {
     y: 12
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(9,9,9,0.42)'
     }
-  }, "Platform pages"), React.createElement("div", {
+  }, "Platform pages"), /*#__PURE__*/React.createElement("div", {
     className: "orange-line mt-3"
-  })), React.createElement(Reveal, {
+  })), /*#__PURE__*/React.createElement(Reveal, {
     y: 26,
     delay: 0.08
-  }, React.createElement("h2", {
+  }, /*#__PURE__*/React.createElement("h2", {
     className: "cg mt-6",
     style: {
       fontSize: 'clamp(2.4rem, 5vw, 4.6rem)',
@@ -8958,17 +9309,17 @@ const DreamApp = () => {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "Three clearer ways to understand Keystone."))), React.createElement(Reveal, {
+  }, "Three clearer ways to understand Keystone."))), /*#__PURE__*/React.createElement(Reveal, {
     y: 16,
     delay: 0.16
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "text-sm md:text-base leading-relaxed",
     style: {
       color: 'rgba(9,9,9,0.6)'
     }
-  }, "The homepage keeps the live product story. These pages go deeper into the floor-plan method, the firm workflow, and the roadmap without flattening everything into one long scroll."))), React.createElement("div", {
+  }, "The homepage keeps the live product story. These pages go deeper into the floor-plan method, the guided workflow, and the roadmap without flattening everything into one long scroll."))), /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-3 gap-4 mt-10"
-  }, PLATFORM_PAGE_CARDS.map((card, index) => React.createElement(motion.article, {
+  }, PLATFORM_PAGE_CARDS.map((card, index) => /*#__PURE__*/React.createElement(motion.article, {
     key: card.href,
     initial: {
       opacity: 0,
@@ -8985,12 +9336,12 @@ const DreamApp = () => {
     transition: {
       delay: index * 0.08
     }
-  }, React.createElement(TiltCard, {
+  }, /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 4,
     style: {
       height: '100%'
     }
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.12)",
     className: "h-full",
     style: {
@@ -8999,13 +9350,13 @@ const DreamApp = () => {
       borderRadius: '22px',
       overflow: 'hidden'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       aspectRatio: '1 / 0.78',
       overflow: 'hidden',
       position: 'relative'
     }
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: card.image,
     alt: card.alt,
     style: {
@@ -9014,13 +9365,13 @@ const DreamApp = () => {
       objectFit: 'cover',
       display: 'block'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     style: {
       position: 'absolute',
       inset: 0,
       background: 'linear-gradient(180deg, rgba(9,9,9,0.02) 0%, rgba(9,9,9,0.42) 100%)'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       position: 'absolute',
@@ -9029,7 +9380,7 @@ const DreamApp = () => {
       top: '1rem',
       color: 'rgba(255,255,255,0.78)'
     }
-  }, card.eyebrow), React.createElement("div", {
+  }, card.eyebrow), /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       position: 'absolute',
@@ -9037,45 +9388,45 @@ const DreamApp = () => {
       bottom: '1rem',
       color: 'white'
     }
-  }, card.stat)), React.createElement("div", {
+  }, card.stat)), /*#__PURE__*/React.createElement("div", {
     className: "p-5 md:p-6"
-  }, React.createElement("h3", {
+  }, /*#__PURE__*/React.createElement("h3", {
     className: "cg text-[1.8rem] leading-[0.94]",
     style: {
       color: 'var(--ink)'
     }
-  }, card.title), React.createElement("p", {
+  }, card.title), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.62)'
     }
-  }, card.body), React.createElement("a", {
+  }, card.body), /*#__PURE__*/React.createElement("a", {
     href: card.href,
     className: "cta-secondary mt-6 inline-flex"
-  }, card.cta))))))))), React.createElement("section", {
+  }, card.cta))))))))), /*#__PURE__*/React.createElement("section", {
     id: "services",
     className: "defer-section py-14 md:py-[4.75rem] relative overflow-hidden",
     style: {
       background: 'linear-gradient(180deg, #ECE3D3 0%, #F7F2E9 60%, #F0EBE1 100%)',
       color: 'var(--ink)'
     }
-  }, React.createElement(OrbBackground, null), React.createElement("div", {
+  }, /*#__PURE__*/React.createElement(OrbBackground, null), /*#__PURE__*/React.createElement("div", {
     className: "site-shell relative z-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-[minmax(0,1fr)_320px] gap-12 items-end"
-  }, React.createElement("div", null, React.createElement(Reveal, {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(Reveal, {
     y: 12
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(10,10,12,0.45)'
     }
-  }, "Firm workflow"), React.createElement("div", {
+  }, "Your workflow"), /*#__PURE__*/React.createElement("div", {
     className: "orange-line mt-3"
-  })), React.createElement(Reveal, {
+  })), /*#__PURE__*/React.createElement(Reveal, {
     y: 32,
     delay: 0.08
-  }, React.createElement("h2", {
+  }, /*#__PURE__*/React.createElement("h2", {
     className: "cg mt-6",
     style: {
       fontSize: 'clamp(2.8rem, 7vw, 5.4rem)',
@@ -9083,16 +9434,16 @@ const DreamApp = () => {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "A ", React.createElement(GradientText, null, "calmer way"), " to move from first inquiry to architect-ready intent."))), React.createElement(Reveal, {
+  }, "A ", /*#__PURE__*/React.createElement(GradientText, null, "calmer way"), " to move from first idea to a real house concept."))), /*#__PURE__*/React.createElement(Reveal, {
     y: 16,
     delay: 0.18
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "text-sm md:text-base leading-relaxed text-mid"
-  }, "Keystone is not trying to replace architectural judgment. It gives firms a better handoff from client curiosity to the first serious design conversation."))), React.createElement("div", {
+  }, "Keystone is not trying to replace professional judgment. It gives homeowners a clearer starting point before they spend heavily on drawings and revisions."))), /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-[minmax(0,1fr)_340px] gap-6 mt-10 items-start"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid md:grid-cols-3 gap-5 self-start"
-  }, serviceCards.map((card, index) => React.createElement(motion.div, {
+  }, serviceCards.map((card, index) => /*#__PURE__*/React.createElement(motion.div, {
     key: card.number,
     initial: {
       opacity: 0,
@@ -9109,68 +9460,68 @@ const DreamApp = () => {
     transition: {
       delay: index * 0.08
     }
-  }, React.createElement(TiltCard, {
+  }, /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 6,
     style: {
       height: '100%'
     }
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.14)",
     className: "service-card-v2 p-6 md:p-7 self-start h-full"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "service-number"
-  }, card.number), React.createElement("h3", {
+  }, card.number), /*#__PURE__*/React.createElement("h3", {
     className: "cg mt-5 text-[2rem] leading-[0.96]"
-  }, card.title), React.createElement("p", {
+  }, card.title), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-sm leading-relaxed",
     style: {
       color: 'var(--mid)'
     }
-  }, card.body)))))), React.createElement(SpotlightCard, {
+  }, card.body)))))), /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.1)",
     className: "paper-panel p-6 md:p-7 self-start"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.24em]",
     style: {
       color: 'var(--accent)',
       opacity: 0.8
     }
-  }, "Inside every session"), React.createElement("div", {
+  }, "Inside every session"), /*#__PURE__*/React.createElement("div", {
     className: "orange-line mt-3 mb-4"
-  }), React.createElement("h3", {
+  }), /*#__PURE__*/React.createElement("h3", {
     className: "cg mt-5 text-[2.1rem] leading-[0.95]"
-  }, "The studio stack clients never see, but your team will feel."), React.createElement("div", {
+  }, "The full package that makes the house easier to understand."), /*#__PURE__*/React.createElement("div", {
     className: "flex flex-wrap gap-2 mt-6"
-  }, sessionStack.map(item => React.createElement("span", {
+  }, sessionStack.map(item => /*#__PURE__*/React.createElement("span", {
     key: item,
     className: "session-stack-pill"
-  }, item))), React.createElement("div", {
+  }, item))), /*#__PURE__*/React.createElement("div", {
     className: "mt-8 pt-6",
     style: {
       borderTop: '1px solid rgba(255,106,55,0.12)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.24em]",
     style: {
       color: 'var(--accent)',
       opacity: 0.6
     }
-  }, "Coming next"), React.createElement("div", {
+  }, "Coming next"), /*#__PURE__*/React.createElement("div", {
     className: "grid gap-3 mt-4"
-  }, roadmapCards.map(item => React.createElement("div", {
+  }, roadmapCards.map(item => /*#__PURE__*/React.createElement("div", {
     key: item,
     className: "flex items-center gap-3 text-sm",
     style: {
       color: 'var(--mid)'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "w-2 h-2 rounded-full flex-shrink-0",
     style: {
       background: 'var(--accent)'
     }
-  }), React.createElement("span", null, item))))))), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("span", null, item))))))), /*#__PURE__*/React.createElement("div", {
     className: "service-summary-grid mt-8"
-  }, SERVICE_BENEFITS.map((item, index) => React.createElement(motion.article, {
+  }, SERVICE_BENEFITS.map((item, index) => /*#__PURE__*/React.createElement(motion.article, {
     key: item.eyebrow,
     initial: {
       opacity: 0,
@@ -9188,36 +9539,36 @@ const DreamApp = () => {
       delay: index * 0.08
     },
     className: "service-summary-card"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "service-summary-kicker"
-  }, item.eyebrow), React.createElement("h3", null, item.title), React.createElement("p", null, item.body)))))), React.createElement("section", {
+  }, item.eyebrow), /*#__PURE__*/React.createElement("h3", null, item.title), /*#__PURE__*/React.createElement("p", null, item.body)))))), /*#__PURE__*/React.createElement("section", {
     id: "pricing",
     className: "defer-section py-14 md:py-[4.75rem] relative overflow-hidden",
     style: {
       background: 'var(--paper)',
       color: 'var(--ink)'
     }
-  }, React.createElement(FloatingParticles, {
+  }, /*#__PURE__*/React.createElement(FloatingParticles, {
     count: 25,
     color: "255,106,55",
     className: "opacity-20"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "site-shell relative z-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "max-w-3xl"
-  }, React.createElement(Reveal, {
+  }, /*#__PURE__*/React.createElement(Reveal, {
     y: 12
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(10,10,12,0.45)'
     }
-  }, "Pricing"), React.createElement("div", {
+  }, "Pricing"), /*#__PURE__*/React.createElement("div", {
     className: "orange-line mt-3"
-  })), React.createElement(Reveal, {
+  })), /*#__PURE__*/React.createElement(Reveal, {
     y: 32,
     delay: 0.08
-  }, React.createElement("h2", {
+  }, /*#__PURE__*/React.createElement("h2", {
     className: "cg mt-6",
     style: {
       fontSize: 'clamp(2.4rem, 5.6vw, 4.5rem)',
@@ -9225,19 +9576,19 @@ const DreamApp = () => {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, React.createElement(GradientText, null, "Clear pricing"), " before your team commits the hours.")), React.createElement(Reveal, {
+  }, /*#__PURE__*/React.createElement(GradientText, null, "Clear pricing"), " before you commit the money.")), /*#__PURE__*/React.createElement(Reveal, {
     y: 16,
     delay: 0.18
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mt-5 text-base leading-relaxed",
     style: {
       color: 'var(--mid)'
     }
-  }, "Start with a guided demo, try one live client session, or turn Keystone into a repeatable pre-meeting rhythm without a dead-month subscription."))), React.createElement("div", {
+  }, "Start with the free trial floor plan, then move into the paid session model once the product is ready for launch."))), /*#__PURE__*/React.createElement("div", {
     className: "grid xl:grid-cols-[minmax(0,1fr)_300px] gap-6 mt-10 items-start"
-  }, React.createElement("div", null, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "grid md:grid-cols-3 gap-4"
-  }, pricingTiers.map((tier, index) => React.createElement(motion.div, {
+  }, pricingTiers.map((tier, index) => /*#__PURE__*/React.createElement(motion.div, {
     key: tier.tag,
     initial: {
       opacity: 0,
@@ -9254,44 +9605,44 @@ const DreamApp = () => {
     transition: {
       delay: index * 0.08
     }
-  }, tier.featured ? React.createElement(TiltCard, {
+  }, tier.featured ? /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 5,
     style: {
       height: '100%'
     }
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.2)",
     className: "pricing-featured p-6 md:p-7 flex flex-col min-h-[360px] h-full"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(255,255,255,0.6)'
     }
-  }, tier.tag), React.createElement("div", {
+  }, tier.tag), /*#__PURE__*/React.createElement("div", {
     className: "cg mt-5 text-white",
     style: {
       fontSize: '3rem',
       lineHeight: 0.88,
       letterSpacing: '-0.06em'
     }
-  }, tier.price), React.createElement("div", {
+  }, tier.price), /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em] mt-2",
     style: {
       color: 'rgba(255,255,255,0.46)'
     }
-  }, tier.unit), React.createElement("p", {
+  }, tier.unit), /*#__PURE__*/React.createElement("p", {
     className: "mt-5 text-sm leading-relaxed flex-1",
     style: {
       color: 'rgba(255,255,255,0.72)'
     }
-  }, tier.desc), React.createElement(StarBorderBtn, {
+  }, tier.desc), /*#__PURE__*/React.createElement(StarBorderBtn, {
     onClick: () => scrollTo('generator'),
     className: "w-full mt-6"
-  }, React.createElement("span", null, tier.cta), React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, tier.cta), /*#__PURE__*/React.createElement("span", {
     className: "cta-live-mark"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "cta-live-dot"
-  }), "Now")))) : React.createElement(SpotlightCard, {
+  }), "Now")))) : /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.1)",
     className: "p-6 md:p-7 rounded-[14px] flex flex-col min-h-[360px] h-full",
     style: {
@@ -9299,34 +9650,34 @@ const DreamApp = () => {
       border: '1px solid rgba(255,106,55,0.1)',
       color: 'var(--ink)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.4)'
     }
-  }, tier.tag), React.createElement("div", {
+  }, tier.tag), /*#__PURE__*/React.createElement("div", {
     className: "cg mt-5",
     style: {
       fontSize: '3rem',
       lineHeight: 0.88,
       letterSpacing: '-0.06em'
     }
-  }, tier.price), React.createElement("div", {
+  }, tier.price), /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em] mt-2",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, tier.unit), React.createElement("p", {
+  }, tier.unit), /*#__PURE__*/React.createElement("p", {
     className: "mt-5 text-sm leading-relaxed flex-1",
     style: {
       color: 'var(--mid)'
     }
-  }, tier.desc), React.createElement("button", {
+  }, tier.desc), /*#__PURE__*/React.createElement("button", {
     onClick: () => setModalOpen(true),
-    className: `cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.tag === 'Guided demo' ? 'cta-glow-soft' : ''}`
-  }, tier.cta)))))), React.createElement("div", {
+    className: `cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.tag === 'Trial phase' ? 'cta-glow-soft' : ''}`
+  }, tier.cta)))))), /*#__PURE__*/React.createElement("div", {
     className: "grid gap-4"
-  }, quoteCards.map((quote, index) => React.createElement(motion.div, {
+  }, quoteCards.map((quote, index) => /*#__PURE__*/React.createElement(motion.div, {
     key: quote.name,
     initial: {
       opacity: 0,
@@ -9343,37 +9694,37 @@ const DreamApp = () => {
     transition: {
       delay: index * 0.08
     }
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.08)",
     className: "quote-card p-5 h-full"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "cg text-[1.2rem] leading-[1.1]",
     style: {
       color: 'var(--ink)'
     }
-  }, quote.quote), React.createElement("div", {
+  }, quote.quote), /*#__PURE__*/React.createElement("div", {
     className: "mt-4 pt-4",
     style: {
       borderTop: '1px solid rgba(255,106,55,0.12)'
     }
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "font-semibold text-sm"
-  }, quote.name), React.createElement("p", {
+  }, quote.name), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[10px] uppercase tracking-[0.2em] mt-2",
     style: {
       color: 'var(--mid)'
     }
-  }, quote.firm))))))))), React.createElement("section", {
+  }, quote.firm))))))))), /*#__PURE__*/React.createElement("section", {
     id: "studio",
     className: "defer-section py-16 md:py-20 relative overflow-hidden",
     style: {
       background: 'linear-gradient(180deg, rgba(10,10,10,1) 0%, rgba(23,23,23,1) 100%)'
     }
-  }, React.createElement(FloatingParticles, {
+  }, /*#__PURE__*/React.createElement(FloatingParticles, {
     count: 40,
     color: "255,106,55",
     className: "opacity-25"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "hero-glow",
     style: {
       top: '12%',
@@ -9382,23 +9733,23 @@ const DreamApp = () => {
       height: '540px',
       background: 'radial-gradient(circle, rgba(255,106,55,0.12), transparent 70%)'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "site-shell relative z-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-[minmax(0,1fr)_360px] gap-10 items-start"
-  }, React.createElement(Reveal, {
+  }, /*#__PURE__*/React.createElement(Reveal, {
     y: 28
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.1)",
     className: "dream-panel p-7 md:p-10 animated-border"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(232,238,244,0.65)'
     }
-  }, "Studio"), React.createElement("div", {
+  }, "Studio"), /*#__PURE__*/React.createElement("div", {
     className: "orange-line mt-3"
-  }), React.createElement("h2", {
+  }), /*#__PURE__*/React.createElement("h2", {
     className: "cg text-white mt-6",
     style: {
       fontSize: 'clamp(2.8rem, 7vw, 5.2rem)',
@@ -9406,32 +9757,32 @@ const DreamApp = () => {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "Built by people who have felt the discovery gap up close."), React.createElement("p", {
+  }, "Built by people who have felt the discovery gap up close."), /*#__PURE__*/React.createElement("p", {
     className: "mt-6 max-w-2xl text-base leading-relaxed",
     style: {
       color: 'rgba(244,239,230,0.72)'
     }
-  }, "Keystone began from a simple frustration: talented architects were burning unpaid hours trying to pull clarity out of clients who had not yet learned how to describe what they wanted."), React.createElement("p", {
+  }, "Keystone began from a simple frustration: too many people knew the home they wanted emotionally, but did not know how to describe it clearly enough to move the design forward."), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 max-w-2xl text-base leading-relaxed",
     style: {
       color: 'rgba(244,239,230,0.72)'
     }
-  }, "The product is designed to let the client do some of that thinking before the meeting so the architect can spend the kickoff shaping ideas instead of extracting basics."), React.createElement("div", {
+  }, "The product is designed to help people do some of that thinking before the formal design meeting, so the next conversation can shape ideas instead of extracting basics."), /*#__PURE__*/React.createElement("div", {
     className: "mt-8 pt-6 border-t border-white/10"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "cg text-white",
     style: {
       fontSize: 'clamp(1.6rem, 3vw, 2.6rem)',
       lineHeight: 1.08
     }
-  }, "\"Architects should spend their energy shaping ideas, not extracting them one exhausted question at a time.\""), React.createElement("p", {
+  }, "\"Architects should spend their energy shaping ideas, not extracting them one exhausted question at a time.\""), /*#__PURE__*/React.createElement("p", {
     className: "mono mt-4 text-[10px] uppercase tracking-[0.24em]",
     style: {
       color: 'rgba(244,239,230,0.5)'
     }
-  }, "Founder note / Keystone AI")))), React.createElement("div", {
+  }, "Founder note / Keystone AI")))), /*#__PURE__*/React.createElement("div", {
     className: "grid gap-4"
-  }, studioMetrics.map((metric, index) => React.createElement(motion.div, {
+  }, studioMetrics.map((metric, index) => /*#__PURE__*/React.createElement(motion.div, {
     key: metric.label,
     initial: {
       opacity: 0,
@@ -9450,21 +9801,21 @@ const DreamApp = () => {
       delay: index * 0.07,
       ease: [0.22, 1, 0.36, 1]
     }
-  }, React.createElement(TiltCard, {
+  }, /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 4
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.15)",
     className: "studio-metric h-full"
-  }, React.createElement("strong", {
+  }, /*#__PURE__*/React.createElement("strong", {
     className: "gradient-text-anim"
-  }, metric.value), React.createElement("span", {
+  }, metric.value), /*#__PURE__*/React.createElement("span", {
     className: "text-[11px] uppercase tracking-[0.18em]",
     style: {
       color: 'rgba(244,239,230,0.5)'
     }
-  }, metric.label))))))), React.createElement("div", {
+  }, metric.label))))))), /*#__PURE__*/React.createElement("div", {
     className: "grid md:grid-cols-3 gap-4 mt-8"
-  }, studioTeam.map((member, index) => React.createElement(motion.article, {
+  }, studioTeam.map((member, index) => /*#__PURE__*/React.createElement(motion.article, {
     key: member.name,
     initial: {
       opacity: 0,
@@ -9481,15 +9832,15 @@ const DreamApp = () => {
     transition: {
       delay: index * 0.08
     }
-  }, React.createElement(TiltCard, {
+  }, /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 4,
     style: {
       height: '100%'
     }
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.12)",
     className: "dream-panel p-4 md:p-5 flex items-start gap-4 h-full"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "rounded-[20px] overflow-hidden flex-shrink-0",
     style: {
       width: '88px',
@@ -9497,7 +9848,7 @@ const DreamApp = () => {
       background: 'rgba(255,255,255,0.03)',
       border: '1px solid rgba(255,106,55,0.15)'
     }
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: member.image,
     alt: member.name,
     style: {
@@ -9506,27 +9857,27 @@ const DreamApp = () => {
       objectFit: 'cover',
       objectPosition: 'top'
     }
-  })), React.createElement("div", null, React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.24em]",
     style: {
       color: 'var(--accent)',
       opacity: 0.7
     }
-  }, member.role), React.createElement("h3", {
+  }, member.role), /*#__PURE__*/React.createElement("h3", {
     className: "cg text-white text-[1.6rem] mt-2 leading-[0.96]"
-  }, member.name), React.createElement("p", {
+  }, member.name), /*#__PURE__*/React.createElement("p", {
     className: "mt-2 text-[13px] leading-relaxed",
     style: {
       color: 'rgba(244,239,230,0.68)'
     }
-  }, member.bio))))))))), React.createElement(SurveySection, {
+  }, member.bio))))))))), /*#__PURE__*/React.createElement(SurveySection, {
     onJoin: () => setModalOpen(true)
-  }), React.createElement("section", {
+  }), /*#__PURE__*/React.createElement("section", {
     className: "defer-section py-20 md:py-28 relative overflow-hidden",
     style: {
       background: 'linear-gradient(180deg, #FFFDFC 0%, #FFF4EE 60%, #F5F0E9 100%)'
     }
-  }, React.createElement(Waves, {
+  }, /*#__PURE__*/React.createElement(Waves, {
     lineColor: "rgba(255,106,55,0.22)",
     waveSpeedX: 0.01,
     waveSpeedY: 0.008,
@@ -9536,27 +9887,27 @@ const DreamApp = () => {
     tension: 0.018,
     xGap: 14,
     yGap: 40
-  }), React.createElement(OrbBackground, null), React.createElement(FloatingParticles, {
+  }), /*#__PURE__*/React.createElement(OrbBackground, null), /*#__PURE__*/React.createElement(FloatingParticles, {
     count: 45,
     color: "255,106,55",
     className: "opacity-35"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "container mx-auto max-w-5xl px-5 md:px-10 text-center relative z-10"
-  }, React.createElement(Reveal, {
+  }, /*#__PURE__*/React.createElement(Reveal, {
     y: 12
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "section-label justify-center",
     style: {
       color: 'rgba(9,9,9,0.42)'
     }
-  }, "Final invitation"), React.createElement("div", {
+  }, "Final invitation"), /*#__PURE__*/React.createElement("div", {
     className: "flex justify-center mt-3"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "orange-line"
-  }))), React.createElement(Reveal, {
+  }))), /*#__PURE__*/React.createElement(Reveal, {
     y: 28,
     delay: 0.08
-  }, React.createElement("h2", {
+  }, /*#__PURE__*/React.createElement("h2", {
     className: "cg mt-6",
     style: {
       fontSize: 'clamp(3rem, 7vw, 5.8rem)',
@@ -9565,56 +9916,56 @@ const DreamApp = () => {
       textTransform: 'uppercase',
       color: 'var(--ink)'
     }
-  }, React.createElement(BlurText, {
+  }, /*#__PURE__*/React.createElement(BlurText, {
     text: "Give the first meeting",
     delay: 50,
     direction: "bottom",
     tag: "span",
     className: "block"
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "block",
     style: {
       color: 'var(--accent)'
     }
-  }, React.createElement(BlurText, {
+  }, /*#__PURE__*/React.createElement(BlurText, {
     text: "a stronger starting point.",
     delay: 50,
     direction: "bottom",
     tag: "span"
-  })))), React.createElement(Reveal, {
+  })))), /*#__PURE__*/React.createElement(Reveal, {
     y: 16,
     delay: 0.22
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mt-5 max-w-2xl mx-auto text-base md:text-lg leading-relaxed",
     style: {
       color: 'rgba(9,9,9,0.62)'
     }
-  }, "If the goal is to help residential clients arrive better prepared while protecting your studio's time, Keystone is ready for a real conversation.")), React.createElement(Reveal, {
+  }, "If you want to walk into the first builder or architect conversation with something real in hand, Keystone is ready to help you start there.")), /*#__PURE__*/React.createElement(Reveal, {
     y: 20,
     delay: 0.34
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mt-10 flex flex-col sm:flex-row gap-3 justify-center"
-  }, React.createElement(StarBorderBtn, {
+  }, /*#__PURE__*/React.createElement(StarBorderBtn, {
     onClick: () => scrollTo('generator')
-  }, React.createElement("span", null, "Open Live Studio"), React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", null, "Open Live Studio"), /*#__PURE__*/React.createElement("span", {
     className: "cta-live-mark"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "cta-live-dot"
-  }), "Try it now")), React.createElement("button", {
+  }), "Try it now")), /*#__PURE__*/React.createElement("button", {
     onClick: () => setModalOpen(true),
     className: "cta-hero cta-glow-soft"
-  }, "Request Access"))))), React.createElement(SiteFooter, {
+  }, "Unlock Advanced Features"))))), /*#__PURE__*/React.createElement(SiteFooter, {
     home: true
   })));
 };
 const HowFloorPlansWorkPage = () => {
   usePageTitle('Keystone AI - How Floor Plans Work');
-  const caseFacts = [['Input', 'Firm-issued structured brief'], ['Core engine', 'Deterministic layout + validation'], ['Output', 'Plan + elevations + DXF + optional render'], ['Boundary', 'Concept study, not permit docs']];
-  const intakeSignals = ['Area, stories, bedrooms, baths, garage type, and broad footprint bias are captured before discovery starts.', 'The brief records layout intent such as primary-suite level, kitchen position, laundry placement, and open-concept preference.', 'Frontage, lot context, light preference, indoor-outdoor intent, and accessibility needs shape the first zoning pass.', 'The architect receives a working plan artifact before kickoff instead of reconstructing the brief live from scattered notes.'];
+  const caseFacts = [['Input', 'Guided home brief'], ['Core engine', 'Deterministic layout + validation'], ['Output', 'Plan + elevations + DXF + optional render'], ['Boundary', 'Concept study, not permit docs']];
+  const intakeSignals = ['Area, stories, bedrooms, baths, garage type, and broad footprint bias are captured before discovery starts.', 'The brief records layout intent such as primary-suite level, kitchen position, laundry placement, and open-concept preference.', 'Frontage, lot context, light preference, indoor-outdoor intent, and accessibility needs shape the first zoning pass.', 'You leave the brief with a working plan artifact instead of trying to reconstruct the house from scattered notes later.'];
   const processSteps = [{
     step: '01',
     title: 'The survey is normalized into a usable brief',
-    body: 'The intake does not stay as loose text. Keystone converts the client answers into structured constraints such as story count, area target, garage type, primary-suite level, bathroom rules, frontage, and lot context.'
+    body: 'The intake does not stay as loose text. Keystone converts your survey answers into structured constraints such as story count, area target, garage type, primary-suite level, bathroom rules, frontage, and lot context.'
   }, {
     step: '02',
     title: 'Multiple footprint candidates are explored',
@@ -9633,8 +9984,8 @@ const HowFloorPlansWorkPage = () => {
     body: 'Doors, windows, and entry points are added after the room geometry exists. The plan is then checked for connectivity, room count, bathroom logic, hallway bloat, and other architectural quality gates.'
   }, {
     step: '06',
-    title: 'The firm receives the plan and optional render',
-    body: 'The floor plan, elevation set, and vector DXF are exported first. Gemini can then be used as an optional exterior study layered on top of the approved plan geometry rather than replacing the core floor-plan logic.'
+    title: 'The concept package is exported',
+    body: 'The floor plan, elevation set, and CAD export (DXF) are exported first. The Exterior Render can then be used as an optional image layer on top of the approved plan geometry rather than replacing the core floor-plan logic.'
   }];
   const planInputs = [{
     title: 'Program before drawing',
@@ -9653,32 +10004,32 @@ const HowFloorPlansWorkPage = () => {
     alt: 'Technical architectural output supporting review and export'
   }];
   const supportingGallery = [ASSETS.workflow.clientIntake, ASSETS.exampleElevationSheet, ASSETS.roadmap.cadExport, ASSETS.exampleRender];
-  return React.createElement(SubpageChrome, null, ({
+  return /*#__PURE__*/React.createElement(SubpageChrome, null, ({
     openModal
-  }) => React.createElement(React.Fragment, null, React.createElement("section", {
+  }) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
     className: "relative overflow-hidden",
     style: {
       background: 'linear-gradient(180deg, #FFFDF9 0%, #F2E9DE 100%)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "hero-video-shell"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "hero-video-base"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "hero-video-wave orange"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "hero-video-wave soft"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "hero-video-wave sand"
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "dream-grid absolute inset-0 opacity-70"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "site-shell py-16 md:py-24 relative z-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid xl:grid-cols-[minmax(0,1.05fr)_360px] gap-8 items-start"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label"
-  }, "How floor plans are made"), React.createElement("h1", {
+  }, "How floor plans are made"), /*#__PURE__*/React.createElement("h1", {
     className: "cg mt-6",
     style: {
       fontSize: 'clamp(3rem, 7vw, 6rem)',
@@ -9687,42 +10038,42 @@ const HowFloorPlansWorkPage = () => {
       textTransform: 'uppercase',
       color: 'var(--ink)'
     }
-  }, "How Keystone turns client intent into a first working floor plan."), React.createElement("p", {
+  }, "How Keystone turns client intent into a first working floor plan."), /*#__PURE__*/React.createElement("p", {
     className: "mt-6 max-w-3xl text-base md:text-lg leading-relaxed",
     style: {
       color: 'rgba(32,26,21,0.72)'
     }
-  }, "This page explains the actual floor-plan workflow behind Keystone. A firm sends the client a guided brief, Keystone normalizes that information into plan constraints, explores footprint options, builds a room program, lays out the plan, validates circulation, and only then prepares the export and optional Gemini exterior study."), React.createElement("div", {
+  }, "This page explains the actual floor-plan workflow behind Keystone. A guided brief is normalized into plan constraints, footprint options are explored, a room program is built, the plan is laid out, circulation is validated, and only then are the export package and optional Exterior Render prepared."), /*#__PURE__*/React.createElement("div", {
     className: "grid sm:grid-cols-2 gap-3 mt-8 max-w-3xl"
-  }, caseFacts.map(([label, value]) => React.createElement("div", {
+  }, caseFacts.map(([label, value]) => /*#__PURE__*/React.createElement("div", {
     key: label,
     className: "paper-panel p-4 md:p-5"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[9px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, label), React.createElement("div", {
+  }, label), /*#__PURE__*/React.createElement("div", {
     className: "cg text-[1.4rem] mt-3 leading-[0.95]",
     style: {
       color: 'var(--ink)'
     }
-  }, value)))), React.createElement("div", {
+  }, value)))), /*#__PURE__*/React.createElement("div", {
     className: "mt-8 flex flex-wrap gap-3"
-  }, React.createElement("a", {
+  }, /*#__PURE__*/React.createElement("a", {
     href: "/#generator",
     className: "cta-hero cta-glow"
-  }, "Open Live Studio"), React.createElement("button", {
+  }, "Open Live Studio"), /*#__PURE__*/React.createElement("button", {
     onClick: openModal,
     className: "cta-hero cta-glow-soft"
-  }, "Request Access"))), React.createElement("aside", {
+  }, "Unlock Advanced Features"))), /*#__PURE__*/React.createElement("aside", {
     className: "dream-panel p-6 md:p-7 overflow-hidden relative"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(245,240,233,0.58)'
     }
-  }, "What goes in"), React.createElement("h2", {
+  }, "What goes in"), /*#__PURE__*/React.createElement("h2", {
     className: "cg text-white mt-5",
     style: {
       fontSize: 'clamp(1.8rem,3vw,2.6rem)',
@@ -9730,25 +10081,25 @@ const HowFloorPlansWorkPage = () => {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "Enough specificity to help the architect before the meeting, not just during it."), React.createElement("div", {
+  }, "Enough specificity to help you explain your future home before the meeting, not just during it."), /*#__PURE__*/React.createElement("div", {
     className: "grid gap-3 mt-6"
-  }, intakeSignals.map(item => React.createElement("div", {
+  }, intakeSignals.map(item => /*#__PURE__*/React.createElement("div", {
     key: item,
     className: "flex items-start gap-3 text-sm leading-relaxed",
     style: {
       color: 'rgba(244,239,230,0.66)'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
     style: {
       background: 'var(--accent)'
     }
-  }), React.createElement("span", null, item)))), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("span", null, item)))), /*#__PURE__*/React.createElement("div", {
     className: "mt-6 rounded-[18px] overflow-hidden",
     style: {
       border: '1px solid rgba(255,255,255,0.12)'
     }
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: ASSETS.phase3[4],
     alt: "Keystone guided intake shown on mobile",
     style: {
@@ -9757,59 +10108,59 @@ const HowFloorPlansWorkPage = () => {
       objectFit: 'cover',
       display: 'block'
     }
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "mt-8 pt-5 border-t border-white/10"
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(244,239,230,0.46)'
     }
-  }, "Outcome"), React.createElement("p", {
+  }, "Outcome"), /*#__PURE__*/React.createElement("p", {
     className: "text-sm leading-relaxed mt-3",
     style: {
       color: 'rgba(244,239,230,0.7)'
     }
-  }, "The architect starts with a plan that has already been structured, zoned, and checked for basic circulation. If the team wants an image, Gemini comes after that as an optional exterior study rather than the core planning method.")))))), React.createElement("section", {
+  }, "The plan is already structured, zoned, and checked for basic circulation. If you want an image, the Exterior Render comes after that as an optional layer rather than the core planning method.")))))), /*#__PURE__*/React.createElement("section", {
     className: "py-10 md:py-14",
     style: {
       background: 'linear-gradient(180deg, #FFFDFC 0%, #F5F0E9 100%)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "site-shell"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "proof-frame p-4 md:p-6"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-[1fr_1fr] gap-4"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "proof-browser"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "proof-browser-top"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#FF5F57'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#FFBD2E'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#28C840'
     }
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] ml-3",
     style: {
       color: 'rgba(255,255,255,0.32)',
       letterSpacing: '0.16em'
     }
-  }, "SAMPLE SESSION / GENERATED PLAN")), React.createElement("div", {
+  }, "SAMPLE SESSION / GENERATED PLAN")), /*#__PURE__*/React.createElement("div", {
     className: "proof-browser-screen plan"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "diagonal-accent"
-  }), React.createElement(SmartImage, {
+  }), /*#__PURE__*/React.createElement(SmartImage, {
     src: ASSETS.exampleBlueprint,
     alt: "Sample generated floor plan",
     style: {
@@ -9817,70 +10168,70 @@ const HowFloorPlansWorkPage = () => {
       display: 'block',
       objectFit: 'contain'
     }
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "proof-caption"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "proof-dot",
     style: {
       background: 'var(--blue)'
     }
-  }), "Keystone turns the brief into a working plan artifact the firm can review, critique, and annotate before kickoff.")), React.createElement("div", {
+  }), "Keystone turns the brief into a working plan artifact you can review, share, and react to before the next design conversation.")), /*#__PURE__*/React.createElement("div", {
     className: "proof-browser"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "proof-browser-top"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#FF5F57'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#FFBD2E'
     }
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "bc-dot",
     style: {
       background: '#28C840'
     }
-  }), React.createElement("span", {
+  }), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[8px] ml-3",
     style: {
       color: 'rgba(255,255,255,0.32)',
       letterSpacing: '0.16em'
     }
-  }, "SAMPLE SESSION / GEMINI EXTERIOR STUDY")), React.createElement("div", {
+  }, "SAMPLE SESSION / EXTERIOR RENDER")), /*#__PURE__*/React.createElement("div", {
     className: "proof-browser-screen render"
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: ASSETS.exampleRender,
-    alt: "Sample Gemini exterior study",
+    alt: "Sample exterior render",
     style: {
       width: '100%',
       height: '100%',
       objectFit: 'cover'
     }
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "proof-caption"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "proof-dot",
     style: {
       background: 'var(--accent)'
     }
-  }), "Gemini is optional and comes after the plan, giving the client an exterior mood to react to without replacing the floor-plan logic.")))))), React.createElement("section", {
+  }), "The Exterior Render is optional and comes after the plan, giving you an exterior mood to react to without replacing the floor-plan logic.")))))), /*#__PURE__*/React.createElement("section", {
     className: "py-16 md:py-20",
     style: {
       background: 'var(--paper)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "site-shell"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-[320px_minmax(0,1fr)] gap-8 items-start"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "Method"), React.createElement("h2", {
+  }, "Method"), /*#__PURE__*/React.createElement("h2", {
     className: "cg mt-6",
     style: {
       fontSize: 'clamp(2.4rem, 5vw, 4.3rem)',
@@ -9888,41 +10239,41 @@ const HowFloorPlansWorkPage = () => {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "The value is not mystery. It is a tighter planning sequence before the architect enters the room.")), React.createElement("div", {
+  }, "The value is not mystery. It is a clearer planning sequence before the real project conversation begins.")), /*#__PURE__*/React.createElement("div", {
     className: "grid md:grid-cols-2 gap-4"
-  }, processSteps.map(item => React.createElement("article", {
+  }, processSteps.map(item => /*#__PURE__*/React.createElement("article", {
     key: item.step,
     className: "paper-panel p-5 md:p-6"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(27,79,130,0.72)'
     }
-  }, item.step), React.createElement("h3", {
+  }, item.step), /*#__PURE__*/React.createElement("h3", {
     className: "cg text-[1.7rem] mt-5 leading-[0.95]",
     style: {
       color: 'var(--ink)'
     }
-  }, item.title), React.createElement("p", {
+  }, item.title), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.64)'
     }
-  }, item.body))))))), React.createElement("section", {
+  }, item.body))))))), /*#__PURE__*/React.createElement("section", {
     className: "py-10 md:py-14",
     style: {
       background: 'linear-gradient(180deg, #FFFDF9 0%, #F0E8DD 100%)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "site-shell"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-[280px_minmax(0,1fr)] gap-8 items-start"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "What shapes the plan"), React.createElement("h2", {
+  }, "What shapes the plan"), /*#__PURE__*/React.createElement("h2", {
     className: "cg mt-6",
     style: {
       fontSize: 'clamp(2.2rem, 4.5vw, 4rem)',
@@ -9930,9 +10281,9 @@ const HowFloorPlansWorkPage = () => {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "The floor plan is built from program, zoning, and review logic before mood comes into the picture.")), React.createElement("div", {
+  }, "The floor plan is built from program, zoning, and review logic before mood comes into the picture.")), /*#__PURE__*/React.createElement("div", {
     className: "grid md:grid-cols-3 gap-4"
-  }, planInputs.map((item, index) => React.createElement(motion.article, {
+  }, planInputs.map((item, index) => /*#__PURE__*/React.createElement(motion.article, {
     key: item.title,
     initial: {
       opacity: 0,
@@ -9949,12 +10300,12 @@ const HowFloorPlansWorkPage = () => {
     transition: {
       delay: index * 0.08
     }
-  }, React.createElement(TiltCard, {
+  }, /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 4,
     style: {
       height: '100%'
     }
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.12)",
     className: "h-full",
     style: {
@@ -9963,12 +10314,12 @@ const HowFloorPlansWorkPage = () => {
       borderRadius: '22px',
       overflow: 'hidden'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       aspectRatio: '1 / 0.78',
       overflow: 'hidden'
     }
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: item.image,
     alt: item.alt,
     style: {
@@ -9977,37 +10328,37 @@ const HowFloorPlansWorkPage = () => {
       objectFit: 'cover',
       display: 'block'
     }
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "p-5 md:p-6"
-  }, React.createElement("h3", {
+  }, /*#__PURE__*/React.createElement("h3", {
     className: "cg text-[1.6rem] leading-[0.95]",
     style: {
       color: 'var(--ink)'
     }
-  }, item.title), React.createElement("p", {
+  }, item.title), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.64)'
     }
-  }, item.body)))))))))), React.createElement("section", {
+  }, item.body)))))))))), /*#__PURE__*/React.createElement("section", {
     className: "py-12 md:py-16 relative overflow-hidden",
     style: {
       background: 'linear-gradient(180deg,#0A0806 0%,#130B05 100%)'
     }
-  }, React.createElement(FloatingParticles, {
+  }, /*#__PURE__*/React.createElement(FloatingParticles, {
     count: 28,
     color: "255,106,55",
     className: "opacity-18"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "site-shell relative z-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(255,106,55,0.7)'
     }
-  }, "Support material"), React.createElement("h2", {
+  }, "Support material"), /*#__PURE__*/React.createElement("h2", {
     className: "cg text-white mt-6",
     style: {
       fontSize: 'clamp(2.3rem, 4.8vw, 4rem)',
@@ -10015,16 +10366,16 @@ const HowFloorPlansWorkPage = () => {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "More visual proof, while staying honest about what the system is and is not."), React.createElement("div", {
+  }, "More visual proof, while staying honest about what the system is and is not."), /*#__PURE__*/React.createElement("div", {
     className: "grid sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-8"
-  }, supportingGallery.map((image, index) => React.createElement("div", {
+  }, supportingGallery.map((image, index) => /*#__PURE__*/React.createElement("div", {
     key: image,
     className: "rounded-[18px] overflow-hidden",
     style: {
       border: '1px solid rgba(255,255,255,0.08)',
       background: 'rgba(255,255,255,0.03)'
     }
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: image,
     alt: `Keystone floor plan support visual ${index + 1}`,
     style: {
@@ -10033,71 +10384,71 @@ const HowFloorPlansWorkPage = () => {
       objectFit: 'cover',
       display: 'block'
     }
-  }))))), React.createElement(SpotlightCard, {
+  }))))), /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.14)",
     className: "dream-panel p-6 md:p-7 self-start"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.24em]",
     style: {
       color: 'rgba(255,106,55,0.8)'
     }
-  }, "Important boundary"), React.createElement("h3", {
+  }, "Important boundary"), /*#__PURE__*/React.createElement("h3", {
     className: "cg text-white mt-5 text-[2rem] leading-[0.95]"
-  }, "Keystone helps start the design discussion. It does not replace architectural responsibility."), React.createElement("p", {
+  }, "Keystone helps start the design discussion. It does not replace architectural responsibility."), /*#__PURE__*/React.createElement("p", {
     className: "mt-5 text-sm leading-relaxed",
     style: {
       color: 'rgba(244,239,230,0.7)'
     }
-  }, "The output is a concept aid for discovery and kickoff. It is not a permit-ready drawing set, not a stamped document, and not a substitute for architect or engineer review. Gemini can support the exterior mood, but it is not the core floor-plan engine."), React.createElement("div", {
+  }, "The output is a concept aid for discovery and kickoff. It is not a permit-ready drawing set, not a stamped document, and not a substitute for architect, engineer, or builder review. The Exterior Render can support the exterior mood, but it is not the core floor-plan engine."), /*#__PURE__*/React.createElement("div", {
     className: "mt-6 flex flex-col gap-3"
-  }, React.createElement("a", {
+  }, /*#__PURE__*/React.createElement("a", {
     href: "/#generator",
     className: "cta-secondary text-center"
-  }, "Open Live Studio"), React.createElement("button", {
+  }, "Open Live Studio"), /*#__PURE__*/React.createElement("button", {
     onClick: openModal,
     className: "cta-hero cta-glow-soft"
-  }, "Request Access"))))))));
+  }, "Unlock Advanced Features"))))))));
 };
-const CaseStudyPage = () => React.createElement(HowFloorPlansWorkPage, null);
+const CaseStudyPage = () => /*#__PURE__*/React.createElement(HowFloorPlansWorkPage, null);
 const B2BWorkflowPage = () => {
-  usePageTitle('Keystone AI - B2B Workflow');
+  usePageTitle('Keystone AI - Guided Workflow');
   const workflowStages = [{
     step: '01',
-    title: 'The firm sends a guided link',
-    body: 'Keystone is sold to the studio and shared with the client before the first serious meeting. The architect controls when the workflow starts and who sees it.',
+    title: 'You open the guided brief',
+    body: 'Keystone starts with a survey written for normal people, so the process begins with clarity instead of technical guesswork.',
     image: ASSETS.workflow.firmLaunch
   }, {
     step: '02',
-    title: 'The client fills out structured intent',
-    body: 'Room needs, lot cues, light preferences, and style signals arrive in a format the studio can review later instead of pulling everything out live on the call.',
+    title: 'You fill out structured intent',
+    body: 'Room needs, lot cues, light preferences, and style signals arrive in a format that can later be reviewed by you, your family, and any professional you bring in.',
     image: ASSETS.workflow.clientIntake
   }, {
     step: '03',
     title: 'Keystone returns a plan, elevations, and export',
-    body: 'The generated plan becomes a working artifact the team can download as a blueprint image, matching elevations, and vector DXF export before the kickoff conversation even begins.',
+    body: 'The generated plan becomes a working artifact you can download as a blueprint image, matching elevations, and CAD Export (DXF) before the next design conversation even begins.',
     image: ASSETS.workflow.planExport
   }, {
     step: '04',
-    title: 'The architect walks in prepared',
-    body: 'An optional Gemini exterior study can support emotional alignment, but the operational win is simpler: the firm begins with more clarity and less drift.',
+    title: 'The next conversation starts ahead',
+    body: 'An optional Exterior Render can support emotional alignment, but the deeper win is simpler: the process begins with more clarity and less drift.',
     image: ASSETS.workflow.kickoffMeeting
   }];
-  const operatorBenefits = ['More serious kickoff meetings with less unpaid discovery time', 'A clearer client handoff before the architect starts shaping options', 'A stronger internal review artifact for firms that want consistency'];
+  const operatorBenefits = ['A clearer first design conversation', 'An easier handoff into professional design work later', 'A stronger concept artifact for family discussion, review, and budgeting'];
   const supportGallery = [ASSETS.workflow.collage, ASSETS.exampleElevationSheet, ASSETS.roadmap.cadExport, ASSETS.exampleRender];
-  return React.createElement(SubpageChrome, null, ({
+  return /*#__PURE__*/React.createElement(SubpageChrome, null, ({
     openModal
-  }) => React.createElement(React.Fragment, null, React.createElement("section", {
+  }) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
     className: "relative overflow-hidden",
     style: {
       background: 'linear-gradient(180deg, #FFFDF9 0%, #F5EADF 100%)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "site-shell py-16 md:py-24 relative z-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid xl:grid-cols-[minmax(0,1fr)_360px] gap-8 items-start"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label"
-  }, "B2B workflow"), React.createElement("h1", {
+  }, "Guided workflow"), /*#__PURE__*/React.createElement("h1", {
     className: "cg mt-6",
     style: {
       fontSize: 'clamp(3rem, 7vw, 6rem)',
@@ -10106,31 +10457,31 @@ const B2BWorkflowPage = () => {
       textTransform: 'uppercase',
       color: 'var(--ink)'
     }
-  }, "A pre-meeting workflow designed for architecture firms."), React.createElement("p", {
+  }, "A guided workflow designed to make home design easier to understand."), /*#__PURE__*/React.createElement("p", {
     className: "mt-6 max-w-3xl text-base md:text-lg leading-relaxed",
     style: {
       color: 'rgba(32,26,21,0.72)'
     }
-  }, "Keystone is not a generic lead form or portfolio gimmick. It is a firm-led process that helps clients arrive with structured intent so the architect can start the first serious conversation further ahead."), React.createElement("div", {
+  }, "Keystone is not a generic lead form or a gallery trick. It is a guided process that helps people arrive at the first serious design conversation with more structure, less drift, and something real to react to."), /*#__PURE__*/React.createElement("div", {
     className: "grid sm:grid-cols-3 gap-3 mt-8 max-w-3xl"
-  }, [['Buyer', 'Residential firms'], ['Live today', 'Brief + plan + elevations + DXF'], ['Rollout', 'Firm-led access']].map(([label, value]) => React.createElement("div", {
+  }, [['Buyer', 'Home builders'], ['Live today', 'Brief + plan + elevations + DXF'], ['Trial', 'Free + unlocked']].map(([label, value]) => /*#__PURE__*/React.createElement("div", {
     key: label,
     className: "paper-panel p-4 md:p-5"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[9px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, label), React.createElement("div", {
+  }, label), /*#__PURE__*/React.createElement("div", {
     className: "cg text-[1.4rem] mt-3 leading-[0.95]",
     style: {
       color: 'var(--ink)'
     }
-  }, value))))), React.createElement("aside", {
+  }, value))))), /*#__PURE__*/React.createElement("aside", {
     className: "paper-panel p-5 md:p-6"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "rounded-[18px] overflow-hidden"
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: ASSETS.workflow.planReview,
     alt: "Architect reviewing a Keystone floor plan on screen and paper",
     style: {
@@ -10139,36 +10490,36 @@ const B2BWorkflowPage = () => {
       objectFit: 'cover',
       display: 'block'
     }
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "mt-5"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "What firms get"), React.createElement("div", {
+  }, "What you get"), /*#__PURE__*/React.createElement("div", {
     className: "grid gap-3 mt-4"
-  }, LIVE_NOW_FEATURES.map(item => React.createElement("div", {
+  }, LIVE_NOW_FEATURES.map(item => /*#__PURE__*/React.createElement("div", {
     key: item,
     className: "flex items-start gap-3 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.68)'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
     style: {
       background: 'var(--accent)'
     }
-  }), React.createElement("span", null, item))))))))), React.createElement("section", {
+  }), /*#__PURE__*/React.createElement("span", null, item))))))))), /*#__PURE__*/React.createElement("section", {
     className: "py-12 md:py-16",
     style: {
       background: 'var(--paper)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "site-shell"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid md:grid-cols-2 xl:grid-cols-4 gap-4"
-  }, workflowStages.map((item, index) => React.createElement(motion.article, {
+  }, workflowStages.map((item, index) => /*#__PURE__*/React.createElement(motion.article, {
     key: item.step,
     initial: {
       opacity: 0,
@@ -10185,12 +10536,12 @@ const B2BWorkflowPage = () => {
     transition: {
       delay: index * 0.08
     }
-  }, React.createElement(TiltCard, {
+  }, /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 4,
     style: {
       height: '100%'
     }
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.1)",
     className: "h-full",
     style: {
@@ -10199,11 +10550,11 @@ const B2BWorkflowPage = () => {
       borderRadius: '22px',
       overflow: 'hidden'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       aspectRatio: '1 / 0.82'
     }
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: item.image,
     alt: item.title,
     style: {
@@ -10212,43 +10563,43 @@ const B2BWorkflowPage = () => {
       objectFit: 'cover',
       display: 'block'
     }
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "p-5 md:p-6"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'var(--accent)',
       opacity: 0.78
     }
-  }, item.step), React.createElement("h3", {
+  }, item.step), /*#__PURE__*/React.createElement("h3", {
     className: "cg text-[1.6rem] mt-4 leading-[0.95]",
     style: {
       color: 'var(--ink)'
     }
-  }, item.title), React.createElement("p", {
+  }, item.title), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.64)'
     }
-  }, item.body))))))))), React.createElement("section", {
+  }, item.body))))))))), /*#__PURE__*/React.createElement("section", {
     className: "py-12 md:py-16 relative overflow-hidden",
     style: {
       background: 'linear-gradient(180deg,#0A0806 0%,#130B05 100%)'
     }
-  }, React.createElement(FloatingParticles, {
+  }, /*#__PURE__*/React.createElement(FloatingParticles, {
     count: 24,
     color: "255,106,55",
     className: "opacity-18"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "site-shell relative z-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid xl:grid-cols-[minmax(0,1fr)_320px] gap-8 items-start"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(255,106,55,0.72)'
     }
-  }, "Why it matters"), React.createElement("h2", {
+  }, "Why it matters"), /*#__PURE__*/React.createElement("h2", {
     className: "cg text-white mt-6",
     style: {
       fontSize: 'clamp(2.4rem, 5vw, 4.4rem)',
@@ -10256,81 +10607,81 @@ const B2BWorkflowPage = () => {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "More signal before the architect spends real time."), React.createElement("div", {
+  }, "More signal before you spend real money or step into a serious design conversation."), /*#__PURE__*/React.createElement("div", {
     className: "grid sm:grid-cols-2 gap-3 mt-8"
-  }, supportGallery.map((image, index) => React.createElement("div", {
+  }, supportGallery.map((image, index) => /*#__PURE__*/React.createElement("div", {
     key: image,
     className: "rounded-[18px] overflow-hidden",
     style: {
       border: '1px solid rgba(255,255,255,0.08)'
     }
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: image,
-    alt: `B2B workflow support visual ${index + 1}`,
+    alt: `Guided workflow support visual ${index + 1}`,
     style: {
       width: '100%',
       height: '220px',
       objectFit: 'cover',
       display: 'block'
     }
-  }))))), React.createElement("div", {
+  }))))), /*#__PURE__*/React.createElement("div", {
     className: "grid gap-4"
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.14)",
     className: "dream-panel p-6 md:p-7"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.24em]",
     style: {
       color: 'rgba(255,106,55,0.78)'
     }
-  }, "Operator benefits"), React.createElement("div", {
+  }, "Operator benefits"), /*#__PURE__*/React.createElement("div", {
     className: "grid gap-3 mt-5"
-  }, operatorBenefits.map(item => React.createElement("div", {
+  }, operatorBenefits.map(item => /*#__PURE__*/React.createElement("div", {
     key: item,
     className: "flex items-start gap-3 text-sm leading-relaxed",
     style: {
       color: 'rgba(244,239,230,0.7)'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
     style: {
       background: 'var(--accent)'
     }
-  }), React.createElement("span", null, item))))), React.createElement(SpotlightCard, {
+  }), /*#__PURE__*/React.createElement("span", null, item))))), /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.12)",
     className: "paper-panel p-6 md:p-7"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.24em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "Scope discipline"), React.createElement("p", {
+  }, "Scope discipline"), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.68)'
     }
-  }, "Keystone is intentionally narrow today: structured intake, generated plan, elevation views, an MVP planning estimate, vector DXF export, and optional Gemini study. Scheduling and deeper viewer tools stay on the roadmap until they are truly live."), React.createElement("div", {
+  }, "Keystone is intentionally narrow today: structured intake, generated plan, elevation views, a Cost Estimate, CAD export (DXF), and an optional Exterior Render. Scheduling and deeper viewer tools stay on the roadmap until they are truly live."), /*#__PURE__*/React.createElement("div", {
     className: "mt-6 flex flex-col gap-3"
-  }, React.createElement("a", {
+  }, /*#__PURE__*/React.createElement("a", {
     href: "/roadmap",
     className: "cta-secondary text-center"
-  }, "View Roadmap"), React.createElement("button", {
+  }, "View Roadmap"), /*#__PURE__*/React.createElement("button", {
     onClick: openModal,
     className: "cta-hero cta-glow-soft"
-  }, "Request Access")))))))));
+  }, "Unlock Advanced Features")))))))));
 };
 const RoadmapPage = () => {
   usePageTitle('Keystone AI - Roadmap');
   const roadmapModules = [{
     phase: 'Live today',
     title: 'Guided brief capture',
-    body: 'The client-facing intake link already turns loose preferences into structured discovery data before kickoff.',
+    body: 'The guided intake already turns loose preferences into structured discovery data before the first serious design conversation.',
     image: ASSETS.workflow.clientIntake,
     status: 'Live'
   }, {
     phase: 'Live today',
     title: 'Generated plan + blueprint image',
-    body: 'Keystone already returns a usable floor plan and a clean blueprint image the firm can download and review.',
+    body: 'Keystone already returns a usable floor plan and a clean blueprint image you can download, share, and review.',
     image: ASSETS.workflow.planExport,
     status: 'Live'
   }, {
@@ -10341,8 +10692,8 @@ const RoadmapPage = () => {
     status: 'Live'
   }, {
     phase: 'Live today',
-    title: 'Gemini exterior study',
-    body: 'An optional exterior study is already available to give the client a visual anchor during the early conversation.',
+    title: 'Exterior render',
+    body: 'An optional exterior render is already available to give the household a visual anchor during the early conversation.',
     image: ASSETS.roadmap.exteriorStudy,
     status: 'Live'
   }, {
@@ -10354,7 +10705,7 @@ const RoadmapPage = () => {
   }, {
     phase: 'Live today',
     title: 'Planning estimate layer',
-    body: 'The generated plan now includes a concept-level quantity takeoff and early cost range so the team can discuss geometry and commercial context together.',
+    body: 'The generated plan now includes a concept-level quantity takeoff and early cost range so the household can discuss geometry and budget together.',
     image: ASSETS.roadmap.overview,
     status: 'Live'
   }, {
@@ -10364,21 +10715,21 @@ const RoadmapPage = () => {
     image: ASSETS.phase3[1],
     status: 'Planned'
   }];
-  const roadmapTracks = [['Estimates', 'Tie quantity logic to early project conversations without overselling precision.'], ['Scheduling', 'Help firms preview timing dependencies once the product truth is ready for it.'], ['3D viewer', 'Add richer interactive viewing only after the core plan, elevation, and export workflow is solid.'], ['White-labeling', 'Let studios present Keystone inside their own professional brand language.']];
-  return React.createElement(SubpageChrome, null, ({
+  const roadmapTracks = [['Estimates', 'Tie quantity logic to early project conversations without overselling precision.'], ['Scheduling', 'Help homeowners understand timing dependencies once the product truth is ready for it.'], ['3D viewer', 'Add richer interactive viewing only after the core plan, elevation, and export workflow is solid.'], ['White-labeling', 'Later, let professionals present Keystone inside their own brand language.']];
+  return /*#__PURE__*/React.createElement(SubpageChrome, null, ({
     openModal
-  }) => React.createElement(React.Fragment, null, React.createElement("section", {
+  }) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
     className: "relative overflow-hidden",
     style: {
       background: 'linear-gradient(180deg, #FFFDF9 0%, #F4EBE1 100%)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "site-shell py-16 md:py-24 relative z-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid xl:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label"
-  }, "Roadmap"), React.createElement("h1", {
+  }, "Roadmap"), /*#__PURE__*/React.createElement("h1", {
     className: "cg mt-6",
     style: {
       fontSize: 'clamp(3rem, 7vw, 6rem)',
@@ -10387,52 +10738,52 @@ const RoadmapPage = () => {
       textTransform: 'uppercase',
       color: 'var(--ink)'
     }
-  }, "What Keystone does now, and what the platform is growing toward next."), React.createElement("p", {
+  }, "What Keystone does now, and what the platform is growing toward next."), /*#__PURE__*/React.createElement("p", {
     className: "mt-6 max-w-3xl text-base md:text-lg leading-relaxed",
     style: {
       color: 'rgba(32,26,21,0.72)'
     }
-  }, "This roadmap keeps a strict line between live capability and planned capability. It shows the platform direction around deeper quantity logic, scheduling, and 3D viewing while keeping live features like elevations, the MVP planning estimate, and DXF export clearly separate from roadmap items.")), React.createElement(SpotlightCard, {
+  }, "This roadmap keeps a strict line between live capability and planned capability. It shows the platform direction around deeper quantity logic, scheduling, and 3D viewing while keeping live features like elevations, the Cost Estimate, and DXF export clearly separate from roadmap items.")), /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.1)",
     className: "paper-panel p-6 md:p-7"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.24em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "Product truth"), React.createElement("div", {
+  }, "Product truth"), /*#__PURE__*/React.createElement("div", {
     className: "grid gap-3 mt-5"
-  }, LIVE_NOW_FEATURES.map(item => React.createElement("div", {
+  }, LIVE_NOW_FEATURES.map(item => /*#__PURE__*/React.createElement("div", {
     key: item,
     className: "flex items-start gap-3 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.68)'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
     style: {
       background: 'var(--accent)'
     }
-  }), React.createElement("span", null, item)))), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("span", null, item)))), /*#__PURE__*/React.createElement("div", {
     className: "mt-6 pt-5",
     style: {
       borderTop: '1px solid rgba(10,10,12,0.08)'
     }
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.64)'
     }
-  }, "Everything below marked ", React.createElement("strong", null, "Planned"), " is direction, not a live sales claim.")))))), React.createElement("section", {
+  }, "Everything below marked ", /*#__PURE__*/React.createElement("strong", null, "Planned"), " is direction, not a live sales claim.")))))), /*#__PURE__*/React.createElement("section", {
     className: "py-12 md:py-16",
     style: {
       background: 'var(--paper)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "site-shell"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid md:grid-cols-2 xl:grid-cols-3 gap-4"
-  }, roadmapModules.map((module, index) => React.createElement(motion.article, {
+  }, roadmapModules.map((module, index) => /*#__PURE__*/React.createElement(motion.article, {
     key: module.title,
     initial: {
       opacity: 0,
@@ -10449,12 +10800,12 @@ const RoadmapPage = () => {
     transition: {
       delay: index * 0.06
     }
-  }, React.createElement(TiltCard, {
+  }, /*#__PURE__*/React.createElement(TiltCard, {
     maxTilt: 4,
     style: {
       height: '100%'
     }
-  }, React.createElement(SpotlightCard, {
+  }, /*#__PURE__*/React.createElement(SpotlightCard, {
     spotlightColor: "rgba(255,106,55,0.12)",
     className: "h-full",
     style: {
@@ -10463,11 +10814,11 @@ const RoadmapPage = () => {
       borderRadius: '22px',
       overflow: 'hidden'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     style: {
       aspectRatio: '1 / 0.75'
     }
-  }, React.createElement(SmartImage, {
+  }, /*#__PURE__*/React.createElement(SmartImage, {
     src: module.image,
     alt: module.title,
     style: {
@@ -10476,50 +10827,50 @@ const RoadmapPage = () => {
       objectFit: 'cover',
       display: 'block'
     }
-  })), React.createElement("div", {
+  })), /*#__PURE__*/React.createElement("div", {
     className: "p-5 md:p-6"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center justify-between gap-3"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, module.phase), React.createElement("span", {
+  }, module.phase), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[9px] uppercase tracking-[0.2em] px-2 py-1 rounded-full",
     style: {
       color: module.status === 'Live' ? 'white' : 'rgba(10,10,12,0.56)',
       background: module.status === 'Live' ? 'var(--accent)' : 'rgba(10,10,12,0.06)'
     }
-  }, module.status)), React.createElement("h3", {
+  }, module.status)), /*#__PURE__*/React.createElement("h3", {
     className: "cg text-[1.7rem] mt-4 leading-[0.95]",
     style: {
       color: 'var(--ink)'
     }
-  }, module.title), React.createElement("p", {
+  }, module.title), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.64)'
     }
-  }, module.body))))))))), React.createElement("section", {
+  }, module.body))))))))), /*#__PURE__*/React.createElement("section", {
     className: "py-12 md:py-16 relative overflow-hidden",
     style: {
       background: 'linear-gradient(180deg,#0A0806 0%,#130B05 100%)'
     }
-  }, React.createElement(FloatingParticles, {
+  }, /*#__PURE__*/React.createElement(FloatingParticles, {
     count: 20,
     color: "255,106,55",
     className: "opacity-16"
-  }), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("div", {
     className: "site-shell relative z-10"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid xl:grid-cols-[320px_minmax(0,1fr)] gap-8 items-start"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label",
     style: {
       color: 'rgba(255,106,55,0.72)'
     }
-  }, "Direction"), React.createElement("h2", {
+  }, "Direction"), /*#__PURE__*/React.createElement("h2", {
     className: "cg text-white mt-6",
     style: {
       fontSize: 'clamp(2.4rem, 5vw, 4rem)',
@@ -10527,79 +10878,82 @@ const RoadmapPage = () => {
       letterSpacing: '-0.05em',
       textTransform: 'uppercase'
     }
-  }, "The platform grows outward from plan logic.")), React.createElement("div", {
+  }, "The platform grows outward from plan logic.")), /*#__PURE__*/React.createElement("div", {
     className: "grid md:grid-cols-2 gap-4"
-  }, roadmapTracks.map(([title, body]) => React.createElement(SpotlightCard, {
+  }, roadmapTracks.map(([title, body]) => /*#__PURE__*/React.createElement(SpotlightCard, {
     key: title,
     spotlightColor: "rgba(255,106,55,0.14)",
     className: "dream-panel p-5 md:p-6"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(255,106,55,0.78)'
     }
-  }, title), React.createElement("p", {
+  }, title), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-sm leading-relaxed",
     style: {
       color: 'rgba(244,239,230,0.68)'
     }
-  }, body))))), React.createElement("div", {
+  }, body))))), /*#__PURE__*/React.createElement("div", {
     className: "mt-8 flex flex-col sm:flex-row gap-3"
-  }, React.createElement("a", {
+  }, /*#__PURE__*/React.createElement("a", {
     href: "/b2b-workflow",
     className: "cta-secondary text-center"
-  }, "View B2B Workflow"), React.createElement("button", {
+  }, "View Guided Workflow"), /*#__PURE__*/React.createElement("button", {
     onClick: openModal,
     className: "cta-hero cta-glow-soft"
-  }, "Request Access"))))));
+  }, "Unlock Advanced Features"))))));
 };
 const FAQPage = () => {
   usePageTitle('Keystone AI - FAQ');
   const faqItems = [{
     question: 'What is live in Keystone right now?',
-    answer: 'The live workflow today includes guided brief capture, floor plan generation, elevation views, an MVP planning estimate, vector DXF export, high-resolution plan download, and Gemini-powered exterior study generation from the same project brief.'
+    answer: 'The live workflow today includes guided brief capture, floor plan generation, elevation views, a concept-level Cost Estimate workbook, CAD Export (DXF), high-resolution plan download, and Exterior Render generation from the same project brief.'
   }, {
-    question: 'Who is Keystone actually sold to?',
-    answer: 'Keystone is a B2B product for residential architecture and design-led firms. The firm adopts it, then shares the guided workflow with clients before the first serious meeting.'
+    question: 'Who is Keystone for right now?',
+    answer: 'Keystone is currently being shaped for homeowners and first-time home builders who want to describe the house they want without needing technical drafting knowledge.'
   }, {
-    question: 'Can a firm send Keystone to a client before the first meeting?',
-    answer: 'Yes. That is the core workflow. The firm shares the link and access code, the client completes the guided brief, and the architect reviews the results before kickoff.'
+    question: 'Do I need a technical background to use it?',
+    answer: 'No. That is the point of the guided brief. Keystone is designed so you can talk about your rooms, priorities, and preferences in plain language.'
   }, {
-    question: 'What does the architect receive before the meeting?',
-    answer: 'The firm can review the completed brief, the generated floor plan, the elevation views, the MVP planning estimate, the downloadable blueprint image, the vector DXF export, and the Gemini exterior study if one was generated for that session.'
+    question: 'What do I get from the free mode?',
+    answer: 'Free mode gives you the generated floor plan, the elevation views, and the high-resolution blueprint download.'
   }, {
-    question: 'Does Keystone replace the architect?',
-    answer: 'No. Keystone is an early discovery tool. It helps generate an initial plan and visual anchor, but design judgment still belongs to the architect and project team.'
+    question: 'What unlocks with a passkey?',
+    answer: 'The passkey unlocks advanced refinements, the Exterior Render, the Cost Estimate workbook, and CAD Export (DXF) during the current trial phase.'
+  }, {
+    question: 'Does Keystone replace an architect or builder?',
+    answer: 'No. Keystone is an early home-design and discovery tool. It helps you arrive with a clearer starting point, but professional design judgment still matters for any real project.'
   }, {
     question: 'Are these outputs construction documents?',
     answer: 'No. Keystone outputs are concept aids only. They are not permit-ready drawings, stamped documents, engineering deliverables, or final construction instructions.'
   }, {
-    question: 'Are CAD files, quantity takeoff, or cost estimates live today?',
-    answer: 'Elevation views, vector DXF export, and an MVP concept-level planning estimate are live today. Native DWG production, scheduling, and deeper downstream quantity logic still belong to the later workflow.'
+    question: 'Are CAD files and cost estimates live today?',
+    answer: 'The Cost Estimate workbook and CAD Export (DXF) are live today inside the advanced package. Native DWG production, scheduling, and deeper downstream quantity logic still belong to the later workflow.'
   }, {
     question: 'Why is access private right now?',
-    answer: 'Keystone is still being introduced through guided access so the workflow, onboarding, and firm fit stay strong while the product is maturing.'
+    answer: 'Keystone is still in a controlled trial phase so the expensive features stay protected while the product is maturing.'
   }, {
     question: 'How long does it take?',
-    answer: 'The first floor plan is designed to arrive quickly, often in under a minute. Gemini exterior studies take longer, but still fit inside an early-stage pre-meeting session.'
+    answer: 'The first floor plan is designed to arrive quickly, often in under a minute. Exterior renders take longer, but still fit inside an early-stage design session.'
   }, {
     question: 'How should I think about data and privacy?',
-    answer: 'Project inputs and generated outputs are used to operate the service, support firm access, and improve product quality. The current privacy page explains the starter policy in more detail.'
+    answer: 'Project inputs and generated outputs are used to operate the service, support access requests, and improve product quality. The current privacy page explains the starter policy in more detail.'
   }];
-  return React.createElement(SubpageChrome, null, ({
+  return /*#__PURE__*/React.createElement(SubpageChrome, null, ({
     openModal
-  }) => React.createElement(React.Fragment, null, React.createElement("section", {
+  }) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
     className: "py-16 md:py-24",
     style: {
       background: 'linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "site-shell"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid xl:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start"
-  }, React.createElement("div", null, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "section-label"
-  }, "FAQ"), React.createElement("h1", {
+  }, "FAQ"), /*#__PURE__*/React.createElement("h1", {
     className: "cg mt-6",
     style: {
       fontSize: 'clamp(3rem, 7vw, 5.8rem)',
@@ -10607,81 +10961,81 @@ const FAQPage = () => {
       letterSpacing: '-0.06em',
       textTransform: 'uppercase'
     }
-  }, "Questions serious firms ask before they open Keystone."), React.createElement("p", {
+  }, "Questions first-time home builders ask before they trust Keystone."), /*#__PURE__*/React.createElement("p", {
     className: "mt-6 max-w-3xl text-base md:text-lg leading-relaxed",
     style: {
       color: 'rgba(32,26,21,0.72)'
     }
-  }, "These answers stay anchored to what is actually live right now, how firms use the workflow, and what is still on the roadmap.")), React.createElement("aside", {
+  }, "These answers stay anchored to what is actually live right now, how the free and unlocked modes work, and what is still on the roadmap.")), /*#__PURE__*/React.createElement("aside", {
     className: "paper-panel p-6 md:p-7"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "mono text-[10px] uppercase tracking-[0.24em]",
     style: {
       color: 'rgba(27,79,130,0.72)'
     }
-  }, "Live today"), React.createElement("div", {
+  }, "Live today"), /*#__PURE__*/React.createElement("div", {
     className: "grid gap-3 mt-5"
-  }, LIVE_NOW_FEATURES.map(item => React.createElement("div", {
+  }, LIVE_NOW_FEATURES.map(item => /*#__PURE__*/React.createElement("div", {
     key: item,
     className: "flex items-start gap-3 text-sm leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.7)'
     }
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
     style: {
       background: 'var(--accent)'
     }
-  }), React.createElement("span", null, item)))), React.createElement("div", {
+  }), /*#__PURE__*/React.createElement("span", null, item)))), /*#__PURE__*/React.createElement("div", {
     className: "mt-8 pt-5",
     style: {
       borderTop: '1px solid rgba(10,10,12,0.08)'
     }
-  }, React.createElement("p", {
+  }, /*#__PURE__*/React.createElement("p", {
     className: "mono text-[10px] uppercase tracking-[0.24em]",
     style: {
       color: 'rgba(10,10,12,0.42)'
     }
-  }, "Need a direct answer?"), React.createElement("a", {
+  }, "Need a direct answer?"), /*#__PURE__*/React.createElement("a", {
     href: `mailto:${CONTACT_EMAIL}`,
     className: "inline-block mt-3 text-sm",
     style: {
       color: 'var(--ink)'
     }
-  }, CONTACT_EMAIL), React.createElement("div", {
+  }, CONTACT_EMAIL), /*#__PURE__*/React.createElement("div", {
     className: "mt-5 flex flex-col gap-3"
-  }, React.createElement("a", {
+  }, /*#__PURE__*/React.createElement("a", {
     href: "/how-floor-plans-work",
     className: "cta-secondary text-center"
-  }, "How Floor Plans Work"), React.createElement("button", {
+  }, "How Floor Plans Work"), /*#__PURE__*/React.createElement("button", {
     onClick: openModal,
     className: "cta-hero cta-glow-soft"
-  }, "Request Access"))))))), React.createElement("section", {
+  }, "Unlock Advanced Features"))))))), /*#__PURE__*/React.createElement("section", {
     className: "py-8 md:py-12",
     style: {
       background: 'var(--paper)'
     }
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "site-shell"
-  }, React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
     className: "grid lg:grid-cols-2 gap-4"
-  }, faqItems.map((item, index) => React.createElement("details", {
+  }, faqItems.map((item, index) => /*#__PURE__*/React.createElement("details", {
     key: item.question,
     className: "faq-card paper-panel p-5 md:p-6",
     open: index === 0
-  }, React.createElement("summary", {
+  }, /*#__PURE__*/React.createElement("summary", {
     className: "flex items-start justify-between gap-4 cursor-pointer list-none"
-  }, React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
     className: "cg text-[1.4rem] leading-[0.98]",
     style: {
       color: 'var(--ink)'
     }
-  }, item.question), React.createElement("span", {
+  }, item.question), /*#__PURE__*/React.createElement("span", {
     className: "mono text-[10px] uppercase tracking-[0.22em]",
     style: {
       color: 'rgba(10,10,12,0.36)'
     }
-  }, "Open")), React.createElement("p", {
+  }, "Open")), /*#__PURE__*/React.createElement("p", {
     className: "mt-4 text-sm md:text-base leading-relaxed",
     style: {
       color: 'rgba(10,10,12,0.66)'
@@ -10693,20 +11047,20 @@ const LegalPage = ({
   title,
   intro,
   sections
-}) => React.createElement(SubpageChrome, null, ({
+}) => /*#__PURE__*/React.createElement(SubpageChrome, null, ({
   openModal
-}) => React.createElement(React.Fragment, null, React.createElement("section", {
+}) => /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("section", {
   className: "py-16 md:py-24",
   style: {
     background: 'linear-gradient(180deg, #FFFDF9 0%, #F5F0E9 100%)'
   }
-}, React.createElement("div", {
+}, /*#__PURE__*/React.createElement("div", {
   className: "site-shell"
-}, React.createElement("div", {
+}, /*#__PURE__*/React.createElement("div", {
   className: "grid xl:grid-cols-[minmax(0,1fr)_340px] gap-8 items-start"
-}, React.createElement("div", null, React.createElement("span", {
+}, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
   className: "section-label"
-}, eyebrow), React.createElement("h1", {
+}, eyebrow), /*#__PURE__*/React.createElement("h1", {
   className: "cg mt-6",
   style: {
     fontSize: 'clamp(3rem, 7vw, 5.8rem)',
@@ -10714,72 +11068,72 @@ const LegalPage = ({
     letterSpacing: '-0.06em',
     textTransform: 'uppercase'
   }
-}, title), React.createElement("p", {
+}, title), /*#__PURE__*/React.createElement("p", {
   className: "mt-6 max-w-3xl text-base md:text-lg leading-relaxed",
   style: {
     color: 'rgba(32,26,21,0.72)'
   }
-}, intro)), React.createElement("aside", {
+}, intro)), /*#__PURE__*/React.createElement("aside", {
   className: "paper-panel p-6 md:p-7"
-}, React.createElement("div", {
+}, /*#__PURE__*/React.createElement("div", {
   className: "mono text-[10px] uppercase tracking-[0.24em]",
   style: {
     color: 'rgba(27,79,130,0.72)'
   }
-}, "Starter legal draft"), React.createElement("p", {
+}, "Starter legal draft"), /*#__PURE__*/React.createElement("p", {
   className: "mt-4 text-sm leading-relaxed",
   style: {
     color: 'rgba(10,10,12,0.66)'
   }
-}, "These pages use the public brand name ", BRAND_NAME, " while the formal legal entity details are still being finalized."), React.createElement("p", {
+}, "These pages use the public brand name ", BRAND_NAME, " while the formal legal entity details are still being finalized."), /*#__PURE__*/React.createElement("p", {
   className: "mono text-[10px] uppercase tracking-[0.22em] mt-5",
   style: {
     color: 'rgba(10,10,12,0.42)'
   }
-}, "Last updated"), React.createElement("p", {
+}, "Last updated"), /*#__PURE__*/React.createElement("p", {
   className: "text-sm mt-2",
   style: {
     color: 'var(--ink)'
   }
-}, LEGAL_UPDATED_AT), React.createElement("p", {
+}, LEGAL_UPDATED_AT), /*#__PURE__*/React.createElement("p", {
   className: "mono text-[10px] uppercase tracking-[0.22em] mt-5",
   style: {
     color: 'rgba(10,10,12,0.42)'
   }
-}, "Contact"), React.createElement("a", {
+}, "Contact"), /*#__PURE__*/React.createElement("a", {
   href: `mailto:${CONTACT_EMAIL}`,
   className: "inline-block mt-2 text-sm",
   style: {
     color: 'var(--ink)'
   }
-}, CONTACT_EMAIL), React.createElement("div", {
+}, CONTACT_EMAIL), /*#__PURE__*/React.createElement("div", {
   className: "mt-5 flex flex-col gap-3"
-}, React.createElement("a", {
+}, /*#__PURE__*/React.createElement("a", {
   href: "/#generator",
   className: "cta-secondary text-center"
-}, "Open Live Studio"), React.createElement("button", {
+}, "Open Live Studio"), /*#__PURE__*/React.createElement("button", {
   onClick: openModal,
   className: "cta-hero cta-glow-soft"
-}, "Request Access")))))), React.createElement("section", {
+}, "Unlock Advanced Features")))))), /*#__PURE__*/React.createElement("section", {
   className: "py-8 md:py-12",
   style: {
     background: 'var(--paper)'
   }
-}, React.createElement("div", {
+}, /*#__PURE__*/React.createElement("div", {
   className: "site-shell"
-}, React.createElement("div", {
+}, /*#__PURE__*/React.createElement("div", {
   className: "grid lg:grid-cols-2 gap-4"
-}, sections.map(section => React.createElement("article", {
+}, sections.map(section => /*#__PURE__*/React.createElement("article", {
   key: section.title,
   className: "paper-panel p-5 md:p-6"
-}, React.createElement("div", {
+}, /*#__PURE__*/React.createElement("div", {
   className: "mono text-[10px] uppercase tracking-[0.22em]",
   style: {
     color: 'rgba(27,79,130,0.72)'
   }
-}, section.title), React.createElement("div", {
+}, section.title), /*#__PURE__*/React.createElement("div", {
   className: "grid gap-3 mt-4"
-}, section.body.map((paragraph, index) => React.createElement("p", {
+}, section.body.map((paragraph, index) => /*#__PURE__*/React.createElement("p", {
   key: index,
   className: "text-sm leading-relaxed",
   style: {
@@ -10789,10 +11143,10 @@ const LegalPage = ({
 const PrivacyPage = () => {
   const sections = [{
     title: 'Information we collect',
-    body: ['We may collect contact details you send through access forms, firm details, client or project brief information submitted through the product, and the outputs generated from those inputs.', 'We may also collect limited technical data such as basic usage logs, browser information, and service diagnostics needed to keep the product working.']
+    body: ['We may collect contact details you send through access forms, project brief information submitted through the product, and the outputs generated from those inputs.', 'We may also collect limited technical data such as basic usage logs, browser information, and service diagnostics needed to keep the product working.']
   }, {
     title: 'How the information is used',
-    body: ['We use information to operate Keystone, respond to access requests, let firms review submitted briefs and outputs, improve output quality, maintain security, and understand whether the product is reliable for firms using it.', 'We do not treat your project data as public marketing material without permission.']
+    body: ['We use information to operate Keystone, respond to access requests, improve output quality, maintain security, and understand whether the product is reliable for real homeowner use.', 'We do not treat your project data as public marketing material without permission.']
   }, {
     title: 'Sharing and service providers',
     body: ['Keystone relies on hosted infrastructure and model providers to generate outputs and deliver the service. Information may be processed by those providers as part of normal operation.', 'We do not sell personal information. We share data only as needed to run, secure, or improve the service.']
@@ -10801,12 +11155,12 @@ const PrivacyPage = () => {
     body: ['We retain information for as long as reasonably necessary to operate the product, support users, evaluate product quality, and comply with legal obligations.', 'If you need a deletion request reviewed, contact us at the email listed on this page and we will handle it where reasonably possible.']
   }, {
     title: 'Your choices',
-    body: ['You can choose not to submit forms or project details, though that may limit access to Keystone.', 'You may also contact us to ask questions about access, stored contact details, client-submitted project data, or deletion requests.']
+    body: ['You can choose not to submit forms or project details, though that may limit access to Keystone.', 'You may also contact us to ask questions about access, stored contact details, submitted project data, or deletion requests.']
   }, {
     title: 'Important note',
     body: ['Keystone is an early-stage product. This privacy page is a starter draft designed to be transparent while the formal company structure is still being finalized.']
   }];
-  return React.createElement(LegalPage, {
+  return /*#__PURE__*/React.createElement(LegalPage, {
     eyebrow: "Privacy",
     title: "A plain-language privacy draft for an early-stage studio product.",
     intro: "This page explains the current privacy posture for Keystone in straightforward terms. It is meant to be readable now and tightened further as the business structure becomes formalized.",
@@ -10816,16 +11170,16 @@ const PrivacyPage = () => {
 const TermsPage = () => {
   const sections = [{
     title: 'Nature of the service',
-    body: ['Keystone is a B2B design-assist product for early residential discovery. It helps firms collect client inputs, generate conceptual floor plans, prepare elevations and an MVP planning estimate, create downloadable images and DXF exports, and produce Gemini-powered exterior studies from project briefs.', 'The service is offered on an early-stage basis and may evolve, change, pause, or improve over time.']
+    body: ['Keystone is an early-stage home design and discovery product. It helps people describe what they want in a house, generate conceptual floor plans, prepare elevations and a concept-level Cost Estimate, create downloadable images and DXF exports, and produce Exterior Renders from project briefs.', 'The service is offered on an early-stage basis and may evolve, change, pause, or improve over time.']
   }, {
     title: 'Professional responsibility',
-    body: ['Keystone does not replace licensed design professionals. All outputs must be reviewed, interpreted, and validated by qualified professionals before they are used in any meaningful project context.', 'You are responsible for how you use outputs inside your own practice or process.']
+    body: ['Keystone does not replace licensed design professionals. All outputs must be reviewed, interpreted, and validated by qualified professionals before they are used in any meaningful project context.', 'You are responsible for how you use outputs inside your own planning, budgeting, or design process.']
   }, {
     title: 'Not construction documents',
     body: ['Keystone outputs are conceptual only. They are not permit-ready drawings, engineering documents, code compliance confirmations, or final construction instructions.', 'You must not rely on Keystone outputs as final technical documents without further professional development and review.']
   }, {
     title: 'User responsibilities',
-    body: ['You agree to provide information you have the right to use and to avoid unlawful, infringing, or harmful inputs.', 'If Keystone access is private or code-based, you are responsible for safeguarding that access, sharing it only as intended, and handling client access responsibly inside your own firm workflow.']
+    body: ['You agree to provide information you have the right to use and to avoid unlawful, infringing, or harmful inputs.', 'If Keystone access is private or code-based, you are responsible for safeguarding that access and sharing it only as intended.']
   }, {
     title: 'Payments and availability',
     body: ['Pricing, access policies, and demo eligibility may change as the product evolves. Guided sessions or free demos may be limited or discontinued.', 'We do not guarantee uninterrupted availability, and we may suspend or modify access when needed for reliability or safety.']
@@ -10833,7 +11187,7 @@ const TermsPage = () => {
     title: 'Warranty and liability',
     body: ['Keystone is provided as-is to the fullest extent permitted by law. We make no guarantee that outputs will be accurate for every project, complete for every use case, or uninterrupted at all times.', 'To the fullest extent permitted by law, Keystone is not liable for project losses, downstream design decisions, construction reliance, or other damages arising from use of conceptual outputs.']
   }];
-  return React.createElement(LegalPage, {
+  return /*#__PURE__*/React.createElement(LegalPage, {
     eyebrow: "Terms",
     title: "Interim terms for using Keystone responsibly.",
     intro: "These terms are written to match the current reality of the product: an early-stage studio tool for first conversations, not a substitute for professional design responsibility.",
@@ -10842,14 +11196,14 @@ const TermsPage = () => {
 };
 const AppRouter = () => {
   const path = getCurrentPath();
-  if (path === '/how-floor-plans-work') return React.createElement(HowFloorPlansWorkPage, null);
-  if (path === '/case-study') return React.createElement(CaseStudyPage, null);
-  if (path === '/b2b-workflow') return React.createElement(B2BWorkflowPage, null);
-  if (path === '/roadmap') return React.createElement(RoadmapPage, null);
-  if (path === '/faq') return React.createElement(FAQPage, null);
-  if (path === '/privacy') return React.createElement(PrivacyPage, null);
-  if (path === '/terms') return React.createElement(TermsPage, null);
-  return React.createElement(DreamApp, null);
+  if (path === '/how-floor-plans-work') return /*#__PURE__*/React.createElement(HowFloorPlansWorkPage, null);
+  if (path === '/case-study') return /*#__PURE__*/React.createElement(CaseStudyPage, null);
+  if (path === '/b2b-workflow') return /*#__PURE__*/React.createElement(B2BWorkflowPage, null);
+  if (path === '/roadmap') return /*#__PURE__*/React.createElement(RoadmapPage, null);
+  if (path === '/faq') return /*#__PURE__*/React.createElement(FAQPage, null);
+  if (path === '/privacy') return /*#__PURE__*/React.createElement(PrivacyPage, null);
+  if (path === '/terms') return /*#__PURE__*/React.createElement(TermsPage, null);
+  return /*#__PURE__*/React.createElement(DreamApp, null);
 };
 const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(React.createElement(AppRouter, null));
+root.render(/*#__PURE__*/React.createElement(AppRouter, null));
