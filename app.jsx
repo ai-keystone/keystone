@@ -3111,6 +3111,7 @@ const Render3DPanel = ({
     onRenderStatusChange,
     accessToken = null,
     initialState = null,
+    resetKey = 0,
     isLocked = false,
     onLockedAction,
 }) => {
@@ -3237,7 +3238,11 @@ const Render3DPanel = ({
         doRender(renderSurveyData, ref.hint, renderImageClean);
     };
 
+    // Session-restore: apply initialState once on mount only (prevents snapshot feedback loop)
+    const _initialApplied = useRef(false);
     useEffect(() => {
+        if (_initialApplied.current || !initialState) return;
+        _initialApplied.current = true;
         const next = normalizeRenderState(initialState);
         setRenderStatus(next.status);
         setRenderImage(next.image || null);
@@ -3247,6 +3252,18 @@ const Render3DPanel = ({
         setRenderSurveyData(next.surveyData || null);
         setShowSurvey(false);
     }, [initialState]);
+
+    // Explicit reset when parent generates a new plan (resetKey increments)
+    useEffect(() => {
+        if (!resetKey) return;
+        setRenderStatus('idle');
+        setRenderImage(null);
+        setRenderImageClean(null);
+        setErrorMsg('');
+        setActiveRefinement(null);
+        setRenderSurveyData(null);
+        setShowSurvey(false);
+    }, [resetKey]);
 
     useEffect(() => {
         if (typeof onRenderStatusChange === 'function') onRenderStatusChange(renderStatus);
@@ -4239,6 +4256,7 @@ const DesignGenerator = ({ onOpenModal }) => {
     const [showAlternatives, setShowAlternatives] = useState(false);
     const [isExportingEstimateXlsx, setIsExportingEstimateXlsx] = useState(false);
     const [renderLaunchSignal, setRenderLaunchSignal] = useState(0);
+    const [renderResetKey, setRenderResetKey] = useState(0);
     const [renderPanelStatus, setRenderPanelStatus] = useState(() => normalizeRenderState(initialSession?.renderState).status);
     const [renderState, setRenderState] = useState(() => normalizeRenderState(initialSession?.renderState));
 
@@ -4343,6 +4361,7 @@ const DesignGenerator = ({ onOpenModal }) => {
             setFootprintInfo(data.footprintInfo ?? null);
             setAlternatives(data.alternatives || []);
             setRenderState(createEmptyRenderState());
+            setRenderResetKey(k => k + 1);
             setRenderPanelStatus('idle');
             setStatus('plan-ready');
         } catch(err) { alert('Error: ' + err.message); setStatus('idle'); }
@@ -4387,6 +4406,7 @@ const DesignGenerator = ({ onOpenModal }) => {
             setPlanSpec(data.planSpec ? { ...data.planSpec, estimate: data.estimate || data.planSpec?.estimate || null } : null);
             if (data.galleryId) setGalleryId(data.galleryId);
             setRenderState(createEmptyRenderState());
+            setRenderResetKey(k => k + 1);
             setRenderPanelStatus('idle');
             setRefinementHistory(prev => [...prev, { role:'assistant', content: summary }]);
             setRefinementsLeft(prev => prev - 1);
@@ -4560,6 +4580,7 @@ const DesignGenerator = ({ onOpenModal }) => {
         setFootprintInfo(null);
         setAlternatives([]);
         setRenderState(createEmptyRenderState());
+        setRenderResetKey(k => k + 1);
         setRenderPanelStatus('idle');
         try { localStorage.removeItem(STUDIO_SESSION_KEY); } catch {}
     };
@@ -4821,13 +4842,14 @@ const DesignGenerator = ({ onOpenModal }) => {
                                         planSvg={planSvg}
                                         elevations={planSpec?.elevations}
                                         galleryId={galleryId}
-                                        onRenderReady={img=>{setZoomImage(img);setRenderState(prev=>({...prev,status:'ready',image:img}));}}
+                                        onRenderReady={img=>setZoomImage(img)}
                                         onRenderStateSnapshot={setRenderState}
                                         launchSignal={renderLaunchSignal}
                                         showLaunchButton={false}
                                         onRenderStatusChange={setRenderPanelStatus}
                                         accessToken={accessToken}
-                                        initialState={renderState}
+                                        initialState={null}
+                                        resetKey={renderResetKey}
                                         isLocked={!isUnlocked}
                                         onLockedAction={promptUnlock}
                                     />
@@ -4911,6 +4933,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                                     setPlanScore(alt.score);
                                                     setFootprintInfo(alt.footprintInfo);
                                                     setRenderState(createEmptyRenderState());
+                                                    setRenderResetKey(k => k + 1);
                                                     setRenderPanelStatus('idle');
                                                     // Swap: current becomes an alternative
                                                     const newAlts = [

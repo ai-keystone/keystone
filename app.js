@@ -4770,6 +4770,7 @@ const Render3DPanel = ({
   onRenderStatusChange,
   accessToken = null,
   initialState = null,
+  resetKey = 0,
   isLocked = false,
   onLockedAction
 }) => {
@@ -4895,7 +4896,12 @@ const Render3DPanel = ({
     // Pass the clean (un-watermarked) existing image so backend can do lighting-only edit
     doRender(renderSurveyData, ref.hint, renderImageClean);
   };
+
+  // Session-restore: apply initialState once on mount only (prevents snapshot feedback loop)
+  const _initialApplied = useRef(false);
   useEffect(() => {
+    if (_initialApplied.current || !initialState) return;
+    _initialApplied.current = true;
     const next = normalizeRenderState(initialState);
     setRenderStatus(next.status);
     setRenderImage(next.image || null);
@@ -4905,6 +4911,18 @@ const Render3DPanel = ({
     setRenderSurveyData(next.surveyData || null);
     setShowSurvey(false);
   }, [initialState]);
+
+  // Explicit reset when parent generates a new plan (resetKey increments)
+  useEffect(() => {
+    if (!resetKey) return;
+    setRenderStatus('idle');
+    setRenderImage(null);
+    setRenderImageClean(null);
+    setErrorMsg('');
+    setActiveRefinement(null);
+    setRenderSurveyData(null);
+    setShowSurvey(false);
+  }, [resetKey]);
   useEffect(() => {
     if (typeof onRenderStatusChange === 'function') onRenderStatusChange(renderStatus);
   }, [renderStatus, onRenderStatusChange]);
@@ -6930,6 +6948,7 @@ const DesignGenerator = ({
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [isExportingEstimateXlsx, setIsExportingEstimateXlsx] = useState(false);
   const [renderLaunchSignal, setRenderLaunchSignal] = useState(0);
+  const [renderResetKey, setRenderResetKey] = useState(0);
   const [renderPanelStatus, setRenderPanelStatus] = useState(() => normalizeRenderState(initialSession?.renderState).status);
   const [renderState, setRenderState] = useState(() => normalizeRenderState(initialSession?.renderState));
   useEffect(() => {
@@ -7049,6 +7068,7 @@ const DesignGenerator = ({
       setFootprintInfo(data.footprintInfo ?? null);
       setAlternatives(data.alternatives || []);
       setRenderState(createEmptyRenderState());
+      setRenderResetKey(k => k + 1);
       setRenderPanelStatus('idle');
       setStatus('plan-ready');
     } catch (err) {
@@ -7100,6 +7120,7 @@ const DesignGenerator = ({
       } : null);
       if (data.galleryId) setGalleryId(data.galleryId);
       setRenderState(createEmptyRenderState());
+      setRenderResetKey(k => k + 1);
       setRenderPanelStatus('idle');
       setRefinementHistory(prev => [...prev, {
         role: 'assistant',
@@ -7278,6 +7299,7 @@ const DesignGenerator = ({
     setFootprintInfo(null);
     setAlternatives([]);
     setRenderState(createEmptyRenderState());
+    setRenderResetKey(k => k + 1);
     setRenderPanelStatus('idle');
     try {
       localStorage.removeItem(STUDIO_SESSION_KEY);
@@ -7789,20 +7811,14 @@ const DesignGenerator = ({
     planSvg: planSvg,
     elevations: planSpec?.elevations,
     galleryId: galleryId,
-    onRenderReady: img => {
-      setZoomImage(img);
-      setRenderState(prev => ({
-        ...prev,
-        status: 'ready',
-        image: img
-      }));
-    },
+    onRenderReady: img => setZoomImage(img),
     onRenderStateSnapshot: setRenderState,
     launchSignal: renderLaunchSignal,
     showLaunchButton: false,
     onRenderStatusChange: setRenderPanelStatus,
     accessToken: accessToken,
-    initialState: renderState,
+    initialState: null,
+    resetKey: renderResetKey,
     isLocked: !isUnlocked,
     onLockedAction: promptUnlock
   }))) : /*#__PURE__*/React.createElement("div", {
@@ -7901,6 +7917,7 @@ const DesignGenerator = ({
       setPlanScore(alt.score);
       setFootprintInfo(alt.footprintInfo);
       setRenderState(createEmptyRenderState());
+      setRenderResetKey(k => k + 1);
       setRenderPanelStatus('idle');
       // Swap: current becomes an alternative
       const newAlts = [{
