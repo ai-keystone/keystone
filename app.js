@@ -7260,13 +7260,8 @@ const DesignGenerator = ({
     if (renderPanelStatus === 'loading') return;
     setRenderLaunchSignal(value => value + 1);
   };
-  const actionButtonClass = (disabled = false) => ['px-4 py-3 rounded-full text-[10px] font-bold uppercase tracking-[0.22em] transition-all shadow-md text-white', disabled ? '' : 'cta-hero cta-glow-soft hover:-translate-y-0.5'].join(' ');
-  const actionButtonStyle = (disabled = false) => disabled ? {
-    background: 'rgba(245,126,66,0.45)',
-    cursor: 'not-allowed',
-    opacity: 0.68,
-    boxShadow: 'none'
-  } : undefined;
+  const actionButtonClass = (disabled = false) => 'px-4 py-3 rounded-full text-[10px] font-bold uppercase tracking-[0.22em] shadow-md text-white ks-action-btn';
+  const actionButtonStyle = (_disabled = false) => undefined;
   const renderActionLabel = renderPanelStatus === 'loading' ? 'Rendering 3D...' : renderPanelStatus === 'ready' ? 'Exterior Render Options' : 'Generate Exterior Render';
   const isLoading = status === 'loading-plan' || status === 'refining';
   const resetSampleBrief = () => {
@@ -7598,7 +7593,7 @@ const DesignGenerator = ({
     width: "12",
     height: "12",
     fill: "none",
-    stroke: "rgba(244,239,230,0.4)",
+    stroke: "rgba(110,220,130,0.75)",
     viewBox: "0 0 24 24"
   }, /*#__PURE__*/React.createElement("path", {
     strokeLinecap: "round",
@@ -7609,7 +7604,7 @@ const DesignGenerator = ({
     className: "mono",
     style: {
       fontSize: 8,
-      color: 'rgba(244,239,230,0.38)',
+      color: 'rgba(110,220,130,0.92)',
       letterSpacing: '0.18em',
       textTransform: 'uppercase'
     }
@@ -7623,7 +7618,7 @@ const DesignGenerator = ({
     className: "mono",
     style: {
       fontSize: 7,
-      color: 'rgba(244,239,230,0.3)',
+      color: 'rgba(110,220,130,0.72)',
       letterSpacing: '0.14em',
       textTransform: 'uppercase'
     }
@@ -7638,7 +7633,7 @@ const DesignGenerator = ({
     className: "mono",
     style: {
       fontSize: 7,
-      color: 'rgba(244,239,230,0.2)',
+      color: 'rgba(110,220,130,0.55)',
       letterSpacing: '0.16em',
       textTransform: 'uppercase'
     }
@@ -7794,7 +7789,14 @@ const DesignGenerator = ({
     planSvg: planSvg,
     elevations: planSpec?.elevations,
     galleryId: galleryId,
-    onRenderReady: img => setZoomImage(img),
+    onRenderReady: img => {
+      setZoomImage(img);
+      setRenderState(prev => ({
+        ...prev,
+        status: 'ready',
+        image: img
+      }));
+    },
     onRenderStateSnapshot: setRenderState,
     launchSignal: renderLaunchSignal,
     showLaunchButton: false,
