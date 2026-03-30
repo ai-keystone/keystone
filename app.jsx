@@ -4535,16 +4535,10 @@ const DesignGenerator = ({ onOpenModal }) => {
         setRenderLaunchSignal((value) => value + 1);
     };
 
-    const actionButtonClass = (disabled = false) => [
-        'px-4 py-3 rounded-full text-[10px] font-bold uppercase tracking-[0.22em] transition-all shadow-md text-white',
-        disabled ? '' : 'cta-hero cta-glow-soft hover:-translate-y-0.5'
-    ].join(' ');
+    const actionButtonClass = (disabled = false) =>
+        'px-4 py-3 rounded-full text-[10px] font-bold uppercase tracking-[0.22em] shadow-md text-white ks-action-btn';
 
-    const actionButtonStyle = (disabled = false) => (
-        disabled
-            ? { background:'rgba(245,126,66,0.45)', cursor:'not-allowed', opacity:0.68, boxShadow:'none' }
-            : undefined
-    );
+    const actionButtonStyle = (_disabled = false) => undefined;
 
     const renderActionLabel =
         renderPanelStatus === 'loading'
@@ -4723,8 +4717,8 @@ const DesignGenerator = ({ onOpenModal }) => {
                         {/* Title block */}
                         <div className="cad-canvas-titleblock">
                             <div style={{display:'flex',alignItems:'center',gap:8}}>
-                                <svg width="12" height="12" fill="none" stroke="rgba(244,239,230,0.4)" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                <span className="mono" style={{fontSize:8,color:'rgba(244,239,230,0.38)',letterSpacing:'0.18em',textTransform:'uppercase'}}>
+                                <svg width="12" height="12" fill="none" stroke="rgba(110,220,130,0.75)" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                <span className="mono" style={{fontSize:8,color:'rgba(110,220,130,0.92)',letterSpacing:'0.18em',textTransform:'uppercase'}}>
                                     {planSvg && footprintInfo
                                         ? `${footprintInfo.widthFt}' x ${footprintInfo.heightFt}' | ${formData.stories || ''} | ${formData.bedrooms || ''}${planSpec?.elevations ? ' | elevation set' : ''}`
                                         : 'Blueprint Viewport'}
@@ -4732,10 +4726,10 @@ const DesignGenerator = ({ onOpenModal }) => {
                             </div>
                             {planSvg && planScore != null
                                 ? <div style={{display:'flex',alignItems:'center',gap:6}}>
-                                    <span className="mono" style={{fontSize:7,color:'rgba(244,239,230,0.3)',letterSpacing:'0.14em',textTransform:'uppercase'}}>AI Score</span>
+                                    <span className="mono" style={{fontSize:7,color:'rgba(110,220,130,0.72)',letterSpacing:'0.14em',textTransform:'uppercase'}}>AI Score</span>
                                     <span className="mono" style={{fontSize:9,fontWeight:700,color:planScore>=70?'#4ade80':planScore>=40?'#facc15':'#f87171'}}>{planScore}/100</span>
                                   </div>
-                                : <span className="mono" style={{fontSize:7,color:'rgba(244,239,230,0.2)',letterSpacing:'0.16em',textTransform:'uppercase'}}>Keystone AI | Blueprint</span>}
+                                : <span className="mono" style={{fontSize:7,color:'rgba(110,220,130,0.55)',letterSpacing:'0.16em',textTransform:'uppercase'}}>Keystone AI | Blueprint</span>}
                         </div>
                         {/* Canvas body */}
                         <div className="cad-canvas-body">
@@ -4827,7 +4821,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                         planSvg={planSvg}
                                         elevations={planSpec?.elevations}
                                         galleryId={galleryId}
-                                        onRenderReady={img=>setZoomImage(img)}
+                                        onRenderReady={img=>{setZoomImage(img);setRenderState(prev=>({...prev,status:'ready',image:img}));}}
                                         onRenderStateSnapshot={setRenderState}
                                         launchSignal={renderLaunchSignal}
                                         showLaunchButton={false}
