@@ -4351,10 +4351,10 @@ const buildPresentationDxf = planSpec => {
     lineweight: 18
   };
 
-  // AC1015: emit lineweight code 370 per entity
+  // Layer attributes for entities (color only — lineweights live in LAYER table)
   const dxfLayerAttrs = layer => {
     const style = styleForLayer(layer);
-    return `8\n${style.name}\n62\n${style.color}\n370\n${style.lineweight}`;
+    return `8\n${style.name}\n62\n${style.color}`;
   };
   const drawLine = (x1, y1, x2, y2, layer) => {
     if (!finite(x1, y1, x2, y2)) return;
@@ -4918,30 +4918,57 @@ const buildPresentationDxf = planSpec => {
   const schedY = tbY + tbH + 1;
   drawRoomSchedule(planSpec, tbX, schedY + 16, schedW);
 
-  // Assemble DXF output with AC1015 header
+  // Assemble DXF output — AC1009 (R12) format: universally supported, no CLASSES/OBJECTS required
   const lines = [];
+  // HEADER
   lines.push('0\nSECTION\n2\nHEADER');
-  lines.push('9\n$ACADVER\n1\nAC1015');
-  lines.push('9\n$INSUNITS\n70\n2');
-  lines.push('9\n$MEASUREMENT\n70\n0');
-  lines.push('9\n$LTSCALE\n40\n0.5');
+  lines.push('9\n$ACADVER\n1\nAC1009');
+  lines.push('9\n$INSUNITS\n70\n1'); // 1 = inches; SCALE=12 converts tile-feet → inches
+  lines.push('9\n$MEASUREMENT\n70\n0'); // 0 = imperial
+  lines.push('9\n$LTSCALE\n40\n12.0'); // linetype scale to match inch units
+  lines.push('9\n$LIMMIN\n10\n0.0\n20\n0.0');
+  lines.push('9\n$LIMMAX\n10\n1680.0\n20\n1296.0'); // 140ft × 108ft in inches
   lines.push('0\nENDSEC');
+  // TABLES
   lines.push('0\nSECTION\n2\nTABLES');
+  // VPORT table (required by most parsers)
+  lines.push('0\nTABLE\n2\nVPORT\n70\n1');
+  lines.push('0\nVPORT\n2\n*ACTIVE\n70\n0\n10\n0.0\n20\n0.0\n11\n1.0\n21\n1.0\n12\n840.0\n22\n648.0\n13\n0.0\n23\n0.0\n14\n10.0\n24\n10.0\n15\n10.0\n25\n10.0\n16\n0.0\n26\n0.0\n36\n1.0\n17\n0.0\n27\n0.0\n37\n0.0\n40\n1296.0\n41\n1.293\n42\n50.0\n43\n0.0\n44\n0.0\n50\n0.0\n51\n0.0\n71\n0\n72\n1000\n73\n1\n74\n3\n75\n0\n76\n1\n77\n0\n78\n0');
+  lines.push('0\nENDTAB');
+  // LTYPE table
   lines.push('0\nTABLE\n2\nLTYPE\n70\n1');
   lines.push('0\nLTYPE\n2\nCONTINUOUS\n70\n0\n3\nSolid line\n72\n65\n73\n0\n40\n0.0');
   lines.push('0\nENDTAB');
+  // LAYER table
   lines.push(`0\nTABLE\n2\nLAYER\n70\n${Object.keys(layerStyles).length + 1}`);
-  lines.push('0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS\n370\n18');
+  lines.push('0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS');
   Object.values(layerStyles).forEach(style => {
-    lines.push(`0\nLAYER\n2\n${style.name}\n70\n0\n62\n${style.color}\n6\nCONTINUOUS\n370\n${style.lineweight}`);
+    lines.push(`0\nLAYER\n2\n${style.name}\n70\n0\n62\n${style.color}\n6\nCONTINUOUS`);
   });
   lines.push('0\nENDTAB');
+  // STYLE table
   lines.push('0\nTABLE\n2\nSTYLE\n70\n1');
   lines.push('0\nSTYLE\n2\nSTANDARD\n70\n0\n40\n0\n41\n1\n50\n0\n71\n0\n42\n0.2\n3\ntxt\n4\n');
   lines.push('0\nENDTAB');
+  // VIEW table
+  lines.push('0\nTABLE\n2\nVIEW\n70\n0');
+  lines.push('0\nENDTAB');
+  // UCS table
+  lines.push('0\nTABLE\n2\nUCS\n70\n0');
+  lines.push('0\nENDTAB');
+  // APPID table
+  lines.push('0\nTABLE\n2\nAPPID\n70\n1');
+  lines.push('0\nAPPID\n2\nACAD\n70\n0');
+  lines.push('0\nENDTAB');
   lines.push('0\nENDSEC');
+  // BLOCKS — required MODEL_SPACE and PAPER_SPACE stubs
   lines.push('0\nSECTION\n2\nBLOCKS');
+  lines.push('0\nBLOCK\n8\n0\n2\n*MODEL_SPACE\n70\n0\n10\n0.0\n20\n0.0\n30\n0.0\n3\n*MODEL_SPACE\n1\n');
+  lines.push('0\nENDBLK\n8\n0');
+  lines.push('0\nBLOCK\n8\n0\n2\n*PAPER_SPACE\n70\n0\n10\n0.0\n20\n0.0\n30\n0.0\n3\n*PAPER_SPACE\n1\n');
+  lines.push('0\nENDBLK\n8\n0');
   lines.push('0\nENDSEC');
+  // ENTITIES
   lines.push('0\nSECTION\n2\nENTITIES');
   lines.push(...entities);
   lines.push('0\nENDSEC');
