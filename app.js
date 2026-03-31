@@ -4273,56 +4273,73 @@ const planSpanForElevation = (planSpec, viewKey) => {
 const buildPresentationDxf = planSpec => {
   const SCALE = 12;
   const entities = [];
+
+  // Professional A-prefix layer table with AC1015 lineweights (in hundredths of mm)
   const layerStyles = {
-    OUTLINE: {
-      name: 'OUTLINE',
-      color: 8,
-      lineweight: 30
-    },
-    WALLS: {
-      name: 'WALLS',
+    'A-WALL': {
+      name: 'A-WALL',
       color: 7,
-      lineweight: 45
+      lineweight: 50
     },
-    DOORS: {
-      name: 'DOORS',
-      color: 1,
+    'A-WALL-INT': {
+      name: 'A-WALL-INT',
+      color: 8,
       lineweight: 25
     },
-    WINDOWS: {
-      name: 'WINDOWS',
+    'A-DOOR': {
+      name: 'A-DOOR',
+      color: 1,
+      lineweight: 18
+    },
+    'A-WINDOW': {
+      name: 'A-WINDOW',
       color: 5,
-      lineweight: 20
+      lineweight: 18
     },
-    LABELS: {
-      name: 'LABELS',
+    'A-ROOM-LABEL': {
+      name: 'A-ROOM-LABEL',
       color: 2,
-      lineweight: 18
+      lineweight: 13
     },
-    FURNITURE: {
-      name: 'FURNITURE',
+    'A-FURN': {
+      name: 'A-FURN',
       color: 6,
-      lineweight: 18
+      lineweight: 13
     },
-    DIMENSIONS: {
-      name: 'DIMENSIONS',
+    'A-DIM': {
+      name: 'A-DIM',
       color: 4,
-      lineweight: 15
+      lineweight: 13
     },
-    ELEVATION: {
-      name: 'ELEVATION',
+    'A-ELEV': {
+      name: 'A-ELEV',
       color: 3,
       lineweight: 25
     },
-    ELEV_TEXT: {
-      name: 'ELEV_TEXT',
+    'A-ELEV-TEXT': {
+      name: 'A-ELEV-TEXT',
       color: 2,
-      lineweight: 15
+      lineweight: 13
     },
-    SHEET: {
-      name: 'SHEET',
+    'A-SHEET': {
+      name: 'A-SHEET',
       color: 8,
       lineweight: 18
+    },
+    'A-TITLE': {
+      name: 'A-TITLE',
+      color: 7,
+      lineweight: 35
+    },
+    'A-NORTH': {
+      name: 'A-NORTH',
+      color: 3,
+      lineweight: 18
+    },
+    'A-SCHEDULE': {
+      name: 'A-SCHEDULE',
+      color: 2,
+      lineweight: 13
     }
   };
   const push = s => entities.push(s);
@@ -4331,11 +4348,13 @@ const buildPresentationDxf = planSpec => {
   const styleForLayer = layer => layerStyles[layer] || {
     name: String(layer || '0'),
     color: 7,
-    lineweight: 20
+    lineweight: 18
   };
+
+  // AC1015: emit lineweight code 370 per entity
   const dxfLayerAttrs = layer => {
     const style = styleForLayer(layer);
-    return `8\n${style.name}\n62\n${style.color}`;
+    return `8\n${style.name}\n62\n${style.color}\n370\n${style.lineweight}`;
   };
   const drawLine = (x1, y1, x2, y2, layer) => {
     if (!finite(x1, y1, x2, y2)) return;
@@ -4371,42 +4390,180 @@ const buildPresentationDxf = planSpec => {
     const justification = align === 'center' ? 1 : align === 'right' ? 2 : 0;
     push(`0\nTEXT\n${dxfLayerAttrs(layer)}\n10\n${x * SCALE}\n20\n${y * SCALE}\n30\n0\n40\n${h * SCALE}\n1\n${safe}\n7\nSTANDARD\n72\n${justification}\n73\n0\n11\n${x * SCALE}\n21\n${y * SCALE}\n31\n0`);
   };
+
+  // Double-line wall: draws two parallel lines offset ±thickness/2 from the centerline segment
+  const drawDoubleLineWall = (x1, y1, x2, y2, thickness, layer) => {
+    if (!finite(x1, y1, x2, y2, thickness) || thickness <= 0) return;
+    const half = thickness / 2;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 0.01) return;
+    // Perpendicular offset unit vector
+    const ox = -dy / len * half;
+    const oy = dx / len * half;
+    drawLine(x1 + ox, y1 + oy, x2 + ox, y2 + oy, layer);
+    drawLine(x1 - ox, y1 - oy, x2 - ox, y2 - oy, layer);
+  };
   const drawDimH = (x1, x2, baseY, offset, label) => {
     const y = baseY + offset;
-    drawLine(x1, baseY, x1, y, 'DIMENSIONS');
-    drawLine(x2, baseY, x2, y, 'DIMENSIONS');
-    drawLine(x1, y, x2, y, 'DIMENSIONS');
-    drawLine(x1, y - 0.3, x1 + 0.35, y + 0.35, 'DIMENSIONS');
-    drawLine(x1, y + 0.3, x1 + 0.35, y - 0.35, 'DIMENSIONS');
-    drawLine(x2, y - 0.3, x2 - 0.35, y + 0.35, 'DIMENSIONS');
-    drawLine(x2, y + 0.3, x2 - 0.35, y - 0.35, 'DIMENSIONS');
-    drawText((x1 + x2) / 2, y + 0.55, 0.75, label, 'DIMENSIONS', 'center');
+    drawLine(x1, baseY, x1, y, 'A-DIM');
+    drawLine(x2, baseY, x2, y, 'A-DIM');
+    drawLine(x1, y, x2, y, 'A-DIM');
+    drawLine(x1, y - 0.3, x1 + 0.35, y + 0.35, 'A-DIM');
+    drawLine(x1, y + 0.3, x1 + 0.35, y - 0.35, 'A-DIM');
+    drawLine(x2, y - 0.3, x2 - 0.35, y + 0.35, 'A-DIM');
+    drawLine(x2, y + 0.3, x2 - 0.35, y - 0.35, 'A-DIM');
+    drawText((x1 + x2) / 2, y + 0.55, 0.75, label, 'A-DIM', 'center');
   };
   const drawDimV = (y1, y2, baseX, offset, label) => {
     const x = baseX - offset;
-    drawLine(baseX, y1, x, y1, 'DIMENSIONS');
-    drawLine(baseX, y2, x, y2, 'DIMENSIONS');
-    drawLine(x, y1, x, y2, 'DIMENSIONS');
-    drawLine(x - 0.3, y1, x + 0.3, y1 + 0.35, 'DIMENSIONS');
-    drawLine(x + 0.3, y1, x - 0.3, y1 + 0.35, 'DIMENSIONS');
-    drawLine(x - 0.3, y2, x + 0.3, y2 - 0.35, 'DIMENSIONS');
-    drawLine(x + 0.3, y2, x - 0.3, y2 - 0.35, 'DIMENSIONS');
-    drawText(x - 0.55, (y1 + y2) / 2, 0.75, label, 'DIMENSIONS', 'right');
+    drawLine(baseX, y1, x, y1, 'A-DIM');
+    drawLine(baseX, y2, x, y2, 'A-DIM');
+    drawLine(x, y1, x, y2, 'A-DIM');
+    drawLine(x - 0.3, y1, x + 0.3, y1 + 0.35, 'A-DIM');
+    drawLine(x + 0.3, y1, x - 0.3, y1 + 0.35, 'A-DIM');
+    drawLine(x - 0.3, y2, x + 0.3, y2 - 0.35, 'A-DIM');
+    drawLine(x + 0.3, y2, x - 0.3, y2 - 0.35, 'A-DIM');
+    drawText(x - 0.55, (y1 + y2) / 2, 0.75, label, 'A-DIM', 'right');
   };
   const drawSheetFrame = (x, y, w, h) => {
-    drawRect(x, y, w, h, 'SHEET');
-    drawRect(x + 0.8, y + 0.8, w - 1.6, h - 1.6, 'SHEET');
+    drawRect(x, y, w, h, 'A-SHEET');
+    drawRect(x + 0.8, y + 0.8, w - 1.6, h - 1.6, 'A-SHEET');
   };
+
+  // North arrow: circle + N text + triangle pointing north
+  const drawNorthArrow = (cx, cy, radius) => {
+    drawCircle(cx, cy, radius, 'A-NORTH');
+    // Triangle pointing up (north): tip at top, base at bottom of circle
+    const tipX = cx,
+      tipY = cy + radius * 0.85;
+    const baseLeft = cx - radius * 0.4,
+      baseRight = cx + radius * 0.4,
+      baseY = cy - radius * 0.55;
+    drawPolyline([[tipX, tipY], [baseLeft, baseY], [baseRight, baseY], [tipX, tipY]], 'A-NORTH', true);
+    // Vertical stem
+    drawLine(cx, cy + radius * 0.85, cx, cy - radius * 0.85, 'A-NORTH');
+    // N label above circle
+    drawText(cx - radius * 0.2, cy + radius + 0.3, radius * 0.7, 'N', 'A-NORTH', 'center');
+  };
+
+  // Keystone AI logo mark: stylized roof peak chevron
+  const drawKeystoneLogoMark = (originX, originY) => {
+    // Chevron roof peak: (0,0) -> (1.5,2) -> (3,0) relative to origin
+    drawLine(originX, originY, originX + 1.5, originY + 2, 'A-TITLE');
+    drawLine(originX + 1.5, originY + 2, originX + 3, originY, 'A-TITLE');
+    // Baseline
+    drawLine(originX, originY, originX + 3, originY, 'A-TITLE');
+    // Small vertical below peak
+    drawLine(originX + 1.5, originY, originX + 1.5, originY - 0.5, 'A-TITLE');
+  };
+
+  // Enhanced title block with logo mark, project fields, scale, drawing number
   const drawTitleBlock = (x, y, w, h) => {
-    drawRect(x, y, w, h, 'SHEET');
-    drawLine(x, y + h - 4, x + w, y + h - 4, 'SHEET');
-    drawLine(x + w * 0.55, y, x + w * 0.55, y + h, 'SHEET');
-    drawText(x + 1, y + h - 2.8, 0.9, 'KEYSTONE AI', 'LABELS');
-    drawText(x + 1, y + h - 1.6, 1.15, 'PRESENTATION PLAN SET', 'LABELS');
-    drawText(x + 1, y + h - 0.55, 0.55, `Generated ${new Date().toISOString().slice(0, 10)}`, 'LABELS');
-    drawText(x + w * 0.55 + 0.8, y + h - 2.8, 0.7, `STYLE: ${String(planSpec?.elevations?.meta?.styleLabel || 'Residential').toUpperCase()}`, 'LABELS');
-    drawText(x + w * 0.55 + 0.8, y + h - 1.7, 0.7, `FRONT: ${String(planSpec?.surveyData?.frontFacing || 'South').toUpperCase()}`, 'LABELS');
-    drawText(x + w * 0.55 + 0.8, y + h - 0.6, 0.55, 'Includes plans, dimensions, furniture, and elevations', 'LABELS');
+    // Outer border
+    drawRect(x, y, w, h, 'A-TITLE');
+    // Horizontal divider: top band for logo + title
+    drawLine(x, y + h - 4.5, x + w, y + h - 4.5, 'A-SHEET');
+    // Vertical divider separating left (brand) from right (project data)
+    drawLine(x + w * 0.5, y, x + w * 0.5, y + h - 4.5, 'A-SHEET');
+
+    // Logo mark in top-left of title band
+    drawKeystoneLogoMark(x + 1.0, y + h - 3.8);
+
+    // Company name + subtitle
+    drawText(x + 5.5, y + h - 3.2, 1.1, 'KEYSTONE AI', 'A-TITLE', 'left');
+    drawText(x + 5.5, y + h - 1.9, 0.65, 'RESIDENTIAL CONCEPT PLAN', 'A-ROOM-LABEL', 'left');
+    drawText(x + 5.5, y + h - 0.9, 0.5, `Generated ${new Date().toISOString().slice(0, 10)}`, 'A-ROOM-LABEL', 'left');
+
+    // Right column: project metadata
+    const rx = x + w * 0.5 + 0.8;
+    const styleLabel = String(planSpec?.elevations?.meta?.styleLabel || 'Residential').toUpperCase();
+    const frontFacing = String(planSpec?.surveyData?.frontFacing || 'South').toUpperCase();
+    const totalArea = (planSpec?.levels || []).reduce((sum, lv) => {
+      return sum + (lv.rooms || []).reduce((s, r) => {
+        const parts = Array.isArray(r.parts) && r.parts.length ? r.parts : [r];
+        return s + parts.reduce((ps, p) => ps + Number(p.w || 0) * Number(p.h || 0), 0);
+      }, 0);
+    }, 0);
+    drawText(rx, y + h - 4.1, 0.65, `STYLE: ${styleLabel}`, 'A-ROOM-LABEL', 'left');
+    drawText(rx, y + h - 3.2, 0.65, `FRONT: ${frontFacing}`, 'A-ROOM-LABEL', 'left');
+    drawText(rx, y + h - 2.3, 0.65, `AREA:  ${Math.round(totalArea)} SQFT`, 'A-ROOM-LABEL', 'left');
+    drawText(rx, y + h - 1.4, 0.55, 'SCALE: NTS', 'A-ROOM-LABEL', 'left');
+    drawText(rx, y + h - 0.7, 0.55, 'DRG: KS-2026', 'A-ROOM-LABEL', 'left');
+  };
+
+  // Finish class lookup for room schedule
+  const finishClassForDxf = type => {
+    const t = String(type || '').toLowerCase();
+    if (/bedroom|living|dining|loft|library|study|gym/.test(t)) return 'HARDWOOD';
+    if (/bathroom|kitchen|laundry|mudroom|powder/.test(t)) return 'TILE';
+    if (/garage/.test(t)) return 'CONCRETE';
+    return 'STONE/TILE';
+  };
+
+  // Room schedule table: header + one row per room + footer
+  const drawRoomSchedule = (spec, x, y, w) => {
+    const rowH = 0.9;
+    const colWidths = [w * 0.07, w * 0.30, w * 0.13, w * 0.22, w * 0.28];
+    const headers = ['NO.', 'ROOM', 'LEVEL', 'AREA (SQFT)', 'FINISH CLASS'];
+    const tileSizeFt = spec?.tileSizeFt || 2;
+
+    // Title
+    drawText(x, y + 1.2, 0.7, 'ROOM SCHEDULE', 'A-SCHEDULE', 'left');
+    let curY = y;
+    // Draw a horizontal line above header
+    drawLine(x, curY, x + w, curY, 'A-SCHEDULE');
+    curY -= rowH;
+
+    // Header row
+    let colX = x;
+    headers.forEach((h, i) => {
+      drawText(colX + 0.15, curY + 0.25, 0.45, h, 'A-SCHEDULE', 'left');
+      colX += colWidths[i];
+    });
+    drawLine(x, curY, x + w, curY, 'A-SCHEDULE');
+    curY -= rowH;
+
+    // Data rows
+    let rowNum = 1;
+    let totalConditioned = 0;
+    let totalGarage = 0;
+    (spec?.levels || []).forEach(lv => {
+      (lv.rooms || []).forEach(room => {
+        const parts = Array.isArray(room.parts) && room.parts.length ? room.parts : [room];
+        const areaTiles = parts.reduce((s, p) => s + Number(p.w || 0) * Number(p.h || 0), 0);
+        const areaSqft = Math.round(areaTiles * (tileSizeFt * tileSizeFt));
+        const label = String(room.label || room.type || '').toUpperCase().replace(/_/g, ' ');
+        const finish = finishClassForDxf(room.type);
+        const isGarage = /garage/i.test(String(room.type || ''));
+        if (isGarage) totalGarage += areaSqft;else totalConditioned += areaSqft;
+        const cells = [String(rowNum), label, `L${lv.level || 1}`, `${areaSqft}`, finish];
+        colX = x;
+        cells.forEach((cell, i) => {
+          drawText(colX + 0.15, curY + 0.22, 0.4, cell, 'A-SCHEDULE', 'left');
+          colX += colWidths[i];
+        });
+        drawLine(x, curY, x + w, curY, 'A-SCHEDULE');
+        curY -= rowH;
+        rowNum++;
+      });
+    });
+
+    // Footer totals
+    drawLine(x, curY + rowH, x + w, curY + rowH, 'A-SCHEDULE');
+    drawText(x + 0.15, curY - rowH + 0.6, 0.42, `TOTAL CONDITIONED: ${totalConditioned} SQFT`, 'A-SCHEDULE', 'left');
+    drawText(x + 0.15, curY - rowH * 2 + 0.6, 0.42, `GARAGE: ${totalGarage} SQFT`, 'A-SCHEDULE', 'left');
+
+    // Vertical column separators
+    let sepX = x;
+    for (let i = 0; i < colWidths.length - 1; i++) {
+      sepX += colWidths[i];
+      drawLine(sepX, y, sepX, curY - rowH * 2, 'A-SCHEDULE');
+    }
+    // Left + right borders
+    drawLine(x, y, x, curY - rowH * 2, 'A-SCHEDULE');
+    drawLine(x + w, y, x + w, curY - rowH * 2, 'A-SCHEDULE');
   };
   const roomParts = room => Array.isArray(room?.parts) && room.parts.length ? room.parts : [room];
   const largestPart = room => roomParts(room).reduce((best, part) => (part.w || 0) * (part.h || 0) > (best.w || 0) * (best.h || 0) ? part : best, roomParts(room)[0] || room || {});
@@ -4440,35 +4597,35 @@ const buildPresentationDxf = planSpec => {
     const fw = Number(item.w || 0);
     const fh = Number(item.h || 0);
     if (!fw || !fh) return;
-    drawRect(fx, fy, fw, fh, 'FURNITURE');
+    drawRect(fx, fy, fw, fh, 'A-FURN');
     const kind = String(item.kind || '').toLowerCase();
     if (kind.includes('bed')) {
-      drawLine(fx, fy + fh - 0.8, fx + fw, fy + fh - 0.8, 'FURNITURE');
-      drawRect(fx + 0.35, fy + fh - 1.35, Math.min(1.35, fw / 2 - 0.45), 0.55, 'FURNITURE');
-      drawRect(fx + fw - Math.min(1.35, fw / 2 - 0.45) - 0.35, fy + fh - 1.35, Math.min(1.35, fw / 2 - 0.45), 0.55, 'FURNITURE');
+      drawLine(fx, fy + fh - 0.8, fx + fw, fy + fh - 0.8, 'A-FURN');
+      drawRect(fx + 0.35, fy + fh - 1.35, Math.min(1.35, fw / 2 - 0.45), 0.55, 'A-FURN');
+      drawRect(fx + fw - Math.min(1.35, fw / 2 - 0.45) - 0.35, fy + fh - 1.35, Math.min(1.35, fw / 2 - 0.45), 0.55, 'A-FURN');
     } else if (kind === 'shower') {
-      drawLine(fx, fy, fx + fw, fy + fh, 'FURNITURE');
-      drawLine(fx + fw, fy, fx, fy + fh, 'FURNITURE');
+      drawLine(fx, fy, fx + fw, fy + fh, 'A-FURN');
+      drawLine(fx + fw, fy, fx, fy + fh, 'A-FURN');
     } else if (kind === 'washer' || kind === 'dryer') {
-      drawCircle(fx + fw / 2, fy + fh / 2, Math.min(fw, fh) * 0.22, 'FURNITURE');
+      drawCircle(fx + fw / 2, fy + fh / 2, Math.min(fw, fh) * 0.22, 'A-FURN');
     } else if (kind === 'dining_table') {
-      drawCircle(fx + fw / 2, fy + fh / 2, Math.min(fw, fh) * 0.35, 'FURNITURE');
+      drawCircle(fx + fw / 2, fy + fh / 2, Math.min(fw, fh) * 0.35, 'A-FURN');
     } else if (kind === 'sofa') {
-      drawLine(fx + 0.4, fy + 0.55, fx + fw - 0.4, fy + 0.55, 'FURNITURE');
-      drawLine(fx + 0.4, fy + fh - 0.55, fx + fw - 0.4, fy + fh - 0.55, 'FURNITURE');
+      drawLine(fx + 0.4, fy + 0.55, fx + fw - 0.4, fy + 0.55, 'A-FURN');
+      drawLine(fx + 0.4, fy + fh - 0.55, fx + fw - 0.4, fy + fh - 0.55, 'A-FURN');
     } else if (kind === 'coffee_table' || kind === 'console' || kind === 'dresser' || kind === 'laundry_counter' || kind === 'desk') {
-      drawLine(fx, fy + fh / 2, fx + fw, fy + fh / 2, 'FURNITURE');
+      drawLine(fx, fy + fh / 2, fx + fw, fy + fh / 2, 'A-FURN');
     } else if (kind === 'bookcase' || kind === 'counter') {
       const step = Math.max(0.5, fw > fh ? fh / 4 : fw / 4);
       if (fw >= fh) {
-        for (let y = fy + step; y < fy + fh; y += step) drawLine(fx, y, fx + fw, y, 'FURNITURE');
+        for (let y = fy + step; y < fy + fh; y += step) drawLine(fx, y, fx + fw, y, 'A-FURN');
       } else {
-        for (let x = fx + step; x < fx + fw; x += step) drawLine(x, fy, x, fy + fh, 'FURNITURE');
+        for (let x = fx + step; x < fx + fw; x += step) drawLine(x, fy, x, fy + fh, 'A-FURN');
       }
     } else if (kind === 'vanity') {
-      drawCircle(fx + fw * 0.28, fy + fh * 0.5, Math.min(fw, fh) * 0.12, 'FURNITURE');
+      drawCircle(fx + fw * 0.28, fy + fh * 0.5, Math.min(fw, fh) * 0.12, 'A-FURN');
     } else if (kind === 'tub') {
-      drawRect(fx + 0.25, fy + 0.25, Math.max(0.8, fw - 0.5), Math.max(0.8, fh - 0.5), 'FURNITURE');
+      drawRect(fx + 0.25, fy + 0.25, Math.max(0.8, fw - 0.5), Math.max(0.8, fh - 0.5), 'A-FURN');
     }
   };
   const drawDoorSymbol = (door, level, originX, originY) => {
@@ -4481,31 +4638,31 @@ const buildPresentationDxf = planSpec => {
       if (door.dir === 'horizontal') {
         const left = dx - dw / 2;
         const top = dy + 0.35;
-        drawLine(left, top, left + dw, top, 'DOORS');
+        drawLine(left, top, left + dw, top, 'A-DOOR');
         const panelWidth = dw / Math.max(3, Math.round(dw / 2.5));
         for (let px = left + panelWidth; px < left + dw - 0.1; px += panelWidth) {
-          drawLine(px, top, px, top - 0.9, 'DOORS');
+          drawLine(px, top, px, top - 0.9, 'A-DOOR');
         }
-        drawLine(left, top, left + 0.9, top - 0.9, 'DOORS');
-        drawLine(left + dw, top, left + dw - 0.9, top - 0.9, 'DOORS');
+        drawLine(left, top, left + 0.9, top - 0.9, 'A-DOOR');
+        drawLine(left + dw, top, left + dw - 0.9, top - 0.9, 'A-DOOR');
       } else {
         const bottom = dy - dw / 2;
-        drawLine(dx + 0.35, bottom, dx + 0.35, bottom + dw, 'DOORS');
+        drawLine(dx + 0.35, bottom, dx + 0.35, bottom + dw, 'A-DOOR');
         const panelHeight = dw / Math.max(3, Math.round(dw / 2.5));
         for (let py = bottom + panelHeight; py < bottom + dw - 0.1; py += panelHeight) {
-          drawLine(dx + 0.35, py, dx - 0.55, py, 'DOORS');
+          drawLine(dx + 0.35, py, dx - 0.55, py, 'A-DOOR');
         }
-        drawLine(dx + 0.35, bottom, dx - 0.55, bottom + 0.9, 'DOORS');
-        drawLine(dx + 0.35, bottom + dw, dx - 0.55, bottom + dw - 0.9, 'DOORS');
+        drawLine(dx + 0.35, bottom, dx - 0.55, bottom + 0.9, 'A-DOOR');
+        drawLine(dx + 0.35, bottom + dw, dx - 0.55, bottom + dw - 0.9, 'A-DOOR');
       }
       return;
     }
     if (door.openThreshold) {
       const gapHalf = dw / 2;
       if (door.dir === 'horizontal') {
-        drawLine(dx - gapHalf, dy, dx + gapHalf, dy, 'DOORS');
+        drawLine(dx - gapHalf, dy, dx + gapHalf, dy, 'A-DOOR');
       } else {
-        drawLine(dx, dy - gapHalf, dx, dy + gapHalf, 'DOORS');
+        drawLine(dx, dy - gapHalf, dx, dy + gapHalf, 'A-DOOR');
       }
       return;
     }
@@ -4524,9 +4681,9 @@ const buildPresentationDxf = planSpec => {
       const hingeX = dx;
       const hingeY = yTop;
       const leafX = swingRight ? dx + dw : dx - dw;
-      drawLine(hingeX, hingeY, leafX, hingeY, 'DOORS');
-      if (swingRight) drawArc(hingeX, hingeY, dw, 270, 360, 'DOORS');else drawArc(hingeX, hingeY, dw, 180, 270, 'DOORS');
-      drawLine(dx, yTop, dx, yBottom, 'DOORS');
+      drawLine(hingeX, hingeY, leafX, hingeY, 'A-DOOR');
+      if (swingRight) drawArc(hingeX, hingeY, dw, 270, 360, 'A-DOOR');else drawArc(hingeX, hingeY, dw, 180, 270, 'A-DOOR');
+      drawLine(dx, yTop, dx, yBottom, 'A-DOOR');
       return;
     }
     const xLeft = dx - dw / 2;
@@ -4536,9 +4693,9 @@ const buildPresentationDxf = planSpec => {
     const hingeX = xLeft;
     const hingeY = dy;
     const leafY = swingDown ? dy - dw : dy + dw;
-    drawLine(hingeX, hingeY, hingeX, leafY, 'DOORS');
-    if (swingDown) drawArc(hingeX, hingeY, dw, 270, 360, 'DOORS');else drawArc(hingeX, hingeY, dw, 0, 90, 'DOORS');
-    drawLine(dx - dw / 2, dy, dx + dw / 2, dy, 'DOORS');
+    drawLine(hingeX, hingeY, hingeX, leafY, 'A-DOOR');
+    if (swingDown) drawArc(hingeX, hingeY, dw, 270, 360, 'A-DOOR');else drawArc(hingeX, hingeY, dw, 0, 90, 'A-DOOR');
+    drawLine(dx - dw / 2, dy, dx + dw / 2, dy, 'A-DOOR');
   };
   const drawWindowSymbol = (win, level, originX, originY) => {
     const lvlH = Number(level.height || 0);
@@ -4547,11 +4704,11 @@ const buildPresentationDxf = planSpec => {
     const wx = originX + Number(win.x || 0);
     const wy = mapY(Number(win.y || 0));
     if (win.dir === 'horizontal') {
-      drawLine(wx - ww / 2, wy - 0.18, wx + ww / 2, wy - 0.18, 'WINDOWS');
-      drawLine(wx - ww / 2, wy + 0.18, wx + ww / 2, wy + 0.18, 'WINDOWS');
+      drawLine(wx - ww / 2, wy - 0.18, wx + ww / 2, wy - 0.18, 'A-WINDOW');
+      drawLine(wx - ww / 2, wy + 0.18, wx + ww / 2, wy + 0.18, 'A-WINDOW');
     } else {
-      drawLine(wx - 0.18, wy - ww / 2, wx - 0.18, wy + ww / 2, 'WINDOWS');
-      drawLine(wx + 0.18, wy - ww / 2, wx + 0.18, wy + ww / 2, 'WINDOWS');
+      drawLine(wx - 0.18, wy - ww / 2, wx - 0.18, wy + ww / 2, 'A-WINDOW');
+      drawLine(wx + 0.18, wy - ww / 2, wx + 0.18, wy + ww / 2, 'A-WINDOW');
     }
   };
   const drawPlanLevel = (level, originX, originY) => {
@@ -4559,17 +4716,49 @@ const buildPresentationDxf = planSpec => {
     const lvlH = Number(level.height || 30);
     const mapY = (y, h = 0) => originY + (lvlH - y - h);
     const titleY = originY + lvlH + 7.5;
-    drawText(originX, titleY, 1.35, `LEVEL ${level.level}`, 'LABELS');
-    drawText(originX, titleY - 1.2, 0.8, `${Math.round(lvlW * lvlH).toLocaleString()} SQ FT`, 'LABELS');
-    drawRect(originX, originY, lvlW, lvlH, 'OUTLINE');
+    drawText(originX, titleY, 1.35, `LEVEL ${level.level}`, 'A-ROOM-LABEL');
+    drawText(originX, titleY - 1.2, 0.8, `${Math.round(lvlW * lvlH).toLocaleString()} SQ FT`, 'A-ROOM-LABEL');
+
+    // Outer plan boundary on A-WALL
+    drawRect(originX, originY, lvlW, lvlH, 'A-WALL');
+
+    // Double-line walls: iterate each room's 4 edges
+    // Exterior edge: lies on plan boundary (x=0, x=lvlW, y=0, y=lvlH)
+    const EXT_THICK = 0.5;
+    const INT_THICK = 0.33;
     (level.rooms || []).forEach(room => {
       roomParts(room).forEach(part => {
-        drawRect(originX + Number(part.x || 0), mapY(Number(part.y || 0), Number(part.h || 0)), Number(part.w || 0), Number(part.h || 0), 'WALLS');
+        const px = Number(part.x || 0);
+        const py = Number(part.y || 0);
+        const pw = Number(part.w || 0);
+        const ph = Number(part.h || 0);
+        if (pw <= 0 || ph <= 0) return;
+
+        // Map to DXF coordinates
+        const rx = originX + px;
+        const ry = mapY(py, ph);
+        const rx2 = rx + pw;
+        const ry2 = ry + ph;
+
+        // Bottom edge (plan-space y=py → top of rect in DXF due to Y-flip)
+        const onBottom = py === 0;
+        const onTop = py + ph === lvlH;
+        const onLeft = px === 0;
+        const onRight = px + pw === lvlW;
+
+        // Bottom of room in plan-space is top of rect in DXF coords (ry2)
+        drawDoubleLineWall(rx, ry2, rx2, ry2, onBottom ? EXT_THICK : INT_THICK, onBottom ? 'A-WALL' : 'A-WALL-INT');
+        // Top of room in plan-space is bottom of rect in DXF coords (ry)
+        drawDoubleLineWall(rx, ry, rx2, ry, onTop ? EXT_THICK : INT_THICK, onTop ? 'A-WALL' : 'A-WALL-INT');
+        // Left edge
+        drawDoubleLineWall(rx, ry, rx, ry2, onLeft ? EXT_THICK : INT_THICK, onLeft ? 'A-WALL' : 'A-WALL-INT');
+        // Right edge
+        drawDoubleLineWall(rx2, ry, rx2, ry2, onRight ? EXT_THICK : INT_THICK, onRight ? 'A-WALL' : 'A-WALL-INT');
       });
       const anchor = largestPart(room);
       const label = String(room.label || room.type || '').toUpperCase().replace(/_/g, ' ');
-      drawText(originX + Number(anchor.x || 0) + Number(anchor.w || 0) / 2, mapY(Number(anchor.y || 0), Number(anchor.h || 0)) + Number(anchor.h || 0) / 2 + 0.4, 0.6, label, 'LABELS', 'center');
-      drawText(originX + Number(anchor.x || 0) + Number(anchor.w || 0) / 2, mapY(Number(anchor.y || 0), Number(anchor.h || 0)) + Number(anchor.h || 0) / 2 - 0.5, 0.45, `${Math.round(roomArea(room))} sqft`, 'LABELS', 'center');
+      drawText(originX + Number(anchor.x || 0) + Number(anchor.w || 0) / 2, mapY(Number(anchor.y || 0), Number(anchor.h || 0)) + Number(anchor.h || 0) / 2 + 0.4, 0.6, label, 'A-ROOM-LABEL', 'center');
+      drawText(originX + Number(anchor.x || 0) + Number(anchor.w || 0) / 2, mapY(Number(anchor.y || 0), Number(anchor.h || 0)) + Number(anchor.h || 0) / 2 - 0.5, 0.45, `${Math.round(roomArea(room))} sqft`, 'A-ROOM-LABEL', 'center');
     });
     (level.doors || []).forEach(door => drawDoorSymbol(door, level, originX, originY));
     (level.windows || []).forEach(win => drawWindowSymbol(win, level, originX, originY));
@@ -4616,7 +4805,7 @@ const buildPresentationDxf = planSpec => {
     const mapX = x => originX + (x - vbX) * scale;
     const mapY = (y, h = 0) => originY + (vbH - (y - vbY) - h) * scale;
     const elevationHeight = vbH * scale;
-    drawText(originX, originY + elevationHeight + 3.2, 0.95, label, 'ELEV_TEXT');
+    drawText(originX, originY + elevationHeight + 3.2, 0.95, label, 'A-ELEV-TEXT');
     if (dimensionLabel) drawDimH(originX, originX + targetWidthFt, originY, -2.4, dimensionLabel);
     root.querySelectorAll('line,rect,circle,path,text,polygon,polyline').forEach(node => {
       const tag = node.tagName.toLowerCase();
@@ -4631,7 +4820,7 @@ const buildPresentationDxf = planSpec => {
         const fullBg = w >= vbW * 0.98 && h >= vbH * 0.98 && !stroke;
         if (fullBg) return;
         if (!stroke && (!fill || fill === 'none')) return;
-        drawRect(mapX(x), mapY(y, h), w * scale, h * scale, 'ELEVATION');
+        drawRect(mapX(x), mapY(y, h), w * scale, h * scale, 'A-ELEV');
         return;
       }
       if (tag === 'line') {
@@ -4639,27 +4828,27 @@ const buildPresentationDxf = planSpec => {
         const y1 = svgAttrNumber(node.getAttribute('y1'));
         const x2 = svgAttrNumber(node.getAttribute('x2'));
         const y2 = svgAttrNumber(node.getAttribute('y2'));
-        drawLine(mapX(x1), mapY(y1), mapX(x2), mapY(y2), 'ELEVATION');
+        drawLine(mapX(x1), mapY(y1), mapX(x2), mapY(y2), 'A-ELEV');
         return;
       }
       if (tag === 'circle') {
         const cx = svgAttrNumber(node.getAttribute('cx'));
         const cy = svgAttrNumber(node.getAttribute('cy'));
         const r = svgAttrNumber(node.getAttribute('r'));
-        if (r > 0) drawCircle(mapX(cx), mapY(cy), r * scale, 'ELEVATION');
+        if (r > 0) drawCircle(mapX(cx), mapY(cy), r * scale, 'A-ELEV');
         return;
       }
       if (tag === 'polygon' || tag === 'polyline') {
         const raw = String(node.getAttribute('points') || '').trim();
         if (!raw) return;
         const points = raw.split(/\s+/).map(pair => pair.split(',').map(Number)).filter(pair => pair.length === 2 && pair.every(Number.isFinite)).map(([x, y]) => [mapX(x), mapY(y)]);
-        drawPolyline(points, 'ELEVATION', tag === 'polygon');
+        drawPolyline(points, 'A-ELEV', tag === 'polygon');
         return;
       }
       if (tag === 'path') {
         parseSvgPathSubpaths(node.getAttribute('d')).forEach(subpath => {
           const points = subpath.points.map(([x, y]) => [mapX(x), mapY(y)]);
-          drawPolyline(points, 'ELEVATION', subpath.closed);
+          drawPolyline(points, 'A-ELEV', subpath.closed);
         });
         return;
       }
@@ -4668,7 +4857,7 @@ const buildPresentationDxf = planSpec => {
         const y = svgAttrNumber(node.getAttribute('y'));
         const size = Math.max(0.45, svgAttrNumber(node.getAttribute('font-size'), 10) * scale * 0.18);
         const text = node.textContent || '';
-        if (text.trim()) drawText(mapX(x), mapY(y), size, text, 'ELEV_TEXT');
+        if (text.trim()) drawText(mapX(x), mapY(y), size, text, 'A-ELEV-TEXT');
       }
     });
     return {
@@ -4713,21 +4902,38 @@ const buildPresentationDxf = planSpec => {
     h: 108
   };
   drawSheetFrame(sheet.x, sheet.y, sheet.w, sheet.h);
-  drawTitleBlock(sheet.x + sheet.w - 42, sheet.y + 2, 40, 10);
+
+  // Title block: right side of sheet, upper portion
+  const tbX = sheet.x + sheet.w - 42;
+  const tbY = sheet.y + 2;
+  const tbW = 40;
+  const tbH = 14;
+  drawTitleBlock(tbX, tbY, tbW, tbH);
+
+  // North arrow: inside title block area, lower-right
+  drawNorthArrow(tbX + tbW - 4, tbY + 4, 2);
+
+  // Room schedule: below title block
+  const schedW = tbW;
+  const schedY = tbY + tbH + 1;
+  drawRoomSchedule(planSpec, tbX, schedY + 16, schedW);
+
+  // Assemble DXF output with AC1015 header
   const lines = [];
   lines.push('0\nSECTION\n2\nHEADER');
-  lines.push('9\n$ACADVER\n1\nAC1009');
-  lines.push('9\n$INSUNITS\n70\n1');
+  lines.push('9\n$ACADVER\n1\nAC1015');
+  lines.push('9\n$INSUNITS\n70\n2');
   lines.push('9\n$MEASUREMENT\n70\n0');
+  lines.push('9\n$LTSCALE\n40\n0.5');
   lines.push('0\nENDSEC');
   lines.push('0\nSECTION\n2\nTABLES');
   lines.push('0\nTABLE\n2\nLTYPE\n70\n1');
   lines.push('0\nLTYPE\n2\nCONTINUOUS\n70\n0\n3\nSolid line\n72\n65\n73\n0\n40\n0.0');
   lines.push('0\nENDTAB');
   lines.push(`0\nTABLE\n2\nLAYER\n70\n${Object.keys(layerStyles).length + 1}`);
-  lines.push('0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS');
+  lines.push('0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS\n370\n18');
   Object.values(layerStyles).forEach(style => {
-    lines.push(`0\nLAYER\n2\n${style.name}\n70\n0\n62\n${style.color}\n6\nCONTINUOUS`);
+    lines.push(`0\nLAYER\n2\n${style.name}\n70\n0\n62\n${style.color}\n6\nCONTINUOUS\n370\n${style.lineweight}`);
   });
   lines.push('0\nENDTAB');
   lines.push('0\nTABLE\n2\nSTYLE\n70\n1');
