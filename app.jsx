@@ -1783,9 +1783,14 @@ const ElevationsPanel = ({ elevations, formData, onOpenPreview }) => {
     );
 };
 
-const PlanSummaryPanel = ({ planSpec }) => {
+const profileLabel = (value) => String(value || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) || '-';
+
+const PlanSummaryPanel = ({ planSpec, openingDiagnostics }) => {
     if (!planSpec) return null;
     const allRooms = (planSpec.levels||[]).flatMap(l => l.rooms||[]);
+    const diag = openingDiagnostics || planSpec?.openingDiagnostics || null;
+    const totals = diag?.totals || null;
+    const profiles = diag?.profiles || null;
     const roomCounts = {};
     allRooms.forEach(r => { const t = r.label||r.type; roomCounts[t] = (roomCounts[t]||0)+1; });
     return (
@@ -1809,6 +1814,23 @@ const PlanSummaryPanel = ({ planSpec }) => {
                     <span key={label} className="room-badge active" style={{cursor:'default'}}>{label}{count > 1 ? ` x${count}` : ''}</span>
                 ))}
             </div>
+            {diag && (
+                <div className="rounded-[14px] border border-black/8 bg-white/70 p-3 mt-4">
+                    <p className="mono text-[8px] uppercase tracking-[0.2em]" style={{color:'rgba(10,10,12,0.5)'}}>Opening diagnostics</p>
+                    <div className="grid grid-cols-3 gap-2 mt-3">
+                        <div className="spec-panel"><div className="spec-label">Openings</div><div className="spec-value">{profileLabel(profiles?.openingProfile)}</div></div>
+                        <div className="spec-panel"><div className="spec-label">Indoor/Outdoor</div><div className="spec-value">{profileLabel(profiles?.indoorOutdoorProfile)}</div></div>
+                        <div className="spec-panel"><div className="spec-label">Doorways</div><div className="spec-value">{profileLabel(profiles?.doorwayProfile)}</div></div>
+                    </div>
+                    {totals && (
+                        <div className="flex flex-wrap gap-1.5 mt-3">
+                            <span className="room-badge active" style={{cursor:'default'}}>Windows {Number(totals.windowCount || 0)}</span>
+                            <span className="room-badge active" style={{cursor:'default'}}>Exterior doors {Number(totals.exteriorDoorCount || 0)}</span>
+                            <span className="room-badge active" style={{cursor:'default'}}>Wide doors {Number(totals.wideDoorCount || 0)}</span>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };
@@ -4472,6 +4494,7 @@ const DesignGenerator = ({ onOpenModal }) => {
     const [galleryId, setGalleryId] = useState(() => initialSession?.galleryId || null);
     const [planScore, setPlanScore] = useState(() => initialSession?.planScore ?? null);
     const [footprintInfo, setFootprintInfo] = useState(() => initialSession?.footprintInfo ?? null);
+    const [openingDiagnostics, setOpeningDiagnostics] = useState(() => initialSession?.openingDiagnostics ?? null);
     const [alternatives, setAlternatives] = useState(() => initialSession?.alternatives || []);
     const [showAlternatives, setShowAlternatives] = useState(false);
     const [isExportingEstimateXlsx, setIsExportingEstimateXlsx] = useState(false);
@@ -4509,6 +4532,7 @@ const DesignGenerator = ({ onOpenModal }) => {
             galleryId,
             planScore,
             footprintInfo,
+            openingDiagnostics,
             alternatives: Array.isArray(alternatives) ? alternatives.slice(0, 6) : [],
             renderState: renderState?.image
                 ? {
@@ -4526,7 +4550,7 @@ const DesignGenerator = ({ onOpenModal }) => {
         try {
             localStorage.setItem(STUDIO_SESSION_KEY, JSON.stringify(snapshot));
         } catch {}
-    }, [formData, status, planSvg, planSpec, refinementHistory, refinementsLeft, galleryId, planScore, footprintInfo, alternatives, renderState]);
+    }, [formData, status, planSvg, planSpec, refinementHistory, refinementsLeft, galleryId, planScore, footprintInfo, openingDiagnostics, alternatives, renderState]);
 
     const promptUnlock = (featureLabel = 'advanced features') => {
         alert(`Unlock advanced features with a passkey to use ${featureLabel}.`);
@@ -4579,6 +4603,7 @@ const DesignGenerator = ({ onOpenModal }) => {
             setGalleryId(data.galleryId || null);
             setPlanScore(data.score ?? null);
             setFootprintInfo(data.footprintInfo ?? null);
+            setOpeningDiagnostics(data.openingDiagnostics || data.planSpec?.openingDiagnostics || null);
             setAlternatives(data.alternatives || []);
             setRenderState(createEmptyRenderState());
             setRenderResetKey(k => k + 1);
@@ -4624,6 +4649,7 @@ const DesignGenerator = ({ onOpenModal }) => {
 
             setPlanSvg(data.svg);
             setPlanSpec(data.planSpec ? { ...data.planSpec, estimate: data.estimate || data.planSpec?.estimate || null } : null);
+            setOpeningDiagnostics(data.openingDiagnostics || data.planSpec?.openingDiagnostics || null);
             if (data.galleryId) setGalleryId(data.galleryId);
             setRenderState(createEmptyRenderState());
             setRenderResetKey(k => k + 1);
@@ -5101,7 +5127,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                         </div>
                         <div className="grid xl:grid-cols-[minmax(320px,380px)_minmax(0,1fr)] gap-0">
                             <div className="border-r border-black/5">
-                                <PlanSummaryPanel planSpec={planSpec}/>
+                                <PlanSummaryPanel planSpec={planSpec} openingDiagnostics={openingDiagnostics}/>
                             </div>
                             {isUnlocked ? (
                                 <EstimatePanel estimate={planSpec?.estimate}/>
@@ -5152,12 +5178,13 @@ const DesignGenerator = ({ onOpenModal }) => {
                                                     setPlanSpec(alt.planSpec);
                                                     setPlanScore(alt.score);
                                                     setFootprintInfo(alt.footprintInfo);
+                                                    setOpeningDiagnostics(alt.openingDiagnostics || alt.planSpec?.openingDiagnostics || null);
                                                     setRenderState(createEmptyRenderState());
                                                     setRenderResetKey(k => k + 1);
                                                     setRenderPanelStatus('idle');
                                                     // Swap: current becomes an alternative
                                                     const newAlts = [
-                                                        { svg: planSvg, planSpec, score: planScore, footprintInfo },
+                                                        { svg: planSvg, planSpec, score: planScore, footprintInfo, openingDiagnostics },
                                                         ...alternatives.filter((_, j) => j !== i),
                                                     ].filter(a => a.svg);
                                                     setAlternatives(newAlts);
@@ -5178,6 +5205,11 @@ const DesignGenerator = ({ onOpenModal }) => {
                                                         <div className="mt-1 h-1 bg-black/8 rounded-full overflow-hidden">
                                                             <div className="h-full bg-blue/60 rounded-full transition-all" style={{width:`${Math.min(100, alt.score)}%`}}/>
                                                         </div>
+                                                    )}
+                                                    {alt.openingDiagnostics?.profiles && (
+                                                        <p className="mono text-[7px] mt-1" style={{color:'rgba(10,10,12,0.5)'}}>
+                                                            {profileLabel(alt.openingDiagnostics.profiles.openingProfile)} • {profileLabel(alt.openingDiagnostics.profiles.doorwayProfile)}
+                                                        </p>
                                                     )}
                                                     <p className="mono text-[7px] text-blue mt-1 group-hover:text-ink">
                                                         {alt.score !== undefined ? `Score ${alt.score}/100` : ''} - Click to use

@@ -3263,11 +3263,16 @@ const ElevationsPanel = ({
     }
   }, supportLabel, " is also used to ground the Exterior Render."))));
 };
+const profileLabel = value => String(value || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || '-';
 const PlanSummaryPanel = ({
-  planSpec
+  planSpec,
+  openingDiagnostics
 }) => {
   if (!planSpec) return null;
   const allRooms = (planSpec.levels || []).flatMap(l => l.rooms || []);
+  const diag = openingDiagnostics || planSpec?.openingDiagnostics || null;
+  const totals = diag?.totals || null;
+  const profiles = diag?.profiles || null;
   const roomCounts = {};
   allRooms.forEach(r => {
     const t = r.label || r.type;
@@ -3320,7 +3325,51 @@ const PlanSummaryPanel = ({
     style: {
       cursor: 'default'
     }
-  }, label, count > 1 ? ` x${count}` : ''))));
+  }, label, count > 1 ? ` x${count}` : ''))), diag && /*#__PURE__*/React.createElement("div", {
+    className: "rounded-[14px] border border-black/8 bg-white/70 p-3 mt-4"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "mono text-[8px] uppercase tracking-[0.2em]",
+    style: {
+      color: 'rgba(10,10,12,0.5)'
+    }
+  }, "Opening diagnostics"), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-3 gap-2 mt-3"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "spec-panel"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "spec-label"
+  }, "Openings"), /*#__PURE__*/React.createElement("div", {
+    className: "spec-value"
+  }, profileLabel(profiles?.openingProfile))), /*#__PURE__*/React.createElement("div", {
+    className: "spec-panel"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "spec-label"
+  }, "Indoor/Outdoor"), /*#__PURE__*/React.createElement("div", {
+    className: "spec-value"
+  }, profileLabel(profiles?.indoorOutdoorProfile))), /*#__PURE__*/React.createElement("div", {
+    className: "spec-panel"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "spec-label"
+  }, "Doorways"), /*#__PURE__*/React.createElement("div", {
+    className: "spec-value"
+  }, profileLabel(profiles?.doorwayProfile)))), totals && /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-1.5 mt-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "room-badge active",
+    style: {
+      cursor: 'default'
+    }
+  }, "Windows ", Number(totals.windowCount || 0)), /*#__PURE__*/React.createElement("span", {
+    className: "room-badge active",
+    style: {
+      cursor: 'default'
+    }
+  }, "Exterior doors ", Number(totals.exteriorDoorCount || 0)), /*#__PURE__*/React.createElement("span", {
+    className: "room-badge active",
+    style: {
+      cursor: 'default'
+    }
+  }, "Wide doors ", Number(totals.wideDoorCount || 0)))));
 };
 
 // Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ REFINEMENT PANEL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
@@ -7177,6 +7226,7 @@ const DesignGenerator = ({
   const [galleryId, setGalleryId] = useState(() => initialSession?.galleryId || null);
   const [planScore, setPlanScore] = useState(() => initialSession?.planScore ?? null);
   const [footprintInfo, setFootprintInfo] = useState(() => initialSession?.footprintInfo ?? null);
+  const [openingDiagnostics, setOpeningDiagnostics] = useState(() => initialSession?.openingDiagnostics ?? null);
   const [alternatives, setAlternatives] = useState(() => initialSession?.alternatives || []);
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [isExportingEstimateXlsx, setIsExportingEstimateXlsx] = useState(false);
@@ -7210,6 +7260,7 @@ const DesignGenerator = ({
       galleryId,
       planScore,
       footprintInfo,
+      openingDiagnostics,
       alternatives: Array.isArray(alternatives) ? alternatives.slice(0, 6) : [],
       renderState: renderState?.image ? {
         ...renderState,
@@ -7225,7 +7276,7 @@ const DesignGenerator = ({
     try {
       localStorage.setItem(STUDIO_SESSION_KEY, JSON.stringify(snapshot));
     } catch {}
-  }, [formData, status, planSvg, planSpec, refinementHistory, refinementsLeft, galleryId, planScore, footprintInfo, alternatives, renderState]);
+  }, [formData, status, planSvg, planSpec, refinementHistory, refinementsLeft, galleryId, planScore, footprintInfo, openingDiagnostics, alternatives, renderState]);
   const promptUnlock = (featureLabel = 'advanced features') => {
     alert(`Unlock advanced features with a passkey to use ${featureLabel}.`);
   };
@@ -7299,6 +7350,7 @@ const DesignGenerator = ({
       setGalleryId(data.galleryId || null);
       setPlanScore(data.score ?? null);
       setFootprintInfo(data.footprintInfo ?? null);
+      setOpeningDiagnostics(data.openingDiagnostics || data.planSpec?.openingDiagnostics || null);
       setAlternatives(data.alternatives || []);
       setRenderState(createEmptyRenderState());
       setRenderResetKey(k => k + 1);
@@ -7351,6 +7403,7 @@ const DesignGenerator = ({
         ...data.planSpec,
         estimate: data.estimate || data.planSpec?.estimate || null
       } : null);
+      setOpeningDiagnostics(data.openingDiagnostics || data.planSpec?.openingDiagnostics || null);
       if (data.galleryId) setGalleryId(data.galleryId);
       setRenderState(createEmptyRenderState());
       setRenderResetKey(k => k + 1);
@@ -8091,7 +8144,8 @@ const DesignGenerator = ({
   }, /*#__PURE__*/React.createElement("div", {
     className: "border-r border-black/5"
   }, /*#__PURE__*/React.createElement(PlanSummaryPanel, {
-    planSpec: planSpec
+    planSpec: planSpec,
+    openingDiagnostics: openingDiagnostics
   })), isUnlocked ? /*#__PURE__*/React.createElement(EstimatePanel, {
     estimate: planSpec?.estimate
   }) : /*#__PURE__*/React.createElement("div", {
@@ -8149,6 +8203,7 @@ const DesignGenerator = ({
       setPlanSpec(alt.planSpec);
       setPlanScore(alt.score);
       setFootprintInfo(alt.footprintInfo);
+      setOpeningDiagnostics(alt.openingDiagnostics || alt.planSpec?.openingDiagnostics || null);
       setRenderState(createEmptyRenderState());
       setRenderResetKey(k => k + 1);
       setRenderPanelStatus('idle');
@@ -8157,7 +8212,8 @@ const DesignGenerator = ({
         svg: planSvg,
         planSpec,
         score: planScore,
-        footprintInfo
+        footprintInfo,
+        openingDiagnostics
       }, ...alternatives.filter((_, j) => j !== i)].filter(a => a.svg);
       setAlternatives(newAlts);
       setShowAlternatives(false);
@@ -8185,7 +8241,12 @@ const DesignGenerator = ({
     style: {
       width: `${Math.min(100, alt.score)}%`
     }
-  })), /*#__PURE__*/React.createElement("p", {
+  })), alt.openingDiagnostics?.profiles && /*#__PURE__*/React.createElement("p", {
+    className: "mono text-[7px] mt-1",
+    style: {
+      color: 'rgba(10,10,12,0.5)'
+    }
+  }, profileLabel(alt.openingDiagnostics.profiles.openingProfile), " \u2022 ", profileLabel(alt.openingDiagnostics.profiles.doorwayProfile)), /*#__PURE__*/React.createElement("p", {
     className: "mono text-[7px] text-blue mt-1 group-hover:text-ink"
   }, alt.score !== undefined ? `Score ${alt.score}/100` : '', " - Click to use"))))), /*#__PURE__*/React.createElement("div", {
     className: "p-3 border-t border-black/10 bg-paper/40"
