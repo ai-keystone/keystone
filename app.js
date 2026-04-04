@@ -5336,6 +5336,56 @@ const Render3DPanel = ({
 };
 
 // Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ SURVEY FORM Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
+const STYLE_FINISH_DEFAULTS = {
+  'Craftsman (Wood & Stone)': {
+    exteriorSiding: 'Cedar lap',
+    roofMaterial: 'Architectural asphalt',
+    countertop: 'Granite',
+    flooringPublic: 'Engineered hardwood',
+    cabinetGrade: 'Semi-custom',
+    fixtureGrade: 'Mid-grade'
+  },
+  'Modern Farmhouse (Board & Batten)': {
+    exteriorSiding: 'Board & batten',
+    roofMaterial: 'Standing seam metal',
+    countertop: 'Quartz',
+    flooringPublic: 'Hardwood',
+    cabinetGrade: 'Semi-custom',
+    fixtureGrade: 'Premium'
+  },
+  'Traditional Colonial (Brick)': {
+    exteriorSiding: 'Brick',
+    roofMaterial: 'Architectural asphalt',
+    countertop: 'Laminate',
+    flooringPublic: 'Engineered hardwood',
+    cabinetGrade: 'Builder stock',
+    fixtureGrade: 'Builder'
+  },
+  'Contemporary Modern (Concrete)': {
+    exteriorSiding: 'Concrete panel',
+    roofMaterial: 'Flat membrane',
+    countertop: 'Concrete',
+    flooringPublic: 'Polished concrete',
+    cabinetGrade: 'Full custom',
+    fixtureGrade: 'Premium'
+  },
+  'Mediterranean (Stucco & Tile)': {
+    exteriorSiding: 'Stucco',
+    roofMaterial: 'Clay tile',
+    countertop: 'Marble',
+    flooringPublic: 'Tile',
+    cabinetGrade: 'Semi-custom',
+    fixtureGrade: 'Luxury'
+  }
+};
+const FINISH_OVERRIDE_OPTIONS = {
+  exteriorSiding: ['Cedar lap', 'Board & batten', 'Brick', 'Stucco', 'Concrete panel', 'Stone', 'Fiber cement'],
+  roofMaterial: ['Asphalt shingles', 'Architectural asphalt', 'Standing seam metal', 'Clay tile', 'Slate', 'Flat membrane'],
+  countertop: ['Laminate', 'Granite', 'Quartz', 'Marble', 'Butcher block', 'Concrete'],
+  flooringPublic: ['Hardwood', 'Engineered hardwood', 'LVP', 'Tile', 'Polished concrete'],
+  cabinetGrade: ['Builder stock', 'Semi-custom', 'Full custom'],
+  fixtureGrade: ['Builder', 'Mid-grade', 'Premium', 'Luxury']
+};
 const SURVEY_STEPS = [{
   id: 'basics',
   title: 'Basic Requirements',
@@ -5360,7 +5410,7 @@ const SURVEY_STEPS = [{
   id: 'extras',
   title: 'Special Features',
   subtitle: 'Additional rooms and preferences',
-  fields: ['features', 'accessibilityNeeds', 'budgetTier', 'freeformWishes']
+  fields: ['features', 'accessibilityNeeds', 'budgetTier', 'foundationType', 'hvacSystem', 'outdoorLiving', 'outdoorArea', 'freeformWishes']
 }];
 const DEFAULT_FORM_DATA = {
   location: '',
@@ -5385,6 +5435,11 @@ const DEFAULT_FORM_DATA = {
   naturalLight: 'Balanced windows',
   accessibilityNeeds: 'None',
   budgetTier: 'Mid ($200-300/sqft)',
+  foundationType: 'Slab-on-grade',
+  hvacSystem: 'Forced air (gas)',
+  outdoorLiving: 'None',
+  outdoorArea: '0',
+  finishOverrides: {},
   freeformWishes: ''
 };
 const SurveyForm = ({
@@ -5399,6 +5454,17 @@ const SurveyForm = ({
     ...prev,
     [field]: value
   }));
+  const styleFinishDefaults = STYLE_FINISH_DEFAULTS[formData.materials] || STYLE_FINISH_DEFAULTS['Craftsman (Wood & Stone)'];
+  const effectiveFinishValue = key => formData.finishOverrides?.[key] || styleFinishDefaults?.[key] || '';
+  const updateFinishOverride = (key, value) => {
+    setFormData(prev => ({
+      ...prev,
+      finishOverrides: {
+        ...(prev.finishOverrides || {}),
+        [key]: value
+      }
+    }));
+  };
   const handleReset = () => {
     if (onReset) onReset();
     setStep(0);
@@ -6322,7 +6388,7 @@ const SurveyForm = ({
       case 'materials':
         return /*#__PURE__*/React.createElement("div", {
           key: field,
-          className: "space-y-1.5"
+          className: "space-y-2"
         }, /*#__PURE__*/React.createElement(Lbl, null, "Exterior Style & Materials"), /*#__PURE__*/React.createElement(BtnGrid, {
           field: "materials",
           cols: 1,
@@ -6347,7 +6413,66 @@ const SurveyForm = ({
             label: 'Mediterranean',
             desc: 'Stucco exterior, terracotta tiles, arched details'
           }]
-        }));
+        }), /*#__PURE__*/React.createElement("details", {
+          className: "p-3 border border-black/10 rounded-sm bg-white/80"
+        }, /*#__PURE__*/React.createElement("summary", {
+          className: "cursor-pointer select-none text-[10px] font-semibold uppercase tracking-[0.14em]",
+          style: {
+            color: 'var(--blue)'
+          }
+        }, "Customize Finishes (optional)"), /*#__PURE__*/React.createElement("p", {
+          className: "text-[9px] text-mid/65 mt-2 mb-2"
+        }, "Defaults come from the selected style. You can override only what you want."), /*#__PURE__*/React.createElement("div", {
+          className: "grid md:grid-cols-2 gap-2.5"
+        }, /*#__PURE__*/React.createElement("div", {
+          className: "space-y-1"
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Exterior siding"), /*#__PURE__*/React.createElement("select", {
+          value: effectiveFinishValue('exteriorSiding'),
+          onChange: e => updateFinishOverride('exteriorSiding', e.target.value)
+        }, FINISH_OVERRIDE_OPTIONS.exteriorSiding.map(option => /*#__PURE__*/React.createElement("option", {
+          key: option,
+          value: option
+        }, option)))), /*#__PURE__*/React.createElement("div", {
+          className: "space-y-1"
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Roof material"), /*#__PURE__*/React.createElement("select", {
+          value: effectiveFinishValue('roofMaterial'),
+          onChange: e => updateFinishOverride('roofMaterial', e.target.value)
+        }, FINISH_OVERRIDE_OPTIONS.roofMaterial.map(option => /*#__PURE__*/React.createElement("option", {
+          key: option,
+          value: option
+        }, option)))), /*#__PURE__*/React.createElement("div", {
+          className: "space-y-1"
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Countertop"), /*#__PURE__*/React.createElement("select", {
+          value: effectiveFinishValue('countertop'),
+          onChange: e => updateFinishOverride('countertop', e.target.value)
+        }, FINISH_OVERRIDE_OPTIONS.countertop.map(option => /*#__PURE__*/React.createElement("option", {
+          key: option,
+          value: option
+        }, option)))), /*#__PURE__*/React.createElement("div", {
+          className: "space-y-1"
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Flooring (public)"), /*#__PURE__*/React.createElement("select", {
+          value: effectiveFinishValue('flooringPublic'),
+          onChange: e => updateFinishOverride('flooringPublic', e.target.value)
+        }, FINISH_OVERRIDE_OPTIONS.flooringPublic.map(option => /*#__PURE__*/React.createElement("option", {
+          key: option,
+          value: option
+        }, option)))), /*#__PURE__*/React.createElement("div", {
+          className: "space-y-1"
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Cabinet grade"), /*#__PURE__*/React.createElement("select", {
+          value: effectiveFinishValue('cabinetGrade'),
+          onChange: e => updateFinishOverride('cabinetGrade', e.target.value)
+        }, FINISH_OVERRIDE_OPTIONS.cabinetGrade.map(option => /*#__PURE__*/React.createElement("option", {
+          key: option,
+          value: option
+        }, option)))), /*#__PURE__*/React.createElement("div", {
+          className: "space-y-1"
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Fixture grade"), /*#__PURE__*/React.createElement("select", {
+          value: effectiveFinishValue('fixtureGrade'),
+          onChange: e => updateFinishOverride('fixtureGrade', e.target.value)
+        }, FINISH_OVERRIDE_OPTIONS.fixtureGrade.map(option => /*#__PURE__*/React.createElement("option", {
+          key: option,
+          value: option
+        }, option)))))));
       case 'indoorOutdoor':
         return /*#__PURE__*/React.createElement("div", {
           key: field,
@@ -6439,6 +6564,53 @@ const SurveyForm = ({
             desc: 'Premium materials, custom details'
           }]
         }));
+      case 'foundationType':
+        return /*#__PURE__*/React.createElement("div", {
+          key: field,
+          className: "space-y-1.5"
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Foundation Type"), /*#__PURE__*/React.createElement(BtnGrid, {
+          field: "foundationType",
+          cols: 1,
+          options: ['Slab-on-grade', 'Crawl space', 'Full basement']
+        }));
+      case 'hvacSystem':
+        return /*#__PURE__*/React.createElement("div", {
+          key: field,
+          className: "space-y-1.5"
+        }, /*#__PURE__*/React.createElement(Lbl, null, "HVAC System"), /*#__PURE__*/React.createElement(BtnGrid, {
+          field: "hvacSystem",
+          cols: 1,
+          options: ['Forced air (gas)', 'Heat pump', 'Mini-split']
+        }));
+      case 'outdoorLiving':
+        return /*#__PURE__*/React.createElement("div", {
+          key: field,
+          className: "space-y-1.5"
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Outdoor Living"), /*#__PURE__*/React.createElement(BtnGrid, {
+          field: "outdoorLiving",
+          cols: 1,
+          options: ['None', 'Covered porch', 'Open deck', 'Screened porch', 'Patio']
+        }));
+      case 'outdoorArea':
+        {
+          if ((formData.outdoorLiving || 'None') === 'None') return null;
+          const outdoorArea = Math.max(0, Math.min(800, parseInt(formData.outdoorArea, 10) || 0));
+          return /*#__PURE__*/React.createElement("div", {
+            key: field,
+            className: "space-y-1.5"
+          }, /*#__PURE__*/React.createElement("div", {
+            className: "flex items-center justify-between"
+          }, /*#__PURE__*/React.createElement(Lbl, null, "Outdoor Area (sq ft)"), /*#__PURE__*/React.createElement("span", {
+            className: "mono text-[9px] text-mid"
+          }, outdoorArea, " sqft")), /*#__PURE__*/React.createElement("input", {
+            type: "range",
+            min: "0",
+            max: "800",
+            step: "10",
+            value: outdoorArea,
+            onChange: e => upd('outdoorArea', e.target.value)
+          }));
+        }
       case 'freeformWishes':
         return /*#__PURE__*/React.createElement("div", {
           key: field,

@@ -3630,12 +3630,64 @@ const Render3DPanel = ({
 };
 
 // Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ SURVEY FORM Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
+const STYLE_FINISH_DEFAULTS = {
+    'Craftsman (Wood & Stone)': {
+        exteriorSiding: 'Cedar lap',
+        roofMaterial: 'Architectural asphalt',
+        countertop: 'Granite',
+        flooringPublic: 'Engineered hardwood',
+        cabinetGrade: 'Semi-custom',
+        fixtureGrade: 'Mid-grade',
+    },
+    'Modern Farmhouse (Board & Batten)': {
+        exteriorSiding: 'Board & batten',
+        roofMaterial: 'Standing seam metal',
+        countertop: 'Quartz',
+        flooringPublic: 'Hardwood',
+        cabinetGrade: 'Semi-custom',
+        fixtureGrade: 'Premium',
+    },
+    'Traditional Colonial (Brick)': {
+        exteriorSiding: 'Brick',
+        roofMaterial: 'Architectural asphalt',
+        countertop: 'Laminate',
+        flooringPublic: 'Engineered hardwood',
+        cabinetGrade: 'Builder stock',
+        fixtureGrade: 'Builder',
+    },
+    'Contemporary Modern (Concrete)': {
+        exteriorSiding: 'Concrete panel',
+        roofMaterial: 'Flat membrane',
+        countertop: 'Concrete',
+        flooringPublic: 'Polished concrete',
+        cabinetGrade: 'Full custom',
+        fixtureGrade: 'Premium',
+    },
+    'Mediterranean (Stucco & Tile)': {
+        exteriorSiding: 'Stucco',
+        roofMaterial: 'Clay tile',
+        countertop: 'Marble',
+        flooringPublic: 'Tile',
+        cabinetGrade: 'Semi-custom',
+        fixtureGrade: 'Luxury',
+    },
+};
+
+const FINISH_OVERRIDE_OPTIONS = {
+    exteriorSiding: ['Cedar lap', 'Board & batten', 'Brick', 'Stucco', 'Concrete panel', 'Stone', 'Fiber cement'],
+    roofMaterial: ['Asphalt shingles', 'Architectural asphalt', 'Standing seam metal', 'Clay tile', 'Slate', 'Flat membrane'],
+    countertop: ['Laminate', 'Granite', 'Quartz', 'Marble', 'Butcher block', 'Concrete'],
+    flooringPublic: ['Hardwood', 'Engineered hardwood', 'LVP', 'Tile', 'Polished concrete'],
+    cabinetGrade: ['Builder stock', 'Semi-custom', 'Full custom'],
+    fixtureGrade: ['Builder', 'Mid-grade', 'Premium', 'Luxury'],
+};
+
 const SURVEY_STEPS = [
     { id:'basics',    title:'Basic Requirements',   subtitle:'Size, stories, and rooms',           fields:['totalArea','stories','bedrooms','bathrooms','privateBaths'] },
     { id:'structure', title:'Structure & Site',      subtitle:'Garage, shape, and orientation',     fields:['garage','shape','frontFacing','lotContext'] },
     { id:'lifestyle', title:'Lifestyle & Layout',    subtitle:'How you live in the home',           fields:['openConcept','masterLocation','kitchenPlacement','laundryLocation','ceilingHeight'] },
     { id:'style',     title:'Style & Materials',     subtitle:'Aesthetic and finishes',             fields:['materials','indoorOutdoor','naturalLight'] },
-    { id:'extras',    title:'Special Features',      subtitle:'Additional rooms and preferences',   fields:['features','accessibilityNeeds','budgetTier','freeformWishes'] },
+    { id:'extras',    title:'Special Features',      subtitle:'Additional rooms and preferences',   fields:['features','accessibilityNeeds','budgetTier','foundationType','hvacSystem','outdoorLiving','outdoorArea','freeformWishes'] },
 ];
 const DEFAULT_FORM_DATA = {
     location:'', totalArea:'2400', stories:'2 Stories', bedrooms:'3 Bed', bathrooms:'3 Bath',
@@ -3646,12 +3698,26 @@ const DEFAULT_FORM_DATA = {
     features:'1 Study', frontFacing:'South', lotContext:'Suburban standard lot',
     laundryLocation:'Level 1 (near garage/mud)', ceilingHeight:'Standard (9 ft)',
     indoorOutdoor:'Moderate (some connection)', naturalLight:'Balanced windows',
-    accessibilityNeeds:'None', budgetTier:'Mid ($200-300/sqft)', freeformWishes:'',
+    accessibilityNeeds:'None', budgetTier:'Mid ($200-300/sqft)',
+    foundationType:'Slab-on-grade', hvacSystem:'Forced air (gas)', outdoorLiving:'None', outdoorArea:'0',
+    finishOverrides:{},
+    freeformWishes:'',
 };
 
 const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => {
     const [step, setStep] = useState(0);
     const upd = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+    const styleFinishDefaults = STYLE_FINISH_DEFAULTS[formData.materials] || STYLE_FINISH_DEFAULTS['Craftsman (Wood & Stone)'];
+    const effectiveFinishValue = (key) => (formData.finishOverrides?.[key] || styleFinishDefaults?.[key] || '');
+    const updateFinishOverride = (key, value) => {
+        setFormData(prev => ({
+            ...prev,
+            finishOverrides: {
+                ...(prev.finishOverrides || {}),
+                [key]: value,
+            },
+        }));
+    };
     const handleReset = () => {
         if (onReset) onReset();
         setStep(0);
@@ -3983,13 +4049,64 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
                 </div>
             );
             case 'ceilingHeight': return <div key={field} className="space-y-1.5"><Lbl>Ceiling Height</Lbl><BtnGrid field="ceilingHeight" cols={3} options={['Standard (9 ft)','Tall (10 ft)','Cathedral / Vaulted']}/></div>;
-            case 'materials': return <div key={field} className="space-y-1.5"><Lbl>Exterior Style & Materials</Lbl><BtnGrid field="materials" cols={1} options={[
-                {val:'Craftsman (Wood & Stone)',          label:'Craftsman',              desc:'Natural wood trim, stone veneer, covered porch'},
-                {val:'Modern Farmhouse (Board & Batten)', label:'Modern Farmhouse',       desc:'Board-and-batten, black frames, metal roof'},
-                {val:'Traditional Colonial (Brick)',      label:'Traditional / Colonial', desc:'Brick facade, symmetrical windows, pitched roof'},
-                {val:'Contemporary Modern (Concrete)',    label:'Contemporary / Modern',  desc:'Flat roof, concrete, floor-to-ceiling glass'},
-                {val:'Mediterranean (Stucco & Tile)',     label:'Mediterranean',          desc:'Stucco exterior, terracotta tiles, arched details'},
-            ]}/></div>;
+            case 'materials': return (
+                <div key={field} className="space-y-2">
+                    <Lbl>Exterior Style & Materials</Lbl>
+                    <BtnGrid field="materials" cols={1} options={[
+                        {val:'Craftsman (Wood & Stone)',          label:'Craftsman',              desc:'Natural wood trim, stone veneer, covered porch'},
+                        {val:'Modern Farmhouse (Board & Batten)', label:'Modern Farmhouse',       desc:'Board-and-batten, black frames, metal roof'},
+                        {val:'Traditional Colonial (Brick)',      label:'Traditional / Colonial', desc:'Brick facade, symmetrical windows, pitched roof'},
+                        {val:'Contemporary Modern (Concrete)',    label:'Contemporary / Modern',  desc:'Flat roof, concrete, floor-to-ceiling glass'},
+                        {val:'Mediterranean (Stucco & Tile)',     label:'Mediterranean',          desc:'Stucco exterior, terracotta tiles, arched details'},
+                    ]}/>
+                    <details className="p-3 border border-black/10 rounded-sm bg-white/80">
+                        <summary className="cursor-pointer select-none text-[10px] font-semibold uppercase tracking-[0.14em]" style={{color:'var(--blue)'}}>
+                            Customize Finishes (optional)
+                        </summary>
+                        <p className="text-[9px] text-mid/65 mt-2 mb-2">
+                            Defaults come from the selected style. You can override only what you want.
+                        </p>
+                        <div className="grid md:grid-cols-2 gap-2.5">
+                            <div className="space-y-1">
+                                <Lbl>Exterior siding</Lbl>
+                                <select value={effectiveFinishValue('exteriorSiding')} onChange={e => updateFinishOverride('exteriorSiding', e.target.value)}>
+                                    {FINISH_OVERRIDE_OPTIONS.exteriorSiding.map(option => <option key={option} value={option}>{option}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <Lbl>Roof material</Lbl>
+                                <select value={effectiveFinishValue('roofMaterial')} onChange={e => updateFinishOverride('roofMaterial', e.target.value)}>
+                                    {FINISH_OVERRIDE_OPTIONS.roofMaterial.map(option => <option key={option} value={option}>{option}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <Lbl>Countertop</Lbl>
+                                <select value={effectiveFinishValue('countertop')} onChange={e => updateFinishOverride('countertop', e.target.value)}>
+                                    {FINISH_OVERRIDE_OPTIONS.countertop.map(option => <option key={option} value={option}>{option}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <Lbl>Flooring (public)</Lbl>
+                                <select value={effectiveFinishValue('flooringPublic')} onChange={e => updateFinishOverride('flooringPublic', e.target.value)}>
+                                    {FINISH_OVERRIDE_OPTIONS.flooringPublic.map(option => <option key={option} value={option}>{option}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <Lbl>Cabinet grade</Lbl>
+                                <select value={effectiveFinishValue('cabinetGrade')} onChange={e => updateFinishOverride('cabinetGrade', e.target.value)}>
+                                    {FINISH_OVERRIDE_OPTIONS.cabinetGrade.map(option => <option key={option} value={option}>{option}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-1">
+                                <Lbl>Fixture grade</Lbl>
+                                <select value={effectiveFinishValue('fixtureGrade')} onChange={e => updateFinishOverride('fixtureGrade', e.target.value)}>
+                                    {FINISH_OVERRIDE_OPTIONS.fixtureGrade.map(option => <option key={option} value={option}>{option}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            );
             case 'indoorOutdoor': return <div key={field} className="space-y-1.5"><Lbl>Indoor / Outdoor Flow</Lbl><BtnGrid field="indoorOutdoor" cols={1} options={['Minimal (enclosed feel)','Moderate (some connection)','Maximum (open to outdoors)']}/></div>;
             case 'naturalLight': return <div key={field} className="space-y-1.5"><Lbl>Natural Light Priority</Lbl><BtnGrid field="naturalLight" cols={1} options={['Balanced windows','Maximum glazing','Privacy first (fewer windows)']}/></div>;
             case 'features': return (
@@ -4030,6 +4147,44 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
                 </div>
             );
             case 'budgetTier': return <div key={field} className="space-y-1.5"><Lbl>Budget Tier</Lbl><BtnGrid field="budgetTier" cols={1} options={[{val:'Entry ($120-180/sqft)',label:'Entry - $120-180/sqft',desc:'Efficient, value-optimized design'},{val:'Mid ($200-300/sqft)',label:'Mid - $200-300/sqft',desc:'Quality finishes, flexible layouts'},{val:'Luxury ($350+/sqft)',label:'Luxury - $350+/sqft',desc:'Premium materials, custom details'}]}/></div>;
+            case 'foundationType': return (
+                <div key={field} className="space-y-1.5">
+                    <Lbl>Foundation Type</Lbl>
+                    <BtnGrid field="foundationType" cols={1} options={['Slab-on-grade','Crawl space','Full basement']}/>
+                </div>
+            );
+            case 'hvacSystem': return (
+                <div key={field} className="space-y-1.5">
+                    <Lbl>HVAC System</Lbl>
+                    <BtnGrid field="hvacSystem" cols={1} options={['Forced air (gas)','Heat pump','Mini-split']}/>
+                </div>
+            );
+            case 'outdoorLiving': return (
+                <div key={field} className="space-y-1.5">
+                    <Lbl>Outdoor Living</Lbl>
+                    <BtnGrid field="outdoorLiving" cols={1} options={['None','Covered porch','Open deck','Screened porch','Patio']}/>
+                </div>
+            );
+            case 'outdoorArea': {
+                if ((formData.outdoorLiving || 'None') === 'None') return null;
+                const outdoorArea = Math.max(0, Math.min(800, parseInt(formData.outdoorArea, 10) || 0));
+                return (
+                    <div key={field} className="space-y-1.5">
+                        <div className="flex items-center justify-between">
+                            <Lbl>Outdoor Area (sq ft)</Lbl>
+                            <span className="mono text-[9px] text-mid">{outdoorArea} sqft</span>
+                        </div>
+                        <input
+                            type="range"
+                            min="0"
+                            max="800"
+                            step="10"
+                            value={outdoorArea}
+                            onChange={e => upd('outdoorArea', e.target.value)}
+                        />
+                    </div>
+                );
+            }
             case 'freeformWishes': return <div key={field} className="space-y-1.5"><Lbl>Anything Else? (optional)</Lbl><textarea rows="3" placeholder="Specific wishes, must-haves, or notes..." value={formData.freeformWishes} onChange={e=>upd('freeformWishes',e.target.value)}/></div>;
             default: return null;
         }
