@@ -1602,16 +1602,34 @@ const resolveElevationSpanFt = ({ viewKey, planSpec, footprintInfo }) => {
     return Math.max(1, Number((orientation === 'left' || orientation === 'right') ? dims.depthFt : dims.widthFt));
 };
 
+const computeScaleBaseFt = ({ planSpec, footprintInfo, views }) => {
+    const levelDims = levelOneDimensions(planSpec, footprintInfo);
+    const viewSpans = (views || []).map((view) => resolveElevationSpanFt({
+        viewKey: view?.key,
+        planSpec,
+        footprintInfo,
+    }));
+    return Math.max(levelDims.widthFt || 0, ...viewSpans, 1);
+};
+
+const computeElevationCardScale = ({ spanFt, scaleBaseFt, availableWidthPx }) => {
+    const safeSpanFt = Math.max(1, Number(spanFt || 0));
+    const safeBaseFt = Math.max(1, Number(scaleBaseFt || 0));
+    const widthPct = clamp((safeSpanFt / safeBaseFt) * 96, 44, 96);
+    const safeAvailableW = Math.max(1, Number(availableWidthPx || 0));
+    const widthPx = clamp(
+        safeAvailableW * (widthPct / 100),
+        Math.max(76, safeAvailableW * 0.42),
+        safeAvailableW
+    );
+    return { widthPct, widthPx };
+};
+
 const BlueprintPresentationSheet = ({ planSvg, elevations, formData, footprintInfo, renderImage, planSpec }) => {
     if (!planSvg) return null;
     const views = getElevationViews(elevations);
     const showSideRail = views.length > 0 || !!renderImage;
-    const levelDims = levelOneDimensions(planSpec, footprintInfo);
-    const scaleBaseFt = Math.max(
-        levelDims.widthFt || 0,
-        ...views.map((view) => resolveElevationSpanFt({ viewKey: view.key, planSpec, footprintInfo })),
-        1
-    );
+    const scaleBaseFt = computeScaleBaseFt({ planSpec, footprintInfo, views });
     const area = extractPrimaryNumber(formData?.totalArea, footprintInfo?.widthFt && footprintInfo?.heightFt ? String(footprintInfo.widthFt * footprintInfo.heightFt) : '');
     const styleLabel = elevations?.meta?.styleLabel || formData?.materials || 'Residential';
     const roofKind = String(elevations?.meta?.roofKind || 'gabled').replace(/_/g, ' ');
@@ -1699,7 +1717,11 @@ const BlueprintPresentationSheet = ({ planSvg, elevations, formData, footprintIn
                             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
                                 {views.map(view => {
                                     const viewSpanFt = resolveElevationSpanFt({ viewKey: view.key, planSpec, footprintInfo });
-                                    const targetWidthPct = clamp((viewSpanFt / scaleBaseFt) * 96, 44, 96);
+                                    const targetScale = computeElevationCardScale({
+                                        spanFt: viewSpanFt,
+                                        scaleBaseFt,
+                                        availableWidthPx: 180,
+                                    });
                                     return (
                                     <div key={view.key} style={{
                                         background:'#fffdf9',
@@ -1728,7 +1750,7 @@ const BlueprintPresentationSheet = ({ planSvg, elevations, formData, footprintIn
                                             }}
                                         >
                                             <div
-                                                style={{ width:`${targetWidthPct}%`, maxWidth:'100%' }}
+                                                style={{ width:`${targetScale.widthPct}%`, maxWidth:'100%' }}
                                                 dangerouslySetInnerHTML={{__html: elevations[view.key]}}
                                             />
                                         </div>
@@ -2560,10 +2582,7 @@ const composeBlueprintPresentationSheet = async ({ planSvg, elevations, formData
     const drawPlanX = planX + (planBoxW - drawPlanW) / 2;
     const drawPlanY = planY + (planBoxH - drawPlanH) / 2;
     ctx.drawImage(planImage, drawPlanX, drawPlanY, drawPlanW, drawPlanH);
-    const planDims = levelOneDimensions(planSpec, footprintInfo);
-    const planScalePxPerFt = (drawPlanW > 0 && planDims.widthFt > 0)
-        ? drawPlanW / planDims.widthFt
-        : 0;
+    const scaleBaseFt = computeScaleBaseFt({ planSpec, footprintInfo, views });
 
     if (renderAsset) {
         const renderX = pad + planBoxW + gap;
@@ -2603,9 +2622,12 @@ const composeBlueprintPresentationSheet = async ({ planSvg, elevations, formData
         const availableW = cardW - 16;
         const availableH = cardH - 30;
         const spanFt = resolveElevationSpanFt({ viewKey: entry.key, planSpec, footprintInfo });
-        const rawTargetW = planScalePxPerFt > 0 ? spanFt * planScalePxPerFt : availableW;
-        const targetW = clamp(rawTargetW, Math.max(76, availableW * 0.42), availableW);
-        const scale = Math.min(targetW / entry.image.width, availableH / entry.image.height);
+        const targetScale = computeElevationCardScale({
+            spanFt,
+            scaleBaseFt,
+            availableWidthPx: availableW,
+        });
+        const scale = Math.min(targetScale.widthPx / entry.image.width, availableH / entry.image.height);
         const drawW = entry.image.width * scale;
         const drawH = entry.image.height * scale;
         const drawX = x + (cardW - drawW) / 2;
@@ -4842,7 +4864,6 @@ const DesignGenerator = ({ onOpenModal }) => {
     const [footprintInfo, setFootprintInfo] = useState(() => initialSession?.footprintInfo ?? null);
     const [openingDiagnostics, setOpeningDiagnostics] = useState(() => initialSession?.openingDiagnostics ?? null);
     const [alternatives, setAlternatives] = useState(() => initialSession?.alternatives || []);
-    const [showAlternatives, setShowAlternatives] = useState(false);
     const [optionSequence, setOptionSequence] = useState(() => initialSession?.optionSequence || []);
     const [currentOptionIndex, setCurrentOptionIndex] = useState(0);
     const [isExportingEstimateXlsx, setIsExportingEstimateXlsx] = useState(false);
@@ -4940,7 +4961,6 @@ const DesignGenerator = ({ onOpenModal }) => {
 
     const handleGeneratePlan = async () => {
         setStatus('loading-plan');
-        setShowAlternatives(false);
         try {
             const res = await fetch('/api/plan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ surveyData:formData, chatHistory:[] }) });
             const data = await res.json();
@@ -5040,6 +5060,19 @@ const DesignGenerator = ({ onOpenModal }) => {
             setStatus('plan-ready');
         }
     };
+
+    const applyOptionChoice = React.useCallback((opt, index = 0) => {
+        if (!opt?.svg || !opt?.planSpec) return;
+        setPlanSvg(opt.svg);
+        setPlanSpec(opt.planSpec);
+        setPlanScore(opt.score);
+        setFootprintInfo(opt.footprintInfo);
+        setOpeningDiagnostics(opt.openingDiagnostics || opt.planSpec?.openingDiagnostics || null);
+        setCurrentOptionIndex(index);
+        setRenderState(createEmptyRenderState());
+        setRenderResetKey(k => k + 1);
+        setRenderPanelStatus('idle');
+    }, []);
 
     const downloadBlueprint = async () => {
     try {
@@ -5443,8 +5476,11 @@ const DesignGenerator = ({ onOpenModal }) => {
                                             </p>
                                         </div>
                                         {optionSequence.length > 1 && (
-                                            <button onClick={() => setShowAlternatives(true)} className="w-full cta-secondary py-3 text-[10px]">
-                                                View Stacked Options ({Math.min(3, optionSequence.length)})
+                                            <button
+                                                onClick={() => document.getElementById('keystone-option-stack')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                                                className="w-full cta-secondary py-3 text-[10px]"
+                                            >
+                                                Jump To Option Stack ({Math.min(3, optionSequence.length)})
                                             </button>
                                         )}
                                     </div>
@@ -5532,90 +5568,71 @@ const DesignGenerator = ({ onOpenModal }) => {
                         </div>
                     </div>
                 )}
-                </div>
-
-                        {/* Ã¢"â‚¬Ã¢"â‚¬ ALTERNATIVES MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ */}
-                        {showAlternatives && optionSequence.length > 0 && (() => {
-                            const stackedOptions = optionSequence.slice(0, 3);
-                            return (
-                            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)'}}>
-                                <div className="bg-paper rounded-lg shadow-2xl max-w-5xl w-full max-h-[92vh] overflow-hidden flex flex-col">
-                                    <div className="flex items-center justify-between p-4 border-b border-black/10">
-                                        <div>
-                                            <h3 className="font-semibold text-sm">Three Options (Stacked Compare)</h3>
-                                            <p className="mono text-[8px] text-mid mt-0.5 uppercase tracking-widest">
-                                                Top = highest score, then Option 2 and Option 3
-                                            </p>
-                                        </div>
-                                        <button onClick={() => setShowAlternatives(false)} className="w-8 h-8 flex items-center justify-center rounded hover:bg-black/8 text-mid hover:text-ink transition-colors">
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                        </button>
-                                    </div>
-
-                                    <div className="overflow-y-auto p-4 flex-1 space-y-4">
-                                        {stackedOptions.map((opt, index) => {
-                                            const isActive = planSvg === opt?.svg;
-                                            const optionNumber = index + 1;
-                                            return (
-                                                <div key={`${opt?.functionalId || 'opt'}_${index}`} className="bg-white rounded-lg border border-black/8 p-3">
-                                                    <div className="flex items-center justify-between gap-3 mb-2">
-                                                        <div>
-                                                            <h4 className="font-semibold text-sm">Option {optionNumber}</h4>
-                                                            <p className="mono text-[8px] uppercase tracking-widest text-mid mt-0.5">
-                                                                {opt?.functionalLabel || `Option ${optionNumber}`}
-                                                            </p>
-                                                        </div>
-                                                        <div className="flex items-center gap-2">
-                                                            {isActive ? (
-                                                                <span className="mono text-[8px] uppercase tracking-widest px-2 py-1 rounded-full border border-[rgba(22,163,74,0.3)] bg-[rgba(22,163,74,0.08)] text-[rgba(22,163,74,0.9)]">
-                                                                    Current
-                                                                </span>
-                                                            ) : null}
-                                                            <button
-                                                                onClick={() => {
-                                                                    setPlanSvg(opt.svg);
-                                                                    setPlanSpec(opt.planSpec);
-                                                                    setPlanScore(opt.score);
-                                                                    setFootprintInfo(opt.footprintInfo);
-                                                                    setOpeningDiagnostics(opt.openingDiagnostics || opt.planSpec?.openingDiagnostics || null);
-                                                                    setCurrentOptionIndex(index);
-                                                                    setRenderState(createEmptyRenderState());
-                                                                    setRenderResetKey(k => k + 1);
-                                                                    setRenderPanelStatus('idle');
-                                                                }}
-                                                                className="cta-hero text-[10px] px-4 py-2"
-                                                            >
-                                                                Use This Option
-                                                            </button>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="bg-white rounded-lg border border-black/8 p-3 overflow-hidden" style={{maxHeight:'46vh'}} dangerouslySetInnerHTML={{__html: opt?.svg || '<p style="padding:20px;color:#999;font-size:11px">Preview unavailable</p>'}}/>
-
-                                                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-                                                        <span className="mono text-[8px] text-mid">
-                                                            {opt?.footprintInfo ? `${opt.footprintInfo.widthFt} x ${opt.footprintInfo.heightFt} ft` : ''}
-                                                        </span>
-                                                        {opt?.footprintInfo?.aspectRatio && (
-                                                            <span className="mono text-[8px] text-mid">ratio {opt.footprintInfo.aspectRatio.toFixed(2)}</span>
-                                                        )}
-                                                        {opt?.score !== undefined && (
-                                                            <span className="mono text-[8px] text-mid">Score {opt.score}/100</span>
-                                                        )}
-                                                    </div>
-                                                    {opt?.openingDiagnostics?.profiles && (
-                                                        <p className="mono text-[7px] mt-1" style={{color:'rgba(10,10,12,0.5)'}}>
-                                                            {profileLabel(opt.openingDiagnostics.profiles.openingProfile)} • {profileLabel(opt.openingDiagnostics.profiles.doorwayProfile)}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
+                {(status === 'plan-ready' || status === 'refining') && optionSequence.length > 1 && (
+                    <div id="keystone-option-stack" className="paper-panel mt-4 overflow-hidden">
+                        <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
+                            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                                <div>
+                                    <span className="section-label">Option Stack</span>
+                                    <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
+                                        Option 1 is the highest-ranked plan. Scroll down to compare Option 2 and Option 3.
+                                    </p>
                                 </div>
+                                <span className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
+                                    Vertical compare flow
+                                </span>
                             </div>
-                            );
-                        })()}
+                        </div>
+                        <div className="p-4 md:p-5 space-y-4">
+                            {optionSequence.slice(0, 3).map((opt, index) => {
+                                const isActive = planSvg === opt?.svg;
+                                const optionNumber = index + 1;
+                                return (
+                                    <div key={`${opt?.functionalId || 'option'}_${index}`} className="bg-white rounded-[16px] border border-black/8 p-3 md:p-4">
+                                        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                                            <div>
+                                                <h4 className="font-semibold text-sm">Option {optionNumber}</h4>
+                                                <p className="mono text-[8px] uppercase tracking-widest text-mid mt-0.5">
+                                                    {opt?.functionalLabel || `Option ${optionNumber}`}
+                                                </p>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                {isActive ? (
+                                                    <span className="mono text-[8px] uppercase tracking-widest px-2 py-1 rounded-full border border-[rgba(22,163,74,0.3)] bg-[rgba(22,163,74,0.08)] text-[rgba(22,163,74,0.9)]">
+                                                        Current
+                                                    </span>
+                                                ) : null}
+                                                <button onClick={() => applyOptionChoice(opt, index)} className="cta-hero text-[10px] px-4 py-2">
+                                                    Use This Option
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-white rounded-lg border border-black/8 p-3 overflow-hidden" style={{maxHeight:'52vh'}} dangerouslySetInnerHTML={{__html: opt?.svg || '<p style="padding:20px;color:#999;font-size:11px">Preview unavailable</p>'}}/>
+
+                                        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                            <span className="mono text-[8px] text-mid">
+                                                {opt?.footprintInfo ? `${opt.footprintInfo.widthFt} x ${opt.footprintInfo.heightFt} ft` : ''}
+                                            </span>
+                                            {opt?.footprintInfo?.aspectRatio && (
+                                                <span className="mono text-[8px] text-mid">ratio {opt.footprintInfo.aspectRatio.toFixed(2)}</span>
+                                            )}
+                                            {opt?.score !== undefined && (
+                                                <span className="mono text-[8px] text-mid">Score {opt.score}/100</span>
+                                            )}
+                                        </div>
+                                        {opt?.openingDiagnostics?.profiles && (
+                                            <p className="mono text-[7px] mt-1" style={{color:'rgba(10,10,12,0.5)'}}>
+                                                {profileLabel(opt.openingDiagnostics.profiles.openingProfile)} • {profileLabel(opt.openingDiagnostics.profiles.doorwayProfile)}
+                                            </p>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+                </div>
             </div>
         </section>
     );
