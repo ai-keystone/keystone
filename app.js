@@ -4322,9 +4322,9 @@ const planSpanForElevation = (planSpec, viewKey) => {
 const buildPresentationDxf = planSpec => {
   // Keep DXF in feet and prefer broad-reader compatibility.
   const SCALE = 1;
-  const DXF_VERSION = 'AC1009';
-  const DXF_INCLUDE_LINEWEIGHT_CODES = false;
-  const DXF_INCLUDE_OBJECTS_SECTION = false;
+  const DXF_VERSION = 'AC1015';
+  const DXF_INCLUDE_LINEWEIGHT_CODES = true;
+  const DXF_INCLUDE_OBJECTS_SECTION = true;
   const entities = [];
 
   // Professional A-prefix layer table.
