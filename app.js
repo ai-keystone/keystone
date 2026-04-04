@@ -4320,7 +4320,8 @@ const planSpanForElevation = (planSpec, viewKey) => {
   return edge === 'top' || edge === 'bottom' ? Number(level1.width || 30) : Number(level1.height || 24);
 };
 const buildPresentationDxf = planSpec => {
-  const SCALE = 12;
+  // Export in feet (AC1015 + INSUNITS=2). Keep geometry in the same unit system.
+  const SCALE = 1;
   const entities = [];
 
   // Professional A-prefix layer table with AC1015 lineweights (in hundredths of mm)
@@ -4967,16 +4968,16 @@ const buildPresentationDxf = planSpec => {
   const schedY = tbY + tbH + 1;
   drawRoomSchedule(planSpec, tbX, schedY + 16, schedW);
 
-  // Assemble DXF output — AC1009 (R12) format: universally supported, no CLASSES/OBJECTS required
+  // Assemble DXF output — AC1015 (AutoCAD 2000) with TABLES/BLOCKS/ENTITIES/OBJECTS
   const lines = [];
   // HEADER
   lines.push('0\nSECTION\n2\nHEADER');
-  lines.push('9\n$ACADVER\n1\nAC1009');
-  lines.push('9\n$INSUNITS\n70\n1'); // 1 = inches; SCALE=12 converts tile-feet → inches
+  lines.push('9\n$ACADVER\n1\nAC1015');
+  lines.push('9\n$INSUNITS\n70\n2'); // 2 = feet
   lines.push('9\n$MEASUREMENT\n70\n0'); // 0 = imperial
-  lines.push('9\n$LTSCALE\n40\n12.0'); // linetype scale to match inch units
+  lines.push('9\n$LTSCALE\n40\n1.0');
   lines.push('9\n$LIMMIN\n10\n0.0\n20\n0.0');
-  lines.push('9\n$LIMMAX\n10\n1680.0\n20\n1296.0'); // 140ft × 108ft in inches
+  lines.push(`9\n$LIMMAX\n10\n${(sheet.w * SCALE).toFixed(1)}\n20\n${(sheet.h * SCALE).toFixed(1)}`);
   lines.push('0\nENDSEC');
   // TABLES
   lines.push('0\nSECTION\n2\nTABLES');
@@ -4990,9 +4991,9 @@ const buildPresentationDxf = planSpec => {
   lines.push('0\nENDTAB');
   // LAYER table
   lines.push(`0\nTABLE\n2\nLAYER\n70\n${Object.keys(layerStyles).length + 1}`);
-  lines.push('0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS');
+  lines.push('0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS\n370\n18');
   Object.values(layerStyles).forEach(style => {
-    lines.push(`0\nLAYER\n2\n${style.name}\n70\n0\n62\n${style.color}\n6\nCONTINUOUS`);
+    lines.push(`0\nLAYER\n2\n${style.name}\n70\n0\n62\n${style.color}\n6\nCONTINUOUS\n370\n${style.lineweight}`);
   });
   lines.push('0\nENDTAB');
   // STYLE table
@@ -5020,6 +5021,9 @@ const buildPresentationDxf = planSpec => {
   // ENTITIES
   lines.push('0\nSECTION\n2\nENTITIES');
   lines.push(...entities);
+  lines.push('0\nENDSEC');
+  // OBJECTS (kept minimal but explicit for AC1015 compatibility)
+  lines.push('0\nSECTION\n2\nOBJECTS');
   lines.push('0\nENDSEC');
   lines.push('0\nEOF');
   return lines.join('\r\n');
