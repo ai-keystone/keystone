@@ -5516,7 +5516,7 @@ const SURVEY_STEPS = [{
   id: 'structure',
   title: 'Structure & Site',
   subtitle: 'Garage, shape, and orientation',
-  fields: ['garage', 'shape', 'frontFacing', 'lotContext']
+  fields: ['garage', 'shape', 'frontFacing', 'lotContext', 'lotWidth', 'lotDepth']
 }, {
   id: 'lifestyle',
   title: 'Lifestyle & Layout',
@@ -5560,6 +5560,8 @@ const DEFAULT_FORM_DATA = {
   hvacSystem: 'Forced air (gas)',
   outdoorLiving: 'None',
   outdoorArea: '0',
+  lotWidth: '',
+  lotDepth: '',
   finishOverrides: {},
   freeformWishes: ''
 };
@@ -6732,6 +6734,32 @@ const SurveyForm = ({
             onChange: e => upd('outdoorArea', e.target.value)
           }));
         }
+      case 'lotWidth':
+        return /*#__PURE__*/React.createElement("div", {
+          key: field,
+          className: "space-y-1.5"
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Lot Width (ft) \u2014 optional"), /*#__PURE__*/React.createElement("input", {
+          type: "number",
+          min: "20",
+          max: "500",
+          placeholder: "e.g. 60",
+          value: formData.lotWidth,
+          onChange: e => upd('lotWidth', e.target.value),
+          className: "w-full"
+        }));
+      case 'lotDepth':
+        return /*#__PURE__*/React.createElement("div", {
+          key: field,
+          className: "space-y-1.5"
+        }, /*#__PURE__*/React.createElement(Lbl, null, "Lot Depth (ft) \u2014 optional"), /*#__PURE__*/React.createElement("input", {
+          type: "number",
+          min: "20",
+          max: "500",
+          placeholder: "e.g. 120",
+          value: formData.lotDepth,
+          onChange: e => upd('lotDepth', e.target.value),
+          className: "w-full"
+        }));
       case 'freeformWishes':
         return /*#__PURE__*/React.createElement("div", {
           key: field,

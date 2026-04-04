@@ -3803,7 +3803,7 @@ const FINISH_OVERRIDE_OPTIONS = {
 
 const SURVEY_STEPS = [
     { id:'basics',    title:'Basic Requirements',   subtitle:'Size, stories, and rooms',           fields:['totalArea','stories','bedrooms','bathrooms','privateBaths'] },
-    { id:'structure', title:'Structure & Site',      subtitle:'Garage, shape, and orientation',     fields:['garage','shape','frontFacing','lotContext'] },
+    { id:'structure', title:'Structure & Site',      subtitle:'Garage, shape, and orientation',     fields:['garage','shape','frontFacing','lotContext','lotWidth','lotDepth'] },
     { id:'lifestyle', title:'Lifestyle & Layout',    subtitle:'How you live in the home',           fields:['openConcept','masterLocation','kitchenPlacement','laundryLocation','ceilingHeight'] },
     { id:'style',     title:'Style & Materials',     subtitle:'Aesthetic and finishes',             fields:['materials','indoorOutdoor','naturalLight'] },
     { id:'extras',    title:'Special Features',      subtitle:'Additional rooms and preferences',   fields:['features','accessibilityNeeds','budgetTier','foundationType','hvacSystem','outdoorLiving','outdoorArea','freeformWishes'] },
@@ -3819,6 +3819,7 @@ const DEFAULT_FORM_DATA = {
     indoorOutdoor:'Moderate (some connection)', naturalLight:'Balanced windows',
     accessibilityNeeds:'None', budgetTier:'Mid ($200-300/sqft)',
     foundationType:'Slab-on-grade', hvacSystem:'Forced air (gas)', outdoorLiving:'None', outdoorArea:'0',
+    lotWidth:'', lotDepth:'',
     finishOverrides:{},
     freeformWishes:'',
 };
@@ -4304,6 +4305,18 @@ const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => 
                     </div>
                 );
             }
+            case 'lotWidth': return (
+                <div key={field} className="space-y-1.5">
+                    <Lbl>Lot Width (ft) — optional</Lbl>
+                    <input type="number" min="20" max="500" placeholder="e.g. 60" value={formData.lotWidth} onChange={e=>upd('lotWidth',e.target.value)} className="w-full"/>
+                </div>
+            );
+            case 'lotDepth': return (
+                <div key={field} className="space-y-1.5">
+                    <Lbl>Lot Depth (ft) — optional</Lbl>
+                    <input type="number" min="20" max="500" placeholder="e.g. 120" value={formData.lotDepth} onChange={e=>upd('lotDepth',e.target.value)} className="w-full"/>
+                </div>
+            );
             case 'freeformWishes': return <div key={field} className="space-y-1.5"><Lbl>Anything Else? (optional)</Lbl><textarea rows="3" placeholder="Specific wishes, must-haves, or notes..." value={formData.freeformWishes} onChange={e=>upd('freeformWishes',e.target.value)}/></div>;
             default: return null;
         }
