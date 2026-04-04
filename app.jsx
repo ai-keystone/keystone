@@ -2668,14 +2668,18 @@ const planSpanForElevation = (planSpec, viewKey) => {
 };
 
 const buildPresentationDxf = (planSpec) => {
-    // Export in feet (AC1015 + INSUNITS=2). Keep geometry in the same unit system.
+    // Keep DXF in feet and prefer broad-reader compatibility.
     const SCALE = 1;
+    const DXF_VERSION = 'AC1009';
+    const DXF_INCLUDE_LINEWEIGHT_CODES = false;
+    const DXF_INCLUDE_OBJECTS_SECTION = false;
     const entities = [];
 
-    // Professional A-prefix layer table with AC1015 lineweights (in hundredths of mm)
+    // Professional A-prefix layer table.
     const layerStyles = {
         'A-WALL':       { name: 'A-WALL',       color: 7, lineweight: 50 },
         'A-WALL-INT':   { name: 'A-WALL-INT',   color: 8, lineweight: 25 },
+        'A-FLOR-PATT':  { name: 'A-FLOR-PATT',  color: 8, lineweight: 9 },
         'A-DOOR':       { name: 'A-DOOR',       color: 1, lineweight: 18 },
         'A-WINDOW':     { name: 'A-WINDOW',     color: 5, lineweight: 18 },
         'A-ROOM-LABEL': { name: 'A-ROOM-LABEL', color: 2, lineweight: 13 },
@@ -2838,10 +2842,11 @@ const buildPresentationDxf = (planSpec) => {
     // Finish class lookup for room schedule
     const finishClassForDxf = (type) => {
         const t = String(type || '').toLowerCase();
-        if (/bedroom|living|dining|loft|library|study|gym/.test(t)) return 'HARDWOOD';
+        if (/bedroom|primary_bedroom|child|sleep/.test(t)) return 'CARPET';
+        if (/living|dining|loft|library|study|gym|family|great_room/.test(t)) return 'HARDWOOD';
         if (/bathroom|kitchen|laundry|mudroom|powder/.test(t)) return 'TILE';
         if (/garage/.test(t)) return 'CONCRETE';
-        return 'STONE/TILE';
+        return 'HARDWOOD';
     };
 
     // Room schedule table: header + one row per room + footer
@@ -3013,6 +3018,52 @@ const buildPresentationDxf = (planSpec) => {
         return out;
     };
 
+    const drawHatchInRect = (x, y, w, h, pattern) => {
+        if (!finite(x, y, w, h) || w <= 0.25 || h <= 0.25) return;
+        const left = x;
+        const right = x + w;
+        const bottom = y;
+        const top = y + h;
+        const maxMarks = 240;
+
+        if (pattern === 'TILE') {
+            const spacing = 2.0;
+            let marks = 0;
+            for (let xx = left + spacing; xx < right && marks < maxMarks; xx += spacing, marks++) {
+                drawLine(xx, bottom, xx, top, 'A-FLOR-PATT');
+            }
+            for (let yy = bottom + spacing; yy < top && marks < maxMarks * 2; yy += spacing, marks++) {
+                drawLine(left, yy, right, yy, 'A-FLOR-PATT');
+            }
+            return;
+        }
+
+        if (pattern === 'CARPET' || pattern === 'CONCRETE') {
+            const spacing = pattern === 'CARPET' ? 1.4 : 2.6;
+            const radius = pattern === 'CARPET' ? 0.045 : 0.035;
+            let marks = 0;
+            for (let yy = bottom + spacing / 2; yy < top && marks < maxMarks; yy += spacing) {
+                for (let xx = left + spacing / 2; xx < right && marks < maxMarks; xx += spacing, marks++) {
+                    drawCircle(xx, yy, radius, 'A-FLOR-PATT');
+                }
+            }
+            return;
+        }
+
+        // HARDWOOD default: diagonal plank-like strokes
+        const spacing = 1.2;
+        let marks = 0;
+        for (let offset = -h; offset <= w && marks < maxMarks; offset += spacing, marks++) {
+            const x1 = left + Math.max(0, offset);
+            const y1 = bottom + Math.max(0, -offset);
+            const x2 = left + Math.min(w, offset + h);
+            const y2 = bottom + Math.min(h, h + offset);
+            if (finite(x1, y1, x2, y2) && (Math.abs(x2 - x1) > 0.05 || Math.abs(y2 - y1) > 0.05)) {
+                drawLine(x1, y1, x2, y2, 'A-FLOR-PATT');
+            }
+        }
+    };
+
     const drawFurnitureItem = (item, level, originX, originY) => {
         const lvlH = Number(level.height || 0);
         const fx = originX + Number(item.x || 0);
@@ -3152,6 +3203,21 @@ const buildPresentationDxf = (planSpec) => {
 
         drawText(originX, titleY, 1.35, `LEVEL ${level.level}`, 'A-ROOM-LABEL');
         drawText(originX, titleY - 1.2, 0.8, `${Math.round((lvlW * lvlH)).toLocaleString()} SQ FT`, 'A-ROOM-LABEL');
+
+        // Room hatches first so walls/symbols remain legible above them.
+        (level.rooms || []).forEach((room) => {
+            const finishClass = finishClassForDxf(room.type);
+            roomParts(room).forEach((part) => {
+                const px = Number(part.x || 0);
+                const py = Number(part.y || 0);
+                const pw = Number(part.w || 0);
+                const ph = Number(part.h || 0);
+                if (!finite(px, py, pw, ph) || pw <= 0 || ph <= 0) return;
+                const rx = originX + px;
+                const ry = mapY(py, ph);
+                drawHatchInRect(rx, ry, pw, ph, finishClass);
+            });
+        });
 
         // Shared-wall extraction: draw each centerline segment once.
         const EXT_THICK = 0.5;
@@ -3331,11 +3397,12 @@ const buildPresentationDxf = (planSpec) => {
     const schedY = tbY + tbH + 1;
     drawRoomSchedule(planSpec, tbX, schedY + 16, schedW);
 
-    // Assemble DXF output — AC1015 (AutoCAD 2000) with TABLES/BLOCKS/ENTITIES/OBJECTS
+    // Assemble DXF output. Use conservative R12 profile for maximum reader compatibility.
     const lines = [];
     // HEADER
     lines.push('0\nSECTION\n2\nHEADER');
-    lines.push('9\n$ACADVER\n1\nAC1015');
+    lines.push(`9\n$ACADVER\n1\n${DXF_VERSION}`);
+    lines.push('9\n$DWGCODEPAGE\n3\nANSI_1252');
     lines.push('9\n$INSUNITS\n70\n2');      // 2 = feet
     lines.push('9\n$MEASUREMENT\n70\n0');   // 0 = imperial
     lines.push('9\n$LTSCALE\n40\n1.0');
@@ -3344,30 +3411,21 @@ const buildPresentationDxf = (planSpec) => {
     lines.push('0\nENDSEC');
     // TABLES
     lines.push('0\nSECTION\n2\nTABLES');
-    // VPORT table (required by most parsers)
-    lines.push('0\nTABLE\n2\nVPORT\n70\n1');
-    lines.push('0\nVPORT\n2\n*ACTIVE\n70\n0\n10\n0.0\n20\n0.0\n11\n1.0\n21\n1.0\n12\n840.0\n22\n648.0\n13\n0.0\n23\n0.0\n14\n10.0\n24\n10.0\n15\n10.0\n25\n10.0\n16\n0.0\n26\n0.0\n36\n1.0\n17\n0.0\n27\n0.0\n37\n0.0\n40\n1296.0\n41\n1.293\n42\n50.0\n43\n0.0\n44\n0.0\n50\n0.0\n51\n0.0\n71\n0\n72\n1000\n73\n1\n74\n3\n75\n0\n76\n1\n77\n0\n78\n0');
-    lines.push('0\nENDTAB');
     // LTYPE table
     lines.push('0\nTABLE\n2\nLTYPE\n70\n1');
     lines.push('0\nLTYPE\n2\nCONTINUOUS\n70\n0\n3\nSolid line\n72\n65\n73\n0\n40\n0.0');
     lines.push('0\nENDTAB');
     // LAYER table
     lines.push(`0\nTABLE\n2\nLAYER\n70\n${Object.keys(layerStyles).length + 1}`);
-    lines.push('0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS\n370\n18');
+    lines.push('0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS');
     Object.values(layerStyles).forEach((style) => {
-        lines.push(`0\nLAYER\n2\n${style.name}\n70\n0\n62\n${style.color}\n6\nCONTINUOUS\n370\n${style.lineweight}`);
+        const lineweight = DXF_INCLUDE_LINEWEIGHT_CODES ? `\n370\n${style.lineweight}` : '';
+        lines.push(`0\nLAYER\n2\n${style.name}\n70\n0\n62\n${style.color}\n6\nCONTINUOUS${lineweight}`);
     });
     lines.push('0\nENDTAB');
     // STYLE table
     lines.push('0\nTABLE\n2\nSTYLE\n70\n1');
     lines.push('0\nSTYLE\n2\nSTANDARD\n70\n0\n40\n0\n41\n1\n50\n0\n71\n0\n42\n0.2\n3\ntxt\n4\n');
-    lines.push('0\nENDTAB');
-    // VIEW table
-    lines.push('0\nTABLE\n2\nVIEW\n70\n0');
-    lines.push('0\nENDTAB');
-    // UCS table
-    lines.push('0\nTABLE\n2\nUCS\n70\n0');
     lines.push('0\nENDTAB');
     // APPID table
     lines.push('0\nTABLE\n2\nAPPID\n70\n1');
@@ -3385,9 +3443,10 @@ const buildPresentationDxf = (planSpec) => {
     lines.push('0\nSECTION\n2\nENTITIES');
     lines.push(...entities);
     lines.push('0\nENDSEC');
-    // OBJECTS (kept minimal but explicit for AC1015 compatibility)
-    lines.push('0\nSECTION\n2\nOBJECTS');
-    lines.push('0\nENDSEC');
+    if (DXF_INCLUDE_OBJECTS_SECTION) {
+        lines.push('0\nSECTION\n2\nOBJECTS');
+        lines.push('0\nENDSEC');
+    }
     lines.push('0\nEOF');
     return lines.join('\r\n');
 };
