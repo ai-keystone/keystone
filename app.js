@@ -3009,16 +3009,51 @@ const getElevationViews = elevations => [{
   key: 'rightSvg',
   label: 'Right'
 }].filter(view => elevations?.[view.key]);
+const VIEW_KEY_TO_EDGE = {
+  frontSvg: 'front',
+  rearSvg: 'rear',
+  leftSvg: 'left',
+  rightSvg: 'right'
+};
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const levelOneDimensions = (planSpec, footprintInfo = {}) => {
+  const level1 = (planSpec?.levels || []).find(level => Number(level?.level || 1) === 1) || (planSpec?.levels || [])[0] || null;
+  const widthFt = Number(level1?.width || footprintInfo?.widthFt || 0) || 0;
+  const depthFt = Number(level1?.height || footprintInfo?.heightFt || 0) || 0;
+  return {
+    widthFt,
+    depthFt
+  };
+};
+const resolveElevationSpanFt = ({
+  viewKey,
+  planSpec,
+  footprintInfo
+}) => {
+  const orientation = VIEW_KEY_TO_EDGE[viewKey] || 'front';
+  if (planSpec) {
+    return Math.max(1, Number(planSpanForElevation(planSpec, orientation) || 0));
+  }
+  const dims = levelOneDimensions(planSpec, footprintInfo);
+  return Math.max(1, Number(orientation === 'left' || orientation === 'right' ? dims.depthFt : dims.widthFt));
+};
 const BlueprintPresentationSheet = ({
   planSvg,
   elevations,
   formData,
   footprintInfo,
-  renderImage
+  renderImage,
+  planSpec
 }) => {
   if (!planSvg) return null;
   const views = getElevationViews(elevations);
   const showSideRail = views.length > 0 || !!renderImage;
+  const levelDims = levelOneDimensions(planSpec, footprintInfo);
+  const scaleBaseFt = Math.max(levelDims.widthFt || 0, ...views.map(view => resolveElevationSpanFt({
+    viewKey: view.key,
+    planSpec,
+    footprintInfo
+  })), 1);
   const area = extractPrimaryNumber(formData?.totalArea, footprintInfo?.widthFt && footprintInfo?.heightFt ? String(footprintInfo.widthFt * footprintInfo.heightFt) : '');
   const styleLabel = elevations?.meta?.styleLabel || formData?.materials || 'Residential';
   const roofKind = String(elevations?.meta?.roofKind || 'gabled').replace(/_/g, ' ');
@@ -3140,39 +3175,60 @@ const BlueprintPresentationSheet = ({
       gridTemplateColumns: '1fr 1fr',
       gap: 12
     }
-  }, views.map(view => /*#__PURE__*/React.createElement("div", {
-    key: view.key,
-    style: {
-      background: '#fffdf9',
-      border: '1px solid rgba(120,102,82,0.12)',
-      borderRadius: 16,
-      padding: '12px 12px 10px',
-      minHeight: 176,
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 8,
-      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.58)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mono",
-    style: {
-      fontSize: 8,
-      letterSpacing: '0.18em',
-      textTransform: 'uppercase',
-      color: 'rgba(10,10,12,0.48)'
-    }
-  }, view.label, " elevation"), /*#__PURE__*/React.createElement("div", {
-    className: "presentation-elevation-svg",
-    style: {
-      flex: 1,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    },
-    dangerouslySetInnerHTML: {
-      __html: elevations[view.key]
-    }
-  })))) : null) : null));
+  }, views.map(view => {
+    const viewSpanFt = resolveElevationSpanFt({
+      viewKey: view.key,
+      planSpec,
+      footprintInfo
+    });
+    const targetWidthPct = clamp(viewSpanFt / scaleBaseFt * 96, 44, 96);
+    return /*#__PURE__*/React.createElement("div", {
+      key: view.key,
+      style: {
+        background: '#fffdf9',
+        border: '1px solid rgba(120,102,82,0.12)',
+        borderRadius: 16,
+        padding: '12px 12px 10px',
+        minHeight: 176,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 8,
+        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.58)'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 8,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        color: 'rgba(10,10,12,0.48)'
+      }
+    }, view.label, " elevation"), /*#__PURE__*/React.createElement("div", {
+      className: "mono",
+      style: {
+        fontSize: 7,
+        letterSpacing: '0.12em',
+        textTransform: 'uppercase',
+        color: 'rgba(10,10,12,0.34)'
+      }
+    }, Math.round(viewSpanFt), "' span (plan-scale)"), /*#__PURE__*/React.createElement("div", {
+      className: "presentation-elevation-svg",
+      style: {
+        flex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }
+    }, /*#__PURE__*/React.createElement("div", {
+      style: {
+        width: `${targetWidthPct}%`,
+        maxWidth: '100%'
+      },
+      dangerouslySetInnerHTML: {
+        __html: elevations[view.key]
+      }
+    })));
+  })) : null) : null));
 };
 const ElevationsPanel = ({
   elevations,
@@ -4106,7 +4162,8 @@ const composeBlueprintPresentationSheet = async ({
   elevations,
   formData,
   footprintInfo,
-  renderImage
+  renderImage,
+  planSpec
 }) => {
   if (!planSvg) return null;
   const planSrc = await svgToPngDataUrl(planSvg, {
@@ -4173,6 +4230,8 @@ const composeBlueprintPresentationSheet = async ({
   const drawPlanX = planX + (planBoxW - drawPlanW) / 2;
   const drawPlanY = planY + (planBoxH - drawPlanH) / 2;
   ctx.drawImage(planImage, drawPlanX, drawPlanY, drawPlanW, drawPlanH);
+  const planDims = levelOneDimensions(planSpec, footprintInfo);
+  const planScalePxPerFt = drawPlanW > 0 && planDims.widthFt > 0 ? drawPlanW / planDims.widthFt : 0;
   if (renderAsset) {
     const renderX = pad + planBoxW + gap;
     const renderY = pad + headerH;
@@ -4209,7 +4268,14 @@ const composeBlueprintPresentationSheet = async ({
     ctx.fillText(`${entry.label.toUpperCase()} ELEVATION`, x + 10, y + 16);
     const availableW = cardW - 16;
     const availableH = cardH - 30;
-    const scale = Math.min(availableW / entry.image.width, availableH / entry.image.height);
+    const spanFt = resolveElevationSpanFt({
+      viewKey: entry.key,
+      planSpec,
+      footprintInfo
+    });
+    const rawTargetW = planScalePxPerFt > 0 ? spanFt * planScalePxPerFt : availableW;
+    const targetW = clamp(rawTargetW, Math.max(76, availableW * 0.42), availableW);
+    const scale = Math.min(targetW / entry.image.width, availableH / entry.image.height);
     const drawW = entry.image.width * scale;
     const drawH = entry.image.height * scale;
     const drawX = x + (cardW - drawW) / 2;
@@ -7699,7 +7765,7 @@ const DesignGenerator = ({
         functionalId: alt.footprintInfo?.functionalId || alt.planSpec?.functionalId || `option_${i + 2}`,
         functionalLabel: alt.footprintInfo?.functionalLabel || alt.planSpec?.functionalLabel || `Option ${i + 2}`
       }));
-      setOptionSequence([bestOption, ...altOptions]);
+      setOptionSequence([bestOption, ...altOptions].slice(0, 3));
       setCurrentOptionIndex(0);
       setRenderState(createEmptyRenderState());
       setRenderResetKey(k => k + 1);
@@ -7788,7 +7854,8 @@ const DesignGenerator = ({
         elevations: planSpec?.elevations || null,
         formData,
         footprintInfo,
-        renderImage: renderState?.image || null
+        renderImage: renderState?.image || null,
+        planSpec
       })) || (await svgToPngDataUrl(planSvg, {
         background: '#F6F4EF',
         pixelRatio: 3
@@ -8348,7 +8415,8 @@ const DesignGenerator = ({
     elevations: planSpec?.elevations,
     formData: formData,
     footprintInfo: footprintInfo,
-    renderImage: renderState?.image || null
+    renderImage: renderState?.image || null,
+    planSpec: planSpec
   })))), /*#__PURE__*/React.createElement("div", {
     className: "cad-panel-actions"
   }, (status === 'plan-ready' || status === 'refining') && planSvg ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
@@ -8422,7 +8490,7 @@ const DesignGenerator = ({
   }, "Main exports and the 3D render action now live in the orange command bar above the studio columns.")), optionSequence.length > 1 && /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowAlternatives(true),
     className: "w-full cta-secondary py-3 text-[10px]"
-  }, "View Options (", optionSequence.length, ")"))), isUnlocked ? /*#__PURE__*/React.createElement("div", {
+  }, "View Stacked Options (", Math.min(3, optionSequence.length), ")"))), isUnlocked ? /*#__PURE__*/React.createElement("div", {
     className: "paper-panel"
   }, /*#__PURE__*/React.createElement(RefinementPanel, {
     planSpec: planSpec,
@@ -8526,54 +8594,21 @@ const DesignGenerator = ({
     onClick: onOpenModal,
     className: "cta-hero cta-glow-soft"
   }, "Unlock Advanced Features"))))))), showAlternatives && optionSequence.length > 0 && (() => {
-    const opt = optionSequence[currentOptionIndex] || optionSequence[0];
-    const isActive = currentOptionIndex === 0 && planSvg === opt?.svg;
+    const stackedOptions = optionSequence.slice(0, 3);
     return /*#__PURE__*/React.createElement("div", {
       className: "fixed inset-0 z-[200] flex items-center justify-center p-4",
       style: {
         background: 'rgba(0,0,0,0.7)'
       }
     }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-paper rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+      className: "bg-paper rounded-lg shadow-2xl max-w-5xl w-full max-h-[92vh] overflow-hidden flex flex-col"
     }, /*#__PURE__*/React.createElement("div", {
       className: "flex items-center justify-between p-4 border-b border-black/10"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center gap-3"
-    }, /*#__PURE__*/React.createElement("button", {
-      onClick: () => setCurrentOptionIndex(i => Math.max(0, i - 1)),
-      disabled: currentOptionIndex === 0,
-      className: "w-8 h-8 flex items-center justify-center rounded border border-black/10 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
-    }, /*#__PURE__*/React.createElement("svg", {
-      className: "w-4 h-4",
-      fill: "none",
-      stroke: "currentColor",
-      viewBox: "0 0 24 24"
-    }, /*#__PURE__*/React.createElement("path", {
-      strokeLinecap: "round",
-      strokeLinejoin: "round",
-      strokeWidth: "2",
-      d: "M15 19l-7-7 7-7"
-    }))), /*#__PURE__*/React.createElement("div", {
-      className: "text-center"
-    }, /*#__PURE__*/React.createElement("h3", {
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h3", {
       className: "font-semibold text-sm"
-    }, "Option ", currentOptionIndex + 1, " of ", optionSequence.length), /*#__PURE__*/React.createElement("p", {
+    }, "Three Options (Stacked Compare)"), /*#__PURE__*/React.createElement("p", {
       className: "mono text-[8px] text-mid mt-0.5 uppercase tracking-widest"
-    }, opt?.functionalLabel || `Option ${currentOptionIndex + 1}`)), /*#__PURE__*/React.createElement("button", {
-      onClick: () => setCurrentOptionIndex(i => Math.min(optionSequence.length - 1, i + 1)),
-      disabled: currentOptionIndex >= optionSequence.length - 1,
-      className: "w-8 h-8 flex items-center justify-center rounded border border-black/10 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
-    }, /*#__PURE__*/React.createElement("svg", {
-      className: "w-4 h-4",
-      fill: "none",
-      stroke: "currentColor",
-      viewBox: "0 0 24 24"
-    }, /*#__PURE__*/React.createElement("path", {
-      strokeLinecap: "round",
-      strokeLinejoin: "round",
-      strokeWidth: "2",
-      d: "M9 5l7 7-7 7"
-    })))), /*#__PURE__*/React.createElement("button", {
+    }, "Top = highest score, then Option 2 and Option 3")), /*#__PURE__*/React.createElement("button", {
       onClick: () => setShowAlternatives(false),
       className: "w-8 h-8 flex items-center justify-center rounded hover:bg-black/8 text-mid hover:text-ink transition-colors"
     }, /*#__PURE__*/React.createElement("svg", {
@@ -8587,53 +8622,59 @@ const DesignGenerator = ({
       strokeWidth: "2",
       d: "M6 18L18 6M6 6l12 12"
     })))), /*#__PURE__*/React.createElement("div", {
-      className: "flex items-center justify-center gap-2 py-2 border-b border-black/5"
-    }, optionSequence.map((_, i) => /*#__PURE__*/React.createElement("button", {
-      key: i,
-      onClick: () => setCurrentOptionIndex(i),
-      className: `w-2.5 h-2.5 rounded-full transition-colors ${i === currentOptionIndex ? 'bg-blue' : 'bg-black/15 hover:bg-black/30'}`,
-      title: `Option ${i + 1}: ${optionSequence[i]?.functionalLabel || ''}`
-    }))), /*#__PURE__*/React.createElement("div", {
-      className: "overflow-y-auto p-4 flex-1"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "bg-white rounded-lg border border-black/8 p-3 overflow-hidden",
-      style: {
-        maxHeight: '50vh'
-      },
-      dangerouslySetInnerHTML: {
-        __html: opt?.svg || '<p style="padding:20px;color:#999;font-size:11px">Preview unavailable</p>'
-      }
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "mt-3 flex items-center justify-between"
-    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-      className: "mono text-[8px] text-mid"
-    }, opt?.footprintInfo ? `${opt.footprintInfo.widthFt} x ${opt.footprintInfo.heightFt} ft` : ''), opt?.footprintInfo?.aspectRatio && /*#__PURE__*/React.createElement("span", {
-      className: "mono text-[8px] text-mid ml-3"
-    }, "ratio ", opt.footprintInfo.aspectRatio.toFixed(2))), opt?.score !== undefined && /*#__PURE__*/React.createElement("span", {
-      className: "mono text-[8px] text-mid"
-    }, "Score ", opt.score, "/100")), opt?.openingDiagnostics?.profiles && /*#__PURE__*/React.createElement("p", {
-      className: "mono text-[7px] mt-1",
-      style: {
-        color: 'rgba(10,10,12,0.5)'
-      }
-    }, profileLabel(opt.openingDiagnostics.profiles.openingProfile), " \u2022 ", profileLabel(opt.openingDiagnostics.profiles.doorwayProfile))), /*#__PURE__*/React.createElement("div", {
-      className: "p-3 border-t border-black/10 bg-paper/40 flex items-center justify-between"
-    }, /*#__PURE__*/React.createElement("p", {
-      className: "mono text-[7px] text-mid"
-    }, "Option 1 is the highest-scoring design. Use arrows or dots to browse."), /*#__PURE__*/React.createElement("button", {
-      onClick: () => {
-        setPlanSvg(opt.svg);
-        setPlanSpec(opt.planSpec);
-        setPlanScore(opt.score);
-        setFootprintInfo(opt.footprintInfo);
-        setOpeningDiagnostics(opt.openingDiagnostics || opt.planSpec?.openingDiagnostics || null);
-        setRenderState(createEmptyRenderState());
-        setRenderResetKey(k => k + 1);
-        setRenderPanelStatus('idle');
-        setShowAlternatives(false);
-      },
-      className: "cta-hero text-[10px] px-4 py-2"
-    }, "Use This Option"))));
+      className: "overflow-y-auto p-4 flex-1 space-y-4"
+    }, stackedOptions.map((opt, index) => {
+      const isActive = planSvg === opt?.svg;
+      const optionNumber = index + 1;
+      return /*#__PURE__*/React.createElement("div", {
+        key: `${opt?.functionalId || 'opt'}_${index}`,
+        className: "bg-white rounded-lg border border-black/8 p-3"
+      }, /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center justify-between gap-3 mb-2"
+      }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h4", {
+        className: "font-semibold text-sm"
+      }, "Option ", optionNumber), /*#__PURE__*/React.createElement("p", {
+        className: "mono text-[8px] uppercase tracking-widest text-mid mt-0.5"
+      }, opt?.functionalLabel || `Option ${optionNumber}`)), /*#__PURE__*/React.createElement("div", {
+        className: "flex items-center gap-2"
+      }, isActive ? /*#__PURE__*/React.createElement("span", {
+        className: "mono text-[8px] uppercase tracking-widest px-2 py-1 rounded-full border border-[rgba(22,163,74,0.3)] bg-[rgba(22,163,74,0.08)] text-[rgba(22,163,74,0.9)]"
+      }, "Current") : null, /*#__PURE__*/React.createElement("button", {
+        onClick: () => {
+          setPlanSvg(opt.svg);
+          setPlanSpec(opt.planSpec);
+          setPlanScore(opt.score);
+          setFootprintInfo(opt.footprintInfo);
+          setOpeningDiagnostics(opt.openingDiagnostics || opt.planSpec?.openingDiagnostics || null);
+          setCurrentOptionIndex(index);
+          setRenderState(createEmptyRenderState());
+          setRenderResetKey(k => k + 1);
+          setRenderPanelStatus('idle');
+        },
+        className: "cta-hero text-[10px] px-4 py-2"
+      }, "Use This Option"))), /*#__PURE__*/React.createElement("div", {
+        className: "bg-white rounded-lg border border-black/8 p-3 overflow-hidden",
+        style: {
+          maxHeight: '46vh'
+        },
+        dangerouslySetInnerHTML: {
+          __html: opt?.svg || '<p style="padding:20px;color:#999;font-size:11px">Preview unavailable</p>'
+        }
+      }), /*#__PURE__*/React.createElement("div", {
+        className: "mt-3 flex flex-wrap items-center gap-x-3 gap-y-1"
+      }, /*#__PURE__*/React.createElement("span", {
+        className: "mono text-[8px] text-mid"
+      }, opt?.footprintInfo ? `${opt.footprintInfo.widthFt} x ${opt.footprintInfo.heightFt} ft` : ''), opt?.footprintInfo?.aspectRatio && /*#__PURE__*/React.createElement("span", {
+        className: "mono text-[8px] text-mid"
+      }, "ratio ", opt.footprintInfo.aspectRatio.toFixed(2)), opt?.score !== undefined && /*#__PURE__*/React.createElement("span", {
+        className: "mono text-[8px] text-mid"
+      }, "Score ", opt.score, "/100")), opt?.openingDiagnostics?.profiles && /*#__PURE__*/React.createElement("p", {
+        className: "mono text-[7px] mt-1",
+        style: {
+          color: 'rgba(10,10,12,0.5)'
+        }
+      }, profileLabel(opt.openingDiagnostics.profiles.openingProfile), " \u2022 ", profileLabel(opt.openingDiagnostics.profiles.doorwayProfile)));
+    }))));
   })()));
 };
 
