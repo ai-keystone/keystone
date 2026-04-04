@@ -4497,6 +4497,8 @@ const DesignGenerator = ({ onOpenModal }) => {
     const [openingDiagnostics, setOpeningDiagnostics] = useState(() => initialSession?.openingDiagnostics ?? null);
     const [alternatives, setAlternatives] = useState(() => initialSession?.alternatives || []);
     const [showAlternatives, setShowAlternatives] = useState(false);
+    const [optionSequence, setOptionSequence] = useState(() => initialSession?.optionSequence || []);
+    const [currentOptionIndex, setCurrentOptionIndex] = useState(0);
     const [isExportingEstimateXlsx, setIsExportingEstimateXlsx] = useState(false);
     const [renderLaunchSignal, setRenderLaunchSignal] = useState(0);
     const [renderResetKey, setRenderResetKey] = useState(0);
@@ -4534,6 +4536,7 @@ const DesignGenerator = ({ onOpenModal }) => {
             footprintInfo,
             openingDiagnostics,
             alternatives: Array.isArray(alternatives) ? alternatives.slice(0, 6) : [],
+            optionSequence: Array.isArray(optionSequence) ? optionSequence.slice(0, 6) : [],
             renderState: renderState?.image
                 ? {
                     ...renderState,
@@ -4550,7 +4553,7 @@ const DesignGenerator = ({ onOpenModal }) => {
         try {
             localStorage.setItem(STUDIO_SESSION_KEY, JSON.stringify(snapshot));
         } catch {}
-    }, [formData, status, planSvg, planSpec, refinementHistory, refinementsLeft, galleryId, planScore, footprintInfo, openingDiagnostics, alternatives, renderState]);
+    }, [formData, status, planSvg, planSpec, refinementHistory, refinementsLeft, galleryId, planScore, footprintInfo, openingDiagnostics, alternatives, optionSequence, renderState]);
 
     const promptUnlock = (featureLabel = 'advanced features') => {
         alert(`Unlock advanced features with a passkey to use ${featureLabel}.`);
@@ -4605,6 +4608,27 @@ const DesignGenerator = ({ onOpenModal }) => {
             setFootprintInfo(data.footprintInfo ?? null);
             setOpeningDiagnostics(data.openingDiagnostics || data.planSpec?.openingDiagnostics || null);
             setAlternatives(data.alternatives || []);
+            // Build immutable option sequence: best plan as option 0, then alternatives
+            const bestOption = {
+                svg: data.svg,
+                planSpec: data.planSpec ? { ...data.planSpec, estimate: data.estimate || data.planSpec?.estimate || null } : null,
+                score: data.score,
+                footprintInfo: data.footprintInfo,
+                openingDiagnostics: data.openingDiagnostics || data.planSpec?.openingDiagnostics || null,
+                functionalId: data.footprintInfo?.functionalId || data.planSpec?.functionalId || 'front_core_compact',
+                functionalLabel: data.footprintInfo?.functionalLabel || data.planSpec?.functionalLabel || 'Option 1',
+            };
+            const altOptions = (data.alternatives || []).map((alt, i) => ({
+                svg: alt.svg,
+                planSpec: alt.planSpec,
+                score: alt.score,
+                footprintInfo: alt.footprintInfo,
+                openingDiagnostics: alt.openingDiagnostics || alt.planSpec?.openingDiagnostics || null,
+                functionalId: alt.footprintInfo?.functionalId || alt.planSpec?.functionalId || `option_${i + 2}`,
+                functionalLabel: alt.footprintInfo?.functionalLabel || alt.planSpec?.functionalLabel || `Option ${i + 2}`,
+            }));
+            setOptionSequence([bestOption, ...altOptions]);
+            setCurrentOptionIndex(0);
             setRenderState(createEmptyRenderState());
             setRenderResetKey(k => k + 1);
             setRenderPanelStatus('idle');
@@ -5063,8 +5087,8 @@ const DesignGenerator = ({ onOpenModal }) => {
                                                 Main exports and the 3D render action now live in the orange command bar above the studio columns.
                                             </p>
                                         </div>
-                                        {alternatives.length > 0 && (
-                                            <button onClick={() => setShowAlternatives(true)} className="w-full cta-secondary py-3 text-[10px]">View Alternatives ({alternatives.length})</button>
+                                        {optionSequence.length > 1 && (
+                                            <button onClick={() => setShowAlternatives(true)} className="w-full cta-secondary py-3 text-[10px]">View Options ({optionSequence.length})</button>
                                         )}
                                     </div>
                                 </div>
@@ -5154,76 +5178,102 @@ const DesignGenerator = ({ onOpenModal }) => {
                 </div>
 
                         {/* Ã¢"â‚¬Ã¢"â‚¬ ALTERNATIVES MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ */}
-                        {showAlternatives && (
+                        {showAlternatives && optionSequence.length > 0 && (() => {
+                            const opt = optionSequence[currentOptionIndex] || optionSequence[0];
+                            const isActive = currentOptionIndex === 0 && planSvg === opt?.svg;
+                            return (
                             <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" style={{background:'rgba(0,0,0,0.7)'}}>
-                                <div className="bg-paper rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                                <div className="bg-paper rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                                    {/* Header with option navigation */}
                                     <div className="flex items-center justify-between p-4 border-b border-black/10">
-                                        <div>
-                                            <h3 className="font-semibold text-sm">Other Generated Plans</h3>
-                                            <p className="mono text-[8px] text-mid mt-0.5 uppercase tracking-widest">
-                                                {alternatives.length} alternative footprints - click any to use it
-                                            </p>
+                                        <div className="flex items-center gap-3">
+                                            <button
+                                                onClick={() => setCurrentOptionIndex(i => Math.max(0, i - 1))}
+                                                disabled={currentOptionIndex === 0}
+                                                className="w-8 h-8 flex items-center justify-center rounded border border-black/10 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"/></svg>
+                                            </button>
+                                            <div className="text-center">
+                                                <h3 className="font-semibold text-sm">Option {currentOptionIndex + 1} of {optionSequence.length}</h3>
+                                                <p className="mono text-[8px] text-mid mt-0.5 uppercase tracking-widest">
+                                                    {opt?.functionalLabel || `Option ${currentOptionIndex + 1}`}
+                                                </p>
+                                            </div>
+                                            <button
+                                                onClick={() => setCurrentOptionIndex(i => Math.min(optionSequence.length - 1, i + 1))}
+                                                disabled={currentOptionIndex >= optionSequence.length - 1}
+                                                className="w-8 h-8 flex items-center justify-center rounded border border-black/10 hover:bg-black/5 disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
+                                            >
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"/></svg>
+                                            </button>
                                         </div>
                                         <button onClick={() => setShowAlternatives(false)} className="w-8 h-8 flex items-center justify-center rounded hover:bg-black/8 text-mid hover:text-ink transition-colors">
                                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
                                         </button>
                                     </div>
-                                    <div className="overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
-                                        {alternatives.map((alt, i) => (
-                                            <div
+
+                                    {/* Option dots */}
+                                    <div className="flex items-center justify-center gap-2 py-2 border-b border-black/5">
+                                        {optionSequence.map((_, i) => (
+                                            <button
                                                 key={i}
-                                                className="border border-black/10 rounded-lg overflow-hidden cursor-pointer hover:border-blue hover:shadow-md transition-all group"
-                                                onClick={() => {
-                                                    setPlanSvg(alt.svg);
-                                                    setPlanSpec(alt.planSpec);
-                                                    setPlanScore(alt.score);
-                                                    setFootprintInfo(alt.footprintInfo);
-                                                    setOpeningDiagnostics(alt.openingDiagnostics || alt.planSpec?.openingDiagnostics || null);
-                                                    setRenderState(createEmptyRenderState());
-                                                    setRenderResetKey(k => k + 1);
-                                                    setRenderPanelStatus('idle');
-                                                    // Swap: current becomes an alternative
-                                                    const newAlts = [
-                                                        { svg: planSvg, planSpec, score: planScore, footprintInfo, openingDiagnostics },
-                                                        ...alternatives.filter((_, j) => j !== i),
-                                                    ].filter(a => a.svg);
-                                                    setAlternatives(newAlts);
-                                                    setShowAlternatives(false);
-                                                }}
-                                            >
-                                                <div className="bg-white p-2 overflow-hidden" style={{maxHeight:'180px'}} dangerouslySetInnerHTML={{__html: alt.svg || '<p style="padding:20px;color:#999;font-size:11px">Preview unavailable</p>'}}/>
-                                                <div className="p-2 bg-paper/60 border-t border-black/5">
-                                                    <div className="flex items-center justify-between">
-                                                        <span className="mono text-[7px] text-mid">
-                                                            {alt.footprintInfo ? `${alt.footprintInfo.widthFt} x ${alt.footprintInfo.heightFt} ft` : `Option ${i+2}`}
-                                                        </span>
-                                                        {alt.footprintInfo && (
-                                                            <span className="mono text-[7px] text-mid">ratio {alt.footprintInfo.aspectRatio?.toFixed(2)}</span>
-                                                        )}
-                                                    </div>
-                                                    {alt.score !== undefined && (
-                                                        <div className="mt-1 h-1 bg-black/8 rounded-full overflow-hidden">
-                                                            <div className="h-full bg-blue/60 rounded-full transition-all" style={{width:`${Math.min(100, alt.score)}%`}}/>
-                                                        </div>
-                                                    )}
-                                                    {alt.openingDiagnostics?.profiles && (
-                                                        <p className="mono text-[7px] mt-1" style={{color:'rgba(10,10,12,0.5)'}}>
-                                                            {profileLabel(alt.openingDiagnostics.profiles.openingProfile)} • {profileLabel(alt.openingDiagnostics.profiles.doorwayProfile)}
-                                                        </p>
-                                                    )}
-                                                    <p className="mono text-[7px] text-blue mt-1 group-hover:text-ink">
-                                                        {alt.score !== undefined ? `Score ${alt.score}/100` : ''} - Click to use
-                                                    </p>
-                                                </div>
-                                            </div>
+                                                onClick={() => setCurrentOptionIndex(i)}
+                                                className={`w-2.5 h-2.5 rounded-full transition-colors ${i === currentOptionIndex ? 'bg-blue' : 'bg-black/15 hover:bg-black/30'}`}
+                                                title={`Option ${i + 1}: ${optionSequence[i]?.functionalLabel || ''}`}
+                                            />
                                         ))}
                                     </div>
-                                    <div className="p-3 border-t border-black/10 bg-paper/40">
-                                        <p className="mono text-[7px] text-mid text-center">The first plan shown is the highest-scoring design. Others are alternative footprints.</p>
+
+                                    {/* Plan preview */}
+                                    <div className="overflow-y-auto p-4 flex-1">
+                                        <div className="bg-white rounded-lg border border-black/8 p-3 overflow-hidden" style={{maxHeight:'50vh'}} dangerouslySetInnerHTML={{__html: opt?.svg || '<p style="padding:20px;color:#999;font-size:11px">Preview unavailable</p>'}}/>
+                                        <div className="mt-3 flex items-center justify-between">
+                                            <div>
+                                                <span className="mono text-[8px] text-mid">
+                                                    {opt?.footprintInfo ? `${opt.footprintInfo.widthFt} x ${opt.footprintInfo.heightFt} ft` : ''}
+                                                </span>
+                                                {opt?.footprintInfo?.aspectRatio && (
+                                                    <span className="mono text-[8px] text-mid ml-3">ratio {opt.footprintInfo.aspectRatio.toFixed(2)}</span>
+                                                )}
+                                            </div>
+                                            {opt?.score !== undefined && (
+                                                <span className="mono text-[8px] text-mid">Score {opt.score}/100</span>
+                                            )}
+                                        </div>
+                                        {opt?.openingDiagnostics?.profiles && (
+                                            <p className="mono text-[7px] mt-1" style={{color:'rgba(10,10,12,0.5)'}}>
+                                                {profileLabel(opt.openingDiagnostics.profiles.openingProfile)} • {profileLabel(opt.openingDiagnostics.profiles.doorwayProfile)}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Footer with select button */}
+                                    <div className="p-3 border-t border-black/10 bg-paper/40 flex items-center justify-between">
+                                        <p className="mono text-[7px] text-mid">
+                                            Option 1 is the highest-scoring design. Use arrows or dots to browse.
+                                        </p>
+                                        <button
+                                            onClick={() => {
+                                                setPlanSvg(opt.svg);
+                                                setPlanSpec(opt.planSpec);
+                                                setPlanScore(opt.score);
+                                                setFootprintInfo(opt.footprintInfo);
+                                                setOpeningDiagnostics(opt.openingDiagnostics || opt.planSpec?.openingDiagnostics || null);
+                                                setRenderState(createEmptyRenderState());
+                                                setRenderResetKey(k => k + 1);
+                                                setRenderPanelStatus('idle');
+                                                setShowAlternatives(false);
+                                            }}
+                                            className="cta-hero text-[10px] px-4 py-2"
+                                        >
+                                            Use This Option
+                                        </button>
                                     </div>
                                 </div>
                             </div>
-                        )}
+                            );
+                        })()}
             </div>
         </section>
     );
