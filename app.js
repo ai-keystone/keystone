@@ -4640,6 +4640,90 @@ const buildPresentationDxf = planSpec => {
     });
     return [...values].sort((a, b) => a - b).filter((value, index, arr) => index === 0 || Math.abs(value - arr[index - 1]) > 0.1);
   };
+  const roundWallCoord = value => Math.round((Number(value) || 0) * 1000) / 1000;
+  const wallSegmentKey = (axis, coord) => `${axis}:${roundWallCoord(coord)}`;
+  const classifyWallSegments = (level, originX, originY) => {
+    const lvlH = Number(level.height || 0);
+    const mapY = (y, h = 0) => originY + (lvlH - y - h);
+    const groups = new Map();
+    const addSegment = (axis, coord, a, b, roomKey) => {
+      const start = roundWallCoord(Math.min(a, b));
+      const end = roundWallCoord(Math.max(a, b));
+      if (!finite(start, end) || end - start < 0.05) return;
+      const key = wallSegmentKey(axis, coord);
+      let group = groups.get(key);
+      if (!group) {
+        group = {
+          axis,
+          coord: roundWallCoord(coord),
+          spans: [],
+          breaks: new Set()
+        };
+        groups.set(key, group);
+      }
+      group.spans.push({
+        start,
+        end,
+        roomKey: String(roomKey || '')
+      });
+      group.breaks.add(start);
+      group.breaks.add(end);
+    };
+    (level.rooms || []).forEach((room, roomIndex) => {
+      const roomKey = String(room?.id || room?.label || room?.type || `room_${roomIndex}`);
+      roomParts(room).forEach(part => {
+        const px = Number(part.x || 0);
+        const py = Number(part.y || 0);
+        const pw = Number(part.w || 0);
+        const ph = Number(part.h || 0);
+        if (!finite(px, py, pw, ph) || pw <= 0 || ph <= 0) return;
+        const rx = originX + px;
+        const ry = mapY(py, ph);
+        const rx2 = rx + pw;
+        const ry2 = ry + ph;
+        addSegment('h', ry, rx, rx2, roomKey);
+        addSegment('h', ry2, rx, rx2, roomKey);
+        addSegment('v', rx, ry, ry2, roomKey);
+        addSegment('v', rx2, ry, ry2, roomKey);
+      });
+    });
+    const out = [];
+    groups.forEach(group => {
+      const sortedBreaks = [...group.breaks].sort((a, b) => a - b);
+      for (let i = 0; i < sortedBreaks.length - 1; i++) {
+        const a = sortedBreaks[i];
+        const b = sortedBreaks[i + 1];
+        if (b - a < 0.05) continue;
+        const mid = (a + b) / 2;
+        const covering = group.spans.filter(span => mid >= span.start - 0.001 && mid <= span.end + 0.001);
+        if (!covering.length) continue;
+        const roomKeys = new Set(covering.map(span => span.roomKey).filter(Boolean));
+        if (!roomKeys.size) continue;
+
+        // Skip seams created by multi-part decomposition of a single room.
+        if (roomKeys.size === 1 && covering.length > 1) continue;
+        const type = roomKeys.size > 1 ? 'interior' : 'exterior';
+        if (group.axis === 'h') {
+          out.push({
+            x1: a,
+            y1: group.coord,
+            x2: b,
+            y2: group.coord,
+            type
+          });
+        } else {
+          out.push({
+            x1: group.coord,
+            y1: a,
+            x2: group.coord,
+            y2: b,
+            type
+          });
+        }
+      }
+    });
+    return out;
+  };
   const drawFurnitureItem = (item, level, originX, originY) => {
     const lvlH = Number(level.height || 0);
     const fx = originX + Number(item.x || 0);
@@ -4769,42 +4853,15 @@ const buildPresentationDxf = planSpec => {
     drawText(originX, titleY, 1.35, `LEVEL ${level.level}`, 'A-ROOM-LABEL');
     drawText(originX, titleY - 1.2, 0.8, `${Math.round(lvlW * lvlH).toLocaleString()} SQ FT`, 'A-ROOM-LABEL');
 
-    // Outer plan boundary on A-WALL
-    drawRect(originX, originY, lvlW, lvlH, 'A-WALL');
-
-    // Double-line walls: iterate each room's 4 edges
-    // Exterior edge: lies on plan boundary (x=0, x=lvlW, y=0, y=lvlH)
+    // Shared-wall extraction: draw each centerline segment once.
     const EXT_THICK = 0.5;
     const INT_THICK = 0.33;
+    const wallSegments = classifyWallSegments(level, originX, originY);
+    wallSegments.forEach(segment => {
+      const exterior = segment.type === 'exterior';
+      drawDoubleLineWall(segment.x1, segment.y1, segment.x2, segment.y2, exterior ? EXT_THICK : INT_THICK, exterior ? 'A-WALL' : 'A-WALL-INT');
+    });
     (level.rooms || []).forEach(room => {
-      roomParts(room).forEach(part => {
-        const px = Number(part.x || 0);
-        const py = Number(part.y || 0);
-        const pw = Number(part.w || 0);
-        const ph = Number(part.h || 0);
-        if (pw <= 0 || ph <= 0) return;
-
-        // Map to DXF coordinates
-        const rx = originX + px;
-        const ry = mapY(py, ph);
-        const rx2 = rx + pw;
-        const ry2 = ry + ph;
-
-        // Bottom edge (plan-space y=py → top of rect in DXF due to Y-flip)
-        const onBottom = py === 0;
-        const onTop = py + ph === lvlH;
-        const onLeft = px === 0;
-        const onRight = px + pw === lvlW;
-
-        // Bottom of room in plan-space is top of rect in DXF coords (ry2)
-        drawDoubleLineWall(rx, ry2, rx2, ry2, onBottom ? EXT_THICK : INT_THICK, onBottom ? 'A-WALL' : 'A-WALL-INT');
-        // Top of room in plan-space is bottom of rect in DXF coords (ry)
-        drawDoubleLineWall(rx, ry, rx2, ry, onTop ? EXT_THICK : INT_THICK, onTop ? 'A-WALL' : 'A-WALL-INT');
-        // Left edge
-        drawDoubleLineWall(rx, ry, rx, ry2, onLeft ? EXT_THICK : INT_THICK, onLeft ? 'A-WALL' : 'A-WALL-INT');
-        // Right edge
-        drawDoubleLineWall(rx2, ry, rx2, ry2, onRight ? EXT_THICK : INT_THICK, onRight ? 'A-WALL' : 'A-WALL-INT');
-      });
       const anchor = largestPart(room);
       const label = String(room.label || room.type || '').toUpperCase().replace(/_/g, ' ');
       drawText(originX + Number(anchor.x || 0) + Number(anchor.w || 0) / 2, mapY(Number(anchor.y || 0), Number(anchor.h || 0)) + Number(anchor.h || 0) / 2 + 0.4, 0.6, label, 'A-ROOM-LABEL', 'center');
