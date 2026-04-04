@@ -4554,6 +4554,7 @@ const buildPresentationDxf = planSpec => {
   // Finish class lookup for room schedule
   const finishClassForDxf = type => {
     const t = String(type || '').toLowerCase();
+    if (/covered_porch|open_deck|screened_porch|patio/.test(t)) return 'COMPOSITE DECK';
     if (/bedroom|primary_bedroom|child|sleep/.test(t)) return 'CARPET';
     if (/living|dining|loft|library|study|gym|family|great_room/.test(t)) return 'HARDWOOD';
     if (/bathroom|kitchen|laundry|mudroom|powder/.test(t)) return 'TILE';
@@ -7746,11 +7747,12 @@ const DesignGenerator = ({
         if (c.action === 'resize_and_move') return `Resized & moved ${name} to ${c.w} x ${c.h} ft`;
         return `Updated ${name}`;
       }).join(', ') : `Applied: ${instruction}`;
-      setPlanSvg(data.svg);
-      setPlanSpec(data.planSpec ? {
+      const updatedSpec = data.planSpec ? {
         ...data.planSpec,
         estimate: data.estimate || data.planSpec?.estimate || null
-      } : null);
+      } : null;
+      setPlanSvg(data.svg);
+      setPlanSpec(updatedSpec);
       setOpeningDiagnostics(data.openingDiagnostics || data.planSpec?.openingDiagnostics || null);
       if (data.galleryId) setGalleryId(data.galleryId);
       setRenderState(createEmptyRenderState());
@@ -7761,6 +7763,14 @@ const DesignGenerator = ({
         content: summary
       }]);
       setRefinementsLeft(prev => prev - 1);
+      // Update the current option in optionSequence so alternatives stay in sync
+      setOptionSequence(prev => prev.map((opt, i) => i === currentOptionIndex ? {
+        ...opt,
+        svg: data.svg,
+        planSpec: updatedSpec,
+        score: data.diagnostics?.refined?.score ?? opt.score,
+        openingDiagnostics: data.openingDiagnostics || null
+      } : opt));
       setStatus('plan-ready');
     } catch (err) {
       console.error('[refine]', err);
