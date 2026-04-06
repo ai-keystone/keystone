@@ -83,6 +83,7 @@ const getCurrentPath = () => {
     return raw === '/index.html' ? '/' : raw;
 };
 const homeSectionHref = (id) => id === 'hero' ? '/' : `/#${id}`;
+const LIVE_STUDIO_HASH = '/#generator';
 const SmartImage = ({ eager = false, ...props }) => (
     <img
         loading={eager ? 'eager' : 'lazy'}
@@ -1443,7 +1444,7 @@ const JoinModal = ({ isOpen, onClose }) => {
                     animate={{ opacity:1 }}
                     exit={{ opacity:0 }}
                     onClick={onClose}
-                    className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/85 backdrop-blur-sm p-0 md:p-6"
+                    className="fixed inset-0 z-[700] flex items-end md:items-center justify-center bg-black/85 backdrop-blur-sm p-0 md:p-6"
                 >
                     <motion.div
                         initial={{ y:50, opacity:0 }}
@@ -5882,7 +5883,23 @@ const DreamApp = () => {
     const [heroVisible, setHeroVisible] = useState(true);
     const [isStudioOpen, setStudioOpen] = useState(false);
     const [hasStudioMounted, setHasStudioMounted] = useState(false);
+    const [liveStudioLinkCopied, setLiveStudioLinkCopied] = useState(false);
     usePageTitle('Keystone AI - Home Design in Plain Language');
+    const liveStudioDirectUrl = useMemo(
+        () => (typeof window === 'undefined' ? LIVE_STUDIO_HASH : `${window.location.origin}${LIVE_STUDIO_HASH}`),
+        [],
+    );
+    const liveStudioQrUrl = useMemo(
+        () => `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=0&data=${encodeURIComponent(liveStudioDirectUrl)}`,
+        [liveStudioDirectUrl],
+    );
+    const copyLiveStudioLink = () => {
+        if (typeof navigator === 'undefined' || !navigator.clipboard) return;
+        navigator.clipboard.writeText(liveStudioDirectUrl).then(() => {
+            setLiveStudioLinkCopied(true);
+            window.setTimeout(() => setLiveStudioLinkCopied(false), 2400);
+        }).catch(() => {});
+    };
 
     useEffect(() => {
         const handler = () => setStudioOpen(true);
@@ -6060,26 +6077,26 @@ const DreamApp = () => {
     ];
     const pricingTiers = [
         {
-            tag: 'Trial phase',
-            price: '$0',
-            unit: 'demo floor plan generation',
-            desc: 'Currently in trial phase. Start with one free floor plan and the matching elevations, then request access if you want the advanced package.',
+            tag: 'FOR NOW',
+            price: 'FREE',
+            unit: 'trial floor plan design',
+            desc: 'TRIAL PERIOD FREE FLOOR PLAN DESIGN, plus advanced features when you sign up for free trial access.',
             cta: 'Request Trial Access',
             featured: false,
         },
         {
-            tag: 'Single session',
-            price: '$149',
-            unit: '1 project',
-            desc: 'After launch: one complete Keystone session for one home project, with unlimited refining and unlimited exterior renders.',
+            tag: 'After launch',
+            price: '$49',
+            unit: 'per project',
+            desc: '20 refinements and 10 exterior 3D renders included in each project.',
             cta: 'Join Launch List',
             featured: true,
         },
         {
-            tag: 'Studio pack',
-            price: '$1,099',
-            unit: '10 projects',
-            desc: 'After launch: a 10-pack for repeat use across multiple home concepts, with the same advanced package available in every project.',
+            tag: 'Pro user',
+            price: '$99',
+            unit: 'per month',
+            desc: 'Unlimited projects for pro users (*10 projects per month).',
             cta: 'Join Launch List',
             featured: false,
         },
@@ -6384,13 +6401,59 @@ const DreamApp = () => {
                                                 </p>
                                             </div>
                                             <div className="flex justify-start lg:justify-end">
-                                                <StarBorderBtn onClick={() => scrollTo('generator')}>
-                                                    <span>Open Live Studio</span>
-                                                    <span className="cta-live-mark">
-                                                        <span className="cta-live-dot"/>
-                                                    Free today
-                                                    </span>
-                                                </StarBorderBtn>
+                                                <div className="w-full max-w-[280px] flex flex-col gap-3">
+                                                    <StarBorderBtn onClick={() => scrollTo('generator')}>
+                                                        <span>Open Live Studio</span>
+                                                        <span className="cta-live-mark">
+                                                            <span className="cta-live-dot"/>
+                                                        Free today
+                                                        </span>
+                                                    </StarBorderBtn>
+                                                    <SpotlightCard
+                                                        spotlightColor="rgba(255,106,55,0.08)"
+                                                        className="p-4 rounded-[14px]"
+                                                        style={{background:'rgba(255,255,255,0.76)',border:'1px solid rgba(255,106,55,0.12)'}}
+                                                    >
+                                                        <div className="mono text-[9px] uppercase tracking-[0.2em]" style={{color:'rgba(10,10,12,0.44)'}}>Direct live studio link</div>
+                                                        <a
+                                                            href={liveStudioDirectUrl}
+                                                            target="_blank"
+                                                            rel="noreferrer"
+                                                            className="block mt-2 text-[12px] leading-snug break-all"
+                                                            style={{color:'var(--ink)'}}
+                                                        >
+                                                            {liveStudioDirectUrl}
+                                                        </a>
+                                                        <div className="grid grid-cols-[1fr_auto] gap-2 mt-3">
+                                                            <button
+                                                                type="button"
+                                                                onClick={copyLiveStudioLink}
+                                                                className="cta-secondary px-3 py-2 text-[10px] justify-center"
+                                                            >
+                                                                {liveStudioLinkCopied ? 'Link copied' : 'Copy link'}
+                                                            </button>
+                                                            <a
+                                                                href={liveStudioDirectUrl}
+                                                                target="_blank"
+                                                                rel="noreferrer"
+                                                                className="cta-hero px-3 py-2 text-[10px] flex items-center justify-center"
+                                                            >
+                                                                Open
+                                                            </a>
+                                                        </div>
+                                                        <div className="mt-3 rounded-[12px] overflow-hidden mx-auto"
+                                                            style={{width:'142px',height:'142px',background:'white',padding:'8px',boxShadow:'0 0 0 1px rgba(10,10,12,0.08)'}}>
+                                                            <img
+                                                                src={liveStudioQrUrl}
+                                                                alt="QR code for Keystone live studio link"
+                                                                style={{width:'100%',height:'100%',objectFit:'contain'}}
+                                                            />
+                                                        </div>
+                                                        <p className="mt-2 text-[11px] leading-relaxed text-center" style={{color:'rgba(10,10,12,0.54)'}}>
+                                                            Use this QR in your pitch so people can try the studio instantly.
+                                                        </p>
+                                                    </SpotlightCard>
+                                                </div>
                                             </div>
                                         </div>
                                     </SpotlightCard>
@@ -6651,7 +6714,7 @@ const DreamApp = () => {
                                 </Reveal>
                                 <Reveal y={16} delay={0.18}>
                                 <p className="mt-5 text-base leading-relaxed" style={{color:'var(--mid)'}}>
-                                    Start with the free trial floor plan, then move into the paid session model once the product is ready for launch.
+                                    Start free right now, then move into project or pro pricing after launch.
                                 </p>
                                 </Reveal>
                             </div>
@@ -6683,7 +6746,7 @@ const DreamApp = () => {
                                                         <div className="mono text-[10px] uppercase tracking-[0.22em] mt-2" style={{color:'rgba(10,10,12,0.42)'}}>{tier.unit}</div>
                                                         <p className="mt-5 text-sm leading-relaxed flex-1" style={{color:'var(--mid)'}}>{tier.desc}</p>
                                                         <button onClick={() => setModalOpen(true)}
-                                                            className={`cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.tag === 'Trial phase' ? 'cta-glow-soft' : ''}`}>
+                                                            className={`cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.tag === 'FOR NOW' ? 'cta-glow-soft' : ''}`}>
                                                             {tier.cta}
                                                         </button>
                                                     </SpotlightCard>

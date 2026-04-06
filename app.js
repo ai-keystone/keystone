@@ -106,6 +106,7 @@ const getCurrentPath = () => {
   return raw === '/index.html' ? '/' : raw;
 };
 const homeSectionHref = id => id === 'hero' ? '/' : `/#${id}`;
+const LIVE_STUDIO_HASH = '/#generator';
 const SmartImage = ({
   eager = false,
   ...props
@@ -2816,7 +2817,7 @@ const JoinModal = ({
       opacity: 0
     },
     onClick: onClose,
-    className: "fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/85 backdrop-blur-sm p-0 md:p-6"
+    className: "fixed inset-0 z-[700] flex items-end md:items-center justify-center bg-black/85 backdrop-blur-sm p-0 md:p-6"
   }, /*#__PURE__*/React.createElement(motion.div, {
     initial: {
       y: 50,
@@ -8982,7 +8983,17 @@ const DreamApp = () => {
   const [heroVisible, setHeroVisible] = useState(true);
   const [isStudioOpen, setStudioOpen] = useState(false);
   const [hasStudioMounted, setHasStudioMounted] = useState(false);
+  const [liveStudioLinkCopied, setLiveStudioLinkCopied] = useState(false);
   usePageTitle('Keystone AI - Home Design in Plain Language');
+  const liveStudioDirectUrl = useMemo(() => typeof window === 'undefined' ? LIVE_STUDIO_HASH : `${window.location.origin}${LIVE_STUDIO_HASH}`, []);
+  const liveStudioQrUrl = useMemo(() => `https://api.qrserver.com/v1/create-qr-code/?size=260x260&margin=0&data=${encodeURIComponent(liveStudioDirectUrl)}`, [liveStudioDirectUrl]);
+  const copyLiveStudioLink = () => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) return;
+    navigator.clipboard.writeText(liveStudioDirectUrl).then(() => {
+      setLiveStudioLinkCopied(true);
+      window.setTimeout(() => setLiveStudioLinkCopied(false), 2400);
+    }).catch(() => {});
+  };
   useEffect(() => {
     const handler = () => setStudioOpen(true);
     document.addEventListener('keystone:open-studio', handler);
@@ -9113,24 +9124,24 @@ const DreamApp = () => {
     firm: 'Product truth'
   }];
   const pricingTiers = [{
-    tag: 'Trial phase',
-    price: '$0',
-    unit: 'demo floor plan generation',
-    desc: 'Currently in trial phase. Start with one free floor plan and the matching elevations, then request access if you want the advanced package.',
+    tag: 'FOR NOW',
+    price: 'FREE',
+    unit: 'trial floor plan design',
+    desc: 'TRIAL PERIOD FREE FLOOR PLAN DESIGN, plus advanced features when you sign up for free trial access.',
     cta: 'Request Trial Access',
     featured: false
   }, {
-    tag: 'Single session',
-    price: '$149',
-    unit: '1 project',
-    desc: 'After launch: one complete Keystone session for one home project, with unlimited refining and unlimited exterior renders.',
+    tag: 'After launch',
+    price: '$49',
+    unit: 'per project',
+    desc: '20 refinements and 10 exterior 3D renders included in each project.',
     cta: 'Join Launch List',
     featured: true
   }, {
-    tag: 'Studio pack',
-    price: '$1,099',
-    unit: '10 projects',
-    desc: 'After launch: a 10-pack for repeat use across multiple home concepts, with the same advanced package available in every project.',
+    tag: 'Pro user',
+    price: '$99',
+    unit: 'per month',
+    desc: 'Unlimited projects for pro users (*10 projects per month).',
     cta: 'Join Launch List',
     featured: false
   }];
@@ -9825,13 +9836,68 @@ const DreamApp = () => {
     }
   }, "The same guided workflow behind the hero is right below. Open the live studio, walk through the survey, shape a plan, and see how much you can understand before a formal design meeting.")), /*#__PURE__*/React.createElement("div", {
     className: "flex justify-start lg:justify-end"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "w-full max-w-[280px] flex flex-col gap-3"
   }, /*#__PURE__*/React.createElement(StarBorderBtn, {
     onClick: () => scrollTo('generator')
   }, /*#__PURE__*/React.createElement("span", null, "Open Live Studio"), /*#__PURE__*/React.createElement("span", {
     className: "cta-live-mark"
   }, /*#__PURE__*/React.createElement("span", {
     className: "cta-live-dot"
-  }), "Free today"))))))))), hasStudioMounted && /*#__PURE__*/React.createElement("div", {
+  }), "Free today")), /*#__PURE__*/React.createElement(SpotlightCard, {
+    spotlightColor: "rgba(255,106,55,0.08)",
+    className: "p-4 rounded-[14px]",
+    style: {
+      background: 'rgba(255,255,255,0.76)',
+      border: '1px solid rgba(255,106,55,0.12)'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "mono text-[9px] uppercase tracking-[0.2em]",
+    style: {
+      color: 'rgba(10,10,12,0.44)'
+    }
+  }, "Direct live studio link"), /*#__PURE__*/React.createElement("a", {
+    href: liveStudioDirectUrl,
+    target: "_blank",
+    rel: "noreferrer",
+    className: "block mt-2 text-[12px] leading-snug break-all",
+    style: {
+      color: 'var(--ink)'
+    }
+  }, liveStudioDirectUrl), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-[1fr_auto] gap-2 mt-3"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: copyLiveStudioLink,
+    className: "cta-secondary px-3 py-2 text-[10px] justify-center"
+  }, liveStudioLinkCopied ? 'Link copied' : 'Copy link'), /*#__PURE__*/React.createElement("a", {
+    href: liveStudioDirectUrl,
+    target: "_blank",
+    rel: "noreferrer",
+    className: "cta-hero px-3 py-2 text-[10px] flex items-center justify-center"
+  }, "Open")), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 rounded-[12px] overflow-hidden mx-auto",
+    style: {
+      width: '142px',
+      height: '142px',
+      background: 'white',
+      padding: '8px',
+      boxShadow: '0 0 0 1px rgba(10,10,12,0.08)'
+    }
+  }, /*#__PURE__*/React.createElement("img", {
+    src: liveStudioQrUrl,
+    alt: "QR code for Keystone live studio link",
+    style: {
+      width: '100%',
+      height: '100%',
+      objectFit: 'contain'
+    }
+  })), /*#__PURE__*/React.createElement("p", {
+    className: "mt-2 text-[11px] leading-relaxed text-center",
+    style: {
+      color: 'rgba(10,10,12,0.54)'
+    }
+  }, "Use this QR in your pitch so people can try the studio instantly.")))))))))), hasStudioMounted && /*#__PURE__*/React.createElement("div", {
     className: "studio-modal-overlay",
     style: {
       opacity: isStudioOpen ? 1 : 0,
@@ -10350,7 +10416,7 @@ const DreamApp = () => {
     style: {
       color: 'var(--mid)'
     }
-  }, "Start with the free trial floor plan, then move into the paid session model once the product is ready for launch."))), /*#__PURE__*/React.createElement("div", {
+  }, "Start free right now, then move into project or pro pricing after launch."))), /*#__PURE__*/React.createElement("div", {
     className: "grid xl:grid-cols-[minmax(0,1fr)_300px] gap-6 mt-10 items-start"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "grid md:grid-cols-3 gap-4"
@@ -10440,7 +10506,7 @@ const DreamApp = () => {
     }
   }, tier.desc), /*#__PURE__*/React.createElement("button", {
     onClick: () => setModalOpen(true),
-    className: `cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.tag === 'Trial phase' ? 'cta-glow-soft' : ''}`
+    className: `cta-hero w-full mt-6 min-h-[58px] flex items-center justify-center ${tier.tag === 'FOR NOW' ? 'cta-glow-soft' : ''}`
   }, tier.cta)))))), /*#__PURE__*/React.createElement("div", {
     className: "grid gap-4"
   }, quoteCards.map((quote, index) => /*#__PURE__*/React.createElement(motion.div, {
