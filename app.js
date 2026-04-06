@@ -2752,9 +2752,8 @@ const JoinModal = ({
 }) => {
   const [formData, setFormData] = React.useState({
     fullName: '',
-    firmName: '',
+    projectName: '',
     email: '',
-    volume: '0-6 months',
     questions: ''
   });
   const [status, setStatus] = React.useState('idle'); // idle | loading | success
@@ -2773,31 +2772,48 @@ const JoinModal = ({
   const handleSubmit = async e => {
     e.preventDefault();
     setStatus('loading');
-    const FORM = "https://docs.google.com/forms/d/e/1FAIpQLSfdIXdz_gGRYmmTLENeYdSV17dwoBZWravDtM9SstDW_qvZag/formResponse";
-    const d = new URLSearchParams();
-    d.append("entry.564926659", formData.fullName);
-    d.append("entry.510477948", formData.firmName);
-    d.append("entry.1527142228", formData.email);
-    d.append("entry.623368817", formData.volume);
-    d.append("entry.1172849489", formData.questions);
+    const FORM = 'https://docs.google.com/forms/d/e/1FAIpQLSfdIXdz_gGRYmmTLENeYdSV17dwoBZWravDtM9SstDW_qvZag/formResponse';
+    const fields = {
+      'entry.564926659': formData.fullName.trim(),
+      'entry.510477948': formData.projectName.trim(),
+      // Reuse "Firm Name" field as project name
+      'entry.1527142228': formData.email.trim(),
+      // Business Email
+      'entry.1172849489': formData.questions.trim() // Additional Questions
+    };
     try {
-      await fetch(FORM, {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: d.toString()
+      const iframeName = `google-form-submit-${Date.now()}`;
+      const hiddenIframe = document.createElement('iframe');
+      hiddenIframe.name = iframeName;
+      hiddenIframe.style.display = 'none';
+      hiddenIframe.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(hiddenIframe);
+      const hiddenForm = document.createElement('form');
+      hiddenForm.action = FORM;
+      hiddenForm.method = 'POST';
+      hiddenForm.target = iframeName;
+      hiddenForm.style.display = 'none';
+      Object.entries(fields).forEach(([name, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        hiddenForm.appendChild(input);
       });
+      document.body.appendChild(hiddenForm);
+      hiddenForm.submit();
+      window.setTimeout(() => {
+        hiddenForm.remove();
+        hiddenIframe.remove();
+      }, 1400);
       setStatus('success');
       setTimeout(() => {
         setStatus('idle');
         onClose();
         setFormData({
           fullName: '',
-          firmName: '',
+          projectName: '',
           email: '',
-          volume: '0-6 months',
           questions: ''
         });
       }, 2600);
@@ -2936,14 +2952,14 @@ const JoinModal = ({
     className: "mono text-[7px] uppercase tracking-widest text-mid block mb-1"
   }, "Project Name"), /*#__PURE__*/React.createElement("input", {
     type: "text",
-    name: "firmName",
-    value: formData.firmName,
+    name: "projectName",
+    value: formData.projectName,
     onChange: update,
     required: true,
     placeholder: "Dream House / Family Home"
   }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "mono text-[7px] uppercase tracking-widest text-mid block mb-1"
-  }, "Email"), /*#__PURE__*/React.createElement("input", {
+  }, "Business Email"), /*#__PURE__*/React.createElement("input", {
     type: "email",
     name: "email",
     value: formData.email,
@@ -2952,13 +2968,7 @@ const JoinModal = ({
     placeholder: "jane@email.com"
   })), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
     className: "mono text-[7px] uppercase tracking-widest text-mid block mb-1"
-  }, "Expected Build Timeline"), /*#__PURE__*/React.createElement("select", {
-    name: "volume",
-    value: formData.volume,
-    onChange: update
-  }, /*#__PURE__*/React.createElement("option", null, "0-6 months"), /*#__PURE__*/React.createElement("option", null, "6-12 months"), /*#__PURE__*/React.createElement("option", null, "12+ months"))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
-    className: "mono text-[7px] uppercase tracking-widest text-mid block mb-1"
-  }, "Questions / Notes"), /*#__PURE__*/React.createElement("textarea", {
+  }, "Additional Questions"), /*#__PURE__*/React.createElement("textarea", {
     name: "questions",
     rows: "2",
     value: formData.questions,

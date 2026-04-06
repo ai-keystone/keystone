@@ -1399,7 +1399,7 @@ const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
 
 // Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ JOIN MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
 const JoinModal = ({ isOpen, onClose }) => {
-    const [formData, setFormData] = React.useState({ fullName:'', firmName:'', email:'', volume:'0-6 months', questions:'' });
+    const [formData, setFormData] = React.useState({ fullName:'', projectName:'', email:'', questions:'' });
     const [status, setStatus] = React.useState('idle'); // idle | loading | success
     const update = (e) => setFormData(p => ({ ...p, [e.target.name]: e.target.value }));
 
@@ -1415,20 +1415,47 @@ const JoinModal = ({ isOpen, onClose }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setStatus('loading');
-        const FORM = "https://docs.google.com/forms/d/e/1FAIpQLSfdIXdz_gGRYmmTLENeYdSV17dwoBZWravDtM9SstDW_qvZag/formResponse";
-        const d = new URLSearchParams();
-        d.append("entry.564926659", formData.fullName);
-        d.append("entry.510477948", formData.firmName);
-        d.append("entry.1527142228", formData.email);
-                d.append("entry.623368817", formData.volume);
-        d.append("entry.1172849489", formData.questions);
+        const FORM = 'https://docs.google.com/forms/d/e/1FAIpQLSfdIXdz_gGRYmmTLENeYdSV17dwoBZWravDtM9SstDW_qvZag/formResponse';
+        const fields = {
+            'entry.564926659': formData.fullName.trim(),
+            'entry.510477948': formData.projectName.trim(), // Reuse "Firm Name" field as project name
+            'entry.1527142228': formData.email.trim(), // Business Email
+            'entry.1172849489': formData.questions.trim(), // Additional Questions
+        };
         try {
-            await fetch(FORM, { method:"POST", mode:"no-cors", headers:{"Content-Type":"application/x-www-form-urlencoded"}, body: d.toString() });
+            const iframeName = `google-form-submit-${Date.now()}`;
+            const hiddenIframe = document.createElement('iframe');
+            hiddenIframe.name = iframeName;
+            hiddenIframe.style.display = 'none';
+            hiddenIframe.setAttribute('aria-hidden', 'true');
+            document.body.appendChild(hiddenIframe);
+
+            const hiddenForm = document.createElement('form');
+            hiddenForm.action = FORM;
+            hiddenForm.method = 'POST';
+            hiddenForm.target = iframeName;
+            hiddenForm.style.display = 'none';
+
+            Object.entries(fields).forEach(([name, value]) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = name;
+                input.value = value;
+                hiddenForm.appendChild(input);
+            });
+
+            document.body.appendChild(hiddenForm);
+            hiddenForm.submit();
+            window.setTimeout(() => {
+                hiddenForm.remove();
+                hiddenIframe.remove();
+            }, 1400);
+
             setStatus('success');
             setTimeout(() => {
                 setStatus('idle');
                 onClose();
-                setFormData({ fullName:'', firmName:'', email:'', volume:'0-6 months', questions:'' });
+                setFormData({ fullName:'', projectName:'', email:'', questions:'' });
             }, 2600);
         } catch {
             alert("Error submitting. Please try again.");
@@ -1496,23 +1523,15 @@ const JoinModal = ({ isOpen, onClose }) => {
                                         </div>
                                         <div>
                                             <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Project Name</label>
-                                            <input type="text" name="firmName" value={formData.firmName} onChange={update} required placeholder="Dream House / Family Home"/>
+                                            <input type="text" name="projectName" value={formData.projectName} onChange={update} required placeholder="Dream House / Family Home"/>
                                         </div>
                                     </div>
                                     <div>
-                                        <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Email</label>
+                                        <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Business Email</label>
                                         <input type="email" name="email" value={formData.email} onChange={update} required placeholder="jane@email.com"/>
                                     </div>
                                     <div>
-                                        <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Expected Build Timeline</label>
-                                        <select name="volume" value={formData.volume} onChange={update}>
-                                            <option>0-6 months</option>
-                                            <option>6-12 months</option>
-                                            <option>12+ months</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Questions / Notes</label>
+                                        <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Additional Questions</label>
                                         <textarea name="questions" rows="2" value={formData.questions} onChange={update} placeholder="Tell us what kind of house you are planning..."/>
                                     </div>
                                     <button type="submit" disabled={status === 'loading'} className="cta-hero w-full py-4 text-base disabled:opacity-60">
