@@ -2770,10 +2770,19 @@ const planSpanForElevation = (planSpec, viewKey) => {
 const buildPresentationDxf = (planSpec) => {
     // Keep DXF in feet and prefer broad-reader compatibility.
     const SCALE = 1;
+    // AC1015 + layer lineweights for modern CAD compatibility.
     const DXF_VERSION = 'AC1015';
     const DXF_INCLUDE_LINEWEIGHT_CODES = true;
     const DXF_INCLUDE_OBJECTS_SECTION = true;
     const entities = [];
+    let handleSeed = 0x200;
+    const nextHandle = () => (handleSeed++).toString(16).toUpperCase();
+    const tableHandles = {
+        LTYPE: nextHandle(),
+        LAYER: nextHandle(),
+        STYLE: nextHandle(),
+        APPID: nextHandle(),
+    };
 
     // Professional A-prefix layer table.
     const layerStyles = {
@@ -3498,7 +3507,7 @@ const buildPresentationDxf = (planSpec) => {
     const schedY = tbY + tbH + 1;
     drawRoomSchedule(planSpec, tbX, schedY + 16, schedW);
 
-    // Assemble DXF output. Use conservative R12 profile for maximum reader compatibility.
+    // Assemble DXF output.
     const lines = [];
     // HEADER
     lines.push('0\nSECTION\n2\nHEADER');
@@ -3510,27 +3519,39 @@ const buildPresentationDxf = (planSpec) => {
     lines.push('9\n$LIMMIN\n10\n0.0\n20\n0.0');
     lines.push(`9\n$LIMMAX\n10\n${(sheet.w * SCALE).toFixed(1)}\n20\n${(sheet.h * SCALE).toFixed(1)}`);
     lines.push('0\nENDSEC');
+    const tableHeader = (name, count, handle) => {
+        if (DXF_VERSION === 'AC1015') {
+            return `0\nTABLE\n2\n${name}\n5\n${handle}\n330\n0\n100\nAcDbSymbolTable\n70\n${count}`;
+        }
+        return `0\nTABLE\n2\n${name}\n70\n${count}`;
+    };
+
+    const tableRecordPrefix = (dxftype, ownerHandle, className) => {
+        if (DXF_VERSION !== 'AC1015') return `0\n${dxftype}\n`;
+        return `0\n${dxftype}\n5\n${nextHandle()}\n330\n${ownerHandle}\n100\nAcDbSymbolTableRecord\n100\n${className}\n`;
+    };
+
     // TABLES
     lines.push('0\nSECTION\n2\nTABLES');
     // LTYPE table
-    lines.push('0\nTABLE\n2\nLTYPE\n70\n1');
-    lines.push('0\nLTYPE\n2\nCONTINUOUS\n70\n0\n3\nSolid line\n72\n65\n73\n0\n40\n0.0');
+    lines.push(tableHeader('LTYPE', 1, tableHandles.LTYPE));
+    lines.push(`${tableRecordPrefix('LTYPE', tableHandles.LTYPE, 'AcDbLinetypeTableRecord')}2\nCONTINUOUS\n70\n0\n3\nSolid line\n72\n65\n73\n0\n40\n0.0`);
     lines.push('0\nENDTAB');
     // LAYER table
-    lines.push(`0\nTABLE\n2\nLAYER\n70\n${Object.keys(layerStyles).length + 1}`);
-    lines.push('0\nLAYER\n2\n0\n70\n0\n62\n7\n6\nCONTINUOUS');
+    lines.push(tableHeader('LAYER', Object.keys(layerStyles).length + 1, tableHandles.LAYER));
+    lines.push(`${tableRecordPrefix('LAYER', tableHandles.LAYER, 'AcDbLayerTableRecord')}2\n0\n70\n0\n62\n7\n6\nCONTINUOUS`);
     Object.values(layerStyles).forEach((style) => {
         const lineweight = DXF_INCLUDE_LINEWEIGHT_CODES ? `\n370\n${style.lineweight}` : '';
-        lines.push(`0\nLAYER\n2\n${style.name}\n70\n0\n62\n${style.color}\n6\nCONTINUOUS${lineweight}`);
+        lines.push(`${tableRecordPrefix('LAYER', tableHandles.LAYER, 'AcDbLayerTableRecord')}2\n${style.name}\n70\n0\n62\n${style.color}\n6\nCONTINUOUS${lineweight}`);
     });
     lines.push('0\nENDTAB');
     // STYLE table
-    lines.push('0\nTABLE\n2\nSTYLE\n70\n1');
-    lines.push('0\nSTYLE\n2\nSTANDARD\n70\n0\n40\n0\n41\n1\n50\n0\n71\n0\n42\n0.2\n3\ntxt\n4\n');
+    lines.push(tableHeader('STYLE', 1, tableHandles.STYLE));
+    lines.push(`${tableRecordPrefix('STYLE', tableHandles.STYLE, 'AcDbTextStyleTableRecord')}2\nSTANDARD\n70\n0\n40\n0\n41\n1\n50\n0\n71\n0\n42\n0.2\n3\ntxt\n4\n`);
     lines.push('0\nENDTAB');
     // APPID table
-    lines.push('0\nTABLE\n2\nAPPID\n70\n1');
-    lines.push('0\nAPPID\n2\nACAD\n70\n0');
+    lines.push(tableHeader('APPID', 1, tableHandles.APPID));
+    lines.push(`${tableRecordPrefix('APPID', tableHandles.APPID, 'AcDbRegAppTableRecord')}2\nACAD\n70\n0`);
     lines.push('0\nENDTAB');
     lines.push('0\nENDSEC');
     // BLOCKS — required MODEL_SPACE and PAPER_SPACE stubs
@@ -3545,7 +3566,20 @@ const buildPresentationDxf = (planSpec) => {
     lines.push(...entities);
     lines.push('0\nENDSEC');
     if (DXF_INCLUDE_OBJECTS_SECTION) {
+        const rootDictionaryHandle = nextHandle();
+        const childDictionaryHandles = {
+            ACAD_VISUALSTYLE: nextHandle(),
+        };
+        const buildDictionary = (handle, ownerHandle, entries = []) => {
+            const entryLines = entries.map(([name, childHandle]) => `3\n${name}\n350\n${childHandle}`).join('\n');
+            return `0\nDICTIONARY\n5\n${handle}\n330\n${ownerHandle}\n100\nAcDbDictionary\n281\n1${entryLines ? `\n${entryLines}` : ''}`;
+        };
+
         lines.push('0\nSECTION\n2\nOBJECTS');
+        lines.push(buildDictionary(rootDictionaryHandle, '0', Object.entries(childDictionaryHandles)));
+        Object.values(childDictionaryHandles).forEach((childHandle) => {
+            lines.push(buildDictionary(childHandle, rootDictionaryHandle));
+        });
         lines.push('0\nENDSEC');
     }
     lines.push('0\nEOF');
