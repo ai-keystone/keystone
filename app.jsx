@@ -3031,6 +3031,141 @@ const buildPresentationDxf = (planSpec) => {
         ((part.w || 0) * (part.h || 0)) > ((best.w || 0) * (best.h || 0)) ? part : best
     ), roomParts(room)[0] || room || {});
     const roomArea = (room) => roomParts(room).reduce((sum, part) => sum + (Number(part.w || 0) * Number(part.h || 0)), 0);
+    const roomRects = (level) => {
+        const rects = [];
+        (level?.rooms || []).forEach((room) => {
+            roomParts(room).forEach((part) => {
+                const x = Number(part.x || 0);
+                const y = Number(part.y || 0);
+                const w = Number(part.w || 0);
+                const h = Number(part.h || 0);
+                if (finite(x, y, w, h) && w > 0 && h > 0) rects.push({ x, y, w, h });
+            });
+        });
+        return rects;
+    };
+
+    const mergeOutlineSegments = (segments) => {
+        const EPS = 1e-6;
+        const horizontal = segments
+            .filter((segment) => Math.abs(Number(segment.y1 || 0) - Number(segment.y2 || 0)) < EPS)
+            .map((segment) => ({
+                x1: Number(segment.x1 || 0),
+                y1: Number(segment.y1 || 0),
+                x2: Number(segment.x2 || 0),
+                y2: Number(segment.y2 || 0),
+            }))
+            .sort((a, b) => (a.y1 - b.y1) || (a.x1 - b.x1) || (a.x2 - b.x2));
+        const vertical = segments
+            .filter((segment) => Math.abs(Number(segment.x1 || 0) - Number(segment.x2 || 0)) < EPS)
+            .map((segment) => ({
+                x1: Number(segment.x1 || 0),
+                y1: Number(segment.y1 || 0),
+                x2: Number(segment.x2 || 0),
+                y2: Number(segment.y2 || 0),
+            }))
+            .sort((a, b) => (a.x1 - b.x1) || (a.y1 - b.y1) || (a.y2 - b.y2));
+
+        const mergeRuns = (sorted, axis) => {
+            const merged = [];
+            sorted.forEach((segment) => {
+                const prev = merged[merged.length - 1];
+                if (!prev) {
+                    merged.push({ ...segment });
+                    return;
+                }
+                if (axis === 'h') {
+                    if (Math.abs(prev.y1 - segment.y1) < EPS && Math.abs(prev.x2 - segment.x1) < EPS) {
+                        prev.x2 = segment.x2;
+                        return;
+                    }
+                } else if (Math.abs(prev.x1 - segment.x1) < EPS && Math.abs(prev.y2 - segment.y1) < EPS) {
+                    prev.y2 = segment.y2;
+                    return;
+                }
+                merged.push({ ...segment });
+            });
+            return merged;
+        };
+
+        return [...mergeRuns(horizontal, 'h'), ...mergeRuns(vertical, 'v')];
+    };
+
+    const resolveLevelExteriorGeometry = (level) => {
+        const lvlW = Number(level?.width || 0);
+        const lvlH = Number(level?.height || 0);
+
+        if (Array.isArray(level?.outlineSegments) && level.outlineSegments.length) {
+            return {
+                segments: mergeOutlineSegments(level.outlineSegments.map((segment) => ({
+                    x1: Number(segment?.x1 || 0),
+                    y1: Number(segment?.y1 || 0),
+                    x2: Number(segment?.x2 || 0),
+                    y2: Number(segment?.y2 || 0),
+                }))),
+                areaSqFt: Number.isFinite(Number(level?.envelopeAreaSqFt))
+                    ? Number(level.envelopeAreaSqFt)
+                    : lvlW * lvlH,
+            };
+        }
+
+        const fallbackSegments = [
+            { x1: 0, y1: 0, x2: lvlW, y2: 0 },
+            { x1: lvlW, y1: 0, x2: lvlW, y2: lvlH },
+            { x1: lvlW, y1: lvlH, x2: 0, y2: lvlH },
+            { x1: 0, y1: lvlH, x2: 0, y2: 0 },
+        ];
+        const rects = roomRects(level);
+        if (!rects.length) {
+            return { segments: fallbackSegments, areaSqFt: lvlW * lvlH };
+        }
+
+        const xs = [...new Set(rects.flatMap((rect) => [rect.x, rect.x + rect.w]))].sort((a, b) => a - b);
+        const ys = [...new Set(rects.flatMap((rect) => [rect.y, rect.y + rect.h]))].sort((a, b) => a - b);
+        if (xs.length < 2 || ys.length < 2) {
+            return { segments: fallbackSegments, areaSqFt: lvlW * lvlH };
+        }
+
+        const cells = [];
+        let areaSqFt = 0;
+        for (let ix = 0; ix < xs.length - 1; ix++) {
+            cells[ix] = [];
+            const x0 = xs[ix];
+            const x1 = xs[ix + 1];
+            const midX = (x0 + x1) / 2;
+            for (let iy = 0; iy < ys.length - 1; iy++) {
+                const y0 = ys[iy];
+                const y1 = ys[iy + 1];
+                const midY = (y0 + y1) / 2;
+                const occupied = rects.some((rect) =>
+                    midX >= rect.x && midX < rect.x + rect.w &&
+                    midY >= rect.y && midY < rect.y + rect.h
+                );
+                cells[ix][iy] = occupied;
+                if (occupied) areaSqFt += (x1 - x0) * (y1 - y0);
+            }
+        }
+
+        const segments = [];
+        for (let ix = 0; ix < xs.length - 1; ix++) {
+            for (let iy = 0; iy < ys.length - 1; iy++) {
+                if (!cells[ix][iy]) continue;
+                const x0 = xs[ix];
+                const x1 = xs[ix + 1];
+                const y0 = ys[iy];
+                const y1 = ys[iy + 1];
+                if (ix === 0 || !cells[ix - 1][iy]) segments.push({ x1: x0, y1: y0, x2: x0, y2: y1 });
+                if (ix === xs.length - 2 || !cells[ix + 1][iy]) segments.push({ x1, y1: y0, x2: x1, y2: y1 });
+                if (iy === 0 || !cells[ix][iy - 1]) segments.push({ x1: x0, y1: y0, x2: x1, y2: y0 });
+                if (iy === ys.length - 2 || !cells[ix][iy + 1]) segments.push({ x1: x0, y1, x2: x1, y2: y1 });
+            }
+        }
+
+        return {
+            segments: mergeOutlineSegments(segments),
+            areaSqFt,
+        };
+    };
 
     const collectExteriorBreaks = (level, axis) => {
         const max = axis === 'x' ? Number(level.width || 0) : Number(level.height || 0);
@@ -3309,10 +3444,13 @@ const buildPresentationDxf = (planSpec) => {
         const lvlW = Number(level.width || 40);
         const lvlH = Number(level.height || 30);
         const mapY = (y, h = 0) => originY + (lvlH - y - h);
+        const mapLineY = (y) => originY + (lvlH - y);
         const titleY = originY + lvlH + 7.5;
+        const exteriorGeometry = resolveLevelExteriorGeometry(level);
+        const levelAreaSqFt = Math.round(Number(exteriorGeometry?.areaSqFt || (lvlW * lvlH)));
 
         drawText(originX, titleY, 1.35, `LEVEL ${level.level}`, 'A-ROOM-LABEL');
-        drawText(originX, titleY - 1.2, 0.8, `${Math.round((lvlW * lvlH)).toLocaleString()} SQ FT`, 'A-ROOM-LABEL');
+        drawText(originX, titleY - 1.2, 0.8, `${levelAreaSqFt.toLocaleString()} SQ FT`, 'A-ROOM-LABEL');
 
         // Room hatches first so walls/symbols remain legible above them.
         (level.rooms || []).forEach((room) => {
@@ -3335,14 +3473,23 @@ const buildPresentationDxf = (planSpec) => {
         const wallSegments = classifyWallSegments(level, originX, originY);
         wallSegments.forEach((segment) => {
             const exterior = segment.type === 'exterior';
+            if (exterior) return;
             drawDoubleLineWall(
                 segment.x1,
                 segment.y1,
                 segment.x2,
                 segment.y2,
-                exterior ? EXT_THICK : INT_THICK,
-                exterior ? 'A-WALL' : 'A-WALL-INT'
+                INT_THICK,
+                'A-WALL-INT'
             );
+        });
+
+        (exteriorGeometry?.segments || []).forEach((segment) => {
+            const x1 = originX + Number(segment.x1 || 0);
+            const y1 = mapLineY(Number(segment.y1 || 0));
+            const x2 = originX + Number(segment.x2 || 0);
+            const y2 = mapLineY(Number(segment.y2 || 0));
+            drawDoubleLineWall(x1, y1, x2, y2, EXT_THICK, 'A-WALL');
         });
 
         (level.rooms || []).forEach((room) => {
