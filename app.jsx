@@ -2001,6 +2001,9 @@ const EstimatePanel = ({ estimate }) => {
     const lineItems = Array.isArray(costRange.lineItems) ? costRange.lineItems : [];
     const assemblies = Array.isArray(estimate.takeoff?.assemblies) ? estimate.takeoff.assemblies : [];
     const assumptions = Array.isArray(estimate.assumptions?.notes) ? estimate.assumptions.notes : [];
+    const lineItemDisclosure = useClampedList(lineItems, DEFAULT_VISIBLE_LINE_ITEMS);
+    const assemblyDisclosure = useClampedList(assemblies, DEFAULT_VISIBLE_ASSEMBLIES);
+    const noteDisclosure = useClampedList(assumptions, DEFAULT_VISIBLE_NOTES);
     const bathCount = Number(summary.bathCount || 0);
 
     return (
@@ -2047,7 +2050,7 @@ const EstimatePanel = ({ estimate }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {lineItems.map((item) => (
+                                    {lineItemDisclosure.visible.map((item) => (
                                         <tr key={item.key} className="border-t border-black/5 text-[11px]" style={{color:'rgba(10,10,12,0.78)'}}>
                                             <td className="px-4 py-2.5">
                                                 <div className="font-medium">{item.label}</div>
@@ -2059,6 +2062,14 @@ const EstimatePanel = ({ estimate }) => {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                        <div className="px-4 py-3 border-t border-black/6">
+                            <DisclosureToggle
+                                expanded={lineItemDisclosure.expanded}
+                                hiddenCount={lineItemDisclosure.hiddenCount}
+                                onToggle={() => lineItemDisclosure.setExpanded((value) => !value)}
+                                label="line items"
+                            />
                         </div>
                     </div>
 
@@ -2075,7 +2086,7 @@ const EstimatePanel = ({ estimate }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {assemblies.map((item) => (
+                                    {assemblyDisclosure.visible.map((item) => (
                                         <tr key={item.key} className="border-t border-black/5 text-[11px]" style={{color:'rgba(10,10,12,0.78)'}}>
                                             <td className="px-4 py-2.5">
                                                 <div className="font-medium">{item.label}</div>
@@ -2086,6 +2097,14 @@ const EstimatePanel = ({ estimate }) => {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                        <div className="px-4 py-3 border-t border-black/6">
+                            <DisclosureToggle
+                                expanded={assemblyDisclosure.expanded}
+                                hiddenCount={assemblyDisclosure.hiddenCount}
+                                onToggle={() => assemblyDisclosure.setExpanded((value) => !value)}
+                                label="items"
+                            />
                         </div>
                     </div>
                 </div>
@@ -2098,9 +2117,17 @@ const EstimatePanel = ({ estimate }) => {
                         <span className="room-badge active" style={{cursor:'default'}}>Budget: {summary.budgetTier || 'MID'}</span>
                     </div>
                     <div className="mt-3 text-[12px] leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
-                        {assumptions.map((note) => (
+                        {noteDisclosure.visible.map((note) => (
                             <p key={note} className="mt-1 first:mt-0">{note}</p>
                         ))}
+                    </div>
+                    <div className="mt-3">
+                        <DisclosureToggle
+                            expanded={noteDisclosure.expanded}
+                            hiddenCount={noteDisclosure.hiddenCount}
+                            onToggle={() => noteDisclosure.setExpanded((value) => !value)}
+                            label="notes"
+                        />
                     </div>
                 </div>
             </div>
