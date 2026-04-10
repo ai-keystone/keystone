@@ -6263,17 +6263,17 @@ const DreamApp = () => {
         {
             eyebrow: 'Plain-language workflow',
             title: 'Made for people, not just technical teams.',
-            body: 'You answer the brief in everyday language and Keystone translates it into a plan package you can actually understand.',
+            body: 'Answer in everyday language; Keystone translates it into a plan package you can understand.',
         },
         {
             eyebrow: 'Live today',
             title: 'Plan, elevations, Cost Estimate, DXF export, and Exterior Render.',
-            body: 'Keystone currently covers guided intake, floor plan generation, elevation views, a concept-level Cost Estimate, CAD Export (DXF), and an Exterior Render from the same brief.',
+            body: 'Guided intake, floor plan, elevations, Cost Estimate, CAD export, and Exterior Render from the same brief.',
         },
         {
             eyebrow: 'Coming next',
             title: 'Scheduling and deeper 3D remain on the roadmap.',
-            body: 'The Cost Estimate is now live. Scheduling, richer viewer tools, and deeper quantity logic are still on the roadmap until they are ready.',
+            body: 'Scheduling, richer viewer tools, and deeper quantity logic are next.',
         },
     ];
     const outcomeCards = [
@@ -6371,12 +6371,12 @@ const DreamApp = () => {
     ];
     const quoteCards = [
         {
-            quote: 'The strongest use case right now is the homeowner who knows what they want, but needs help seeing it clearly for the first time.',
+            quote: 'The strongest use case: homeowners who know what they want, but need help seeing it clearly for the first time.',
             name: 'Who it is for',
             firm: 'Product direction',
         },
         {
-            quote: 'The live promise stays disciplined on purpose: guided intake, generated plan, elevations, a Cost Estimate, CAD export, and an optional Exterior Render. Scheduling and deeper quantity logic come next, but only when they are real.',
+            quote: 'Guided intake, generated plan, elevations, Cost Estimate, CAD export, and Exterior Render. Scheduling and deeper quantity logic come next.',
             name: 'Scope discipline',
             firm: 'Product truth',
         },
@@ -6583,9 +6583,12 @@ const DreamApp = () => {
                                         </h2>
                                         </Reveal>
                                         <Reveal y={16} delay={0.16}>
-                                        <p className="mt-4 text-sm md:text-base leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
-                                            The fastest way to trust Keystone is to watch the workflow happen in sequence: guided brief, generated plan, elevations, Cost Estimate, CAD export, and optional Exterior Render from the same house.
-                                        </p>
+                                        <div className="mt-4 text-sm md:text-base leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
+                                            <ExpandableText
+                                                summary="The fastest way to trust Keystone is to watch the workflow happen in sequence."
+                                                details="The fastest way to trust Keystone is to watch the workflow happen in sequence: guided brief, generated plan, elevations, Cost Estimate, CAD export, and optional Exterior Render from the same house."
+                                            />
+                                        </div>
                                         <div className="mt-6 flex flex-wrap gap-3">
                                             <StarBorderBtn onClick={() => scrollTo('generator')}>
                                                 <span>Try Free Floor Plan</span>
@@ -6702,9 +6705,12 @@ const DreamApp = () => {
                                                 <h2 className="cg mt-6" style={{fontSize:'clamp(2.6rem, 6vw, 4.8rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase',color:'var(--ink)'}}>
                                                     Try the real workflow, not a teaser.
                                                 </h2>
-                                                <p className="mt-5 max-w-2xl text-base leading-relaxed" style={{color:'rgba(9,9,9,0.62)'}}>
-                                                    The same guided workflow behind the hero is right below. Open the live studio, walk through the survey, shape a plan, and see how much you can understand before a formal design meeting.
-                                                </p>
+                                                <div className="mt-5 max-w-2xl text-base leading-relaxed" style={{color:'rgba(9,9,9,0.62)'}}>
+                                                    <ExpandableText
+                                                        summary="The same guided workflow behind the hero is right below."
+                                                        details="The same guided workflow behind the hero is right below. Open the live studio, walk through the survey, shape a plan, and see how much you can understand before a formal design meeting."
+                                                    />
+                                                </div>
                                             </div>
                                             <div className="flex justify-start lg:justify-end">
                                                 <div className="w-full max-w-[280px] flex flex-col gap-3">
@@ -6848,9 +6854,12 @@ const DreamApp = () => {
                                     </Reveal>
                                 </div>
                                 <Reveal y={16} delay={0.18}>
-                                <p className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.58)'}}>
-                                    Keystone works when the person planning the home, the future professional team, and the next decision all feel less vague. These are the shifts the workflow is built to create.
-                                </p>
+                                <div className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.58)'}}>
+                                    <ExpandableText
+                                        summary="These are the shifts the workflow is built to create."
+                                        details="Keystone works when the person planning the home, the future professional team, and the next decision all feel less vague. These are the shifts the workflow is built to create."
+                                    />
+                                </div>
                                 </Reveal>
                             </div>
                             <div className="grid md:grid-cols-3 gap-4">
@@ -6893,9 +6902,12 @@ const DreamApp = () => {
                                     </Reveal>
                                 </div>
                                 <Reveal y={16} delay={0.16}>
-                                    <p className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.6)'}}>
-                                        The homepage keeps the live product story. These pages go deeper into the floor-plan method, the guided workflow, and the roadmap without flattening everything into one long scroll.
-                                    </p>
+                                    <div className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.6)'}}>
+                                        <ExpandableText
+                                            summary="These pages go deeper into method, workflow, and roadmap."
+                                            details="The homepage keeps the live product story. These pages go deeper into the floor-plan method, the guided workflow, and the roadmap without flattening everything into one long scroll."
+                                        />
+                                    </div>
                                 </Reveal>
                             </div>
                             <div className="grid lg:grid-cols-3 gap-4 mt-10">
@@ -6944,9 +6956,12 @@ const DreamApp = () => {
                                     </Reveal>
                                 </div>
                                 <Reveal y={16} delay={0.18}>
-                                <p className="text-sm md:text-base leading-relaxed text-mid">
-                                    Keystone is not trying to replace professional judgment. It gives homeowners a clearer starting point before they spend heavily on drawings and revisions.
-                                </p>
+                                <div className="text-sm md:text-base leading-relaxed text-mid">
+                                    <ExpandableText
+                                        summary="Keystone gives homeowners a clearer starting point."
+                                        details="Keystone is not trying to replace professional judgment. It gives homeowners a clearer starting point before they spend heavily on drawings and revisions."
+                                    />
+                                </div>
                                 </Reveal>
                             </div>
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-6 mt-10 items-start">
