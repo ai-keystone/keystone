@@ -43,6 +43,39 @@ const CONTACT_EMAIL = 'aikeystone559@gmail.com';
 const LEGAL_UPDATED_AT = 'March 14, 2026';
 const STUDIO_UNLOCK_KEY = 'keystone_unlock';
 const STUDIO_SESSION_KEY = 'keystone_studio_session';
+const DEFAULT_VISIBLE_LINE_ITEMS = 6;
+const DEFAULT_VISIBLE_ASSEMBLIES = 6;
+const DEFAULT_VISIBLE_NOTES = 2;
+
+const useClampedList = (items = [], initialCount = 6) => {
+    const [expanded, setExpanded] = useState(false);
+    const visible = expanded ? items : items.slice(0, initialCount);
+    const hiddenCount = Math.max(0, items.length - visible.length);
+    return { expanded, setExpanded, visible, hiddenCount };
+};
+
+const DisclosureToggle = ({ expanded, hiddenCount, onToggle, label = 'items' }) => {
+    if (!hiddenCount && !expanded) return null;
+    return (
+        <button type="button" onClick={onToggle} className="mono text-[10px] uppercase tracking-[0.18em]">
+            {expanded ? 'Show less' : `View all ${label}${hiddenCount ? ` (+${hiddenCount})` : ''}`}
+        </button>
+    );
+};
+
+const ExpandableText = ({ summary, details, defaultExpanded = false }) => {
+    const [expanded, setExpanded] = useState(defaultExpanded);
+    return (
+        <div>
+            <p>{expanded ? details : summary}</p>
+            {details && details !== summary && (
+                <button type="button" onClick={() => setExpanded((v) => !v)} className="mono text-[10px] uppercase tracking-[0.18em] mt-2">
+                    {expanded ? 'Show less' : 'View all'}
+                </button>
+            )}
+        </div>
+    );
+};
 const createEmptyRenderState = () => ({
     status: 'idle',
     image: null,
