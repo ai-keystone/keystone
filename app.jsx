@@ -5832,50 +5832,9 @@ const DesignGenerator = ({ onOpenModal }) => {
                         <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
                             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
                                 <div>
-                                    <span className="section-label">Plan Summary + Estimate</span>
-                                    <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
-                                        Review the plan summary and the concept-level Cost Estimate together below the main studio workspace.
-                                    </p>
-                                </div>
-                                <span className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
-                                    Footer review panel
-                                </span>
-                            </div>
-                        </div>
-                        <div className="grid xl:grid-cols-[minmax(320px,380px)_minmax(0,1fr)] gap-0">
-                            <div className="border-r border-black/5">
-                                <PlanSummaryPanel planSpec={planSpec} openingDiagnostics={openingDiagnostics}/>
-                            </div>
-                            {isUnlocked ? (
-                                <EstimatePanel estimate={planSpec?.estimate}/>
-                            ) : (
-                                <div className="paper-panel mt-4 overflow-hidden">
-                                    <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
-                                        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-                                            <div>
-                                                <p className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.82)'}}>Cost estimate</p>
-                                                <p className="text-[13px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
-                                                    Unlock advanced features to view and download the concept-level Cost Estimate workbook for this plan.
-                                                </p>
-                                            </div>
-                                            <button onClick={onOpenModal} className="cta-hero cta-glow-soft">
-                                                Unlock Advanced Features
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-                {(status === 'plan-ready' || status === 'refining') && optionSequence.length > 1 && (
-                    <div id="keystone-option-stack" className="paper-panel mt-4 overflow-hidden">
-                        <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
-                            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-                                <div>
                                     <span className="section-label">Option Stack</span>
                                     <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
-                                        Option 1 is the highest-ranked plan. Scroll down to compare Option 2 and Option 3.
+                                        Compare the ranked options first. Option 1 is the highest-ranked plan, and the stack below lets you review Option 2 and Option 3 in sequence.
                                     </p>
                                 </div>
                                 <span className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
@@ -5929,6 +5888,47 @@ const DesignGenerator = ({ onOpenModal }) => {
                                     </div>
                                 );
                             })}
+                        </div>
+                    </div>
+                )}
+                {(status === 'plan-ready' || status === 'refining') && planSvg && (
+                    <div className="paper-panel mt-4 overflow-hidden">
+                        <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
+                            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                                <div>
+                                    <span className="section-label">Plan Summary + Estimate</span>
+                                    <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
+                                        Review the selected details and the concept-level Cost Estimate after you compare the option stack above.
+                                    </p>
+                                </div>
+                                <span className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
+                                    Selected details review panel
+                                </span>
+                            </div>
+                        </div>
+                        <div className="grid xl:grid-cols-[minmax(320px,380px)_minmax(0,1fr)] gap-0">
+                            <div className="border-r border-black/5">
+                                <PlanSummaryPanel planSpec={planSpec} openingDiagnostics={openingDiagnostics}/>
+                            </div>
+                            {isUnlocked ? (
+                                <EstimatePanel estimate={planSpec?.estimate}/>
+                            ) : (
+                                <div className="paper-panel mt-4 overflow-hidden">
+                                    <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
+                                        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                                            <div>
+                                                <p className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.82)'}}>Cost estimate</p>
+                                                <p className="text-[13px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
+                                                    Unlock advanced features to view and download the concept-level Cost Estimate workbook for this plan.
+                                                </p>
+                                            </div>
+                                            <button onClick={onOpenModal} className="cta-hero cta-glow-soft">
+                                                Unlock Advanced Features
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
