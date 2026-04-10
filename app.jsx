@@ -5867,7 +5867,14 @@ const DesignGenerator = ({ onOpenModal }) => {
                                             </div>
                                         </div>
 
-                                        <div className="bg-white rounded-lg border border-black/8 p-3 overflow-hidden" style={{maxHeight:'52vh'}} dangerouslySetInnerHTML={{__html: opt?.svg || '<p style="padding:20px;color:#999;font-size:11px">Preview unavailable</p>'}}/>
+                                        <div className="option-preview-frame">
+                                            <div className="option-preview-sheet" dangerouslySetInnerHTML={{__html: opt?.svg || '<p style="padding:20px;color:#999;font-size:11px">Preview unavailable</p>'}}/>
+                                        </div>
+                                        <div className="mt-2 flex justify-end">
+                                            <button type="button" onClick={() => setZoomImage(opt?.svg)} className="cta-secondary text-[10px] px-3 py-2" style={{minHeight:'auto'}}>
+                                                View full option
+                                            </button>
+                                        </div>
 
                                         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                                             <span className="mono text-[8px] text-mid">
