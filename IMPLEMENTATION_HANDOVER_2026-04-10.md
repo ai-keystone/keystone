@@ -30,14 +30,37 @@ Plan: E:/Github/keystone/docs/superpowers/plans/2026-04-10-frontend-content-dens
   - `app.jsx`
 - Verification:
   - Implementer sanity check: Babel parse OK.
-  - Spec-compliance review: approved (all Task 1 requirements met).
-  - Code-quality review: approved (minor non-blocking note: optional `aria-controls`).
+  - Spec-compliance review: approved.
+  - Code-quality review: approved (minor optional note: `aria-controls` refinement).
 
 ### Task 2: Collapse Cost Line Items and Quantity Takeoff by Default
-- Status: In progress
+- Status: Completed
+- Commits:
+  - `88939ea` — Collapse estimate disclosure lists by default
+  - `dc811aa` — Harden estimate disclosure reset behavior
+- Changes completed:
+  - In `EstimatePanel`, added disclosure controllers:
+    - `lineItemDisclosure`
+    - `assemblyDisclosure`
+    - `noteDisclosure`
+  - Default view now shows truncated rows/notes for:
+    - Cost line items
+    - Quantity takeoff
+    - Assumptions notes
+  - Added `DisclosureToggle` controls for each section.
+  - Fixed hook-order stability by ensuring hooks execute before null guard.
+  - Added reset behavior so lists collapse again when estimate payload changes.
+  - Removed empty toggle spacer containers when no toggle is needed.
+  - Added `aria-controls` wiring support for toggles.
+- Files touched:
+  - `app.jsx`
+- Verification:
+  - Implementer sanity checks: Babel parse OK.
+  - Spec-compliance review: approved.
+  - Code-quality review: approved (minor optional a11y semantic note).
 
 ### Task 3: Move Option Stack Above Plan Summary + Estimate
-- Status: Pending
+- Status: In progress
 
 ### Task 4: Fix Option Section Text Overlap in Preview Cards
 - Status: Pending
@@ -49,5 +72,6 @@ Plan: E:/Github/keystone/docs/superpowers/plans/2026-04-10-frontend-content-dens
 - Status: Pending
 
 ## Next Action If Session Interrupts
-- Resume at Task 2 implementation in `frontend/app.jsx` (EstimatePanel: line-item and takeoff disclosure behavior).
-- After implementation, run spec-compliance review, then code-quality review, then update this handover file.
+- Resume at Task 3 in `frontend/app.jsx`.
+- Move Option Stack block above Plan Summary + Estimate block and update sequence copy.
+- Then run spec-compliance review and code-quality review, and update this handover file.
