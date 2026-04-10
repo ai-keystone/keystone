@@ -48,16 +48,17 @@ const DEFAULT_VISIBLE_ASSEMBLIES = 6;
 const DEFAULT_VISIBLE_NOTES = 2;
 
 const useClampedList = (items = [], initialCount = 6) => {
+    const safeItems = Array.isArray(items) ? items : [];
     const [expanded, setExpanded] = useState(false);
-    const visible = expanded ? items : items.slice(0, initialCount);
-    const hiddenCount = Math.max(0, items.length - visible.length);
+    const visible = expanded ? safeItems : safeItems.slice(0, initialCount);
+    const hiddenCount = Math.max(0, safeItems.length - visible.length);
     return { expanded, setExpanded, visible, hiddenCount };
 };
 
 const DisclosureToggle = ({ expanded, hiddenCount, onToggle, label = 'items' }) => {
     if (!hiddenCount && !expanded) return null;
     return (
-        <button type="button" onClick={onToggle} className="mono text-[10px] uppercase tracking-[0.18em]">
+        <button type="button" onClick={onToggle} aria-expanded={expanded} className="mono text-[10px] uppercase tracking-[0.18em]">
             {expanded ? 'Show less' : `View all ${label}${hiddenCount ? ` (+${hiddenCount})` : ''}`}
         </button>
     );
@@ -65,11 +66,12 @@ const DisclosureToggle = ({ expanded, hiddenCount, onToggle, label = 'items' }) 
 
 const ExpandableText = ({ summary, details, defaultExpanded = false }) => {
     const [expanded, setExpanded] = useState(defaultExpanded);
+    const bodyText = expanded && details ? details : summary;
     return (
         <div>
-            <p>{expanded ? details : summary}</p>
+            <p>{bodyText}</p>
             {details && details !== summary && (
-                <button type="button" onClick={() => setExpanded((v) => !v)} className="mono text-[10px] uppercase tracking-[0.18em] mt-2">
+                <button type="button" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded} className="mono text-[10px] uppercase tracking-[0.18em] mt-2">
                     {expanded ? 'Show less' : 'View all'}
                 </button>
             )}
