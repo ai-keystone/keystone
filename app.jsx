@@ -55,10 +55,16 @@ const useClampedList = (items = [], initialCount = 6) => {
     return { expanded, setExpanded, visible, hiddenCount };
 };
 
-const DisclosureToggle = ({ expanded, hiddenCount, onToggle, label = 'items' }) => {
+const DisclosureToggle = ({ expanded, hiddenCount, onToggle, label = 'items', ariaControls }) => {
     if (!hiddenCount && !expanded) return null;
     return (
-        <button type="button" onClick={onToggle} aria-expanded={expanded} className="mono text-[10px] uppercase tracking-[0.18em]">
+        <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={expanded}
+            {...(ariaControls ? { 'aria-controls': ariaControls } : {})}
+            className="mono text-[10px] uppercase tracking-[0.18em]"
+        >
             {expanded ? 'Show less' : `View all ${label}${hiddenCount ? ` (+${hiddenCount})` : ''}`}
         </button>
     );
@@ -1995,16 +2001,38 @@ const estimateToCsv = (estimate) => {
 };
 
 const EstimatePanel = ({ estimate }) => {
-    if (!estimate) return null;
-    const summary = estimate.summary || {};
-    const costRange = estimate.costRange || {};
+    const estimateId = React.useId();
+    const summary = estimate?.summary || {};
+    const costRange = estimate?.costRange || {};
     const lineItems = Array.isArray(costRange.lineItems) ? costRange.lineItems : [];
-    const assemblies = Array.isArray(estimate.takeoff?.assemblies) ? estimate.takeoff.assemblies : [];
-    const assumptions = Array.isArray(estimate.assumptions?.notes) ? estimate.assumptions.notes : [];
+    const assemblies = Array.isArray(estimate?.takeoff?.assemblies) ? estimate.takeoff.assemblies : [];
+    const assumptions = Array.isArray(estimate?.assumptions?.notes) ? estimate.assumptions.notes : [];
     const lineItemDisclosure = useClampedList(lineItems, DEFAULT_VISIBLE_LINE_ITEMS);
     const assemblyDisclosure = useClampedList(assemblies, DEFAULT_VISIBLE_ASSEMBLIES);
     const noteDisclosure = useClampedList(assumptions, DEFAULT_VISIBLE_NOTES);
+    const estimateDisclosureKey = useMemo(() => JSON.stringify({
+        lineItems: lineItems.map((item) => [item.key, item.label, item.quantity, item.unit, item.target, item.notes]),
+        assemblies: assemblies.map((item) => [item.key, item.label, item.quantity, item.unit, item.notes]),
+        assumptions,
+        total: [costRange?.total?.low, costRange?.total?.target, costRange?.total?.high],
+        summary: [summary.rateFamily, summary.roofKind, summary.budgetTier],
+    }), [lineItems, assemblies, assumptions, costRange?.total?.low, costRange?.total?.target, costRange?.total?.high, summary.rateFamily, summary.roofKind, summary.budgetTier]);
     const bathCount = Number(summary.bathCount || 0);
+
+    useEffect(() => {
+        lineItemDisclosure.setExpanded(false);
+        assemblyDisclosure.setExpanded(false);
+        noteDisclosure.setExpanded(false);
+    }, [estimateDisclosureKey]);
+
+    if (!estimate) return null;
+
+    const showLineItemToggle = lineItemDisclosure.hiddenCount > 0 || lineItemDisclosure.expanded;
+    const showAssemblyToggle = assemblyDisclosure.hiddenCount > 0 || assemblyDisclosure.expanded;
+    const showNoteToggle = noteDisclosure.hiddenCount > 0 || noteDisclosure.expanded;
+    const lineItemsId = `${estimateId}-line-items`;
+    const assembliesId = `${estimateId}-assemblies`;
+    const assumptionsId = `${estimateId}-assumptions`;
 
     return (
         <div className="paper-panel mt-4 overflow-hidden">
@@ -2040,7 +2068,7 @@ const EstimatePanel = ({ estimate }) => {
                         <div className="px-4 py-3 border-b border-black/6">
                             <p className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.46)'}}>Cost line items</p>
                         </div>
-                        <div className="overflow-x-auto">
+                        <div id={lineItemsId} className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="mono text-[8px] uppercase tracking-[0.18em]" style={{color:'rgba(10,10,12,0.42)'}}>
@@ -2063,21 +2091,24 @@ const EstimatePanel = ({ estimate }) => {
                                 </tbody>
                             </table>
                         </div>
-                        <div className="px-4 py-3 border-t border-black/6">
-                            <DisclosureToggle
-                                expanded={lineItemDisclosure.expanded}
-                                hiddenCount={lineItemDisclosure.hiddenCount}
-                                onToggle={() => lineItemDisclosure.setExpanded((value) => !value)}
-                                label="line items"
-                            />
-                        </div>
+                        {showLineItemToggle && (
+                            <div className="px-4 py-3 border-t border-black/6">
+                                <DisclosureToggle
+                                    expanded={lineItemDisclosure.expanded}
+                                    hiddenCount={lineItemDisclosure.hiddenCount}
+                                    onToggle={() => lineItemDisclosure.setExpanded((value) => !value)}
+                                    label="line items"
+                                    ariaControls={lineItemsId}
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <div className="rounded-[18px] border border-black/8 overflow-hidden bg-white/72">
                         <div className="px-4 py-3 border-b border-black/6">
                             <p className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.46)'}}>Quantity takeoff</p>
                         </div>
-                        <div className="overflow-x-auto">
+                        <div id={assembliesId} className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="mono text-[8px] uppercase tracking-[0.18em]" style={{color:'rgba(10,10,12,0.42)'}}>
@@ -2098,18 +2129,21 @@ const EstimatePanel = ({ estimate }) => {
                                 </tbody>
                             </table>
                         </div>
-                        <div className="px-4 py-3 border-t border-black/6">
-                            <DisclosureToggle
-                                expanded={assemblyDisclosure.expanded}
-                                hiddenCount={assemblyDisclosure.hiddenCount}
-                                onToggle={() => assemblyDisclosure.setExpanded((value) => !value)}
-                                label="items"
-                            />
-                        </div>
+                        {showAssemblyToggle && (
+                            <div className="px-4 py-3 border-t border-black/6">
+                                <DisclosureToggle
+                                    expanded={assemblyDisclosure.expanded}
+                                    hiddenCount={assemblyDisclosure.hiddenCount}
+                                    onToggle={() => assemblyDisclosure.setExpanded((value) => !value)}
+                                    label="items"
+                                    ariaControls={assembliesId}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div className="rounded-[18px] border border-black/8 bg-white/64 p-4 mt-4">
+                <div id={assumptionsId} className="rounded-[18px] border border-black/8 bg-white/64 p-4 mt-4">
                     <p className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.46)'}}>Assumptions</p>
                     <div className="flex flex-wrap gap-2 mt-3">
                         <span className="room-badge active" style={{cursor:'default'}}>Concept / cost estimate</span>
@@ -2121,14 +2155,17 @@ const EstimatePanel = ({ estimate }) => {
                             <p key={note} className="mt-1 first:mt-0">{note}</p>
                         ))}
                     </div>
-                    <div className="mt-3">
-                        <DisclosureToggle
-                            expanded={noteDisclosure.expanded}
-                            hiddenCount={noteDisclosure.hiddenCount}
-                            onToggle={() => noteDisclosure.setExpanded((value) => !value)}
-                            label="notes"
-                        />
-                    </div>
+                    {showNoteToggle && (
+                        <div className="mt-3">
+                            <DisclosureToggle
+                                expanded={noteDisclosure.expanded}
+                                hiddenCount={noteDisclosure.hiddenCount}
+                                onToggle={() => noteDisclosure.setExpanded((value) => !value)}
+                                label="notes"
+                                ariaControls={assumptionsId}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
