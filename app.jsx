@@ -43,6 +43,47 @@ const CONTACT_EMAIL = 'aikeystone559@gmail.com';
 const LEGAL_UPDATED_AT = 'March 14, 2026';
 const STUDIO_UNLOCK_KEY = 'keystone_unlock';
 const STUDIO_SESSION_KEY = 'keystone_studio_session';
+const DEFAULT_VISIBLE_LINE_ITEMS = 6;
+const DEFAULT_VISIBLE_ASSEMBLIES = 6;
+const DEFAULT_VISIBLE_NOTES = 2;
+
+const useClampedList = (items = [], initialCount = 6) => {
+    const safeItems = Array.isArray(items) ? items : [];
+    const [expanded, setExpanded] = useState(false);
+    const visible = expanded ? safeItems : safeItems.slice(0, initialCount);
+    const hiddenCount = Math.max(0, safeItems.length - visible.length);
+    return { expanded, setExpanded, visible, hiddenCount };
+};
+
+const DisclosureToggle = ({ expanded, hiddenCount, onToggle, label = 'items', ariaControls }) => {
+    if (!hiddenCount && !expanded) return null;
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={expanded}
+            {...(ariaControls ? { 'aria-controls': ariaControls } : {})}
+            className="mono text-[10px] uppercase tracking-[0.18em]"
+        >
+            {expanded ? 'Show less' : `View all ${label}${hiddenCount ? ` (+${hiddenCount})` : ''}`}
+        </button>
+    );
+};
+
+const ExpandableText = ({ summary, details, defaultExpanded = false }) => {
+    const [expanded, setExpanded] = useState(defaultExpanded);
+    const bodyText = expanded && details ? details : summary;
+    return (
+        <div>
+            <p>{bodyText}</p>
+            {details && details !== summary && (
+                <button type="button" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded} className="mono text-[10px] uppercase tracking-[0.18em] mt-2">
+                    {expanded ? 'Show less' : 'View all'}
+                </button>
+            )}
+        </div>
+    );
+};
 const createEmptyRenderState = () => ({
     status: 'idle',
     image: null,
@@ -1960,13 +2001,38 @@ const estimateToCsv = (estimate) => {
 };
 
 const EstimatePanel = ({ estimate }) => {
-    if (!estimate) return null;
-    const summary = estimate.summary || {};
-    const costRange = estimate.costRange || {};
+    const estimateId = React.useId();
+    const summary = estimate?.summary || {};
+    const costRange = estimate?.costRange || {};
     const lineItems = Array.isArray(costRange.lineItems) ? costRange.lineItems : [];
-    const assemblies = Array.isArray(estimate.takeoff?.assemblies) ? estimate.takeoff.assemblies : [];
-    const assumptions = Array.isArray(estimate.assumptions?.notes) ? estimate.assumptions.notes : [];
+    const assemblies = Array.isArray(estimate?.takeoff?.assemblies) ? estimate.takeoff.assemblies : [];
+    const assumptions = Array.isArray(estimate?.assumptions?.notes) ? estimate.assumptions.notes : [];
+    const lineItemDisclosure = useClampedList(lineItems, DEFAULT_VISIBLE_LINE_ITEMS);
+    const assemblyDisclosure = useClampedList(assemblies, DEFAULT_VISIBLE_ASSEMBLIES);
+    const noteDisclosure = useClampedList(assumptions, DEFAULT_VISIBLE_NOTES);
+    const estimateDisclosureKey = useMemo(() => JSON.stringify({
+        lineItems: lineItems.map((item) => [item.key, item.label, item.quantity, item.unit, item.target, item.notes]),
+        assemblies: assemblies.map((item) => [item.key, item.label, item.quantity, item.unit, item.notes]),
+        assumptions,
+        total: [costRange?.total?.low, costRange?.total?.target, costRange?.total?.high],
+        summary: [summary.rateFamily, summary.roofKind, summary.budgetTier],
+    }), [lineItems, assemblies, assumptions, costRange?.total?.low, costRange?.total?.target, costRange?.total?.high, summary.rateFamily, summary.roofKind, summary.budgetTier]);
     const bathCount = Number(summary.bathCount || 0);
+
+    useEffect(() => {
+        lineItemDisclosure.setExpanded(false);
+        assemblyDisclosure.setExpanded(false);
+        noteDisclosure.setExpanded(false);
+    }, [estimateDisclosureKey]);
+
+    if (!estimate) return null;
+
+    const showLineItemToggle = lineItemDisclosure.hiddenCount > 0 || lineItemDisclosure.expanded;
+    const showAssemblyToggle = assemblyDisclosure.hiddenCount > 0 || assemblyDisclosure.expanded;
+    const showNoteToggle = noteDisclosure.hiddenCount > 0 || noteDisclosure.expanded;
+    const lineItemsId = `${estimateId}-line-items`;
+    const assembliesId = `${estimateId}-assemblies`;
+    const assumptionsId = `${estimateId}-assumptions`;
 
     return (
         <div className="paper-panel mt-4 overflow-hidden">
@@ -2002,7 +2068,7 @@ const EstimatePanel = ({ estimate }) => {
                         <div className="px-4 py-3 border-b border-black/6">
                             <p className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.46)'}}>Cost line items</p>
                         </div>
-                        <div className="overflow-x-auto">
+                        <div id={lineItemsId} className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="mono text-[8px] uppercase tracking-[0.18em]" style={{color:'rgba(10,10,12,0.42)'}}>
@@ -2012,7 +2078,7 @@ const EstimatePanel = ({ estimate }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {lineItems.map((item) => (
+                                    {lineItemDisclosure.visible.map((item) => (
                                         <tr key={item.key} className="border-t border-black/5 text-[11px]" style={{color:'rgba(10,10,12,0.78)'}}>
                                             <td className="px-4 py-2.5">
                                                 <div className="font-medium">{item.label}</div>
@@ -2025,13 +2091,24 @@ const EstimatePanel = ({ estimate }) => {
                                 </tbody>
                             </table>
                         </div>
+                        {showLineItemToggle && (
+                            <div className="px-4 py-3 border-t border-black/6">
+                                <DisclosureToggle
+                                    expanded={lineItemDisclosure.expanded}
+                                    hiddenCount={lineItemDisclosure.hiddenCount}
+                                    onToggle={() => lineItemDisclosure.setExpanded((value) => !value)}
+                                    label="line items"
+                                    ariaControls={lineItemsId}
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <div className="rounded-[18px] border border-black/8 overflow-hidden bg-white/72">
                         <div className="px-4 py-3 border-b border-black/6">
                             <p className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.46)'}}>Quantity takeoff</p>
                         </div>
-                        <div className="overflow-x-auto">
+                        <div id={assembliesId} className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="mono text-[8px] uppercase tracking-[0.18em]" style={{color:'rgba(10,10,12,0.42)'}}>
@@ -2040,7 +2117,7 @@ const EstimatePanel = ({ estimate }) => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {assemblies.map((item) => (
+                                    {assemblyDisclosure.visible.map((item) => (
                                         <tr key={item.key} className="border-t border-black/5 text-[11px]" style={{color:'rgba(10,10,12,0.78)'}}>
                                             <td className="px-4 py-2.5">
                                                 <div className="font-medium">{item.label}</div>
@@ -2052,10 +2129,21 @@ const EstimatePanel = ({ estimate }) => {
                                 </tbody>
                             </table>
                         </div>
+                        {showAssemblyToggle && (
+                            <div className="px-4 py-3 border-t border-black/6">
+                                <DisclosureToggle
+                                    expanded={assemblyDisclosure.expanded}
+                                    hiddenCount={assemblyDisclosure.hiddenCount}
+                                    onToggle={() => assemblyDisclosure.setExpanded((value) => !value)}
+                                    label="items"
+                                    ariaControls={assembliesId}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                <div className="rounded-[18px] border border-black/8 bg-white/64 p-4 mt-4">
+                <div id={assumptionsId} className="rounded-[18px] border border-black/8 bg-white/64 p-4 mt-4">
                     <p className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.46)'}}>Assumptions</p>
                     <div className="flex flex-wrap gap-2 mt-3">
                         <span className="room-badge active" style={{cursor:'default'}}>Concept / cost estimate</span>
@@ -2063,10 +2151,21 @@ const EstimatePanel = ({ estimate }) => {
                         <span className="room-badge active" style={{cursor:'default'}}>Budget: {summary.budgetTier || 'MID'}</span>
                     </div>
                     <div className="mt-3 text-[12px] leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
-                        {assumptions.map((note) => (
+                        {noteDisclosure.visible.map((note) => (
                             <p key={note} className="mt-1 first:mt-0">{note}</p>
                         ))}
                     </div>
+                    {showNoteToggle && (
+                        <div className="mt-3">
+                            <DisclosureToggle
+                                expanded={noteDisclosure.expanded}
+                                hiddenCount={noteDisclosure.hiddenCount}
+                                onToggle={() => noteDisclosure.setExpanded((value) => !value)}
+                                label="notes"
+                                ariaControls={assumptionsId}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -5728,47 +5827,6 @@ const DesignGenerator = ({ onOpenModal }) => {
                     </div>
                 </div>
 
-                {(status === 'plan-ready' || status === 'refining') && planSvg && (
-                    <div className="paper-panel mt-4 overflow-hidden">
-                        <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
-                            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-                                <div>
-                                    <span className="section-label">Plan Summary + Estimate</span>
-                                    <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
-                                        Review the plan summary and the concept-level Cost Estimate together below the main studio workspace.
-                                    </p>
-                                </div>
-                                <span className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
-                                    Footer review panel
-                                </span>
-                            </div>
-                        </div>
-                        <div className="grid xl:grid-cols-[minmax(320px,380px)_minmax(0,1fr)] gap-0">
-                            <div className="border-r border-black/5">
-                                <PlanSummaryPanel planSpec={planSpec} openingDiagnostics={openingDiagnostics}/>
-                            </div>
-                            {isUnlocked ? (
-                                <EstimatePanel estimate={planSpec?.estimate}/>
-                            ) : (
-                                <div className="paper-panel mt-4 overflow-hidden">
-                                    <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
-                                        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-                                            <div>
-                                                <p className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.82)'}}>Cost estimate</p>
-                                                <p className="text-[13px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
-                                                    Unlock advanced features to view and download the concept-level Cost Estimate workbook for this plan.
-                                                </p>
-                                            </div>
-                                            <button onClick={onOpenModal} className="cta-hero cta-glow-soft">
-                                                Unlock Advanced Features
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
                 {(status === 'plan-ready' || status === 'refining') && optionSequence.length > 1 && (
                     <div id="keystone-option-stack" className="paper-panel mt-4 overflow-hidden">
                         <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
@@ -5776,7 +5834,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                 <div>
                                     <span className="section-label">Option Stack</span>
                                     <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
-                                        Option 1 is the highest-ranked plan. Scroll down to compare Option 2 and Option 3.
+                                        Compare the ranked options first. Option 1 is the highest-ranked plan, and the stack below lets you review Option 2 and Option 3 in sequence.
                                     </p>
                                 </div>
                                 <span className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
@@ -5809,7 +5867,14 @@ const DesignGenerator = ({ onOpenModal }) => {
                                             </div>
                                         </div>
 
-                                        <div className="bg-white rounded-lg border border-black/8 p-3 overflow-hidden" style={{maxHeight:'52vh'}} dangerouslySetInnerHTML={{__html: opt?.svg || '<p style="padding:20px;color:#999;font-size:11px">Preview unavailable</p>'}}/>
+                                        <div className="option-preview-frame">
+                                            <div className="option-preview-sheet" dangerouslySetInnerHTML={{__html: opt?.svg || '<p style="padding:20px;color:#999;font-size:11px">Preview unavailable</p>'}}/>
+                                        </div>
+                                        <div className="mt-2 flex justify-end">
+                                            <button type="button" onClick={() => setZoomImage(opt?.svg)} className="cta-secondary text-[10px] px-3 py-2" style={{minHeight:'auto'}}>
+                                                View full option
+                                            </button>
+                                        </div>
 
                                         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
                                             <span className="mono text-[8px] text-mid">
@@ -5830,6 +5895,47 @@ const DesignGenerator = ({ onOpenModal }) => {
                                     </div>
                                 );
                             })}
+                        </div>
+                    </div>
+                )}
+                {(status === 'plan-ready' || status === 'refining') && planSvg && (
+                    <div className="paper-panel mt-4 overflow-hidden">
+                        <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
+                            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                                <div>
+                                    <span className="section-label">Plan Summary + Estimate</span>
+                                    <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
+                                        Review the selected details and the concept-level Cost Estimate after you compare the option stack above.
+                                    </p>
+                                </div>
+                                <span className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'rgba(10,10,12,0.42)'}}>
+                                    Selected details review panel
+                                </span>
+                            </div>
+                        </div>
+                        <div className="grid xl:grid-cols-[minmax(320px,380px)_minmax(0,1fr)] gap-0">
+                            <div className="border-r border-black/5">
+                                <PlanSummaryPanel planSpec={planSpec} openingDiagnostics={openingDiagnostics}/>
+                            </div>
+                            {isUnlocked ? (
+                                <EstimatePanel estimate={planSpec?.estimate}/>
+                            ) : (
+                                <div className="paper-panel mt-4 overflow-hidden">
+                                    <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
+                                        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+                                            <div>
+                                                <p className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(27,79,130,0.82)'}}>Cost estimate</p>
+                                                <p className="text-[13px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.62)'}}>
+                                                    Unlock advanced features to view and download the concept-level Cost Estimate workbook for this plan.
+                                                </p>
+                                            </div>
+                                            <button onClick={onOpenModal} className="cta-hero cta-glow-soft">
+                                                Unlock Advanced Features
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -6157,17 +6263,17 @@ const DreamApp = () => {
         {
             eyebrow: 'Plain-language workflow',
             title: 'Made for people, not just technical teams.',
-            body: 'You answer the brief in everyday language and Keystone translates it into a plan package you can actually understand.',
+            body: 'Answer in everyday language; Keystone translates it into a plan package you can understand.',
         },
         {
             eyebrow: 'Live today',
             title: 'Plan, elevations, Cost Estimate, DXF export, and Exterior Render.',
-            body: 'Keystone currently covers guided intake, floor plan generation, elevation views, a concept-level Cost Estimate, CAD Export (DXF), and an Exterior Render from the same brief.',
+            body: 'Guided intake, floor plan, elevations, Cost Estimate, CAD export, and Exterior Render from the same brief.',
         },
         {
             eyebrow: 'Coming next',
             title: 'Scheduling and deeper 3D remain on the roadmap.',
-            body: 'The Cost Estimate is now live. Scheduling, richer viewer tools, and deeper quantity logic are still on the roadmap until they are ready.',
+            body: 'Scheduling, richer viewer tools, and deeper quantity logic are next.',
         },
     ];
     const outcomeCards = [
@@ -6265,12 +6371,12 @@ const DreamApp = () => {
     ];
     const quoteCards = [
         {
-            quote: 'The strongest use case right now is the homeowner who knows what they want, but needs help seeing it clearly for the first time.',
+            quote: 'The strongest use case: homeowners who know what they want, but need help seeing it clearly for the first time.',
             name: 'Who it is for',
             firm: 'Product direction',
         },
         {
-            quote: 'The live promise stays disciplined on purpose: guided intake, generated plan, elevations, a Cost Estimate, CAD export, and an optional Exterior Render. Scheduling and deeper quantity logic come next, but only when they are real.',
+            quote: 'Guided intake, generated plan, elevations, Cost Estimate, CAD export, and Exterior Render. Scheduling and deeper quantity logic come next.',
             name: 'Scope discipline',
             firm: 'Product truth',
         },
@@ -6477,9 +6583,12 @@ const DreamApp = () => {
                                         </h2>
                                         </Reveal>
                                         <Reveal y={16} delay={0.16}>
-                                        <p className="mt-4 text-sm md:text-base leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
-                                            The fastest way to trust Keystone is to watch the workflow happen in sequence: guided brief, generated plan, elevations, Cost Estimate, CAD export, and optional Exterior Render from the same house.
-                                        </p>
+                                        <div className="mt-4 text-sm md:text-base leading-relaxed" style={{color:'rgba(10,10,12,0.62)'}}>
+                                            <ExpandableText
+                                                summary="The fastest way to trust Keystone is to watch the workflow happen in sequence."
+                                                details="The fastest way to trust Keystone is to watch the workflow happen in sequence: guided brief, generated plan, elevations, Cost Estimate, CAD export, and optional Exterior Render from the same house."
+                                            />
+                                        </div>
                                         <div className="mt-6 flex flex-wrap gap-3">
                                             <StarBorderBtn onClick={() => scrollTo('generator')}>
                                                 <span>Try Free Floor Plan</span>
@@ -6596,9 +6705,12 @@ const DreamApp = () => {
                                                 <h2 className="cg mt-6" style={{fontSize:'clamp(2.6rem, 6vw, 4.8rem)',lineHeight:0.9,letterSpacing:'-0.05em',textTransform:'uppercase',color:'var(--ink)'}}>
                                                     Try the real workflow, not a teaser.
                                                 </h2>
-                                                <p className="mt-5 max-w-2xl text-base leading-relaxed" style={{color:'rgba(9,9,9,0.62)'}}>
-                                                    The same guided workflow behind the hero is right below. Open the live studio, walk through the survey, shape a plan, and see how much you can understand before a formal design meeting.
-                                                </p>
+                                                <div className="mt-5 max-w-2xl text-base leading-relaxed" style={{color:'rgba(9,9,9,0.62)'}}>
+                                                    <ExpandableText
+                                                        summary="The same guided workflow behind the hero is right below."
+                                                        details="The same guided workflow behind the hero is right below. Open the live studio, walk through the survey, shape a plan, and see how much you can understand before a formal design meeting."
+                                                    />
+                                                </div>
                                             </div>
                                             <div className="flex justify-start lg:justify-end">
                                                 <div className="w-full max-w-[280px] flex flex-col gap-3">
@@ -6742,9 +6854,12 @@ const DreamApp = () => {
                                     </Reveal>
                                 </div>
                                 <Reveal y={16} delay={0.18}>
-                                <p className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.58)'}}>
-                                    Keystone works when the person planning the home, the future professional team, and the next decision all feel less vague. These are the shifts the workflow is built to create.
-                                </p>
+                                <div className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.58)'}}>
+                                    <ExpandableText
+                                        summary="These are the shifts the workflow is built to create."
+                                        details="Keystone works when the person planning the home, the future professional team, and the next decision all feel less vague. These are the shifts the workflow is built to create."
+                                    />
+                                </div>
                                 </Reveal>
                             </div>
                             <div className="grid md:grid-cols-3 gap-4">
@@ -6787,9 +6902,12 @@ const DreamApp = () => {
                                     </Reveal>
                                 </div>
                                 <Reveal y={16} delay={0.16}>
-                                    <p className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.6)'}}>
-                                        The homepage keeps the live product story. These pages go deeper into the floor-plan method, the guided workflow, and the roadmap without flattening everything into one long scroll.
-                                    </p>
+                                    <div className="text-sm md:text-base leading-relaxed" style={{color:'rgba(9,9,9,0.6)'}}>
+                                        <ExpandableText
+                                            summary="These pages go deeper into method, workflow, and roadmap."
+                                            details="The homepage keeps the live product story. These pages go deeper into the floor-plan method, the guided workflow, and the roadmap without flattening everything into one long scroll."
+                                        />
+                                    </div>
                                 </Reveal>
                             </div>
                             <div className="grid lg:grid-cols-3 gap-4 mt-10">
@@ -6838,9 +6956,12 @@ const DreamApp = () => {
                                     </Reveal>
                                 </div>
                                 <Reveal y={16} delay={0.18}>
-                                <p className="text-sm md:text-base leading-relaxed text-mid">
-                                    Keystone is not trying to replace professional judgment. It gives homeowners a clearer starting point before they spend heavily on drawings and revisions.
-                                </p>
+                                <div className="text-sm md:text-base leading-relaxed text-mid">
+                                    <ExpandableText
+                                        summary="Keystone gives homeowners a clearer starting point."
+                                        details="Keystone is not trying to replace professional judgment. It gives homeowners a clearer starting point before they spend heavily on drawings and revisions."
+                                    />
+                                </div>
                                 </Reveal>
                             </div>
                             <div className="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-6 mt-10 items-start">
