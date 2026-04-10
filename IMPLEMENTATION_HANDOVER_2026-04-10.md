@@ -15,14 +15,26 @@ Plan: E:/Github/keystone/docs/superpowers/plans/2026-04-10-frontend-content-dens
 ## Task Progress
 
 ### Task 1: Add Reusable Progressive Disclosure Primitives
-- Status: In progress
+- Status: Completed
+- Commits:
+  - `8cf6b85404a143c9206834af1a64fd19434b5262` — feat(ui): add reusable progressive disclosure helpers
+  - `884c50387667e5e65e532078315330ef10bd1ee3` — fix(ui): harden progressive disclosure helpers
 - Changes completed:
-  - None yet.
+  - Added `DEFAULT_VISIBLE_LINE_ITEMS`, `DEFAULT_VISIBLE_ASSEMBLIES`, `DEFAULT_VISIBLE_NOTES` constants in `app.jsx`.
+  - Added `useClampedList` helper hook.
+  - Added `DisclosureToggle` component.
+  - Added `ExpandableText` component.
+  - Hardened helpers for null/non-array inputs and empty-detail fallback.
+  - Added `aria-expanded` on disclosure buttons.
+- Files touched:
+  - `app.jsx`
 - Verification:
-  - Pending.
+  - Implementer sanity check: Babel parse OK.
+  - Spec-compliance review: approved (all Task 1 requirements met).
+  - Code-quality review: approved (minor non-blocking note: optional `aria-controls`).
 
 ### Task 2: Collapse Cost Line Items and Quantity Takeoff by Default
-- Status: Pending
+- Status: In progress
 
 ### Task 3: Move Option Stack Above Plan Summary + Estimate
 - Status: Pending
@@ -37,5 +49,5 @@ Plan: E:/Github/keystone/docs/superpowers/plans/2026-04-10-frontend-content-dens
 - Status: Pending
 
 ## Next Action If Session Interrupts
-- Resume at Task 1 implementation in `frontend/app.jsx`.
-- Then run spec-compliance review followed by code-quality review for Task 1.
+- Resume at Task 2 implementation in `frontend/app.jsx` (EstimatePanel: line-item and takeoff disclosure behavior).
+- After implementation, run spec-compliance review, then code-quality review, then update this handover file.
