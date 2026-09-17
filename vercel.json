@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/plan/presentation",
+      "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/api/plan/presentation"
+    },
+    {
       "source": "/api/plan",
       "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/api/plan"
     },

@@ -1902,6 +1902,11 @@ const PlanSummaryPanel = ({ planSpec, openingDiagnostics }) => {
                 <div className="spec-panel"><div className="spec-label">Stories</div><div className="spec-value">{planSpec.stories}</div></div>
                 <div className="spec-panel"><div className="spec-label">Levels</div><div className="spec-value">{(planSpec.levels||[]).length}</div></div>
             </div>
+            {planSpec.surveyFulfillment?.freeformWishes?.status === 'not_applied' && (
+                <p role="status" className="text-sm leading-relaxed border border-amber-300 bg-amber-50 rounded-lg p-3 mb-4">
+                    Your additional request could not be included in this option. {planSpec.surveyFulfillment.freeformWishes.reason}
+                </p>
+            )}
             <div className="flex flex-wrap gap-1.5">
                 {Object.entries(roomCounts).map(([label, count]) => (
                     <span key={label} className="room-badge active" style={{cursor:'default'}}>{label}{count > 1 ? ` x${count}` : ''}</span>
@@ -2197,26 +2202,34 @@ const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinementHistor
 };
 
 // Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ RENDER SURVEY MODAL Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
-const buildRenderSurveyDefaults = (baseSurveyData = {}, initialData = {}) => ({
-    zipCode: '',
-    lotContext: '',
-    contextDensity: 'Detached neighboring homes',
-    topography: 'Mostly flat site',
-    drivewayStyle: 'Concrete driveway',
-    landscaping: 'Foundation plantings + lawn',
-    surroundings: '',
-    season: 'Summer',
-    timeOfDay: 'Midday',
-    weather: 'Clear sky',
-    ...initialData,
-});
+const buildRenderSurveyDefaults = (baseSurveyData = {}, initialData = {}, planSpec = {}) =>
+    window.KeystoneRenderPreferences.resolve(baseSurveyData, initialData, planSpec);
 
-const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, baseSurveyData }) => {
-    const [data, setData] = useState(buildRenderSurveyDefaults(baseSurveyData, initialData));
+const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, baseSurveyData, planSpec }) => {
+    const dialogRef = useRef(null);
     useEffect(() => {
-        setData(buildRenderSurveyDefaults(baseSurveyData, initialData));
-    }, [initialData, baseSurveyData, isOpen]);
-    const upd = (f, v) => setData(p => ({ ...p, [f]: v }));
+        if (!isOpen) return;
+        const previousFocus = document.activeElement;
+        const frame = requestAnimationFrame(() => dialogRef.current?.querySelector('button')?.focus());
+        return () => { cancelAnimationFrame(frame); previousFocus?.focus?.(); };
+    }, [isOpen]);
+    const handleDialogKey = e => {
+        if (e.key === 'Escape') { e.stopPropagation(); onClose(); }
+        if (e.key !== 'Tab') return;
+        const elements = [...dialogRef.current.querySelectorAll('button:not(:disabled), input:not(:disabled), select:not(:disabled)')];
+        const first = elements[0], last = elements[elements.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
+    };
+    const [overrides, setOverrides] = useState({});
+    const [data, setData] = useState(buildRenderSurveyDefaults(baseSurveyData, initialData, planSpec));
+    useEffect(() => {
+        const resolved = buildRenderSurveyDefaults(baseSurveyData, initialData, planSpec);
+        const defaults = buildRenderSurveyDefaults(baseSurveyData, null, planSpec);
+        setData(resolved);
+        setOverrides(initialData?.version === 2 ? initialData.overrides || {} : Object.fromEntries(Object.entries(resolved).filter(([key, value]) => value !== defaults[key])));
+    }, [initialData, baseSurveyData, planSpec, isOpen]);
+    const upd = (f, v) => { setOverrides(p => ({ ...p, [f]: v })); setData(p => ({ ...p, [f]: v })); };
 
     const BtnRow = ({ field, options }) => (
         <div className="flex flex-wrap gap-1.5">
@@ -2224,7 +2237,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, baseSurveyD
                 const val = typeof opt === 'string' ? opt : opt.val;
                 const label = typeof opt === 'string' ? opt : opt.label;
                 const sel = data[field] === val;
-                return <button key={val} type="button" onClick={() => upd(field, val)}
+                return <button key={val} type="button" aria-pressed={sel} onClick={() => upd(field, val)}
                     className="px-3 py-1.5 border rounded-sm text-[10px] font-semibold transition-all"
                     style={{borderColor: sel?'var(--blue)':'rgba(0,0,0,0.1)', background: sel?'var(--ink)':'white', color: sel?'white':'var(--ink)'}}>
                     {label}
@@ -2241,6 +2254,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, baseSurveyD
                     className="fixed inset-0 z-[150] flex items-end md:items-center justify-center bg-black/88 backdrop-blur-sm p-0 md:p-6">
                     <motion.div initial={{y:40,opacity:0}} animate={{y:0,opacity:1}} exit={{y:40,opacity:0}}
                         transition={{type:'spring',damping:26}}
+                        ref={dialogRef} role="dialog" aria-modal="true" aria-label="3D Render Options" onKeyDown={handleDialogKey}
                         className="electric-border w-full md:max-w-lg rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden"
                         style={{
                             background:'linear-gradient(180deg, rgba(255,252,247,0.985), rgba(246,240,231,0.97))',
@@ -2260,13 +2274,32 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, baseSurveyD
                         <div className="p-6 overflow-y-auto" style={{maxHeight:'85vh', color:'var(--ink)'}}>
                             <span className="badge mb-3 inline-block">3D Render Options</span>
                             <h2 className="cg text-2xl italic mb-1" style={{color:'var(--ink)'}}>Customize Your Render.</h2>
-                            <p className="text-[11px] mb-5 leading-relaxed" style={{color:'rgba(10,10,12,0.7)'}}>These options shape site context, lighting, landscaping, and presentation mood. The house style, roof, and massing stay grounded by your floor plan and elevation set.</p>
+                            <p className="text-[11px] mb-3 leading-relaxed" style={{color:'rgba(10,10,12,0.7)'}}>Your floor-plan survey supplies the starting settings. Change finishes, site context, or lighting for this render. Room layout, openings, and roof shape follow the generated plan and elevations.</p>
+                            <div className="p-3 mb-3 border rounded-sm text-[11px] leading-relaxed" style={{borderColor:'rgba(0,0,0,0.12)'}}>
+                                <strong>From your floor-plan survey</strong>
+                                <p>{[baseSurveyData?.materials, baseSurveyData?.stories, baseSurveyData?.bedrooms, baseSurveyData?.bathrooms, baseSurveyData?.garage].filter(Boolean).join(' · ')}</p>
+                                <p>{[baseSurveyData?.frontFacing && `${baseSurveyData.frontFacing} facing`, baseSurveyData?.shape, baseSurveyData?.ceilingHeight, baseSurveyData?.naturalLight, baseSurveyData?.outdoorLiving].filter(Boolean).join(' · ')}</p>
+                                <p className="mt-1 text-[10px]">Site details absent from your survey use suggested defaults.</p>
+                            </div>
+                            <button type="button" className="mb-5 text-[11px] underline" onClick={() => { setOverrides({}); setData(buildRenderSurveyDefaults(baseSurveyData, null, planSpec)); }}>Reset to floor-plan survey</button>
 
                             <div className="space-y-4">
+                                <div>
+                                    <Lbl>Exterior siding</Lbl>
+                                    <select aria-label="Render exterior siding" value={data.exteriorSiding} onChange={e => upd('exteriorSiding', e.target.value)}>
+                                        {[...new Set([data.exteriorSiding, ...FINISH_OVERRIDE_OPTIONS.exteriorSiding])].map(value => <option key={value}>{value}</option>)}
+                                    </select>
+                                </div>
+                                <div>
+                                    <Lbl>Roof finish</Lbl>
+                                    <select aria-label="Render roof finish" value={data.roofMaterial} onChange={e => upd('roofMaterial', e.target.value)}>
+                                        {[...new Set([data.roofMaterial, ...FINISH_OVERRIDE_OPTIONS.roofMaterial])].map(value => <option key={value}>{value}</option>)}
+                                    </select>
+                                </div>
                                 {/* ZIP CODE */}
                                 <div>
                                     <Lbl>Project ZIP Code</Lbl>
-                                    <input type="text" placeholder="e.g. 78701" maxLength="10"
+                                    <input aria-label="Project ZIP Code" type="text" placeholder="e.g. 78701" maxLength="10"
                                         value={data.zipCode} onChange={e => upd('zipCode', e.target.value)}
                                         style={{maxWidth:'180px'}}/>
                                     <p className="text-[9px] mt-1" style={{color:'rgba(10,10,12,0.56)'}}>Helps set regional context - climate, terrain, neighborhood character</p>
@@ -2274,9 +2307,8 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, baseSurveyD
 
                                 {/* LOT CONTEXT */}
                                 <div>
-                                    <Lbl>Lot / Site Context Override</Lbl>
+                                    <Lbl>Lot / Site Context</Lbl>
                                     <BtnRow field="lotContext" options={[
-                                        {val:'',                      label:'Use Plan Survey'},
                                         {val:'Suburban standard lot', label:'Suburban'},
                                         {val:'Suburban corner lot',   label:'Corner'},
                                         {val:'Urban tight lot',       label:'Urban'},
@@ -2284,7 +2316,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, baseSurveyD
                                         {val:'View focused site',     label:'View Site'},
                                         {val:'Waterfront lot',        label:'Waterfront'},
                                     ]}/>
-                                    <p className="text-[9px] mt-1" style={{color:'rgba(10,10,12,0.56)'}}>Leave on “Use Plan Survey” unless the render needs a different site framing.</p>
+                                    <p className="text-[9px] mt-1" style={{color:'rgba(10,10,12,0.56)'}}>Survey selection: {baseSurveyData?.lotContext || 'Suburban standard lot'}</p>
                                 </div>
 
                                 {/* CONTEXT DENSITY */}
@@ -2339,6 +2371,9 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, baseSurveyD
                                     <Lbl>Immediate Surroundings</Lbl>
                                     <BtnRow field="surroundings" options={[
                                         {val:'Suburban neighborhood', label:'Suburban'},
+                                        {val:'Open countryside', label:'Countryside'},
+                                        {val:'Urban streetscape', label:'Urban'},
+                                        {val:'Open view corridor', label:'Open View'},
                                         {val:'Wooded edge / mature trees', label:'Wooded'},
                                         {val:'Desert arid landscape', label:'Desert'},
                                         {val:'Ocean or lake waterfront', label:'Waterfront'},
@@ -2373,7 +2408,7 @@ const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, baseSurveyD
                                 </div>
                             </div>
 
-                            <button onClick={() => onSubmit(data)}
+                            <button onClick={() => onSubmit({ version: 2, overrides })}
                                 className="w-full mt-6 py-3.5 bg-ink text-white mono text-[10px] uppercase tracking-[0.18em] font-bold hover:bg-blue transition-colors rounded-sm">
                                 Generate Exterior Render
                             </button>
@@ -2396,6 +2431,7 @@ const svgToPngDataUrl = (svgMarkup, options = {}) => new Promise((resolve, rejec
         const {
             background = '#F6F4EF',
             pixelRatio = window.devicePixelRatio && window.devicePixelRatio > 1 ? Math.min(window.devicePixelRatio, 2) : 1,
+            longEdge = null,
         } = options;
 
         let svg = svgMarkup.trim();
@@ -2421,14 +2457,19 @@ const svgToPngDataUrl = (svgMarkup, options = {}) => new Promise((resolve, rejec
         if (!width) width = 1600;
         if (!height) height = 1000;
 
+        // Export from vectors at a fixed resolution, independent of display/DPR.
+        // Limit peak canvas allocation to 36 MP and 8192 pixels per side.
+        const requestedScale = longEdge ? longEdge / Math.max(width, height) : pixelRatio;
+        const scale = Math.min(requestedScale, 8192 / Math.max(width, height), Math.sqrt(36000000 / (width * height)));
+
         const img = new Image();
         img.onload = () => {
             try {
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                canvas.width = Math.max(1, Math.round(width * pixelRatio));
-                canvas.height = Math.max(1, Math.round(height * pixelRatio));
-                ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                canvas.width = Math.max(1, Math.round(width * scale));
+                canvas.height = Math.max(1, Math.round(height * scale));
+                ctx.setTransform(scale, 0, 0, scale, 0, 0);
                 if (background) {
                     ctx.fillStyle = background;
                     ctx.fillRect(0, 0, width, height);
@@ -2455,7 +2496,7 @@ const loadImageElement = (src) => new Promise((resolve, reject) => {
     img.src = src;
 });
 
-const composeElevationReferenceSheet = async (elevations) => {
+const composeElevationReferenceSheet = async (elevations, { exportQuality = false } = {}) => {
     const views = getElevationViews(elevations).map((view) => ({
         ...view,
         label: `${view.label.toUpperCase()} ELEVATION`,
@@ -2466,7 +2507,7 @@ const composeElevationReferenceSheet = async (elevations) => {
     const rasterized = await Promise.all(
         views.map(async (view) => ({
             ...view,
-            src: await svgToPngDataUrl(elevations[view.key], { background: '#F8F2E7' }),
+            src: await svgToPngDataUrl(elevations[view.key], { background: '#F8F2E7', ...(exportQuality ? { longEdge: 3000 } : { longEdge: 1400 }) }),
         }))
     );
     const images = await Promise.all(
@@ -2488,11 +2529,18 @@ const composeElevationReferenceSheet = async (elevations) => {
     canvas.height = pad * 2 + headerH + rows * cellH + (rows - 1) * gutter;
 
     const ctx = canvas.getContext('2d');
+    const logicalWidth = canvas.width, logicalHeight = canvas.height;
+    if (exportQuality) {
+        const scale = 6000 / Math.max(logicalWidth, logicalHeight);
+        canvas.width = Math.round(logicalWidth * scale);
+        canvas.height = Math.round(logicalHeight * scale);
+        ctx.scale(scale, scale);
+    }
     ctx.fillStyle = '#f6f1e8';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.strokeStyle = '#d8cfbf';
     ctx.lineWidth = 2;
-    ctx.strokeRect(12, 12, canvas.width - 24, canvas.height - 24);
+    ctx.strokeRect(12, 12, logicalWidth - 24, logicalHeight - 24);
 
     ctx.fillStyle = '#111';
     ctx.font = '700 24px Georgia, serif';
@@ -3765,6 +3813,8 @@ const Render3DPanel = ({
     const [activeRefinement, setActiveRefinement] = useState(() => normalizeRenderState(initialState).activeRefinement || null);
     const [showSurvey, setShowSurvey] = useState(false);
     const [renderSurveyData, setRenderSurveyData] = useState(() => normalizeRenderState(initialState).surveyData || null);
+    const renderRequest = useRef(0);
+    useEffect(() => () => { renderRequest.current += 1; }, [planSvg]);
     const launchHandledRef = useRef(launchSignal);
     const ensureAdvancedAccess = React.useCallback((featureLabel = 'Exterior Render') => {
         if (!isLocked) return true;
@@ -3791,6 +3841,7 @@ const Render3DPanel = ({
     });
 
     const doRender = async (renderSurvey, lightingHint = null, existingImageForLighting = null) => {
+        const requestId = ++renderRequest.current;
         setRenderStatus('loading');
         setErrorMsg('');
         try {
@@ -3808,7 +3859,7 @@ const Render3DPanel = ({
             const [planImage, elevationSheetImage] = isLightingOnly
                 ? [null, null]
                 : await Promise.all([
-                    svgToPngDataUrl(planSvg, { background: '#F6F4EF' }),
+                    svgToPngDataUrl(planSvg, { background: '#F6F4EF', longEdge: 2400 }),
                     composeElevationReferenceSheet(elevationSet),
                 ]);
 
@@ -3836,6 +3887,7 @@ const Render3DPanel = ({
 
             let data;
             try { data = await res.json(); } catch(_) { data = { success: false, message: `Server error ${res.status}` }; }
+            if (requestId !== renderRequest.current) return;
 
             if (!res.ok || !data.success) {
                 setErrorMsg(data.message || 'Unknown error from server');
@@ -3846,10 +3898,12 @@ const Render3DPanel = ({
             const imgSrc = data.image.startsWith('data:') ? data.image : `data:image/jpeg;base64,${data.image}`;
             setRenderImageClean(imgSrc); // store clean copy for future lighting edits
             const watermarked = await applyWatermark(imgSrc);
+            if (requestId !== renderRequest.current) return;
             setRenderImage(watermarked);
             setRenderStatus('ready');
             if (onRenderReady) onRenderReady(watermarked);
         } catch(err) {
+            if (requestId !== renderRequest.current) return;
             console.error('[render]', err);
             setErrorMsg(err.message || 'Network error - is the server running?');
             setRenderStatus('error');
@@ -3933,7 +3987,7 @@ const Render3DPanel = ({
 
     if (renderStatus === 'idle') return (
         <>
-            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData}/>
+            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData} planSpec={planSpec}/>
             {showLaunchButton ? (
                 <button onClick={handleRender}
                     className="w-full py-3.5 cta-hero cta-glow text-[10px]">
@@ -3968,7 +4022,7 @@ const Render3DPanel = ({
 
     if (renderStatus === 'error') return (
         <>
-            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData}/>
+            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData} planSpec={planSpec}/>
             <div className="p-4 bg-red/5 border border-red/20 rounded-sm">
                 <p className="mono text-[9px] font-bold text-red uppercase mb-1">Render Failed</p>
                 <p className="text-[10px] text-mid leading-relaxed mb-3" style={{wordBreak:'break-word'}}>{errorMsg}</p>
@@ -3985,7 +4039,7 @@ const Render3DPanel = ({
 
     if (renderStatus === 'ready') return (
         <div>
-            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData}/>
+            <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData} planSpec={planSpec}/>
             <SmartImage src={renderImage} className="w-full object-cover rounded-[16px] shadow-xl" alt="Exterior render"/>
             {/* Toolbar */}
             <div className="flex items-center gap-2 mt-2 mb-3 flex-wrap">
@@ -5072,6 +5126,48 @@ const DesignGenerator = ({ onOpenModal }) => {
     const [renderResetKey, setRenderResetKey] = useState(0);
     const [renderPanelStatus, setRenderPanelStatus] = useState(() => normalizeRenderState(initialSession?.renderState).status);
     const [renderState, setRenderState] = useState(() => normalizeRenderState(initialSession?.renderState));
+    const [planView, setPlanView] = useState('normal');
+    const [renderedPlan, setRenderedPlan] = useState(null);
+    const [presentationStatus, setPresentationStatus] = useState('idle');
+    const [presentationError, setPresentationError] = useState('');
+    const [showRenderedLabels, setShowRenderedLabels] = useState(true);
+    const [isExportingPng, setIsExportingPng] = useState(false);
+    const presentationRequest = useRef(0);
+    const renderedReady = !!accessToken && renderedPlan?.source === planSvg && renderedPlan?.token === accessToken;
+    const activeRenderedSvg = renderedReady ? renderedPlan.svg : null;
+    const displayPlanSvg = planView === 'rendered' && activeRenderedSvg
+        ? (showRenderedLabels ? activeRenderedSvg : activeRenderedSvg.replace('</style>', '.rendered-labels { display:none; }</style>'))
+        : planSvg;
+    useEffect(() => {
+        presentationRequest.current += 1;
+        setPlanView('normal'); setRenderedPlan(null);
+        setPresentationStatus('idle'); setPresentationError('');
+    }, [planSvg, accessToken]);
+    const selectPlanView = async (view) => {
+        if (view === 'normal') {
+            presentationRequest.current += 1;
+            setPresentationStatus('idle'); setPlanView('normal'); return;
+        }
+        if (!requireAdvancedAccess('Rendered floor plans')) return;
+        if (renderedReady) { setPlanView('rendered'); return; }
+        const requestId = ++presentationRequest.current;
+        setPresentationStatus('loading'); setPresentationError('');
+        try {
+            const response = await fetch('/api/plan/presentation', {
+                method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+                body: JSON.stringify({ planSpec, surveyData: formData }),
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) throw new Error(result.message || 'Unable to prepare rendered floor plan.');
+            if (requestId !== presentationRequest.current) return;
+            setRenderedPlan({ source: planSvg, token: accessToken, svg: result.svg });
+            setPlanView('rendered'); setPresentationStatus('ready');
+        } catch (error) {
+            if (requestId !== presentationRequest.current) return;
+            setPresentationError(error.message); setPresentationStatus('error');
+        }
+    };
+
 
     useEffect(() => {
         try {
@@ -5277,34 +5373,29 @@ const DesignGenerator = ({ onOpenModal }) => {
 
     const downloadBlueprint = async () => {
     try {
-        const pngUrl = await composeBlueprintPresentationSheet({
-            planSvg,
-            elevations: planSpec?.elevations || null,
-            formData,
-            footprintInfo,
-            renderImage: renderState?.image || null,
-            planSpec,
-        }) || await svgToPngDataUrl(planSvg, {
-            background: '#F6F4EF',
-            pixelRatio: 3,
+        setIsExportingPng(true);
+        // A dedicated full-resolution plan keeps every floor and room readable.
+        const pngUrl = await svgToPngDataUrl(displayPlanSvg, {
+            background: planView === 'rendered' ? '#535f64' : '#F9F8F4',
+            longEdge: 6000,
         });
 
         const l = document.createElement('a');
         l.href = pngUrl;
-        l.download = buildPlanExportFilename(formData, 'floor plan', 'png');
+        l.download = buildPlanExportFilename(formData, planView === 'rendered' ? 'rendered floor plan 6k' : 'floor plan 6k', 'png');
         document.body.appendChild(l);
         l.click();
         l.remove();
     } catch (err) {
         console.error('[downloadBlueprint]', err);
         alert('Download failed.');
-        }
+        } finally { setIsExportingPng(false); }
     };
 
     const downloadElevations = async () => {
         if (!planSpec?.elevations) { alert('No elevations to export yet.'); return; }
         try {
-            const pngUrl = await composeElevationReferenceSheet(planSpec.elevations);
+            const pngUrl = await composeElevationReferenceSheet(planSpec.elevations, { exportQuality: true });
             if (!pngUrl) throw new Error('Unable to build elevation sheet');
             const link = document.createElement('a');
             link.href = pngUrl;
@@ -5542,15 +5633,15 @@ const DesignGenerator = ({ onOpenModal }) => {
                             <div>
                                 <div className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(10,10,12,0.42)'}}>Main actions</div>
                                 <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.64)'}}>
-                                    Free today: floor plan and elevations. Unlock advanced features for the Exterior Render, CAD Export (DXF), refinements, and the Cost Estimate workbook.
+                                    Free today: normal floor plans and elevations. Premium access adds furnished rendered plans, the Exterior Render, CAD Export (DXF), refinements, and the Cost Estimate workbook.
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 <button onClick={launchRenderSurvey} disabled={!planSpec || !planSvg || isLoading || renderPanelStatus === 'loading'} className={actionButtonClass(!planSpec || !planSvg || isLoading || renderPanelStatus === 'loading')} style={actionButtonStyle(!planSpec || !planSvg || isLoading || renderPanelStatus === 'loading')}>
                                     {renderActionLabel}
                                 </button>
-                                <button onClick={downloadBlueprint} disabled={!planSvg || isLoading} className={actionButtonClass(!planSvg || isLoading)} style={actionButtonStyle(!planSvg || isLoading)}>
-                                    Download PNG
+                                <button onClick={downloadBlueprint} title="6000-pixel PNG, full plan at native vector quality" disabled={!planSvg || isLoading || isExportingPng} className={actionButtonClass(!planSvg || isLoading)} style={actionButtonStyle(!planSvg || isLoading)}>
+                                    {isExportingPng ? 'Preparing PNG...' : 'Download PNG · 6K'}
                                 </button>
                                 <button onClick={downloadElevations} disabled={!planSpec?.elevations || isLoading} className={actionButtonClass(!planSpec?.elevations || isLoading)} style={actionButtonStyle(!planSpec?.elevations || isLoading)}>
                                     Elevations PNG
@@ -5610,6 +5701,18 @@ const DesignGenerator = ({ onOpenModal }) => {
                                   </div>
                                 : <span className="mono" style={{fontSize:7,color:'rgba(110,220,130,0.55)',letterSpacing:'0.16em',textTransform:'uppercase'}}>Keystone AI | Blueprint</span>}
                         </div>
+                        {planSvg && <div className="flex flex-wrap items-center gap-2 p-3" style={{background:'#f5f0e9'}}>
+                            <div role="group" aria-label="Floor plan view" className="flex gap-2">
+                                {['normal', 'rendered'].map(view => <button key={view} type="button"
+                                    aria-pressed={planView === view} disabled={view === 'rendered' && (isLoading || presentationStatus === 'loading')}
+                                    onClick={() => selectPlanView(view)} className="px-3 py-2 border rounded-sm text-[11px]"
+                                    style={{background:planView === view ? '#263b43' : '#fff',color:planView === view ? '#fff' : '#263b43'}}>
+                                    {view === 'normal' ? 'Normal' : presentationStatus === 'loading' ? 'Preparing render...' : 'Rendered · Premium'}
+                                </button>)}
+                            </div>
+                            {planView === 'rendered' && <label className="flex items-center gap-2 text-[11px]"><input type="checkbox" checked={showRenderedLabels} onChange={e => setShowRenderedLabels(e.target.checked)} style={{width:'auto'}}/>Room details</label>}
+                            {presentationError && <p role="alert" className="text-[11px] text-red">{presentationError}</p>}
+                        </div>}
                         {/* Canvas body */}
                         <div className="cad-canvas-body">
                             {status === 'idle' && (
@@ -5629,7 +5732,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                             {(status === 'plan-ready' || status === 'refining') && planSvg && (
                                 <InteractiveCanvas>
                                     <BlueprintPresentationSheet
-                                        planSvg={planSvg}
+                                        planSvg={displayPlanSvg}
                                         elevations={planSpec?.elevations}
                                         formData={formData}
                                         footprintInfo={footprintInfo}
@@ -5712,7 +5815,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                         showLaunchButton={false}
                                         onRenderStatusChange={setRenderPanelStatus}
                                         accessToken={accessToken}
-                                        initialState={null}
+                                        initialState={renderState}
                                         resetKey={renderResetKey}
                                         isLocked={!isUnlocked}
                                         onLockedAction={promptUnlock}
