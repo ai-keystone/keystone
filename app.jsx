@@ -1835,7 +1835,7 @@ const ElevationsPanel = ({ elevations, formData, onOpenPreview }) => {
 
     React.useEffect(() => {
         const nextKey = availableViews.some(view => view.key === 'frontSvg') ? 'frontSvg' : (availableViews[0]?.key || defaultKey || null);
-        setActiveKey(nextKey);
+        setActiveKey(current => availableViews.some(view => view.key === current) ? current : nextKey);
     }, [elevations]);
 
     if (!elevations || availableViews.length === 0) return null;
@@ -1889,6 +1889,7 @@ const ElevationsPanel = ({ elevations, formData, onOpenPreview }) => {
                             <button
                                 key={view.key}
                                 type="button"
+                                aria-label={`${view.label} elevation view`}
                                 onClick={() => setActiveKey(view.key)}
                                 className="px-3 py-2.5 border rounded-[12px] text-left transition-all"
                                 style={{
@@ -5225,46 +5226,48 @@ const DesignGenerator = ({ onOpenModal }) => {
     const [renderResetKey, setRenderResetKey] = useState(0);
     const [renderPanelStatus, setRenderPanelStatus] = useState(() => normalizeRenderState(initialSession?.renderState).status);
     const [renderState, setRenderState] = useState(() => normalizeRenderState(initialSession?.renderState));
-    const [planView, setPlanView] = useState('normal');
+    const [planView, setPlanView] = useState('rendered');
     const [renderedPlan, setRenderedPlan] = useState(null);
     const [presentationStatus, setPresentationStatus] = useState('idle');
     const [presentationError, setPresentationError] = useState('');
     const [showRenderedLabels, setShowRenderedLabels] = useState(true);
     const [isExportingPng, setIsExportingPng] = useState(false);
     const presentationRequest = useRef(0);
-    const renderedReady = !!accessToken && renderedPlan?.source === planSvg && renderedPlan?.token === accessToken;
+    const renderedReady = renderedPlan?.source === planSvg && renderedPlan?.spec === planSpec;
     const activeRenderedSvg = renderedReady ? renderedPlan.svg : null;
     const displayPlanSvg = planView === 'rendered' && activeRenderedSvg
         ? (showRenderedLabels ? activeRenderedSvg : activeRenderedSvg.replace('</style>', '.rendered-labels { display:none; }</style>'))
         : planSvg;
-    useEffect(() => {
-        presentationRequest.current += 1;
-        setPlanView('normal'); setRenderedPlan(null);
-        setPresentationStatus('idle'); setPresentationError('');
-    }, [planSvg, accessToken]);
-    const selectPlanView = async (view) => {
-        if (view === 'normal') {
-            presentationRequest.current += 1;
-            setPresentationStatus('idle'); setPlanView('normal'); return;
-        }
-        if (!requireAdvancedAccess('Rendered floor plans')) return;
-        if (renderedReady) { setPlanView('rendered'); return; }
+    const displayElevations = planView === 'rendered' && renderedReady ? renderedPlan.elevations : planSpec?.elevations;
+    const presentationPending = planView === 'rendered' && !renderedReady && !!planSvg && presentationStatus !== 'error';
+    const preparePresentation = async () => {
         const requestId = ++presentationRequest.current;
         setPresentationStatus('loading'); setPresentationError('');
         try {
             const response = await fetch('/api/plan/presentation', {
-                method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ planSpec, surveyData: formData }),
             });
             const result = await response.json();
-            if (!response.ok || !result.success) throw new Error(result.message || 'Unable to prepare rendered floor plan.');
+            if (!response.ok || !result.success || !result.svg || !result.elevations) throw new Error(result.message || 'Unable to prepare rendered views.');
             if (requestId !== presentationRequest.current) return;
-            setRenderedPlan({ source: planSvg, token: accessToken, svg: result.svg });
-            setPlanView('rendered'); setPresentationStatus('ready');
+            setRenderedPlan({ source: planSvg, spec: planSpec, svg: result.svg, elevations: result.elevations });
+            setPresentationStatus('ready');
         } catch (error) {
             if (requestId !== presentationRequest.current) return;
-            setPresentationError(error.message); setPresentationStatus('error');
+            setPresentationError(`${error.message} Showing normal views. Select Rendered to retry.`);
+            setPresentationStatus('error'); setPlanView('normal');
         }
+    };
+    useEffect(() => {
+        setPlanView('rendered'); setRenderedPlan(null); setPresentationError('');
+        if (planSvg && planSpec) preparePresentation();
+        else setPresentationStatus('idle');
+        return () => { presentationRequest.current += 1; };
+    }, [planSvg, planSpec]);
+    const selectPlanView = view => {
+        setPlanView(view);
+        if (view === 'rendered' && !renderedReady && presentationStatus !== 'loading') preparePresentation();
     };
 
 
@@ -5471,6 +5474,7 @@ const DesignGenerator = ({ onOpenModal }) => {
     }, []);
 
     const downloadBlueprint = async () => {
+    if (presentationPending) return;
     try {
         setIsExportingPng(true);
         // A dedicated full-resolution plan keeps every floor and room readable.
@@ -5492,13 +5496,14 @@ const DesignGenerator = ({ onOpenModal }) => {
     };
 
     const downloadElevations = async () => {
+        if (presentationPending) return;
         if (!planSpec?.elevations) { alert('No elevations to export yet.'); return; }
         try {
-            const pngUrl = await composeElevationReferenceSheet(planSpec.elevations, { exportQuality: true });
+            const pngUrl = await composeElevationReferenceSheet(displayElevations, { exportQuality: true });
             if (!pngUrl) throw new Error('Unable to build elevation sheet');
             const link = document.createElement('a');
             link.href = pngUrl;
-            link.download = buildPlanExportFilename(formData, 'elevation set', 'png');
+            link.download = buildPlanExportFilename(formData, planView === 'rendered' ? 'rendered elevation set' : 'elevation set', 'png');
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -5732,17 +5737,17 @@ const DesignGenerator = ({ onOpenModal }) => {
                             <div>
                                 <div className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'rgba(10,10,12,0.42)'}}>Main actions</div>
                                 <p className="text-[12px] leading-relaxed mt-2" style={{color:'rgba(10,10,12,0.64)'}}>
-                                    Free today: normal floor plans and elevations. Premium access adds furnished rendered plans, the Exterior Render, CAD Export (DXF), refinements, and the Cost Estimate workbook.
+                                    Rendered floor plans and elevations are included for everyone. Switch to Normal for the drawing view. Premium access adds the Exterior Render, CAD Export (DXF), refinements, and the Cost Estimate workbook.
                                 </p>
                             </div>
                             <div className="flex flex-wrap gap-3">
                                 <button onClick={launchRenderSurvey} disabled={!planSpec || !planSvg || isLoading || renderPanelStatus === 'loading'} className={actionButtonClass(!planSpec || !planSvg || isLoading || renderPanelStatus === 'loading')} style={actionButtonStyle(!planSpec || !planSvg || isLoading || renderPanelStatus === 'loading')}>
                                     {renderActionLabel}
                                 </button>
-                                <button onClick={downloadBlueprint} title="6000-pixel PNG, full plan at native vector quality" disabled={!planSvg || isLoading || isExportingPng} className={actionButtonClass(!planSvg || isLoading)} style={actionButtonStyle(!planSvg || isLoading)}>
+                                <button onClick={downloadBlueprint} title="6000-pixel PNG, full plan at native vector quality" disabled={!planSvg || isLoading || isExportingPng || presentationPending} className={actionButtonClass(!planSvg || isLoading)} style={actionButtonStyle(!planSvg || isLoading)}>
                                     {isExportingPng ? 'Preparing PNG...' : 'Download PNG · 6K'}
                                 </button>
-                                <button onClick={downloadElevations} disabled={!planSpec?.elevations || isLoading} className={actionButtonClass(!planSpec?.elevations || isLoading)} style={actionButtonStyle(!planSpec?.elevations || isLoading)}>
+                                <button onClick={downloadElevations} disabled={!displayElevations || isLoading || presentationPending} className={actionButtonClass(!planSpec?.elevations || isLoading)} style={actionButtonStyle(!planSpec?.elevations || isLoading)}>
                                     Elevations PNG
                                 </button>
                                 <button onClick={downloadRenderImage} disabled={!renderState?.image || isLoading} className={actionButtonClass(!renderState?.image || isLoading)} style={actionButtonStyle(!renderState?.image || isLoading)}>
@@ -5801,15 +5806,16 @@ const DesignGenerator = ({ onOpenModal }) => {
                                 : <span className="mono" style={{fontSize:7,color:'rgba(110,220,130,0.55)',letterSpacing:'0.16em',textTransform:'uppercase'}}>Keystone AI | Blueprint</span>}
                         </div>
                         {planSvg && <div className="flex flex-wrap items-center gap-2 p-3" style={{background:'#f5f0e9'}}>
-                            <div role="group" aria-label="Floor plan view" className="flex gap-2">
-                                {['normal', 'rendered'].map(view => <button key={view} type="button"
+                            <div role="group" aria-label="Plan and elevation view" className="flex gap-2">
+                                {['rendered', 'normal'].map(view => <button key={view} type="button"
                                     aria-pressed={planView === view} disabled={view === 'rendered' && (isLoading || presentationStatus === 'loading')}
                                     onClick={() => selectPlanView(view)} className="px-3 py-2 border rounded-sm text-[11px]"
                                     style={{background:planView === view ? '#263b43' : '#fff',color:planView === view ? '#fff' : '#263b43'}}>
-                                    {view === 'normal' ? 'Normal' : presentationStatus === 'loading' ? 'Preparing render...' : 'Rendered · Premium'}
+                                    {view === 'normal' ? 'Normal' : 'Rendered'}
                                 </button>)}
                             </div>
-                            {planView === 'rendered' && <label className="flex items-center gap-2 text-[11px]"><input type="checkbox" checked={showRenderedLabels} onChange={e => setShowRenderedLabels(e.target.checked)} style={{width:'auto'}}/>Room details</label>}
+                            {planView === 'rendered' && renderedReady && <label className="flex items-center gap-2 text-[11px]"><input type="checkbox" checked={showRenderedLabels} onChange={e => setShowRenderedLabels(e.target.checked)} style={{width:'auto'}}/>Room details</label>}
+                            {presentationPending && <span role="status" className="text-[11px]">Preparing rendered plan and elevations...</span>}
                             {presentationError && <p role="alert" className="text-[11px] text-red">{presentationError}</p>}
                         </div>}
                         {/* Canvas body */}
@@ -5832,7 +5838,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                 <InteractiveCanvas>
                                     <BlueprintPresentationSheet
                                         planSvg={displayPlanSvg}
-                                        elevations={planSpec?.elevations}
+                                        elevations={displayElevations}
                                         formData={formData}
                                         footprintInfo={footprintInfo}
                                         renderImage={renderState?.image || null}
@@ -5900,7 +5906,7 @@ const DesignGenerator = ({ onOpenModal }) => {
                                         </p>
                                     </div>
                                 )}
-                                <ElevationsPanel elevations={planSpec?.elevations} formData={formData} onOpenPreview={img=>setZoomImage(img)}/>
+                                <ElevationsPanel elevations={displayElevations} formData={formData} onOpenPreview={img=>setZoomImage(img)}/>
                                 <div className="paper-panel">
                                     <Render3DPanel
                                         planSpec={planSpec}
