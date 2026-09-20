@@ -1,0 +1,531 @@
+/* ===================================================================
+   HOME  -  ethereal glass, five sections.
+
+   Shape rule for this page, applied everywhere: interactive controls are
+   pills (--r-pill), inputs are --r-control, panels are --r-card, the hero
+   stage is --r-hero. One accent (--accent) across every section.
+   =================================================================== */
+
+.home-root {
+    padding-bottom: 60px;
+}
+@media (min-width: 768px) {
+    .home-root { padding-bottom: 0; }
+}
+
+/* ---- Buttons ------------------------------------------------------- */
+.btn-primary,
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s2);
+    min-height: 44px;
+    padding: 0 var(--s5);
+    border-radius: var(--r-pill);
+    font-family: var(--font-sans);
+    font-size: var(--t-ui);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--dur) var(--ease),
+                border-color var(--dur) var(--ease),
+                transform var(--dur) var(--ease);
+}
+.btn-primary {
+    background: var(--accent);
+    color: #FFFFFF;
+    border: 1px solid var(--accent);
+}
+.btn-primary:hover { background: var(--accent-hi); border-color: var(--accent-hi); }
+.btn-primary:active { transform: translateY(1px); }
+
+.btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    /* A real border, so the control reads as a control against glass. */
+    border: 1px solid var(--control-edge);
+}
+.btn-ghost:hover { border-color: var(--ink); }
+.btn-ghost:active { transform: translateY(1px); }
+
+.btn-lg { min-height: 52px; padding: 0 var(--s6); font-size: 1rem; }
+
+/* ---- Nav  -  one line, 72px, glass ---------------------------------- */
+/* ---- 1. Hero  -  the drawing makes itself ----------------------------
+   The whole first screen is one generated plan assembling itself. It
+   replaces a static split of headline and picture: the page used to
+   claim the product turned a sentence into a building, and now it shows
+   it. Elevations wait one screen below, because a floor plan is wide and
+   anything sharing its screen comes straight off the drawing. */
+.hero-seq {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+    padding: var(--s4) var(--s4) var(--s5);
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+}
+@media (min-width: 768px) { .hero-seq { padding-inline: var(--s6); } }
+
+.hero-seq-brief {
+    flex: 0 0 auto;
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink);
+    min-height: 1.4em;
+}
+.hero-seq-brief span { color: var(--ink-soft); margin-right: var(--s2); }
+.seq-dark .hero-seq-brief { color: #ffffff; }
+.seq-dark .hero-seq-brief span { color: #8b8b8b; }
+.hero-seq-brief, .hero-seq-brief span { transition: color 1100ms var(--ease); }
+
+.hero-seq-paper {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+}
+/* width/height 100% plus the SVG's own preserveAspectRatio does the
+   fitting. `width: auto` on a viewBox-only SVG does not fill its box -
+   the browser falls back to a default intrinsic size. */
+.hero-seq-paper svg { display: block; width: 100%; height: 100%; }
+
+.hero-seq-cta {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    gap: var(--s2);
+    min-height: 92px;
+}
+.hero-seq-note {
+    font-size: var(--t-meta);
+    color: var(--ink-soft);
+    opacity: 0;
+    transition: opacity 500ms var(--ease);
+}
+.is-settled .hero-seq-note { opacity: 1; }
+.seq-dark .hero-seq-note { color: #8b8b8b; }
+
+/* The one glowing object on the site. It arrives when the drawing is
+   finished, which is the moment the page has earned the click. */
+.cta-glow {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s3);
+    padding: var(--s5) var(--s7);
+    border: 1px solid var(--ember-edge);
+    border-radius: var(--r-control);
+    background: var(--blacktop);
+    color: #FFFFFF;
+    font-family: var(--font-sans);
+    font-size: clamp(1rem, 2vw, 1.3rem);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 500ms var(--ease),
+                transform 500ms var(--ease),
+                box-shadow 300ms var(--ease);
+}
+.cta-glow span { color: var(--ember); }
+.is-settled .cta-glow {
+    opacity: 1;
+    transform: none;
+    animation: cta-breathe 3s ease-in-out infinite;
+}
+.cta-glow:hover {
+    box-shadow:
+        0 0 0 1px var(--ember),
+        0 0 40px -4px rgba(255,122,69,0.85),
+        0 0 120px 14px rgba(255,122,69,0.45),
+        0 0 220px 40px rgba(255,122,69,0.22);
+}
+@keyframes cta-breathe {
+    0%, 100% {
+        box-shadow:
+            0 0 0 1px var(--ember-edge),
+            0 0 32px -6px rgba(255,122,69,0.70),
+            0 0 96px 10px rgba(255,122,69,0.34),
+            0 0 190px 34px rgba(255,122,69,0.16);
+    }
+    50% {
+        box-shadow:
+            0 0 0 1px var(--ember),
+            0 0 44px -2px rgba(255,122,69,0.90),
+            0 0 132px 18px rgba(255,122,69,0.48),
+            0 0 250px 48px rgba(255,122,69,0.26);
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .cta-glow { opacity: 1; transform: none; animation: none; }
+    .hero-seq-note { opacity: 1; }
+}
+
+/* ---- 2. Worked example  -  editorial, full bleed --------------------- */
+.home-example {
+    max-width: 1600px;
+    margin-inline: auto;
+    padding: var(--s8) var(--s4);
+}
+@media (min-width: 768px) { .home-example { padding: var(--s9) var(--s6); } }
+
+.example-head { max-width: 52ch; }
+.home-example h2,
+.home-steps h2,
+.home-access h2 {
+    font-size: clamp(1.75rem, 3.2vw, 2.75rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.98;
+    font-family: var(--font-display);
+    font-size: var(--t-h2);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    margin: 0;
+    text-wrap: balance;
+}
+.example-head p {
+    margin-top: var(--s3);
+    color: var(--ink-soft);
+    font-size: var(--t-body);
+    line-height: 1.6;
+    text-wrap: pretty;
+}
+
+.example-figure {
+    margin: var(--s6) 0 0;
+    border-radius: var(--r-card);
+    overflow: hidden;
+    background: var(--drawing);
+    border: 1px solid var(--rule);
+}
+.example-figure img { display: block; width: 100%; height: auto; }
+.example-figure figcaption {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s4);
+    padding: var(--s4);
+    border-top: 1px solid var(--rule);
+    background: var(--paper);
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
+}
+
+.example-pair {
+    margin-top: var(--s4);
+    display: grid;
+    gap: var(--s4);
+}
+@media (min-width: 768px) { .example-pair { grid-template-columns: 1fr 1fr; } }
+.example-pair img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: var(--r-card);
+    border: 1px solid var(--rule);
+    background: var(--drawing);
+}
+
+/* ---- 3. How it works  -  rows, not cards ---------------------------- */
+.home-steps {
+    max-width: 1600px;
+    margin-inline: auto;
+    padding: 0 var(--s4) var(--s8);
+}
+@media (min-width: 768px) { .home-steps { padding: 0 var(--s6) var(--s9); } }
+
+.step-rows {
+    list-style: none;
+    margin: var(--s6) 0 0;
+    padding: var(--s2) var(--s5);
+    border-radius: var(--r-card);
+}
+.step-rows li {
+    display: grid;
+    gap: var(--s2);
+    padding: var(--s5) 0;
+    border-bottom: 1px solid var(--glass-rim);
+}
+.step-rows li:last-child { border-bottom: 0; }
+@media (min-width: 768px) {
+    .step-rows li {
+        grid-template-columns: minmax(0, 22ch) minmax(0, 1fr);
+        gap: var(--s6);
+        align-items: baseline;
+    }
+}
+.step-verb {
+    font-family: var(--font-display);
+    font-size: var(--t-h3);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+}
+.step-rows p { margin: 0; color: var(--ink-soft); font-size: var(--t-body); line-height: 1.6; }
+
+/* ---- 4. Access  -  two columns -------------------------------------- */
+.home-access {
+    max-width: 1600px;
+    margin-inline: auto;
+    padding: 0 var(--s4) var(--s8);
+}
+@media (min-width: 768px) { .home-access { padding: 0 var(--s6) var(--s9); } }
+
+.access-grid { margin-top: var(--s6); display: grid; gap: var(--s4); }
+@media (min-width: 768px) { .access-grid { grid-template-columns: 1fr 1fr; } }
+
+.access-col {
+    padding: var(--s6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s4);
+    align-items: flex-start;
+}
+.access-price {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--t-h3);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+.access-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s3); }
+.access-col li {
+    position: relative;
+    padding-left: var(--s5);
+    color: var(--ink-soft);
+    font-size: var(--t-ui);
+    line-height: 1.5;
+}
+.access-col li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55em;
+    width: 10px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+}
+.access-note { margin: 0; font-size: var(--t-meta); color: var(--ink-soft); }
+
+/* ---- Studio: what the hero sentence was understood to mean ---------- */
+.brief-reading {
+    margin: var(--s3) var(--s3) 0;
+    padding: var(--s3) var(--s4);
+    border-radius: var(--r-panel);
+    background: var(--accent-soft);
+    border: 1px solid var(--glass-rim);
+}
+.brief-reading p { margin: 0; font-size: var(--t-meta); color: var(--ink); font-weight: 600; }
+.brief-reading ul {
+    list-style: none;
+    margin: var(--s2) 0 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s2);
+}
+.brief-reading li {
+    font-size: var(--t-meta);
+    padding: 2px var(--s2);
+    border-radius: var(--r-pill);
+    background: var(--drawing);
+    border: 1px solid var(--glass-rim);
+    color: var(--ink);
+}
+.brief-reading-note { margin-top: var(--s2) !important; font-weight: 400 !important; color: var(--ink-soft) !important; }
+
+/* ---- Mobile bar ----------------------------------------------------- */
+.mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 56px;
+    background: transparent;
+    border: 0;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: color var(--dur) var(--ease);
+}
+.mobile-nav-btn span {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+.mobile-nav-btn:active { color: var(--ink); }
+
+.mobile-nav-fab {
+    width: 56px;
+    height: 56px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: var(--r-pill);
+    background: var(--accent);
+    color: #FFFFFF;
+    box-shadow: var(--sh-3);
+    cursor: pointer;
+    transition: transform var(--dur) var(--ease), background-color var(--dur) var(--ease);
+}
+.mobile-nav-fab:hover { background: var(--accent-hi); }
+.mobile-nav-fab:active { transform: scale(0.94); }
+
+
+/* ---- Depth, reveal, and the one pointer-tracked highlight ------------
+   Everything here is transform/opacity only and everything is disabled
+   under prefers-reduced-motion. */
+
+/* Cards lift toward the light rather than growing: a scale() on a glass
+   panel resamples its blur every frame and shimmers. */
+.access-col,
+.example-figure,
+.step-rows {
+    transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.access-col:hover {
+    transform: translateY(-3px);
+    box-shadow:
+        inset 0 1px 0 var(--glass-edge),
+        0 4px 10px -3px rgba(var(--ink-rgb),0.08),
+        0 34px 74px -24px rgba(92,58,38,0.30);
+}
+
+/* Scroll reveal. One IntersectionObserver in Home.jsx flips .is-in; the
+   28 Framer reveals this replaces each carried their own observer. */
+/* No entrance reveals.
+   A staggered fade-in on every section is the single loudest "this came
+   from a template" signal, and a printed sheet does not fade in. The
+   [data-reveal] hooks stay in the markup so the decision is reversible,
+   but nothing is armed and nothing animates on scroll. */
+
+@media (prefers-reduced-motion: reduce) {
+}
+
+
+/* ===================================================================
+   CAPABILITIES  -  the one dark block, and the only glow on the site
+   -------------------------------------------------------------------
+   The rest of the page is white paper and 1px rules. That is what makes
+   this work: with nothing else competing, a single block that lights up
+   under the cursor lands far harder than it did when it was one glowing
+   surface among glass panels and a drifting aurora.
+
+   The glow is one masked radial gradient positioned by --mx/--my, which
+   a pointermove handler writes directly to the grid node. No particles,
+   no GSAP, no rAF, no React re-render.
+   =================================================================== */
+.capabilities {
+    background: var(--blacktop);
+    padding-block: var(--s9);
+    margin-block: var(--s9);
+}
+.capabilities-inner {
+    max-width: 1600px;
+    margin-inline: auto;
+    padding-inline: var(--s4);
+}
+@media (min-width: 768px) { .capabilities-inner { padding-inline: var(--s6); } }
+
+.capabilities-eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-on-dark);
+}
+.capabilities h2 {
+    margin-top: var(--s3);
+    font-family: var(--font-display);
+    font-size: var(--t-h1);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.96;
+    color: #FFFFFF;
+    text-transform: none;
+}
+
+.capability-grid {
+    position: relative;
+    margin-top: var(--s7);
+    display: grid;
+    gap: 1px;
+    grid-template-columns: 1fr;
+    /* The 1px gap plus this background IS the hairline between cells, so
+       there are no borders to double up at the edges. */
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.14);
+    --glow: 0;
+}
+@media (min-width: 640px)  { .capability-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1024px) { .capability-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* The lamp. Sits ABOVE the cells, not behind them: the first version put
+   it under the opaque cell faces, so only the 1px gaps lit up and the
+   effect was almost invisible. Screen blending over near-black warms the
+   card faces and the hairlines together, which is what the legacy
+   version actually did. */
+.capability-grid::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    background: radial-gradient(560px circle at var(--mx, 50%) var(--my, 50%),
+        rgba(255, 122, 69, 0.30) 0%,
+        rgba(255, 122, 69, 0.14) 34%,
+        transparent 66%);
+    opacity: var(--glow);
+    transition: opacity 320ms var(--ease);
+    mix-blend-mode: screen;
+}
+
+.capability {
+    position: relative;
+    z-index: 1;
+    background: var(--blacktop);
+    padding: var(--s6) var(--s5) var(--s7);
+    display: grid;
+    gap: var(--s2);
+    align-content: start;
+}
+.capability svg { color: var(--accent-on-dark); margin-bottom: var(--s3); }
+.capability-label {
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent-on-dark);
+}
+.capability h3 {
+    font-family: var(--font-display);
+    font-size: var(--t-h3);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+    color: #FFFFFF;
+    text-transform: none;
+}
+.capability-body {
+    font-size: var(--t-ui);
+    line-height: 1.6;
+    color: #B9B9B4;
+    max-width: 34ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .capability-grid::after { transition: none; }
+}

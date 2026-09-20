@@ -1,0 +1,841 @@
+/* ===================================================================
+   STUDIO  -  dark ethereal glass, drawing first.
+
+   The signature: the drawing is the light source. A lit sheet floating on
+   an ink table, with every panel around it receding into glass. Nothing
+   else in the studio is allowed to glow.
+   =================================================================== */
+
+.studio-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 150;
+    background: rgba(6, 8, 12, 0.72);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    display: grid;
+    place-items: center;
+    padding: var(--s4);
+}
+@media (max-width: 767px) { .studio-modal-overlay { padding: 0; } }
+
+.studio-modal-window {
+    width: min(1600px, 100%);
+    /* dvh, not vh: mobile browser chrome otherwise crops the drawing. */
+    height: min(960px, 100dvh);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--r-card);
+    background: var(--d-base);
+    color: var(--d-text);
+    border: 1px solid var(--d-glass-edge);
+    box-shadow: 0 40px 120px -30px rgba(0, 0, 0, 0.7);
+}
+@media (max-width: 767px) {
+    .studio-modal-window { height: 100dvh; border-radius: 0; border: 0; }
+}
+
+/* Everything inside the studio window resolves tokens in dark mode. */
+.studio-modal-window {
+    --paper: var(--d-base);
+    --paper-deep: var(--d-raise);
+    --ink: var(--d-text);
+    --ink-soft: var(--d-muted);
+    --accent: var(--d-accent);
+    --glass: var(--d-glass);
+    --glass-rim: rgba(255, 255, 255, 0.07);
+    --glass-edge: var(--d-glass-edge);
+    --control-edge: var(--d-control-edge);
+    --blur: var(--d-blur);
+
+    /* The legacy aliases have to be remapped too.
+       tokens.css declares `--blue: var(--accent)` at :root, and a custom
+       property's var() reference is substituted where it is DECLARED, not
+       where it is used. So --blue computed to the light #AD3300 once, at
+       :root, and inherited that literal into the studio no matter what
+       --accent was redefined to here. Studio markup still carries
+       `style={{color:'var(--blue)'}}` in ~40 places; "Primary Bedroom"
+       rendered at 2.05:1 because of it. */
+    --blue: var(--d-accent);
+    --blue-lt: #FF9468;
+    --red: var(--d-accent);
+    --red-dk: #E05F2E;
+    --mid: var(--d-muted);
+    --mist: var(--d-muted);
+    --cream: var(--d-raise);
+    --night: var(--d-base);
+    --border: rgba(255, 255, 255, 0.10);
+    --accent-2: #FF9468;
+    --accent-soft: rgba(255, 122, 69, 0.16);
+    --chip-bg: rgba(255,255,255,0.05);
+    --surface-1: rgba(255,255,255,0.04);
+}
+
+.studio-modal-topbar {
+    flex: 0 0 auto;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-inline: var(--s4);
+    background: var(--d-glass);
+    -webkit-backdrop-filter: var(--d-blur);
+    backdrop-filter: var(--d-blur);
+    border-bottom: 1px solid var(--d-glass-edge);
+    color: var(--d-text);
+}
+.studio-modal-close {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--d-muted);
+    cursor: pointer;
+    transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.studio-modal-close:hover { background: rgba(255, 255, 255, 0.08); color: var(--d-text); }
+
+.studio-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    background: var(--d-base);
+}
+
+/* ---- Canvas  -  the lit sheet -------------------------------------- */
+.canvas-surface {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background:
+        radial-gradient(60% 60% at 50% 45%, rgba(255, 255, 255, 0.045), transparent 70%),
+        #12161E;
+    touch-action: none;
+}
+.canvas-surface.is-blueprint {
+    background:
+        radial-gradient(60% 60% at 50% 45%, rgba(120, 165, 235, 0.10), transparent 70%),
+        #0C1624;
+}
+
+.canvas-grid { position: absolute; inset: 0; pointer-events: none; }
+
+.canvas-transform {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: center center;
+    will-change: transform;
+}
+
+/* The one glow on the page, and it belongs to the drawing. */
+.canvas-sheet {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--drawing);
+    border-radius: 2px;
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.10),
+        0 0 80px -10px rgba(255, 255, 255, 0.22),
+        0 30px 80px -20px rgba(0, 0, 0, 0.8);
+}
+
+.canvas-toolbar {
+    position: absolute;
+    left: 50%;
+    bottom: var(--s4);
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: var(--s1);
+    padding: var(--s1) var(--s2);
+    border-radius: var(--r-pill);
+    background: rgba(18, 22, 30, 0.82);
+    -webkit-backdrop-filter: blur(20px) saturate(1.2);
+    backdrop-filter: blur(20px) saturate(1.2);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.8);
+    user-select: none;
+}
+.canvas-tool {
+    /* 44px. These were 28px with 8px labels, below every touch-target floor. */
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: rgba(242, 239, 233, 0.72);
+    cursor: pointer;
+    transition: background-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.canvas-tool:hover { background: rgba(255, 255, 255, 0.09); color: var(--d-text); }
+.canvas-tool.is-active { background: rgba(120, 165, 235, 0.22); color: #A9C9F5; }
+.canvas-tool-sep {
+    width: 1px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.12);
+    margin-inline: var(--s1);
+}
+.canvas-zoom {
+    min-width: 5ch;
+    text-align: center;
+    font-size: var(--t-meta);
+    font-variant-numeric: tabular-nums;
+    color: var(--d-muted);
+}
+
+/* ---- Status and errors --------------------------------------------- */
+/* Replaces twelve blocking alert() dialogs. Inline, dismissible, and
+   announced, so a failure never costs the user their place. */
+.studio-notices {
+    position: absolute;
+    right: var(--s4);
+    bottom: var(--s4);
+    z-index: 40;
+    display: grid;
+    gap: var(--s2);
+    width: min(380px, calc(100% - var(--s7)));
+}
+.studio-notice {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--s3);
+    align-items: start;
+    padding: var(--s3) var(--s4);
+    border-radius: var(--r-panel);
+    background: rgba(24, 28, 36, 0.94);
+    -webkit-backdrop-filter: var(--d-blur);
+    backdrop-filter: var(--d-blur);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 20px 48px -18px rgba(0, 0, 0, 0.8);
+    color: var(--d-text);
+    font-size: var(--t-ui);
+    line-height: 1.5;
+}
+.studio-notice.is-error { border-left: 3px solid #FF6B57; }
+.studio-notice.is-info { border-left: 3px solid var(--d-accent); }
+.studio-notice p { margin: 0; }
+.studio-notice .studio-notice-detail {
+    margin-top: var(--s2);
+    color: var(--d-muted);
+    font-size: var(--t-meta);
+}
+.studio-notice button {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    border: 0;
+    border-radius: var(--r-pill);
+    background: transparent;
+    color: var(--d-muted);
+    cursor: pointer;
+}
+.studio-notice button:hover { background: rgba(255, 255, 255, 0.08); color: var(--d-text); }
+
+/* An invalid-layout response carries diagnostics worth reading. They used
+   to be discarded into alert('Error: ' + message). */
+.layout-failure {
+    margin: var(--s4);
+    padding: var(--s5);
+    border-radius: var(--r-panel);
+    background: rgba(255, 107, 87, 0.08);
+    border: 1px solid rgba(255, 107, 87, 0.28);
+    color: var(--d-text);
+    max-width: 60ch;
+}
+.layout-failure h4 { margin: 0 0 var(--s2); font-size: var(--t-h3); font-weight: 700; letter-spacing: -0.02em; }
+.layout-failure p { margin: 0; color: var(--d-muted); font-size: var(--t-ui); line-height: 1.6; }
+.layout-failure ul { margin: var(--s3) 0 0; padding-left: var(--s5); color: var(--d-muted); font-size: var(--t-meta); }
+.layout-failure li { margin-top: var(--s1); }
+
+/* ---- Access  -  one surface, at the point of use -------------------- */
+/* Was three inconsistent surfaces: a native alert() with no way to enter a
+   passkey, a black promo panel above the drawing, and inline placeholders. */
+.access-inline {
+    padding: var(--s5);
+    border-radius: var(--r-panel);
+    background: var(--d-glass);
+    border: 1px solid var(--d-glass-edge);
+    display: grid;
+    gap: var(--s3);
+}
+.access-inline h4 { margin: 0; font-size: var(--t-ui); font-weight: 700; }
+.access-inline p { margin: 0; color: var(--d-muted); font-size: var(--t-meta); line-height: 1.6; }
+.access-inline form { display: grid; grid-template-columns: 1fr auto; gap: var(--s2); }
+.access-inline input {
+    min-height: 44px;
+    padding-inline: var(--s3);
+    border-radius: var(--r-control);
+    border: 1px solid var(--d-control-edge);
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--d-text);
+    font-family: var(--font-sans);
+    font-size: var(--t-ui);
+}
+.access-inline input::placeholder { color: var(--d-muted); }
+.access-inline .access-error { color: #FF8F7C; font-size: var(--t-meta); }
+
+/* ---- Workspace layout ----------------------------------------------- */
+.studio-grid { display: grid; gap: var(--s4); align-items: start; }
+
+@media (min-width: 1024px) {
+    .studio-grid {
+        /* Brief beside the drawing; tools below, full width. 300px was too
+           tight for the survey's labels and two-up chip rows, which wrapped
+           into a cramped column. Scales with the window so wide screens give
+           the brief room without ever starving the drawing. */
+        grid-template-columns: minmax(0, clamp(320px, 26vw, 420px)) minmax(0, 1fr);
+    }
+    .studio-grid > .cad-panel-actions { grid-column: 1 / -1; }
+}
+
+@media (max-width: 1023px) {
+    /* Drawing first on small screens. It used to be the third stacked block,
+       behind the brief and the action bar, roughly four screenfuls down. */
+    .studio-grid > .cad-canvas-panel { order: 1; }
+    .studio-grid > .cad-panel-brief   { order: 2; }
+    .studio-grid > .cad-panel-actions { order: 3; }
+
+    /* These were all fixed 82vh / 600px min with no responsive override, so
+       small screens got three stacked 600px scroll boxes. */
+    .studio-grid > .cad-panel-brief,
+    .studio-grid > .cad-panel-actions { height: auto; min-height: 0; max-height: none; }
+    .studio-grid > .cad-canvas-panel  { height: 58dvh; min-height: 340px; }
+}
+
+/* Positioning context for the notice stack. */
+.cad-canvas-panel { position: relative; }
+
+/* ---- Panels in dark glass ------------------------------------------- */
+.studio-modal-window .cad-panel-brief,
+.studio-modal-window .cad-panel-actions {
+    background: var(--d-glass);
+    -webkit-backdrop-filter: var(--d-blur);
+    backdrop-filter: var(--d-blur);
+    border: 1px solid var(--d-glass-edge);
+    border-radius: var(--r-panel);
+    color: var(--d-text);
+}
+.studio-modal-window .cad-panel-brief-header,
+.studio-modal-window .cad-canvas-titleblock {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid var(--d-glass-edge);
+    color: var(--d-text);
+}
+.studio-modal-window .cad-canvas-panel {
+    background: transparent;
+    border: 1px solid var(--d-glass-edge);
+    border-radius: var(--r-panel);
+    overflow: hidden;
+}
+.studio-modal-window .paper-panel {
+    background: var(--d-glass);
+    border-color: var(--d-glass-edge);
+    color: var(--d-text);
+}
+
+/* The studio section used to carry a cream gradient of its own, which is why
+   the panels below the drawing still read as a light page inside a dark one. */
+.studio-section { background: transparent; }
+
+.studio-modal-window .paper-panel,
+.studio-modal-window .cad-metric-chip,
+.studio-modal-window .badge {
+    background: var(--d-glass);
+    border-color: var(--d-glass-edge);
+    color: var(--d-text);
+}
+.studio-modal-window .cad-metric-chip .label { color: var(--d-muted); }
+.studio-modal-window .cad-metric-chip .value { color: var(--d-text); }
+.studio-modal-window .text-mid { color: var(--d-muted); }
+/* components.css sets `input, select, textarea { background: white
+   !important }` on the bare element selector, which beat this rule on
+   specificity alone. The result was --d-text (#F2EFE9) on #FFFFFF: the
+   value you typed into "Total Floor Area" rendered at 1.15:1, i.e.
+   invisible. Matching !important here is the narrowest fix that does not
+   destabilise the light-mode forms that rule exists for. */
+.studio-modal-window input,
+.studio-modal-window select,
+.studio-modal-window textarea {
+    background: rgba(8, 11, 15, 0.55) !important;
+    border: 1.5px solid var(--d-control-edge) !important;
+    color: var(--d-text) !important;
+}
+.studio-modal-window input:hover,
+.studio-modal-window select:hover,
+.studio-modal-window textarea:hover { border-color: #8A95A3 !important; }
+.studio-modal-window input:focus,
+.studio-modal-window select:focus,
+.studio-modal-window textarea:focus {
+    border-color: var(--d-accent) !important;
+    box-shadow: 0 0 0 3px rgba(255,122,69,0.22) !important;
+}
+.studio-modal-window input::placeholder,
+.studio-modal-window textarea::placeholder { color: var(--d-muted) !important; }
+/* Native select arrows and option lists follow the OS, not the page, so
+   force the popup to dark too or it opens as white-on-white. */
+.studio-modal-window select { color-scheme: dark; }
+.studio-modal-window option { background: #151A22; color: var(--d-text); }
+
+/* Tailwind colour utilities in the studio markup resolve to light-mode
+   values. Remap them inside the dark window rather than rewriting every
+   call site; !important is required because several are inline styles. */
+.studio-modal-window .text-ink,
+.studio-modal-window .text-black { color: var(--d-text) !important; }
+.studio-modal-window .text-mid { color: var(--d-muted) !important; }
+.studio-modal-window .text-blue,
+.studio-modal-window .text-red { color: var(--d-accent) !important; }
+.studio-modal-window .text-mid\/60 { color: var(--d-muted) !important; }
+.studio-modal-window .cg { color: var(--d-text); }
+.studio-modal-window .border-blue { border-color: var(--d-accent) !important; }
+
+
+/* The drawing sheet is WHITE, so it keeps light-mode ink even though it sits
+   inside the dark window. Redefining the dark tokens here makes the scoped
+   overrides above resolve to dark ink on the sheet instead of washing it out.
+   Renderer-owned SVG text is never restyled; this only affects the chrome
+   around it. */
+.studio-modal-window .canvas-sheet {
+    --d-text: #14161A;
+    --d-muted: #5C5953;
+    --d-accent: #AD3300;
+    --ink: #14161A;
+    --ink-soft: #5C5953;
+    color: #14161A;
+}
+
+/* Remaining white surfaces inside the dark window. */
+.studio-modal-window .survey-step-pill,
+.studio-modal-window .bg-white\/60 {
+    background: var(--chip-bg) !important;
+    border-color: var(--d-glass-edge) !important;
+    color: var(--d-text) !important;
+}
+.studio-modal-window .border-black\/5 { border-color: var(--d-glass-edge) !important; }
+
+/* Component classes from the light stylesheet, remapped for the dark window.
+   Each of these sets its own colour in components.css, written when the whole
+   studio sat on cream. */
+.studio-modal-window .cad-panel-brief,
+.studio-modal-window .cad-panel-actions,
+.studio-modal-window .paper-panel,
+.studio-modal-window .cad-panel-brief-body,
+.studio-modal-window .badge { color: var(--d-text); }
+
+.studio-modal-window .cta-secondary,
+.studio-modal-window .survey-quick-note,
+.studio-modal-window .elevation-thumb,
+.studio-modal-window .spec-panel,
+.studio-modal-window .refine-msg,
+.studio-modal-window .option-card {
+    background: var(--chip-bg);
+    border-color: var(--d-glass-edge);
+    color: var(--d-text);
+}
+.studio-modal-window .survey-quick-note,
+.studio-modal-window .cad-panel-brief .mono,
+.studio-modal-window .cad-panel-actions .mono { color: var(--d-muted); }
+
+.studio-modal-window .cta-secondary:hover { background: rgba(255, 255, 255, 0.10); }
+
+/* Anything still painting itself white inside the dark window, except the
+   drawing sheet, which is white on purpose. */
+.studio-modal-window *:not(.canvas-sheet):not(.canvas-sheet *) {
+    --paper: var(--d-base);
+    --cream: var(--d-raise);
+}
+
+/* Tailwind surface utilities inside the dark window. */
+.studio-modal-window .bg-white,
+.studio-modal-window .bg-paper,
+.studio-modal-window .bg-cream { background-color: var(--surface-1) !important; }
+
+
+/* ===================================================================
+   STUDIO ACTION BAR
+   -------------------------------------------------------------------
+   Replaces a block that put six equal-weight export pills and a 40-word
+   paragraph above the drawing at every width, in every state. One
+   primary action plus one disclosure, and only once a plan exists.
+   =================================================================== */
+.studio-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--s3);
+    margin-bottom: var(--s4);
+}
+
+.studio-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s2);
+    min-height: 44px;
+    padding: 0 var(--s5);
+    border-radius: var(--r-pill);
+    font-family: var(--font-sans);
+    font-size: var(--t-ui);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color var(--dur) var(--ease),
+                border-color var(--dur) var(--ease),
+                color var(--dur) var(--ease);
+}
+.studio-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.studio-btn-primary {
+    background: var(--d-accent);
+    color: #1A0D06;
+    border: 1px solid var(--d-accent);
+}
+.studio-btn-primary:hover:not(:disabled) { background: #FF8F63; border-color: #FF8F63; }
+
+.studio-btn-quiet {
+    background: transparent;
+    color: var(--d-text);
+    /* A real boundary: this control sits on a dark table, and a borderless
+       button is not discoverable as a control. Gated at 3:1 by
+       scripts/check-contrast.js. */
+    border: 1px solid var(--d-control-edge);
+}
+.studio-btn-quiet:hover:not(:disabled) { border-color: var(--d-text); }
+
+.dl-menu { position: relative; }
+.dl-caret {
+    width: 6px; height: 6px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-2px) rotate(45deg);
+}
+.dl-menu-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 40;
+    min-width: 264px;
+    padding: var(--s2);
+    border-radius: var(--r-panel);
+    background: var(--d-raise);
+    border: 1px solid var(--d-control-edge);
+    box-shadow: 0 24px 60px -16px rgba(0,0,0,0.7);
+    display: grid;
+    gap: 2px;
+}
+.dl-menu-item {
+    display: grid;
+    gap: 1px;
+    text-align: left;
+    width: 100%;
+    min-height: 44px;
+    padding: var(--s2) var(--s3);
+    border-radius: var(--r-control);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: background-color var(--dur) var(--ease);
+}
+.dl-menu-item:hover:not(:disabled) { background: rgba(255,255,255,0.07); }
+.dl-menu-item:disabled { opacity: 0.4; cursor: not-allowed; }
+.dl-menu-label { font-size: var(--t-ui); font-weight: 600; color: var(--d-text); }
+.dl-menu-note  { font-size: var(--t-meta); color: var(--d-muted); }
+
+@media (max-width: 520px) {
+    .studio-actions > * { flex: 1 1 100%; }
+    .dl-menu-list { min-width: 100%; }
+}
+
+
+/* ===================================================================
+   OPTION PICKER + DIALOG
+   -------------------------------------------------------------------
+   Replaces a vertical stack that rendered all three ranked plan SVGs
+   inline below the drawing. Comparing them meant scrolling past three
+   full sheets, and it pushed the plan summary and cost estimate off the
+   bottom of the workspace.
+   =================================================================== */
+.option-picker {
+    margin-top: var(--s4);
+    padding: var(--s5);
+    border-radius: var(--r-card);
+    background: var(--d-glass);
+    -webkit-backdrop-filter: var(--d-blur);
+    backdrop-filter: var(--d-blur);
+    border: 1px solid var(--d-glass-edge);
+}
+.option-picker-head p {
+    margin-top: var(--s2);
+    font-size: var(--t-meta);
+    line-height: 1.6;
+    color: var(--d-muted);
+    max-width: 62ch;
+}
+.option-picker-row {
+    margin-top: var(--s4);
+    display: grid;
+    gap: var(--s3);
+    grid-template-columns: 1fr;
+}
+@media (min-width: 720px) { .option-picker-row { grid-template-columns: repeat(3, 1fr); } }
+
+.option-chip {
+    display: grid;
+    gap: 2px;
+    text-align: left;
+    padding: var(--s4);
+    min-height: 44px;
+    border-radius: var(--r-panel);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--d-control-edge);
+    cursor: pointer;
+    transition: background-color var(--dur) var(--ease),
+                border-color var(--dur) var(--ease),
+                transform var(--dur) var(--ease);
+}
+.option-chip:hover { background: rgba(255,255,255,0.10); border-color: var(--d-text); }
+.option-chip:active { transform: translateY(1px); }
+.option-chip.is-current { border-color: var(--d-accent); }
+.option-chip-n { font-size: var(--t-ui); font-weight: 700; color: var(--d-text); letter-spacing: -0.01em; }
+.option-chip-label { font-size: var(--t-meta); color: var(--d-muted); }
+.option-chip-meta {
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    color: var(--d-muted);
+    font-variant-numeric: tabular-nums;
+}
+.option-chip-current {
+    justify-self: start;
+    margin-top: var(--s2);
+    padding: 2px 8px;
+    border-radius: var(--r-pill);
+    font-size: var(--t-meta);
+    color: var(--d-accent);
+    border: 1px solid var(--d-accent);
+    white-space: nowrap;
+}
+
+.option-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 160;
+    display: grid;
+    place-items: center;
+    padding: var(--s4);
+    background: rgba(6, 8, 11, 0.74);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+.option-dialog {
+    width: min(1100px, 100%);
+    max-height: 92dvh;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--r-card);
+    overflow: hidden;
+    background: var(--d-raise);
+    border: 1px solid var(--d-control-edge);
+    box-shadow: 0 40px 100px -28px rgba(0,0,0,0.75);
+}
+.option-dialog-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s4) var(--s5);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.option-dialog-bar h3 {
+    font-size: var(--t-h3);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--d-text);
+    text-transform: none;
+}
+.option-dialog-bar p { font-size: var(--t-meta); color: var(--d-muted); margin-top: 2px; }
+.option-dialog-actions { display: flex; flex-wrap: wrap; gap: var(--s3); align-items: center; }
+
+/* The sheet is white because a floor plan is a drawing on paper; the
+   surrounding chrome stays dark. */
+.option-dialog-sheet {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding: var(--s5);
+    background: var(--drawing);
+}
+.option-dialog-sheet svg { width: 100%; height: auto; display: block; }
+
+
+/* ---- Tailwind light-surface utilities inside the dark studio ---------
+   The studio markup uses bg-white/40, bg-white/60 and bg-white to raise a
+   panel above the page. Those were written for the light build; in the
+   dark window they produce a near-white card, and every muted or accent
+   label on top of it fell below 4.5:1. Remap them to raised DARK
+   surfaces rather than editing dozens of call sites. */
+/* Matched by prefix, not by enumerating opacities. The first version
+   listed bg-white/80, /70, /60, /50, /40 and /30 - and missed
+   `bg-white/72` on the locked exterior-render panel, which rendered as a
+   light grey card with near-unreadable text in the middle of the dark
+   studio. An attribute match cannot be outrun by a new arbitrary value.
+   The drawing sheet is excluded: a floor plan belongs on white paper. */
+.studio-modal-window [class*="bg-white"]:not(.canvas-sheet):not(.presentation-plan-svg) {
+    /* 0.055 stacked with the panel and glass beneath it landed at about
+       rgb(60,62,64), where --d-muted measures 4.21:1 and the accent
+       4.22:1 - both just under. Lowering the overlay lifts every pair on
+       these panels at once, rather than re-tuning each colour. */
+    background-color: rgba(255, 255, 255, 0.03) !important;
+}
+.studio-modal-window .border-black\/5,
+.studio-modal-window .border-black\/8,
+.studio-modal-window .border-black\/10 {
+    border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+/* --d-muted is tuned against --d-base. On a raised panel it drops toward
+   3:1, so lift it inside those panels only. */
+.studio-modal-window .bg-white,
+.studio-modal-window .bg-white\/60,
+.studio-modal-window .bg-white\/40 {
+    --d-muted: #B8C1CB;
+    --ink-soft: #B8C1CB;
+}
+
+
+/* The five survey step pills are 144px each, so they never fit the brief
+   rail at any width and the row scrolls. It also hides its scrollbar, so
+   nothing indicated there were more steps off to the right - the fifth
+   label just appeared clipped. Fade the trailing edge so the overflow
+   reads as "there is more", and keep a visible focus path for keyboards. */
+.studio-modal-window .survey-step-row {
+    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 28px), transparent 100%);
+    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 28px), transparent 100%);
+    scroll-snap-type: x proximity;
+}
+.studio-modal-window .survey-step-pill { scroll-snap-align: start; }
+/* A masked element clips its own focus ring, so keep the active and
+   focused pills fully opaque by removing the mask while tabbing. */
+.studio-modal-window .survey-step-row:focus-within {
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
+
+/* ===================================================================
+   STUDIO DRAWERS
+   -------------------------------------------------------------------
+   The plan summary, the cost estimate and the four elevations are all
+   things you consult, not things you read past on the way to the
+   exports. Expanded by default they turned the workspace into several
+   screens of vertical scroll with the drawing at the top and everything
+   actionable far below it. Native <details>, so they are keyboard
+   operable and searchable when open without any JavaScript.
+   =================================================================== */
+.studio-drawer {
+    margin-top: var(--s4);
+    border: 1px solid var(--d-control-edge);
+    border-radius: var(--r-card);
+    background: rgba(255, 255, 255, 0.025);
+    overflow: hidden;
+}
+.studio-drawer > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--s2) var(--s4);
+    padding: var(--s4) var(--s6) var(--s4) var(--s5);
+    min-height: 56px;
+    position: relative;
+    font-family: var(--font-sans);
+    font-size: var(--t-ui);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--d-text);
+    transition: background-color var(--dur) var(--ease);
+}
+.studio-drawer > summary::-webkit-details-marker { display: none; }
+.studio-drawer > summary:hover { background: rgba(255,255,255,0.05); }
+.studio-drawer > summary:focus-visible {
+    outline: 2px solid var(--d-accent);
+    outline-offset: -2px;
+}
+.studio-drawer-meta {
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    font-weight: 400;
+    color: var(--d-muted);
+    margin-right: auto;
+}
+/* Chevron drawn from borders: it rotates with the open state and costs
+   no extra request. */
+.studio-drawer > summary::after {
+    content: "";
+    position: absolute;
+    right: var(--s5);
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid var(--d-muted);
+    border-bottom: 2px solid var(--d-muted);
+    transform: translateY(-70%) rotate(45deg);
+    transition: transform var(--dur) var(--ease);
+}
+.studio-drawer[open] > summary::after { transform: translateY(-30%) rotate(-135deg); }
+.studio-drawer[open] > summary { border-bottom: 1px solid rgba(255,255,255,0.10); }
+.studio-drawer-body { padding: var(--s4); }
+.studio-drawer-body > .paper-panel { margin-top: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+    .studio-drawer > summary::after { transition: none; }
+}
+
+/* The elevation preview is a reference, not the main event. Capping it
+   by height keeps the four view buttons and everything below the drawer
+   reachable without a long scroll. */
+.elevation-preview {
+    display: block;
+    margin-inline: auto;
+    max-height: clamp(150px, 26vh, 300px);
+    max-width: 100%;
+    width: auto;
+    height: auto;
+}
+
+
+/* Two controls that resolve their colours from --ink and --paper, both of
+   which the studio flips. `.room-badge.active` became white on a
+   near-white chip (1.15:1) and `.cta-hero` dark ink on a dark panel
+   (1.73:1). Both are primary actions, so they take the studio's accent
+   fill with ink on top - the same treatment as every other primary
+   control in here, and 7.4:1. */
+.studio-modal-window .room-badge.active {
+    background: var(--d-accent) !important;
+    border-color: var(--d-accent) !important;
+    color: #1A0D06 !important;
+}
+.studio-modal-window .cta-hero {
+    background: var(--d-accent) !important;
+    border-color: var(--d-accent) !important;
+    color: #1A0D06 !important;
+}
+.studio-modal-window .cta-secondary {
+    background: transparent !important;
+    border-color: var(--d-control-edge) !important;
+    color: var(--d-text) !important;
+}

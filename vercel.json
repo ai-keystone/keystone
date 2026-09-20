@@ -1,4 +1,9 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
   "rewrites": [
     {
       "source": "/api/plan/presentation",
@@ -54,6 +59,10 @@
     },
     {
       "source": "/roadmap",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/pricing",
       "destination": "/index.html"
     },
     {

@@ -1,0 +1,472 @@
+/* ===================================================================
+   SHARED SITE CHROME  -  nav + footer, used by every route
+   -------------------------------------------------------------------
+   Before Phase 5 the homepage and the six subpages had two entirely
+   different sets of chrome: the homepage used .home-nav (glass, sentence
+   case, three links) while subpages used PageNav (opaque cream bar,
+   uppercase mono, six links, an "Unlock Advanced Features" pill). They
+   read as two different products.
+
+   The footer was shared, but it was styled with the LIGHT tokens
+   (--ink, --ink-soft) on a near-black ground, which the Phase 2 token
+   rename turned into genuine contrast failures:
+       tagline / column headings   2.71:1   (needs 4.5:1)
+       contact email               1.04:1   (needs 4.5:1) - invisible
+   Dark surfaces here use --d-text / --d-muted, which are the tokens
+   actually designed for them. Verified by scripts/check-contrast.js.
+   =================================================================== */
+
+/* ---- Nav ----------------------------------------------------------- */
+.site-nav {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    background: var(--glass);
+    -webkit-backdrop-filter: var(--blur);
+    backdrop-filter: var(--blur);
+    border-bottom: 1px solid var(--glass-rim);
+}
+.site-nav-inner {
+    height: 72px;
+    max-width: 1400px;
+    margin-inline: auto;
+    padding-inline: var(--s4);
+    display: flex;
+    align-items: center;
+    gap: var(--s5);
+}
+@media (min-width: 768px) { .site-nav-inner { padding-inline: var(--s6); } }
+
+.site-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    color: var(--ink);
+    text-decoration: none;
+    margin-right: auto;
+}
+.site-brand img { display: block; }
+/* base.css sets .brand-wordmark to uppercase for the legacy lockup. The
+   new chrome is sentence case, so scope the override to .site-brand
+   rather than changing the base rule other call sites still rely on. */
+.site-brand .brand-wordmark {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-size: 1.05rem;
+    text-transform: none;
+}
+
+.site-nav-links { display: none; gap: var(--s5); }
+@media (min-width: 900px) { .site-nav-links { display: flex; } }
+.site-nav-links a {
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: var(--t-ui);
+    transition: color var(--dur) var(--ease);
+}
+.site-nav-links a:hover { color: var(--ink); }
+/* aria-current marks the page you are on. Colour is not the only
+   signal - the underline carries it for anyone who cannot see hue. */
+.site-nav-links a[aria-current="page"] {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 5px;
+    text-decoration-thickness: 1.5px;
+}
+
+/* ---- Footer -------------------------------------------------------- */
+.site-footer {
+    background: var(--d-base);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding: var(--s8) 0 var(--s6);
+    margin-top: var(--s8);
+}
+.site-footer-inner {
+    max-width: 1400px;
+    margin-inline: auto;
+    padding-inline: var(--s4);
+}
+@media (min-width: 768px) { .site-footer-inner { padding-inline: var(--s6); } }
+
+.site-footer-grid {
+    display: grid;
+    gap: var(--s6);
+    grid-template-columns: 1fr;
+}
+@media (min-width: 640px) { .site-footer-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1000px) { .site-footer-grid { grid-template-columns: 1.4fr 1fr 1fr; } }
+
+.site-footer .site-brand { color: var(--d-text); margin-right: 0; }
+.site-footer-tagline {
+    color: var(--d-muted);
+    font-size: var(--t-ui);
+    line-height: 1.6;
+    margin-top: var(--s3);
+    max-width: 30ch;
+}
+.site-footer-heading {
+    color: var(--d-text);
+    font-size: var(--t-meta);
+    font-weight: 600;
+    margin-bottom: var(--s3);
+}
+.site-footer-links { display: grid; gap: var(--s2); }
+.site-footer-links a,
+.site-footer-contact a {
+    color: var(--d-muted);
+    text-decoration: none;
+    font-size: var(--t-ui);
+    transition: color var(--dur) var(--ease);
+    /* 44px hit target without stretching the visual rhythm. */
+    padding-block: 3px;
+}
+.site-footer-links a:hover,
+.site-footer-contact a:hover { color: var(--d-text); }
+.site-footer-contact a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    word-break: break-word;
+}
+
+.site-footer-base {
+    margin-top: var(--s7);
+    padding-top: var(--s5);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s2);
+    color: var(--d-muted);
+    font-size: var(--t-meta);
+}
+@media (min-width: 768px) {
+    .site-footer-base { flex-direction: row; justify-content: space-between; }
+}
+
+/* ---- Subpage body -------------------------------------------------- */
+.subpage { max-width: 1400px; margin-inline: auto; padding: var(--s8) var(--s4); }
+@media (min-width: 768px) { .subpage { padding-inline: var(--s6); } }
+
+.subpage-head { max-width: 62ch; margin-bottom: var(--s8); }
+.subpage-eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    margin-bottom: var(--s3);
+}
+/* Sentence case at a human size. The old subpage h1 was uppercase at
+   clamp(...5.5rem) - "HOW KEYSTONE TURNS CLIENT INTENT INTO A FIRST
+   WORKING FLOOR PLAN." set four lines tall before any content. */
+.subpage-head h1 {
+    font-family: var(--font-display);
+    font-size: var(--t-h1);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    text-transform: none;
+    color: var(--ink);
+}
+.subpage-head p {
+    margin-top: var(--s4);
+    font-size: var(--t-body);
+    line-height: 1.65;
+    color: var(--ink-soft);
+}
+
+.subpage-section { margin-bottom: var(--s8); }
+.subpage-section > h2 {
+    font-family: var(--font-display);
+    font-size: var(--t-h2);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+    text-transform: none;
+    color: var(--ink);
+    margin-bottom: var(--s5);
+    max-width: 24ch;
+}
+
+.glass-card {
+    background: var(--glass);
+    -webkit-backdrop-filter: var(--blur);
+    backdrop-filter: var(--blur);
+    border: 1px solid var(--glass-rim);
+    border-top-color: var(--glass-edge);
+    border-radius: var(--r-card);
+    box-shadow: var(--sh-2);
+    padding: var(--s5);
+}
+.glass-card h3 {
+    font-size: var(--t-h3);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: var(--s2);
+    text-transform: none;
+}
+.glass-card p { font-size: var(--t-ui); line-height: 1.6; color: var(--ink-soft); }
+
+.card-grid { display: grid; gap: var(--s4); grid-template-columns: 1fr; }
+@media (min-width: 700px) { .card-grid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1100px) { .card-grid-3 { grid-template-columns: repeat(3, 1fr); } }
+
+/* Numbered steps. The number is real information here - these are an
+   ordered pipeline, not decoration. */
+.step-num {
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    color: var(--accent);
+    display: block;
+    margin-bottom: var(--s2);
+}
+
+/* Definition rows: label left, value right, hairline between. Replaces
+   the old boxed 2x2 "fact card" grid. */
+.fact-rows { border-top: 1px solid var(--glass-rim); }
+.fact-row {
+    display: grid;
+    gap: var(--s2);
+    padding: var(--s4) 0;
+    border-bottom: 1px solid var(--glass-rim);
+}
+@media (min-width: 640px) { .fact-row { grid-template-columns: 14rem 1fr; gap: var(--s5); } }
+.fact-row dt { font-weight: 600; color: var(--ink); font-size: var(--t-ui); }
+.fact-row dd { color: var(--ink-soft); font-size: var(--t-ui); line-height: 1.6; }
+
+.subpage-figure {
+    border-radius: var(--r-card);
+    overflow: hidden;
+    border: 1px solid var(--glass-rim);
+    background: var(--surface-1);
+    box-shadow: var(--sh-2);
+    /* Column + margin-top:auto on the caption so captions align across a
+       row whose images have different aspect ratios (1.87 / 1.34 / 1.91). */
+    display: flex;
+    flex-direction: column;
+}
+.subpage-figure img {
+    display: block;
+    width: 100%;
+    /* contain, never cover: these are drawings, and cropping a floor plan
+       to fit a grid cell loses the thing the image is there to show. */
+    aspect-ratio: 16 / 10;
+    object-fit: contain;
+    background: var(--drawing);
+}
+.subpage-figure figcaption {
+    margin-top: auto;
+    padding: var(--s3) var(--s4);
+    font-size: var(--t-meta);
+    line-height: 1.55;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--glass-rim);
+}
+.subpage-figure figcaption strong { color: var(--ink); font-weight: 600; }
+
+.subpage-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s3);
+    align-items: center;
+    margin-top: var(--s6);
+}
+
+/* Buttons are declared in home.css but are now shared chrome. Anchors
+   styled as buttons must lose the default underline. */
+a.btn-primary, a.btn-ghost { text-decoration: none; }
+
+/* Marked lists inside glass cards. base.css strips list styling globally
+   (Tailwind preflight), so restore it where a list is real content. */
+.plain-list { display: grid; gap: var(--s3); }
+.plain-list li {
+    position: relative;
+    padding-left: var(--s5);
+    font-size: var(--t-ui);
+    line-height: 1.6;
+    color: var(--ink-soft);
+}
+.plain-list li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.62em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+
+/* Status. Never colour alone - the pill carries a word, and the planned
+   cards are also visually recessed (dashed rim, no shadow). */
+.subpage-section > h2 { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s3); max-width: none; }
+.status-pill {
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    font-weight: 500;
+    letter-spacing: 0;
+    padding: 3px 10px;
+    border-radius: var(--r-pill);
+    border: 1px solid;
+    white-space: nowrap;
+}
+.status-pill.is-live { color: #1F6B3A; border-color: #1F6B3A; background: rgba(31,107,58,0.07); }
+.status-pill.is-planned { color: var(--ink-soft); border-color: var(--control-edge); background: transparent; }
+
+.glass-card.is-planned {
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--control-edge);
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+/* Tailwind provides .sr-only, but this stylesheet loads before utilities
+   and subpages use it structurally, so declare it here too. */
+.sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+/* ---- FAQ accordion -------------------------------------------------- */
+.faq-list { border-top: 1px solid var(--glass-rim); max-width: 80ch; }
+.faq-item { border-bottom: 1px solid var(--glass-rim); }
+.faq-item summary {
+    cursor: pointer;
+    list-style: none;
+    padding: var(--s4) var(--s6) var(--s4) 0;
+    position: relative;
+    font-size: var(--t-body);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    transition: color var(--dur) var(--ease);
+}
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary:hover { color: var(--accent); }
+/* The chevron is drawn from borders rather than an icon font so it
+   rotates with the open state and needs no extra request. */
+.faq-item summary::after {
+    content: "";
+    position: absolute;
+    right: var(--s3);
+    top: 50%;
+    width: 8px; height: 8px;
+    border-right: 2px solid var(--ink-soft);
+    border-bottom: 2px solid var(--ink-soft);
+    transform: translateY(-70%) rotate(45deg);
+    transition: transform var(--dur) var(--ease);
+}
+.faq-item[open] summary::after { transform: translateY(-30%) rotate(-135deg); }
+.faq-item > p {
+    padding: 0 var(--s6) var(--s5) 0;
+    margin: 0;
+    max-width: 68ch;
+    font-size: var(--t-ui);
+    line-height: 1.65;
+    color: var(--ink-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+    .faq-item summary::after { transition: none; }
+}
+
+/* ---- Legal ---------------------------------------------------------- */
+.legal-body { max-width: 72ch; }
+.legal-body section { margin-bottom: var(--s7); }
+.legal-body h2 {
+    font-family: var(--font-display);
+    font-size: var(--t-h3);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-transform: none;
+    color: var(--ink);
+    margin-bottom: var(--s3);
+}
+.legal-body p {
+    font-size: var(--t-ui);
+    line-height: 1.7;
+    color: var(--ink-soft);
+    margin-bottom: var(--s3);
+}
+.inline-link { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.inline-link:hover { color: var(--accent-hi); }
+
+/* main is focus-targeted by the skip link, so it must not draw an outline
+   when it receives programmatic focus. */
+main[tabindex="-1"]:focus { outline: none; }
+
+
+/* ---- Pricing -------------------------------------------------------- */
+.price-table-wrap { overflow-x: auto; margin-top: var(--s6); }
+.price-table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+}
+.price-table th,
+.price-table td {
+    border-bottom: 1px solid var(--rule);
+    padding: var(--s4) var(--s4);
+    text-align: left;
+    vertical-align: top;
+}
+.price-table thead th { border-bottom-width: 2px; border-bottom-color: var(--ink); }
+.price-table tbody th {
+    font-weight: 500;
+    color: var(--ink);
+    font-size: var(--t-ui);
+    width: 34%;
+}
+.price-table td { color: var(--ink-soft); font-size: var(--t-ui); }
+
+/* The tier that is actually recommended is marked with a rule and a word,
+   not with a lift, a shadow or a scale. */
+.price-table .is-feature { background: var(--paper-deep); }
+.price-table thead .is-feature { box-shadow: inset 0 3px 0 var(--accent); }
+
+.tier-name {
+    display: block;
+    font-family: var(--font-display);
+    font-size: var(--t-h3);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+}
+.tier-price {
+    display: block;
+    margin-top: var(--s2);
+    font-family: var(--font-mono);
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+}
+.tier-note,
+.tier-state {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    color: var(--ink-soft);
+}
+.tier-state { margin-top: var(--s3); letter-spacing: 0.08em; text-transform: uppercase; }
+.tier-state.is-live { color: var(--accent); }
+
+.mark-yes { color: var(--accent); font-size: 0.75em; }
+.mark-no { color: var(--ink-soft); opacity: 0.55; }
+.mark-value { font-family: var(--font-mono); color: var(--ink); }
+
+.price-actions td { padding-top: var(--s5); }
+.price-actions th, .price-actions td { border-bottom: 0; }
+
+.price-footnote {
+    margin-top: var(--s5);
+    max-width: 68ch;
+    font-size: var(--t-meta);
+    line-height: 1.6;
+    color: var(--ink-soft);
+}
