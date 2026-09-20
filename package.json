@@ -6,8 +6,8 @@
     "node": ">=20"
   },
   "scripts": {
-    "prebuild": "node ../scripts/build-frontend.js",
-    "predev": "node ../scripts/build-frontend.js",
+    "prebuild": "node scripts/prebuild.mjs",
+    "predev": "node scripts/prebuild.mjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
