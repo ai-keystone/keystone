@@ -160,12 +160,15 @@
 .cta-secondary {
     background: transparent;
     color: rgba(var(--ink-rgb),0.86);
-    font-family: var(--font-mono);
-    font-size: 0.68rem;
+    /* Was mono, uppercase, 10.9px, 0.18em tracked - the legacy button
+       voice. Every other button on the site is sentence case in the sans
+       at 15px, and this one sits right next to them. */
+    font-family: var(--font-sans);
+    font-size: var(--t-meta);
     font-weight: 500;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    padding: 1rem 1.6rem;
+    letter-spacing: 0;
+    text-transform: none;
+    padding: 0.75rem 1.25rem;
     border: 1px solid rgba(var(--ink-rgb),0.14);
     cursor: pointer;
     transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.15s ease, opacity 0.15s ease;
@@ -458,15 +461,16 @@ input:focus, select:focus, textarea:focus {
     background: rgba(var(--accent-rgb),0.07);
     border: 1px solid rgba(var(--accent-rgb),0.18);
     border-radius: 3px;
-    font-size: 8px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
     transition: all 0.12s;
 }
 .room-badge.active { background: var(--ink); color: white; border-color: var(--ink); }
 
 /* â”€â”€ SPEC PANEL â”€â”€ */
 .spec-panel { background: rgba(var(--accent-rgb),0.05); border-left: 2px solid var(--blue); padding: 9px 13px; }
-.spec-label { font-size: 7px; text-transform: uppercase; letter-spacing: 0.15em; font-weight: 700; opacity: 0.38; }
-.spec-value { font-size: 12px; font-weight: 600; margin-top: 2px; }
+/* 7px, at 0.38 opacity. Legible to nobody. */
+.spec-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; opacity: 0.7; }
+.spec-value { font-size: 13px; font-weight: 600; margin-top: 2px; }
 
 /* â”€â”€ REFINE MSG â”€â”€ */
 .refine-msg { border-left: 2px solid var(--blue); padding: 4px 9px; margin-bottom: 4px; font-size: 10px; opacity: 0.6; }
@@ -512,7 +516,7 @@ input:focus, select:focus, textarea:focus {
     border: 1px solid rgba(var(--ink-rgb),0.1);
     border-radius: 100px;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.22em;
     text-transform: uppercase;
     color: rgba(var(--ink-rgb),0.62);
@@ -542,7 +546,7 @@ input:focus, select:focus, textarea:focus {
     align-items: center;
     gap: 8px;
     font-family: var(--font-mono);
-    font-size: 9px;
+    font-size: 11px;
     letter-spacing: 0.24em;
     text-transform: uppercase;
     color: var(--mist);
@@ -957,18 +961,22 @@ input:focus, select:focus, textarea:focus {
     line-height: 1.5;
     color: rgba(244,239,230,0.58);
 }
+/* Five steps in a 374px panel. As a horizontal scroller the last two
+   sat off the edge behind a fade, so the survey read as three steps and
+   the progress through it was invisible. Wrapped, all five are on screen
+   and "step 4 of 5" is something you can see rather than something the
+   caption has to tell you. */
 .survey-step-row {
-    display: flex;
-    gap: 0.65rem;
-    overflow-x: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+    gap: 0.5rem;
     padding-bottom: 0.25rem;
-    scrollbar-width: none;
 }
 .survey-step-row::-webkit-scrollbar {
     display: none;
 }
 .survey-step-pill {
-    flex: 0 0 144px;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     gap: 0.38rem;
@@ -1137,7 +1145,7 @@ input:focus, select:focus, textarea:focus {
     .unlock-preview-grid { grid-template-columns: 1fr; }
     .gallery-detail-grid { grid-template-columns: 1fr; }
     .service-summary-grid { grid-template-columns: 1fr; }
-    .survey-step-pill { flex-basis: 132px; }
+    .survey-step-pill { min-width: 0; }
 }
 @media (max-width: 1279px) {
     .section-rail { display: none; }
@@ -1171,22 +1179,6 @@ input:focus, select:focus, textarea:focus {
     }
 }
 
-/* â”€â”€ PAGE LOAD VEIL â”€â”€ */
-.page-veil {
-    position: fixed;
-    inset: 0;
-    z-index: 9998;
-    background: var(--ink);
-    pointer-events: none;
-    animation: veilOut 0.72s cubic-bezier(0.22, 1, 0.36, 1) 0.08s both;
-}
-@keyframes veilOut {
-    0%   { opacity: 1; }
-    100% { opacity: 0; visibility: hidden; }
-}
-@media (prefers-reduced-motion: reduce) {
-    .page-veil { animation-duration: 0.01ms !important; }
-}
 
 /* â”€â”€ SCROLL PROGRESS BAR â”€â”€ */
 .scroll-progress-bar {

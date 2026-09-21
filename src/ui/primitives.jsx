@@ -11,7 +11,7 @@ export const DisclosureToggle = ({ expanded, hiddenCount, onToggle, label = 'ite
             onClick={onToggle}
             aria-expanded={expanded}
             {...(ariaControls ? { 'aria-controls': ariaControls } : {})}
-            className="mono text-[10px] uppercase tracking-[0.18em]"
+            className="mono text-[12px] uppercase tracking-[0.18em]"
         >
             {expanded ? 'Show less' : `View all ${label}${hiddenCount ? ` (+${hiddenCount})` : ''}`}
         </button>
@@ -25,7 +25,7 @@ export const ExpandableText = ({ summary, details, defaultExpanded = false }) =>
         <div>
             <p>{bodyText}</p>
             {details && details !== summary && (
-                <button type="button" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded} className="mono text-[10px] uppercase tracking-[0.18em] mt-2">
+                <button type="button" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded} className="mono text-[12px] uppercase tracking-[0.18em] mt-2">
                     {expanded ? 'Show less' : 'View all'}
                 </button>
             )}
@@ -76,7 +76,7 @@ export const BrandLockup = ({
                         {BRAND_DISPLAY_NAME}
                     </span>
                     <div
-                        className="mono text-[8px] uppercase tracking-[0.22em] mt-1"
+                        className="mono text-[11px] uppercase tracking-[0.22em] mt-1"
                         style={{ color: subtitleColor }}
                     >
                         {BRAND_TAGLINE}

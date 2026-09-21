@@ -60,7 +60,12 @@
    it. Elevations wait one screen below, because a floor plan is wide and
    anything sharing its screen comes straight off the drawing. */
 .hero-seq {
-    height: 100dvh;
+    /* Not 100dvh: the sticky nav is in flow above this, so a full
+       viewport here runs 73px past the fold and cuts the note under the
+       button off the bottom edge. Below the md breakpoint the fixed
+       bottom bar takes a second bite, and the note was landing behind
+       it. */
+    height: calc(100dvh - var(--nav-h) - var(--bottom-bar-h, 0px));
     display: flex;
     flex-direction: column;
     gap: var(--s3);
@@ -69,6 +74,10 @@
     border-bottom: 1px solid var(--rule);
 }
 @media (min-width: 768px) { .hero-seq { padding-inline: var(--s6); } }
+/* Matches MobileNavBar's `md:hidden`. 60px bar + its safe-area padding. */
+@media (max-width: 767px) {
+    .hero-seq { --bottom-bar-h: 68px; }
+}
 
 .hero-seq-brief {
     flex: 0 0 auto;
@@ -84,8 +93,17 @@
 .seq-dark .hero-seq-brief span { color: #8b8b8b; }
 .hero-seq-brief, .hero-seq-brief span { transition: color 1100ms var(--ease); }
 
+/* The sheet is sized to the drawing, not to the leftover screen. A plan
+   is wide, so a full-height box letterboxes it and leaves a dead band
+   above and below - which is what pushed the call to action onto the very
+   bottom edge. Giving the box the plan's own proportion (set from the
+   manifest in PlanSequence) removes the band, and the slack collects
+   below the button instead of above it. */
 .hero-seq-paper {
-    flex: 1 1 auto;
+    flex: 0 1 auto;
+    width: 100%;
+    aspect-ratio: var(--plan-ratio, 1.8);
+    max-height: 100%;
     min-height: 0;
     display: grid;
     place-items: center;
@@ -101,6 +119,8 @@
     place-items: center;
     gap: var(--s2);
     min-height: 92px;
+    margin-top: var(--s5);
+    margin-bottom: auto;
 }
 .hero-seq-note {
     font-size: var(--t-meta);
@@ -199,43 +219,72 @@
     text-wrap: pretty;
 }
 
-.example-figure {
-    margin: var(--s6) 0 0;
-    border-radius: var(--r-card);
-    overflow: hidden;
-    background: var(--drawing);
-    border: 1px solid var(--rule);
-}
-.example-figure img { display: block; width: 100%; height: auto; }
-.example-figure figcaption {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--s4);
-    padding: var(--s4);
-    border-top: 1px solid var(--rule);
-    background: var(--paper);
-    font-family: var(--font-mono);
-    font-size: var(--t-meta);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    font-variant-numeric: tabular-nums;
-}
-
+/* Two drawings, each captioned. Unlabelled images ask the reader to work
+   out what they are looking at; a sheet of elevations is not self-evident
+   to anyone who has not seen one before. */
 .example-pair {
-    margin-top: var(--s4);
+    margin-top: var(--s6);
     display: grid;
-    gap: var(--s4);
+    gap: var(--s5);
 }
 @media (min-width: 768px) { .example-pair { grid-template-columns: 1fr 1fr; } }
+.example-pair figure { margin: 0; }
 .example-pair img {
     display: block;
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    height: auto;
     border-radius: var(--r-card);
     border: 1px solid var(--rule);
     background: var(--drawing);
+}
+/* Side by side the two images have different proportions - a sheet of
+   four elevations is 5:4, the render is closer to 3:2 - so at equal
+   widths one ended shorter than the other and the two captions sat on
+   different lines. Both cells take the elevation sheet's proportion.
+   The sheet fits it almost exactly and is never cropped; the render is
+   a photograph, so trimming its edges costs nothing. */
+@media (min-width: 768px) {
+    .example-pair img {
+        aspect-ratio: 5 / 4;
+        object-fit: contain;
+    }
+    .example-pair .is-photo img { object-fit: cover; }
+}
+.example-pair figcaption {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--s3);
+    margin-top: var(--s3);
+}
+.example-label {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--t-ui);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+.example-meta {
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    color: var(--ink-soft);
+}
+
+/* The spec line belongs to both drawings, so it sits under the pair
+   rather than inside either caption. */
+.example-spec {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--s5);
+    margin-top: var(--s5);
+    padding-top: var(--s4);
+    border-top: 1px solid var(--rule);
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    font-variant-numeric: tabular-nums;
 }
 
 /* ---- 3. How it works  -  rows, not cards ---------------------------- */
@@ -362,7 +411,7 @@
     transition: color var(--dur) var(--ease);
 }
 .mobile-nav-btn span {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.02em;
 }
@@ -392,7 +441,6 @@
 /* Cards lift toward the light rather than growing: a scale() on a glass
    panel resamples its blur every frame and shimmers. */
 .access-col,
-.example-figure,
 .step-rows {
     transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }

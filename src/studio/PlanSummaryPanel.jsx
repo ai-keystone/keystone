@@ -13,10 +13,10 @@ export const PlanSummaryPanel = ({ planSpec, openingDiagnostics }) => {
         <div className="paper-panel p-4 md:p-5 mt-4">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
                 <div>
-                    <p className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'var(--accent)'}}>Generated plan summary</p>
+                    <p className="mono text-[11px] uppercase tracking-[0.24em]" style={{color:'var(--accent)'}}>Generated plan summary</p>
                     <p className="text-[13px] leading-relaxed mt-2" style={{color:'var(--ink)'}}>This is the live floor plan output currently available in Keystone today.</p>
                 </div>
-                <div className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'var(--ink-soft)'}}>
+                <div className="mono text-[11px] uppercase tracking-[0.22em]" style={{color:'var(--ink-soft)'}}>
                     Download-ready PNG
                 </div>
             </div>
@@ -37,7 +37,7 @@ export const PlanSummaryPanel = ({ planSpec, openingDiagnostics }) => {
             </div>
             {diag && (
                 <div className="rounded-[14px] border border-black/8 bg-white/70 p-3 mt-4">
-                    <p className="mono text-[8px] uppercase tracking-[0.2em]" style={{color:'var(--ink-soft)'}}>Opening diagnostics</p>
+                    <p className="mono text-[11px] uppercase tracking-[0.2em]" style={{color:'var(--ink-soft)'}}>Opening diagnostics</p>
                     <div className="grid grid-cols-3 gap-2 mt-3">
                         <div className="spec-panel"><div className="spec-label">Openings</div><div className="spec-value">{profileLabel(profiles?.openingProfile)}</div></div>
                         <div className="spec-panel"><div className="spec-label">Indoor/Outdoor</div><div className="spec-value">{profileLabel(profiles?.indoorOutdoorProfile)}</div></div>

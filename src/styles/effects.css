@@ -626,7 +626,7 @@ body.studio-open { overflow: hidden; }
 }
 .cad-metric-chip .label {
     font-family: var(--font-mono);
-    font-size: 8px;
+    font-size: 11px;
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: rgba(var(--ink-rgb),0.44);

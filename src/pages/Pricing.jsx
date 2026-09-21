@@ -18,8 +18,11 @@ import { SubpageChrome } from '../ui/chrome.jsx';
  */
 const TIERS = [
     { key: 'free', name: 'Free', price: '$0', note: 'no account', live: true },
-    { key: 'single', name: 'Single Session', price: '$49', note: 'one project', feature: true },
-    { key: 'pack', name: 'Studio Pack', price: '$1,099', note: 'ten projects' },
+    { key: 'single', name: 'Single Session', price: '$99', note: 'one project', feature: true },
+    /* The pack has to be cheaper per project than buying singles or the
+       ladder reads backwards, so the unit price is stated rather than
+       left for the reader to divide. */
+    { key: 'pack', name: 'Studio Pack', price: '$799', note: 'ten projects', unit: '$79.90 each' },
 ];
 
 const ROWS = [
@@ -87,6 +90,7 @@ export const PricingPage = () => {
                                                 <span className="tier-name">{t.name}</span>
                                                 <span className="tier-price">{t.price}</span>
                                                 <span className="tier-note">{t.note}</span>
+                                                {t.unit && <span className="tier-unit">{t.unit}</span>}
                                                 <span className={'tier-state ' + (t.live ? 'is-live' : 'is-planned')}>
                                                     {t.live ? 'Available now' : 'Planned'}
                                                 </span>
@@ -118,6 +122,41 @@ export const PricingPage = () => {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Below 768px the table has nowhere to go: three tiers
+                            and a label column need about 720px, and scrolling
+                            one into view hides the two it is being compared
+                            against. So the same figures are restated per tier.
+                            Only ever one of the two is in the document - the
+                            other is display:none, which also takes it out of
+                            the accessibility tree - so nothing is announced
+                            twice. */}
+                        <div className="price-stack">
+                            {TIERS.map((t, col) => (
+                                <section className={'price-block' + (t.feature ? ' is-feature' : '')} key={t.key}>
+                                    <h3 className="tier-name">{t.name}</h3>
+                                    <p className="tier-price">{t.price}</p>
+                                    <p className="tier-note">
+                                        {t.note}{t.unit ? ' · ' + t.unit : ''}
+                                    </p>
+                                    <p className={'tier-state ' + (t.live ? 'is-live' : 'is-planned')}>
+                                        {t.live ? 'Available now' : 'Planned'}
+                                    </p>
+                                    <dl className="price-block-rows">
+                                        {ROWS.map(([label, ...cells]) => (
+                                            <div key={label}>
+                                                <dt>{label}</dt>
+                                                <dd><Cell value={cells[col]}/></dd>
+                                            </div>
+                                        ))}
+                                    </dl>
+                                    {t.live
+                                        ? <a href={LIVE_STUDIO_HASH} className="btn-primary">Start a plan</a>
+                                        : <button type="button" className="btn-ghost" onClick={openModal}>Request access</button>}
+                                </section>
+                            ))}
+                        </div>
+
                         <p className="price-footnote">
                             Prices are in US dollars and are not yet charged. During the trial a
                             passkey unlocks every paid feature at no cost.

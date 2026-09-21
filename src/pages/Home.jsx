@@ -52,32 +52,51 @@ export const DreamApp = () => {
                 {/* 1. HERO  -  the product draws itself. */}
                 <PlanSequence onOpenStudio={() => setStudioOpen(true)}/>
 
-                {/* 2. ONE WORKED EXAMPLE  -  editorial full-bleed, different family. */}
+                {/* 2. WHAT ELSE COMES OUT OF THE BRIEF.
+                    The plan used to lead this section as well. Sitting
+                    directly under a hero that spends twelve seconds drawing
+                    one, a second still of the same thing read as a repeat
+                    and taught the visitor nothing they had not just watched.
+                    What they have not seen is the rest of the set, so the
+                    section now starts where the hero stopped. */}
                 <section className="home-example" id="example">
                     <div className="example-head">
-                        <h2>One brief, one house.</h2>
+                        <h2>The plan is one drawing of several.</h2>
                         <p>
-                            Everything below came from a single description. Same house, three ways
-                            of looking at it.
+                            The brief that lays out the rooms also draws every exterior
+                            face of the house, and a view of it built.
                         </p>
                     </div>
-                    <figure className="example-figure">
-                        <img
-                            src={ASSETS.renderedPlan}
-                            alt="Floor plan for a 2,400 square foot house with three bedrooms over two levels, drawn with materials and furniture"
-                            width="2400" height="1013" loading="lazy"
-                        />
-                        <figcaption>
-                            <span className="mono">2,400 sq ft</span>
-                            <span className="mono">3 bed</span>
-                            <span className="mono">3 bath</span>
-                            <span className="mono">2 levels</span>
-                        </figcaption>
-                    </figure>
                     <div className="example-pair">
-                        <img src={ASSETS.renderedElevations} alt="Four elevations of the same house" width="2000" height="1602" loading="lazy"/>
-                        <img src={ASSETS.exampleRender} alt="Exterior render of the same house" width="1400" height="900" loading="lazy"/>
+                        <figure>
+                            <img
+                                src={ASSETS.renderedElevations}
+                                alt="Sheet of four exterior elevations - front, rear, left and right - of a two-storey house"
+                                width="2000" height="1602" loading="lazy"
+                            />
+                            <figcaption>
+                                <span className="example-label">Elevations</span>
+                                <span className="example-meta">Front, rear, left and right</span>
+                            </figcaption>
+                        </figure>
+                        <figure className="is-photo">
+                            <img
+                                src={ASSETS.exampleRender}
+                                alt="Exterior view of the same two-storey house, rendered in brick with a double garage"
+                                width="1400" height="900" loading="lazy"
+                            />
+                            <figcaption>
+                                <span className="example-label">Exterior</span>
+                                <span className="example-meta">Built from the same geometry</span>
+                            </figcaption>
+                        </figure>
                     </div>
+                    <p className="example-spec">
+                        <span>2,400 sq ft</span>
+                        <span>3 bed</span>
+                        <span>3 bath</span>
+                        <span>2 levels</span>
+                    </p>
                 </section>
 
                 <CapabilityGrid/>
@@ -126,8 +145,10 @@ export const DreamApp = () => {
                             <button type="button" className="btn-ghost" onClick={() => setModalOpen(true)}>
                                 Request access
                             </button>
+                            {/* The pricing page publishes the launch figures, so this
+                                can no longer say they are unset. */}
                             <p className="access-note">
-                                Trial access is free while Keystone is in testing. Launch pricing is not set.
+                                Free while Keystone is in testing. <a href="/pricing" className="inline-link">See launch pricing</a>.
                             </p>
                         </div>
                     </div>

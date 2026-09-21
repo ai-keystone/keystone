@@ -55,14 +55,14 @@ export const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, base
                 const label = typeof opt === 'string' ? opt : opt.label;
                 const sel = data[field] === val;
                 return <button key={val} type="button" aria-pressed={sel} onClick={() => upd(field, val)}
-                    className="px-3 py-1.5 border rounded-xs text-[10px] font-semibold transition-all"
+                    className="px-3 py-1.5 border rounded-xs text-[12px] font-semibold transition-all"
                     style={{borderColor: sel?'var(--blue)':'rgba(0,0,0,0.1)', background: sel?'var(--ink)':'white', color: sel?'white':'var(--ink)'}}>
                     {label}
                 </button>;
             })}
         </div>
     );
-    const Lbl = ({children}) => <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1.5">{children}</label>;
+    const Lbl = ({children}) => <label className="mono text-[11px] uppercase tracking-widest text-mid block mb-1.5">{children}</label>;
 
     return (
         <AnimatePresence>
@@ -93,15 +93,15 @@ export const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, base
 
                         <div className="p-6 overflow-y-auto" style={{maxHeight:'85vh', color:'var(--ink)'}}>
                             <span className="badge mb-3 inline-block">3D Render Options</span>
-                            <h2 className="cg text-2xl italic mb-1" style={{color:'var(--ink)'}}>Customize Your Render.</h2>
-                            <p className="text-[11px] mb-3 leading-relaxed" style={{color:'var(--ink)'}}>Your floor-plan survey supplies the starting settings. Change finishes, site context, or lighting for this render. Room layout, openings, and roof shape follow the generated plan and elevations.</p>
-                            <div className="p-3 mb-3 border rounded-xs text-[11px] leading-relaxed" style={{borderColor:'rgba(0,0,0,0.12)'}}>
+                            <h2 className="studio-step-title mb-1" style={{color:'var(--ink)'}}>Customise your render.</h2>
+                            <p className="text-[13px] mb-3 leading-relaxed" style={{color:'var(--ink)'}}>Your floor-plan survey supplies the starting settings. Change finishes, site context, or lighting for this render. Room layout, openings, and roof shape follow the generated plan and elevations.</p>
+                            <div className="p-3 mb-3 border rounded-xs text-[13px] leading-relaxed" style={{borderColor:'rgba(0,0,0,0.12)'}}>
                                 <strong>From your floor-plan survey</strong>
                                 <p>{[baseSurveyData?.materials, baseSurveyData?.stories, baseSurveyData?.bedrooms, baseSurveyData?.bathrooms, baseSurveyData?.garage].filter(Boolean).join(' · ')}</p>
                                 <p>{[baseSurveyData?.frontFacing && `${baseSurveyData.frontFacing} facing`, baseSurveyData?.shape, baseSurveyData?.ceilingHeight, baseSurveyData?.naturalLight, baseSurveyData?.outdoorLiving].filter(Boolean).join(' · ')}</p>
-                                <p className="mt-1 text-[10px]">Site details absent from your survey use suggested defaults.</p>
+                                <p className="mt-1 text-[12px]">Site details absent from your survey use suggested defaults.</p>
                             </div>
-                            <button type="button" className="mb-5 text-[11px] underline" onClick={() => { setOverrides({}); setData(buildRenderSurveyDefaults(baseSurveyData, null, planSpec)); }}>Reset to floor-plan survey</button>
+                            <button type="button" className="mb-5 text-[13px] underline" onClick={() => { setOverrides({}); setData(buildRenderSurveyDefaults(baseSurveyData, null, planSpec)); }}>Reset to floor-plan survey</button>
 
                             <div className="space-y-4">
                                 <div>
@@ -122,7 +122,7 @@ export const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, base
                                     <input aria-label="Project ZIP Code" type="text" placeholder="e.g. 78701" maxLength="10"
                                         value={data.zipCode} onChange={e => upd('zipCode', e.target.value)}
                                         style={{maxWidth:'180px'}}/>
-                                    <p className="text-[9px] mt-1" style={{color:'var(--ink)'}}>Helps set regional context - climate, terrain, neighborhood character</p>
+                                    <p className="text-[12px] mt-1" style={{color:'var(--ink)'}}>Helps set regional context - climate, terrain, neighborhood character</p>
                                 </div>
 
                                 {/* LOT CONTEXT */}
@@ -136,7 +136,7 @@ export const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, base
                                         {val:'View focused site',     label:'View Site'},
                                         {val:'Waterfront lot',        label:'Waterfront'},
                                     ]}/>
-                                    <p className="text-[9px] mt-1" style={{color:'var(--ink)'}}>Survey selection: {baseSurveyData?.lotContext || 'Suburban standard lot'}</p>
+                                    <p className="text-[12px] mt-1" style={{color:'var(--ink)'}}>Survey selection: {baseSurveyData?.lotContext || 'Suburban standard lot'}</p>
                                 </div>
 
                                 {/* CONTEXT DENSITY */}
@@ -229,7 +229,7 @@ export const RenderSurveyModal = ({ isOpen, onClose, onSubmit, initialData, base
                             </div>
 
                             <button onClick={() => onSubmit({ version: 2, overrides })}
-                                className="w-full mt-6 py-3.5 bg-ink text-white mono text-[10px] uppercase tracking-[0.18em] font-bold hover:bg-blue transition-colors rounded-xs">
+                                className="w-full mt-6 py-3.5 bg-ink text-white mono text-[12px] uppercase tracking-[0.18em] font-bold hover:bg-blue transition-colors rounded-xs">
                                 Generate Exterior Render
                             </button>
                         </div>

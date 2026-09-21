@@ -60,6 +60,12 @@
 .site-nav-links { display: none; gap: var(--s5); }
 @media (min-width: 900px) { .site-nav-links { display: flex; } }
 .site-nav-links a {
+    /* Target size: the text box alone measured 23px tall, just under the
+       24px floor in WCAG 2.5.8. The padding is vertical only so the row
+       height and the gaps between links are unchanged. */
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
     color: var(--ink-soft);
     text-decoration: none;
     font-size: var(--t-ui);
@@ -392,7 +398,15 @@ a.btn-primary, a.btn-ghost { text-decoration: none; }
     color: var(--ink-soft);
     margin-bottom: var(--s3);
 }
-.inline-link { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+/* inline-block + min-height so the target clears the 24px floor in
+   WCAG 2.5.8; inline links measured 19px tall. */
+.inline-link {
+    display: inline-block;
+    min-height: 24px;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
 .inline-link:hover { color: var(--accent-hi); }
 
 /* main is focus-targeted by the skip link, so it must not draw an outline
@@ -447,12 +461,17 @@ main[tabindex="-1"]:focus { outline: none; }
     color: var(--ink);
 }
 .tier-note,
+.tier-unit,
 .tier-state {
     display: block;
     font-family: var(--font-mono);
     font-size: var(--t-meta);
     color: var(--ink-soft);
 }
+/* The unit price is the one number that makes the ladder legible, so it
+   sits with the note rather than in a footnote nobody reads. */
+.tier-unit { color: var(--ink); }
+
 .tier-state { margin-top: var(--s3); letter-spacing: 0.08em; text-transform: uppercase; }
 .tier-state.is-live { color: var(--accent); }
 
@@ -463,10 +482,229 @@ main[tabindex="-1"]:focus { outline: none; }
 .price-actions td { padding-top: var(--s5); }
 .price-actions th, .price-actions td { border-bottom: 0; }
 
+/* ---- Pricing, narrow ------------------------------------------------
+   The table and the stack are the same figures in two shapes. Exactly
+   one is ever displayed, which keeps both the reading order and the
+   accessibility tree single. */
+.price-stack { display: none; }
+
+@media (max-width: 767px) {
+    .price-table-wrap { display: none; }
+    .price-stack {
+        display: grid;
+        gap: var(--s6);
+        margin-top: var(--s6);
+    }
+    .price-block {
+        border-top: 2px solid var(--ink);
+        padding-top: var(--s4);
+    }
+    /* The recommended tier is marked the way it is in the table: a rule
+       in the accent and a recessed ground. No lift, no shadow. */
+    .price-block.is-feature {
+        border-top-color: var(--accent);
+        background: var(--paper-deep);
+        margin-inline: calc(var(--s4) * -1);
+        padding-inline: var(--s4);
+        padding-bottom: var(--s4);
+    }
+    .price-block .tier-name { margin: 0; }
+    .price-block .tier-price { margin: var(--s2) 0 0; }
+    .price-block .tier-note { margin: var(--s1) 0 0; }
+    .price-block .tier-state { margin-top: var(--s3); }
+
+    .price-block-rows {
+        margin: var(--s5) 0;
+        font-size: var(--t-ui);
+    }
+    .price-block-rows > div {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--s4);
+        padding: var(--s3) 0;
+        border-bottom: 1px solid var(--rule);
+    }
+    .price-block-rows dt { color: var(--ink); }
+    .price-block-rows dd {
+        margin: 0;
+        color: var(--ink-soft);
+        text-align: right;
+        white-space: nowrap;
+    }
+    .price-block > .btn-primary,
+    .price-block > .btn-ghost { width: 100%; }
+}
+
 .price-footnote {
     margin-top: var(--s5);
     max-width: 68ch;
     font-size: var(--t-meta);
     line-height: 1.6;
+    color: var(--ink-soft);
+}
+
+/* ===================================================================
+   ACCESS REQUEST DIALOG
+   -------------------------------------------------------------------
+   This screen was the last un-migrated surface on the site: uppercase
+   display type, a "Unlock Advanced Features" badge, and four field
+   labels set at 7px with no association to the inputs beneath them. It
+   is rebuilt here on the same tokens as everything else, so the type
+   scale, the rules and the controls are the ones used on every other
+   page rather than a second system that only appears in a dialog.
+   =================================================================== */
+.join-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 700;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+    background: rgba(10, 10, 12, 0.72);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+@media (min-width: 768px) {
+    .join-scrim { align-items: center; padding: var(--s6); }
+}
+
+.join-panel {
+    position: relative;
+    width: 100%;
+    max-width: 30rem;
+    max-height: 92dvh;
+    overflow-y: auto;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-top: 2px solid var(--accent);
+    border-radius: var(--r-card) var(--r-card) 0 0;
+    box-shadow: 0 40px 90px -30px rgba(10, 10, 12, 0.55);
+}
+@media (min-width: 768px) {
+    .join-panel { border-radius: var(--r-card); }
+}
+
+.join-close {
+    position: absolute;
+    top: var(--s4);
+    right: var(--s4);
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--rule);
+    border-radius: 50%;
+    background: var(--paper);
+    color: var(--ink);
+    cursor: pointer;
+    transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.join-close:hover { border-color: var(--ink); }
+.join-close:active { transform: translateY(1px); }
+
+.join-body { padding: var(--s6) var(--s5) var(--s5); }
+@media (min-width: 768px) { .join-body { padding: var(--s7) var(--s6) var(--s6); } }
+
+.join-eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+}
+.join-panel h2 {
+    margin: var(--s2) 0 0;
+    padding-right: var(--s7);
+    font-family: var(--font-display);
+    font-size: var(--t-h3);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+    color: var(--ink);
+}
+.join-intro {
+    margin: var(--s3) 0 0;
+    font-size: var(--t-ui);
+    line-height: 1.6;
+    color: var(--ink-soft);
+    text-wrap: pretty;
+}
+
+.join-form { margin-top: var(--s5); display: grid; gap: var(--s4); }
+.join-row { display: grid; gap: var(--s4); }
+@media (min-width: 480px) { .join-row { grid-template-columns: 1fr 1fr; } }
+
+.join-field { display: grid; gap: var(--s1); }
+.join-field label {
+    font-size: var(--t-meta);
+    font-weight: 500;
+    color: var(--ink);
+}
+.join-optional {
+    margin-left: var(--s1);
+    font-family: var(--font-mono);
+    font-weight: 400;
+    color: var(--ink-soft);
+}
+.join-field input,
+.join-field textarea {
+    width: 100%;
+    padding: var(--s3) var(--s4);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    color: var(--ink);
+    background: var(--drawing);
+    /* A control boundary, not a structural hairline: WCAG 1.4.11 wants
+       3:1, which --rule does not make. */
+    border: 1px solid var(--ink-soft);
+    border-radius: var(--r-control);
+}
+.join-field textarea { resize: vertical; min-height: 68px; }
+.join-field input::placeholder,
+.join-field textarea::placeholder { color: var(--ink-soft); opacity: 0.75; }
+
+.join-error {
+    margin: 0;
+    font-size: var(--t-meta);
+    color: var(--accent);
+}
+.join-submit { width: 100%; justify-content: center; }
+.join-fineprint {
+    margin: 0;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: var(--t-meta);
+    color: var(--ink-soft);
+}
+.join-dismiss {
+    width: 100%;
+    min-height: 44px;
+    background: none;
+    border: 0;
+    font-family: var(--font-sans);
+    font-size: var(--t-ui);
+    color: var(--ink-soft);
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    cursor: pointer;
+    transition: color var(--dur) var(--ease);
+}
+.join-dismiss:hover { color: var(--ink); }
+
+.join-done { margin-top: var(--s5); }
+.join-done-head {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: var(--t-h3);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+}
+.join-done p:last-child {
+    margin: var(--s2) 0 0;
+    font-size: var(--t-ui);
     color: var(--ink-soft);
 }

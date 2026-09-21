@@ -29,8 +29,11 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
             // 3.70:1. A filled accent chip with near-black type is 7.4:1 and
             // reads as chosen at a glance.
             return {
-                borderColor: 'var(--d-accent)',
-                background: 'var(--d-accent)',
+                // --d-accent-fill, not --d-accent: the latter is lightened
+                // so the accent clears 4.5:1 as TEXT, which a fill does not
+                // need. This is the same ember as the hero's button.
+                borderColor: 'var(--d-accent-fill)',
+                background: 'var(--d-accent-fill)',
                 color: '#1A0D06',
                 fontWeight: 700,
                 boxShadow: '0 6px 18px -6px rgba(255,122,69,0.55)',
@@ -45,15 +48,17 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
             boxShadow: 'none',
         };
     };
-    const actionStyle = (tone = 'blue') => ({
-        borderColor: tone === 'blue' ? 'var(--accent)' : 'var(--ink)',
-        background: tone === 'blue'
-            ? 'linear-gradient(180deg, var(--accent) 0%, rgba(20,61,100,1) 100%)'
-            : 'linear-gradient(180deg, rgba(24,24,24,1) 0%, var(--ink) 100%)',
-        color: 'rgba(255,252,248,0.98)',
-        boxShadow: tone === 'blue'
-            ? '0 14px 30px var(--accent)'
-            : '0 14px 30px var(--ink-soft)',
+    /* Both of these were near-white text on a gradient. The 'ink' tone ran
+       to var(--ink), which the studio remaps to near-white, so "Generate
+       floor plan" was pale type on a silver gradient - and a gradient is
+       invisible to a contrast check that reads backgroundColor. Continue
+       and Generate never appear together, so both are simply the primary
+       control: the ember fill with near-black on it, 7.36:1, the same
+       treatment as every other primary action in here. */
+    const actionStyle = () => ({
+        borderColor: 'var(--d-accent-fill)',
+        background: 'var(--d-accent-fill)',
+        color: '#1A0D06',
     });
 
     const BtnGrid = ({ field, options, cols=2 }) => (
@@ -67,8 +72,8 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                     <button key={val} type="button" aria-pressed={sel} onClick={() => upd(field, val)}
                         className="py-3 px-3 border text-left rounded-xs transition-all"
                         style={choiceStyle(sel)}>
-                        <div className="text-[11px] font-semibold leading-tight">{label}</div>
-                        {desc && <div className="text-[9px] mt-0.5 leading-tight" style={{opacity: sel ? 0.74 : 0.42}}>{desc}</div>}
+                        <div className="text-[13px] font-semibold leading-tight">{label}</div>
+                        {desc && <div className="text-[12px] mt-0.5 leading-tight" style={{opacity: sel ? 0.74 : 0.42}}>{desc}</div>}
                     </button>
                 );
             })}
@@ -92,16 +97,16 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
         };
         return (
             <button type="button" aria-pressed={selected} onClick={toggle}
-                className="flex items-center gap-1.5 px-3 py-2 border rounded-xs transition-all text-[10px] font-semibold"
+                className="flex items-center gap-1.5 px-3 py-2 border rounded-xs transition-all text-[12px] font-semibold"
                 style={choiceStyle(selected)}>
-                {icon ? <span className="mono text-[9px] uppercase tracking-[0.18em]" style={{opacity:selected ? 0.76 : 0.6}}>{icon}</span> : null}
+                {icon ? <span className="mono text-[12px] uppercase tracking-[0.18em]" style={{opacity:selected ? 0.76 : 0.6}}>{icon}</span> : null}
                 {label}
                 {selected && <CheckIcon className="w-3 h-3" style={{opacity:0.82}}/>}
             </button>
         );
     };
 
-    const Lbl = ({children}) => <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1.5">{children}</label>;
+    const Lbl = ({children}) => <label className="mono text-[11px] uppercase tracking-widest text-mid block mb-1.5">{children}</label>;
 
     // Footprint shape visual options
     const FootprintOption = ({ val, label, desc, ratio }) => {
@@ -120,8 +125,8 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                         borderRadius: '2px',
                     }}/>
                 </div>
-                <div className="text-[10px] font-semibold leading-tight text-center">{label}</div>
-                <div className={`text-[8px] leading-tight text-center ${sel?'opacity-50':'opacity-40'}`}>{desc}</div>
+                <div className="text-[12px] font-semibold leading-tight text-center">{label}</div>
+                <div className={`text-[11px] leading-tight text-center ${sel?'opacity-50':'opacity-40'}`}>{desc}</div>
             </button>
         );
     };
@@ -136,7 +141,7 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                 <svg viewBox="0 0 60 40" width="60" height="40" style={{display:'block'}}>
                     {svgContent}
                 </svg>
-                <div className="text-[9px] font-semibold leading-tight text-center" style={{color: sel ? 'var(--blue)' : 'var(--ink)'}}>{label}</div>
+                <div className="text-[12px] font-semibold leading-tight text-center" style={{color: sel ? 'var(--blue)' : 'var(--ink)'}}>{label}</div>
             </button>
         );
     };
@@ -144,7 +149,7 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
     const renderField = (field) => {
         const bedCount = parseInt(formData.bedrooms) || 3;
         switch(field) {
-            case 'totalArea': return <div key={field} className="space-y-1.5"><Lbl>Total Floor Area (Sq Ft)</Lbl><input type="number" placeholder="e.g. 2400" value={formData.totalArea} onChange={e=>upd('totalArea',e.target.value)} min="600" max="10000"/><p className="text-[9px] text-mid/60">Total finished sq ft across all levels</p></div>;
+            case 'totalArea': return <div key={field} className="space-y-1.5"><Lbl>Total Floor Area (Sq Ft)</Lbl><input type="number" placeholder="e.g. 2400" value={formData.totalArea} onChange={e=>upd('totalArea',e.target.value)} min="600" max="10000"/><p className="text-[12px] text-mid/60">Total finished sq ft across all levels</p></div>;
             case 'stories': return <div key={field} className="space-y-1.5"><Lbl>Number of Stories</Lbl><BtnGrid field="stories" options={['1 Story','2 Stories']}/></div>;
             case 'bedrooms': return (
                 <div key={field} className="space-y-1.5">
@@ -156,7 +161,7 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                 <div key={field} className="space-y-1.5">
                     <Lbl>Full Bathrooms</Lbl>
                     <div className="flex gap-2">{[1,2,3,4,5].map(n=>{ const selected = formData.bathrooms===`${n} Bath`; return <button key={n} type="button" aria-pressed={selected} onClick={()=>upd('bathrooms',`${n} Bath`)} className="flex-1 h-11 border text-sm font-bold rounded-xs transition-all" style={choiceStyle(selected)}>{n}</button>; })}</div>
-                    <p className="text-[9px] text-mid/60">Half baths added automatically</p>
+                    <p className="text-[12px] text-mid/60">Half baths added automatically</p>
                 </div>
             );
             case 'privateBaths': {
@@ -183,34 +188,34 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                 return (
                     <div key={field} className="space-y-3 p-3 bg-blue/4 border border-blue/15 rounded-xs">
                         <Lbl>Bedroom Configuration</Lbl>
-                        <p className="text-[10px] text-mid mb-1">Set private bathroom and closet type for each bedroom.</p>
+                        <p className="text-[12px] text-mid mb-1">Set private bathroom and closet type for each bedroom.</p>
                         {bedLabels.map((label, idx) => {
                             const cfg = (formData.bedroomConfigs || configs)[idx] || { privateBath: idx === 0 ? 'Yes' : 'No', closet: idx === 0 ? 'Walk-in' : 'Standard' };
                             return (
                                 <div key={idx} className="p-2.5 bg-white/60 border border-black/5 rounded-xs space-y-2">
-                                    <div className="text-[10px] font-bold uppercase tracking-wider" style={{color:'var(--blue)'}}>{label}</div>
+                                    <div className="text-[12px] font-bold uppercase tracking-wider" style={{color:'var(--blue)'}}>{label}</div>
                                     <div className="flex gap-3 items-center">
-                                        <span className="text-[9px] font-medium text-mid w-16 shrink-0">En-Suite</span>
+                                        <span className="text-[12px] font-medium text-mid w-16 shrink-0">En-Suite</span>
                                         <div className="flex gap-1.5 flex-1">
                                             {['Yes', 'No'].map(v => {
                                                 const sel = cfg.privateBath === v;
-                                                return <button key={v} type="button" aria-pressed={sel} onClick={() => { ensureConfigs(); updateConfig(idx, 'privateBath', v); }} className="flex-1 h-8 border text-[10px] font-bold rounded-xs" style={choiceStyle(sel, 'blue')}>{v}</button>;
+                                                return <button key={v} type="button" aria-pressed={sel} onClick={() => { ensureConfigs(); updateConfig(idx, 'privateBath', v); }} className="flex-1 h-8 border text-[12px] font-bold rounded-xs" style={choiceStyle(sel, 'blue')}>{v}</button>;
                                             })}
                                         </div>
                                     </div>
                                     <div className="flex gap-3 items-center">
-                                        <span className="text-[9px] font-medium text-mid w-16 shrink-0">Closet</span>
+                                        <span className="text-[12px] font-medium text-mid w-16 shrink-0">Closet</span>
                                         <div className="flex gap-1.5 flex-1">
                                             {['Walk-in', 'Standard'].map(v => {
                                                 const sel = cfg.closet === v;
-                                                return <button key={v} type="button" aria-pressed={sel} onClick={() => { ensureConfigs(); updateConfig(idx, 'closet', v); }} className="flex-1 h-8 border text-[10px] font-bold rounded-xs" style={choiceStyle(sel, 'blue')}>{v}</button>;
+                                                return <button key={v} type="button" aria-pressed={sel} onClick={() => { ensureConfigs(); updateConfig(idx, 'closet', v); }} className="flex-1 h-8 border text-[12px] font-bold rounded-xs" style={choiceStyle(sel, 'blue')}>{v}</button>;
                                             })}
                                         </div>
                                     </div>
                                 </div>
                             );
                         })}
-                        <p className="text-[9px] text-mid/50">Primary bedroom always gets an en-suite. Remaining baths are shared.</p>
+                        <p className="text-[12px] text-mid/50">Primary bedroom always gets an en-suite. Remaining baths are shared.</p>
                     </div>
                 );
             }
@@ -277,7 +282,7 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                             })}
                         </div>
                     </div>
-                    <p className="mono text-[7px] text-mid/50 text-center">South = most winter sun - East = morning light</p>
+                    <p className="mono text-[11px] text-mid/50 text-center">South = most winter sun - East = morning light</p>
                 </div>
             );
             case 'lotContext': return (
@@ -362,10 +367,10 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                         {val:'Mediterranean (Stucco & Tile)',     label:'Mediterranean',          desc:'Stucco exterior, terracotta tiles, arched details'},
                     ]}/>
                     <details className="p-3 border border-black/10 rounded-xs bg-white/80">
-                        <summary className="cursor-pointer select-none text-[10px] font-semibold uppercase tracking-[0.14em]" style={{color:'var(--blue)'}}>
+                        <summary className="cursor-pointer select-none text-[12px] font-semibold uppercase tracking-[0.14em]" style={{color:'var(--blue)'}}>
                             Customize Finishes (optional)
                         </summary>
-                        <p className="text-[9px] text-mid/65 mt-2 mb-2">
+                        <p className="text-[12px] text-mid/65 mt-2 mb-2">
                             Defaults come from the selected style. You can override only what you want.
                         </p>
                         <div className="grid md:grid-cols-2 gap-2.5">
@@ -414,7 +419,7 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
             case 'features': return (
                 <div key={field} className="space-y-2">
                     <Lbl>Special Rooms</Lbl>
-                    <p className="text-[9px] text-mid/60 mb-2">Tap to add special rooms to your plan. Default: none.</p>
+                    <p className="text-[12px] text-mid/60 mb-2">Tap to add special rooms to your plan. Default: none.</p>
                     <div className="flex flex-wrap gap-2">
                         {[
                             {label:'Study'},
@@ -431,9 +436,9 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                     </div>
                     {(formData.features||'').trim() && (
                         <div className="mt-1 p-2 bg-blue/5 border border-blue/15 rounded-xs">
-                            <span className="mono text-[7px] uppercase text-blue">Selected: </span>
-                            <span className="text-[9px] text-ink">{formData.features}</span>
-                            <button onClick={() => upd('features', '')} className="ml-2 text-[9px] text-red/60 hover:text-red">clear</button>
+                            <span className="mono text-[11px] uppercase text-blue">Selected: </span>
+                            <span className="text-[12px] text-ink">{formData.features}</span>
+                            <button onClick={() => upd('features', '')} className="ml-2 text-[12px] text-red/60 hover:text-red">clear</button>
                         </div>
                     )}
                 </div>
@@ -474,7 +479,7 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                     <div key={field} className="space-y-1.5">
                         <div className="flex items-center justify-between">
                             <Lbl>Outdoor Area (sq ft)</Lbl>
-                            <span className="mono text-[9px] text-mid">{outdoorArea} sqft</span>
+                            <span className="mono text-[12px] text-mid">{outdoorArea} sqft</span>
                         </div>
                         <input
                             type="range"
@@ -515,12 +520,12 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
             </div>
             <div className="flex items-start justify-between gap-3 mb-4">
                 <div>
-                    <span className="mono text-[7px] uppercase tracking-widest text-mid">Step {step+1} of {SURVEY_STEPS.length}</span>
-                    <h3 className="cg text-2xl italic mt-0.5">{cur.title}</h3>
-                    <p className="text-[11px] mt-1" style={{color:'var(--ink)'}}>{cur.subtitle}</p>
+                    <span className="mono text-[11px] uppercase tracking-widest text-mid">Step {step+1} of {SURVEY_STEPS.length}</span>
+                    <h3 className="studio-step-title">{cur.title}</h3>
+                    <p className="text-[13px] mt-1" style={{color:'var(--ink)'}}>{cur.subtitle}</p>
                 </div>
-                <button type="button" onClick={handleReset} className="cta-secondary px-4 py-3 text-[9px]">
-                    Reset Sample
+                <button type="button" onClick={handleReset} className="cta-secondary px-4 py-3 text-[12px]">
+                    Reset sample
                 </button>
             </div>
             <div className="survey-step-row mb-5" aria-label="Survey steps">
@@ -532,7 +537,7 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                         className={`survey-step-pill ${i === step ? 'active' : ''}`}
                         aria-current={i === step ? 'step' : undefined}
                     >
-                        <span className="mono text-[8px] uppercase tracking-[0.22em] opacity-55">0{i + 1}</span>
+                        <span className="mono text-[11px] uppercase tracking-[0.22em] opacity-55">0{i + 1}</span>
                         <span>{item.title}</span>
                     </button>
                 ))}
@@ -544,11 +549,11 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                 {cur.fields.map(f => renderField(f))}
             </div>
             <div className="flex gap-2.5 mt-5">
-                {step > 0 && <button type="button" onClick={() => setStep(s=>s-1)} className="px-5 py-3 border border-black/10 text-[11px] font-semibold hover:border-ink transition-colors rounded-xs">Back</button>}
+                {step > 0 && <button type="button" onClick={() => setStep(s=>s-1)} className="px-5 py-3 border border-black/10 text-[13px] font-semibold hover:border-ink transition-colors rounded-xs">Back</button>}
                 {!isLast
-                    ? <button type="button" onClick={() => setStep(s=>s+1)} className="flex-1 py-3 text-[11px] font-bold uppercase tracking-wider transition-colors rounded-xs border" style={actionStyle('blue')}>Continue</button>
-                    : <button type="button" onClick={onSubmit} disabled={isLoading} className="flex-1 py-3 text-[11px] font-bold uppercase tracking-wider transition-colors disabled:opacity-50 rounded-xs border" style={actionStyle('ink')}>
-                        {isLoading ? 'Generating...' : 'Generate Floor Plan'}
+                    ? <button type="button" onClick={() => setStep(s=>s+1)} className="flex-1 py-3 text-[13px] font-bold transition-colors rounded-xs border" style={actionStyle()}>Continue</button>
+                    : <button type="button" onClick={onSubmit} disabled={isLoading} className="flex-1 py-3 text-[13px] font-bold transition-colors disabled:opacity-50 rounded-xs border" style={actionStyle()}>
+                        {isLoading ? 'Generating' : 'Generate floor plan'}
                       </button>
                 }
             </div>

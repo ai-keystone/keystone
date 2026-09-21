@@ -35,11 +35,11 @@ export const ElevationsPanel = ({ elevations, formData, onOpenPreview }) => {
             <div className="p-4 border-b border-black/5 bg-white/40 flex items-start justify-between gap-3">
                 <div>
                     <span className="section-label">Elevations</span>
-                    <p className="text-[11px] leading-relaxed mt-2" style={{color:'var(--ink)'}}>
+                    <p className="text-[13px] leading-relaxed mt-2" style={{color:'var(--ink)'}}>
                         Deterministic facade views derived from the plan geometry, vertical model, and survey style.
                     </p>
                 </div>
-                <div className="mono text-[8px] uppercase tracking-[0.22em] text-right" style={{color:'var(--ink-soft)'}}>
+                <div className="mono text-[11px] uppercase tracking-[0.22em] text-right" style={{color:'var(--ink-soft)'}}>
                     {styleLabel}<br/>
                     {roofKind}
                 </div>
@@ -58,7 +58,7 @@ export const ElevationsPanel = ({ elevations, formData, onOpenPreview }) => {
                             onClick={() => onOpenPreview && onOpenPreview(activeSrc)}
                         />
                     ) : (
-                        <div className="p-8 text-center text-mid text-[11px]">Elevation preview unavailable.</div>
+                        <div className="p-8 text-center text-mid text-[13px]">Elevation preview unavailable.</div>
                     )}
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-3">
@@ -72,15 +72,22 @@ export const ElevationsPanel = ({ elevations, formData, onOpenPreview }) => {
                                 onClick={() => setActiveKey(view.key)}
                                 className="px-3 py-2.5 border rounded-[12px] text-left transition-all"
                                 style={{
-                                    borderColor: selected ? 'var(--accent)' : 'var(--ink-soft)',
-                                    background: selected ? 'var(--accent)' : 'rgba(255,255,255,0.9)',
+                                    borderColor: selected ? 'var(--d-accent-fill)' : 'var(--d-control-edge)',
+                                    /* The unselected state used to fill
+                                       rgba(255,255,255,0.9) - a near-white card in
+                                       the middle of the dark studio - while its text
+                                       kept var(--ink), which the studio remaps to
+                                       near-white. That is 1.04:1: four captions that
+                                       were not merely low contrast but invisible.
+                                       Unselected now matches every other unchosen
+                                       control in here. */
+                                    background: selected ? 'var(--d-accent-fill)' : 'rgba(255,255,255,0.05)',
                                 }}
                             >
-                                {/* Selected fills with the accent, so its text has
-                                    to flip to ink. Leaving it light gave
-                                    2.25:1 on the orange. */}
-                                <div className="mono text-[8px] uppercase tracking-[0.18em]" style={{color:selected?'#1A0D06':'var(--ink-soft)'}}>{view.label} view</div>
-                                <div className="text-[11px] mt-1" style={{color:selected?'#1A0D06':'var(--ink)'}}>
+                                {/* Selected fills with the ember, so its text flips to
+                                    ink. Leaving it light gave 2.25:1 on the orange. */}
+                                <div className="mono text-[11px] uppercase tracking-[0.18em]" style={{color:selected?'#1A0D06':'var(--d-muted)'}}>{view.label} view</div>
+                                <div className="text-[13px] mt-1" style={{color:selected?'#1A0D06':'var(--d-text)'}}>
                                     {view.key === 'frontSvg' ? 'Primary street-facing facade' :
                                      view.key === 'rearSvg' ? 'Rear massing and glazing' :
                                      view.key === 'leftSvg' ? 'Left-side profile' : 'Right-side profile'}
@@ -90,8 +97,8 @@ export const ElevationsPanel = ({ elevations, formData, onOpenPreview }) => {
                     })}
                 </div>
                 <div className="flex items-center gap-3 mt-3 flex-wrap">
-                    <button onClick={downloadActive} className="mono text-[9px] text-blue underline">Download active view</button>
-                    <span className="mono text-[8px] uppercase tracking-[0.18em]" style={{color:'var(--ink-soft)'}}>
+                    <button onClick={downloadActive} className="mono text-[12px] text-blue underline">Download active view</button>
+                    <span className="mono text-[11px] uppercase tracking-[0.18em]" style={{color:'var(--ink-soft)'}}>
                         {supportLabel} is also used to ground the Exterior Render.
                     </span>
                 </div>

@@ -27,14 +27,14 @@ export const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinemen
             <div className="flex items-center justify-between px-4 md:px-5 pt-4 pb-2">
                 <div className="flex items-center gap-2">
                     <span style={{width:'6px',height:'6px',borderRadius:'50%',background:'var(--accent)',display:'inline-block'}}/>
-                    <p className="mono text-[8px] uppercase tracking-[0.24em] font-bold" style={{color:'var(--ink)'}}>Studio notes</p>
+                    <p className="mono text-[11px] uppercase tracking-[0.24em] font-bold" style={{color:'var(--ink)'}}>Studio notes</p>
                 </div>
-                <span className="mono text-[9px] font-bold" style={{color: countColor}}>
+                <span className="mono text-[12px] font-bold" style={{color: countColor}}>
                     {refinementsLeft}/10 edits left
                 </span>
             </div>
             <div className="px-4 md:px-5 pb-3">
-                <p className="text-[12px] leading-relaxed" style={{color:'var(--ink)'}}>
+                <p className="text-[13px] leading-relaxed" style={{color:'var(--ink)'}}>
                     Use quick edits to explore the floor plan before you export it or move into the Exterior Render.
                 </p>
             </div>
@@ -46,20 +46,20 @@ export const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinemen
                         <div key={i} className="px-3 py-2.5 border-b last:border-0" style={{borderColor:'var(--ink-soft)'}}>
                             {msg.role === 'user' && (
                                 <div className="flex gap-2 items-start">
-                                    <span className="mono text-[7px] uppercase pt-0.5 shrink-0 font-bold" style={{color:'rgba(173,51,0,0.92)'}}>You</span>
-                                    <span className="text-[11px] leading-snug" style={{color:'var(--ink)'}}>{msg.content}</span>
+                                    <span className="mono text-[11px] uppercase pt-0.5 shrink-0 font-bold" style={{color:'rgba(173,51,0,0.92)'}}>You</span>
+                                    <span className="text-[13px] leading-snug" style={{color:'var(--ink)'}}>{msg.content}</span>
                                 </div>
                             )}
                             {msg.role === 'assistant' && (
                                 <div className="flex gap-2 items-start">
-                                    <span className="mono text-[7px] uppercase pt-0.5 shrink-0 font-bold" style={{color:'var(--ink-soft)'}}>Studio</span>
-                                    <span className="text-[11px] leading-snug" style={{color:'var(--accent)'}}>Updated: {msg.content}</span>
+                                    <span className="mono text-[11px] uppercase pt-0.5 shrink-0 font-bold" style={{color:'var(--ink-soft)'}}>Studio</span>
+                                    <span className="text-[13px] leading-snug" style={{color:'var(--accent)'}}>Updated: {msg.content}</span>
                                 </div>
                             )}
                             {msg.role === 'error' && (
                                 <div className="flex gap-2 items-start">
-                                    <span className="mono text-[7px] uppercase pt-0.5 shrink-0 font-bold" style={{color:'rgba(255,133,119,0.92)'}}>Error</span>
-                                    <span className="text-[11px] leading-snug" style={{color:'rgba(255,178,164,0.92)'}}>{msg.content}</span>
+                                    <span className="mono text-[11px] uppercase pt-0.5 shrink-0 font-bold" style={{color:'rgba(255,133,119,0.92)'}}>Error</span>
+                                    <span className="text-[13px] leading-snug" style={{color:'rgba(255,178,164,0.92)'}}>{msg.content}</span>
                                 </div>
                             )}
                         </div>
@@ -67,7 +67,7 @@ export const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinemen
                     {isLoading && (
                         <div className="px-3 py-2 flex items-center gap-2">
                             <div className="w-3 h-3 border-2 border-blue border-t-transparent rounded-full animate-spin shrink-0"/>
-                            <span className="mono text-[8px] uppercase tracking-widest animate-pulse" style={{color:'var(--ink-soft)'}}>Updating the plan...</span>
+                            <span className="mono text-[11px] uppercase tracking-widest animate-pulse" style={{color:'var(--ink-soft)'}}>Updating the plan...</span>
                         </div>
                     )}
                 </div>
@@ -75,14 +75,14 @@ export const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinemen
             {isLoading && refinementHistory.length === 0 && (
                 <div className="mx-4 md:mx-5 mb-3 px-3 py-2 flex items-center gap-2 rounded-[14px]" style={{background:'rgba(255,255,255,0.82)', border:'1px solid var(--ink-soft)'}}>
                     <div className="w-3 h-3 border-2 border-blue border-t-transparent rounded-full animate-spin shrink-0"/>
-                    <span className="mono text-[8px] uppercase tracking-widest animate-pulse" style={{color:'var(--ink-soft)'}}>Updating the plan...</span>
+                    <span className="mono text-[11px] uppercase tracking-widest animate-pulse" style={{color:'var(--ink-soft)'}}>Updating the plan...</span>
                 </div>
             )}
 
             <div className="flex flex-wrap gap-1.5 px-4 md:px-5 mb-3">
                 {REFINEMENT_SUGGESTIONS.map((s, i) => (
                     <button key={i} disabled={disabled} onClick={() => onRefine(s)}
-                        className="text-[9px] px-2.5 py-1.5 border transition-all disabled:opacity-30 rounded-full"
+                        className="text-[12px] px-2.5 py-1.5 border transition-all disabled:opacity-30 rounded-full"
                         style={{borderColor:'var(--ink-soft)',background:'rgba(255,255,255,0.72)',color:'var(--ink)'}}>
                         {s}
                     </button>
@@ -100,13 +100,13 @@ export const RefinementPanel = ({ planSpec, formData, refinementsLeft, refinemen
                     style={{background:'rgba(255,255,255,0.92)',borderColor:'rgba(255,255,255,0.18)'}}
                 />
                 <button type="submit" disabled={disabled || !custom.trim()}
-                    className="px-4 py-2 cta-hero cta-glow-soft text-[9px] disabled:opacity-30 whitespace-nowrap">
+                    className="px-4 py-2 cta-hero cta-glow-soft text-[12px] disabled:opacity-30 whitespace-nowrap">
                     Apply
                 </button>
             </form>
 
             {refinementsLeft === 0 && (
-                <p className="mono text-[9px] font-bold uppercase px-4 md:px-5 pb-4" style={{color:'rgba(255,133,119,0.92)'}}>
+                <p className="mono text-[12px] font-bold uppercase px-4 md:px-5 pb-4" style={{color:'rgba(255,133,119,0.92)'}}>
                     Included edits used. Request guided access if you need a deeper session.
                 </p>
             )}

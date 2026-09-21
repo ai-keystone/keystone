@@ -74,12 +74,26 @@
        measured 4.15:1, under the body floor. As a fill it is better
        still, because the dark ink sitting on it gains contrast too. */
     --d-accent:       #FF9468;
+    /* The ember used as a FILL. #FF9468 exists because the accent has to
+       clear 4.5:1 as text on a raised panel; nothing forces a fill to be
+       lightened, and a filled control reads stronger and matches the
+       hero's button when it is the one ember the rest of the site uses.
+       Ink on this is 7.36:1, so the split costs no contrast. Both are
+       gated in scripts/check-contrast.js. */
+    --d-accent-fill:  #FF7A45;
     --d-glass:        rgba(255,255,255,0.07);
     --d-glass-edge:   rgba(255,255,255,0.09);
     --d-control-edge: #6A7482;
     --d-blur:         blur(20px) saturate(1.2);
 
     /* ---- Space / radius / shadow -------------------------------- */
+    /* The nav is sticky, so it is in flow and eats the top of the first
+       screen. Anything sized to "one screenful" has to subtract it. */
+    --nav-h: 73px;
+    /* MobileNavBar is `md:hidden`, so it only occupies the bottom of the
+       screen below 768px. Declared here, switched on at that width. */
+    --bottom-bar-h: 0px;
+
     --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px; --s5: 24px;
     --s6: 32px; --s7: 48px; --s8: 72px; --s9: 96px;
 

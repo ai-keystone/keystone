@@ -55,16 +55,16 @@ export const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
                         </button>
                     ))}
                     <div className="grid grid-cols-2 gap-2 mt-5">
-                        <a href="/how-floor-plans-work" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
+                        <a href="/how-floor-plans-work" className="mono text-[12px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
                             How It Works
                         </a>
-                        <a href="/b2b-workflow" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
+                        <a href="/b2b-workflow" className="mono text-[12px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
                             Guided Workflow
                         </a>
-                        <a href="/roadmap" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
+                        <a href="/roadmap" className="mono text-[12px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
                             Roadmap
                         </a>
-                        <a href="/faq" className="mono text-[10px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
+                        <a href="/faq" className="mono text-[12px] uppercase tracking-[0.22em] px-4 py-3 rounded-full border border-white/10 text-center text-white/70 hover:text-white hover:border-white/24 transition-colors">
                             FAQ
                         </a>
                     </div>
@@ -75,7 +75,7 @@ export const MobileMenuOverlay = ({ isOpen, onClose, onJoin }) => (
                         </button>
                         <button onClick={() => { onJoin(); onClose(); }}
                             className="cta-hero cta-glow-soft w-full text-center py-4">
-                            Unlock Advanced Features
+                            Request a passkey
                         </button>
                     </div>
                 </div>

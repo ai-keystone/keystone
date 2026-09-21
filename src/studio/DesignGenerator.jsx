@@ -646,8 +646,8 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
                     <div className="cad-panel-brief">
                         <div className="cad-panel-brief-header">
                             <div>
-                                <div className="mono text-[7px] uppercase tracking-[0.22em]" style={{color:'var(--ink-soft)'}}>The Brief</div>
-                                <div className="cg text-sm font-bold" style={{letterSpacing:'-0.02em',marginTop:1}}>Project Parameters</div>
+                                <div className="mono text-[11px] uppercase tracking-[0.22em]" style={{color:'var(--ink-soft)'}}>The Brief</div>
+                                <div className="studio-item-title" style={{marginTop:2}}>What you're building</div>
                             </div>
                             {isLoading
                                 ? <div className="w-3 h-3 border-2 border-blue border-t-transparent rounded-full animate-spin"/>
@@ -675,33 +675,43 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
                     <div className="cad-canvas-panel">
                         {/* Title block */}
                         <div className="cad-canvas-titleblock">
-                            <div style={{display:'flex',alignItems:'center',gap:8}}>
-                                <svg width="12" height="12" fill="none" stroke="rgba(110,220,130,0.75)" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                <span className="mono" style={{fontSize:8,color:'rgba(110,220,130,0.92)',letterSpacing:'0.18em',textTransform:'uppercase'}}>
+                            {/* This strip was the last place a colour from the
+                                old identity survived: a terminal green on
+                                three labels at 7 and 8px, the only hue in the
+                                studio outside the ember. It reads on the
+                                studio's own muted token now, at a size the
+                                title block of a drawing is meant to be read
+                                at. The score keeps its traffic light - the
+                                number carries the same information, so the
+                                colour is reinforcement rather than the only
+                                signal. */}
+                            <div style={{display:'flex',alignItems:'center',gap:8,minWidth:0}}>
+                                <svg width="13" height="13" fill="none" stroke="var(--d-muted)" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                                <span className="mono" style={{fontSize:11,color:'var(--d-muted)',letterSpacing:'0.12em',textTransform:'uppercase',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>
                                     {planSvg && footprintInfo
                                         ? `${footprintInfo.widthFt}' x ${footprintInfo.heightFt}' | ${formData.stories || ''} | ${formData.bedrooms || ''}${planSpec?.elevations ? ' | elevation set' : ''}`
-                                        : 'Blueprint Viewport'}
+                                        : 'Blueprint viewport'}
                                 </span>
                             </div>
                             {planSvg && planScore != null
                                 ? <div style={{display:'flex',alignItems:'center',gap:6}}>
-                                    <span className="mono" style={{fontSize:7,color:'rgba(110,220,130,0.72)',letterSpacing:'0.14em',textTransform:'uppercase'}}>AI Score</span>
-                                    <span className="mono" style={{fontSize:9,fontWeight:700,color:planScore>=70?'#4ade80':planScore>=40?'#facc15':'#f87171'}}>{planScore}/100</span>
+                                    <span className="mono" style={{fontSize:11,color:'var(--d-muted)',letterSpacing:'0.1em',textTransform:'uppercase'}}>Score</span>
+                                    <span className="mono" style={{fontSize:12,fontWeight:700,color:planScore>=70?'#4ade80':planScore>=40?'#facc15':'#f87171'}}>{planScore}/100</span>
                                   </div>
-                                : <span className="mono" style={{fontSize:7,color:'rgba(110,220,130,0.55)',letterSpacing:'0.16em',textTransform:'uppercase'}}>Keystone AI | Blueprint</span>}
+                                : <span className="mono" style={{fontSize:11,color:'var(--d-muted)',letterSpacing:'0.1em',textTransform:'uppercase',whiteSpace:'nowrap'}}>Keystone</span>}
                         </div>
                         {planSvg && <div className="flex flex-wrap items-center gap-2 p-3" style={{background:'var(--surface-1)'}}>
                             <div role="group" aria-label="Plan and elevation view" className="flex gap-2">
                                 {['rendered', 'normal'].map(view => <button key={view} type="button"
                                     aria-pressed={planView === view} disabled={view === 'rendered' && (isLoading || presentationStatus === 'loading')}
-                                    onClick={() => selectPlanView(view)} className="px-3 py-2 border rounded-xs text-[11px]"
+                                    onClick={() => selectPlanView(view)} className="px-3 py-2 border rounded-xs text-[13px]"
                                     style={{background:planView === view ? '#263b43' : '#fff',color:planView === view ? '#fff' : '#263b43'}}>
                                     {view === 'normal' ? 'Normal' : 'Rendered'}
                                 </button>)}
                             </div>
-                            {planView === 'rendered' && renderedReady && <label className="flex items-center gap-2 text-[11px]"><input type="checkbox" checked={showRenderedLabels} onChange={e => setShowRenderedLabels(e.target.checked)} style={{width:'auto'}}/>Room details</label>}
-                            {presentationPending && <span role="status" className="text-[11px]">Preparing rendered plan and elevations...</span>}
-                            {presentationError && <p role="alert" className="text-[11px] text-red">{presentationError}</p>}
+                            {planView === 'rendered' && renderedReady && <label className="flex items-center gap-2 text-[13px]"><input type="checkbox" checked={showRenderedLabels} onChange={e => setShowRenderedLabels(e.target.checked)} style={{width:'auto'}}/>Room details</label>}
+                            {presentationPending && <span role="status" className="text-[13px]">Preparing rendered plan and elevations...</span>}
+                            {presentationError && <p role="alert" className="text-[13px] text-red">{presentationError}</p>}
                         </div>}
                         {/* Canvas body */}
                         <div className="cad-canvas-body">
@@ -728,15 +738,24 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
                             {status === 'idle' && !layoutFailure && (
                                 <div className="flex-1 flex flex-col items-center justify-center p-12 text-center" style={{color:'var(--ink-soft)'}} role="status" aria-live="polite">
                                     <svg className="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
-                                    <p className="cg text-2xl text-white" style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>Awaiting your brief</p>
-                                    <p className="mono text-[9px] uppercase tracking-widest mt-2">Complete the survey to generate the first plan</p>
+                                    {/* An empty state is an invitation, not a status
+                                        light. This one used to shout AWAITING YOUR
+                                        BRIEF in uppercase display type and then
+                                        restate it in uppercase mono, without saying
+                                        what to press. */}
+                                    <p className="studio-empty-title">Your plan will appear here.</p>
+                                    <p className="studio-empty-note">
+                                        Answer the five short steps on the left, then press
+                                        Generate floor plan. The sample brief is already filled in,
+                                        so you can go straight there.
+                                    </p>
                                 </div>
                             )}
                             {isLoading && (
                                 <div className="flex-1 flex flex-col items-center justify-center p-12 text-white" role="status" aria-live="polite">
                                     <div className="w-12 h-12 border-[3px] border-blue border-t-transparent rounded-full animate-spin mb-6"/>
-                                    <p className="mono text-[10px] uppercase tracking-widest animate-pulse text-blue">{status==='refining' ? 'Applying refinement...' : 'Generating floor plan...'}</p>
-                                    <p className="text-[9px] mt-2" style={{color:'var(--ink-soft)'}}>Usually under 5 seconds</p>
+                                    <p className="mono text-[12px] uppercase tracking-widest animate-pulse text-blue">{status==='refining' ? 'Applying refinement...' : 'Generating floor plan...'}</p>
+                                    <p className="text-[12px] mt-2" style={{color:'var(--ink-soft)'}}>Usually under 5 seconds</p>
                                 </div>
                             )}
                             {(status === 'plan-ready' || status === 'refining') && planSvg && (
@@ -805,7 +824,7 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
                                     <div className="flex flex-col gap-3">
                                         <div className="flex items-center justify-between mb-1">
                                             <span className="badge" style={{background: status === 'refining' ? '#fff6ed' : 'var(--paper)', borderColor: status === 'refining' ? 'var(--accent)' : 'var(--blue)'}}>{status === 'refining' ? 'Refining...' : 'Plan ready'}</span>
-                                            <span className="mono text-[7px] uppercase tracking-[0.22em] text-mid font-bold">{refinementsLeft} updates left</span>
+                                            <span className="mono text-[11px] uppercase tracking-[0.22em] text-mid font-bold">{refinementsLeft} refinements left</span>
                                         </div>
                                         {footprintInfo && (
                                             <div style={{display:'flex',flexDirection:'column',gap:6}}>
@@ -816,8 +835,8 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
                                                 {planScore != null && (
                                                     <div className="cad-metric-chip" style={{flexDirection:'column',alignItems:'flex-start',gap:4}}>
                                                         <div style={{display:'flex',justifyContent:'space-between',width:'100%'}}>
-                                                            <span className="label">AI Score</span>
-                                                            <span className="value" style={{color:planScore>=70?'#16a34a':planScore>=40?'#b45309':'#dc2626'}}>{planScore} / 100</span>
+                                                            <span className="label">Layout score</span>
+                                                            <span className="value">{planScore} / 100</span>
                                                         </div>
                                                         <div className="cad-score-bar" style={{width:'100%'}}>
                                                             <div className="cad-score-fill" style={{width:`${Math.min(100,planScore)}%`}}/>
@@ -826,18 +845,19 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
                                                 )}
                                             </div>
                                         )}
-                                        <div className="rounded-[14px] border border-black/8 bg-white/70 px-3 py-3">
-                                            <p className="mono text-[8px] uppercase tracking-[0.2em]" style={{color:'var(--ink-soft)'}}>Action bar</p>
-                                            <p className="text-[10px] leading-relaxed mt-2" style={{color:'var(--ink)'}}>
-                                                Main exports and the 3D render action now live in the orange command bar above the studio columns.
-                                            </p>
-                                        </div>
+                                        {/* This panel used to carry a release note -
+                                            "main exports and the 3D render action now
+                                            live in the orange command bar above the
+                                            studio columns" - which describes a change
+                                            to somebody who saw the previous version.
+                                            Nobody arriving today knows where things
+                                            used to be, so it said nothing. */}
                                         {optionSequence.length > 1 && (
                                             <button
                                                 onClick={() => document.getElementById('keystone-option-stack')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                                                className="w-full cta-secondary py-3 text-[10px]"
+                                                className="w-full cta-secondary py-3 text-[12px]"
                                             >
-                                                Jump To Option Stack ({Math.min(3, optionSequence.length)})
+                                                See the other {Math.min(3, optionSequence.length)} layouts
                                             </button>
                                         )}
                                     </div>
@@ -848,9 +868,11 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
                                     </div>
                                 ) : (
                                     <div className="paper-panel p-5">
-                                        <p className="mono text-[8px] uppercase tracking-[0.2em]" style={{color:'var(--ink-soft)'}}>Advanced refinement</p>
-                                        <p className="text-[11px] leading-relaxed mt-2" style={{color:'var(--ink)'}}>
-                                            Free mode gives you the first plan and elevations. Unlock advanced access to refine, export DXF, generate renders, and download the Cost Estimate workbook.
+                                        <p className="mono text-[11px] uppercase tracking-[0.2em]" style={{color:'var(--ink-soft)'}}>Advanced refinement</p>
+                                        <p className="text-[13px] leading-relaxed mt-2" style={{color:'var(--ink)'}}>
+                                            The plan and all four elevations are yours already. A passkey
+                                            adds refinements in plain language, DXF export, exterior renders
+                                            and the cost estimate workbook.
                                         </p>
                                     </div>
                                 )}
@@ -891,7 +913,7 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
                         ) : (
                             <div className="paper-panel p-6 text-center text-mid flex flex-col items-center justify-center h-full">
                                 <svg className="w-8 h-8 mb-3 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"/></svg>
-                                <p className="text-[11px] leading-relaxed">Once you generate a plan, this side shows the summary, refinements, elevations, render controls, and the cost estimate.</p>
+                                <p className="text-[13px] leading-relaxed">Once you generate a plan, this side shows the summary, refinements, elevations, render controls, and the cost estimate.</p>
                             </div>
                         )}
                     </div>
@@ -956,13 +978,13 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
                                     <div className="p-4 md:p-5 border-b border-black/5 bg-white/40">
                                         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
                                             <div>
-                                                <p className="mono text-[8px] uppercase tracking-[0.24em]" style={{color:'var(--accent)'}}>Cost estimate</p>
+                                                <p className="mono text-[11px] uppercase tracking-[0.24em]" style={{color:'var(--accent)'}}>Cost estimate</p>
                                                 <p className="text-[13px] leading-relaxed mt-2" style={{color:'var(--ink)'}}>
-                                                    Unlock advanced features to view and download the concept-level Cost Estimate workbook for this plan.
+                                                    A passkey adds the concept-level cost estimate workbook for this plan.
                                                 </p>
                                             </div>
                                             <button onClick={onOpenModal} className="cta-hero cta-glow-soft">
-                                                Unlock Advanced Features
+                                                Request a passkey
                                             </button>
                                         </div>
                                     </div>

@@ -91,8 +91,8 @@ export const Gallery = ({ onOpenModal }) => {
                                 <div className="flex items-start justify-between mb-4">
                                     <div>
                                         <span className="badge">Generated Plan</span>
-                                        <h3 className="cg italic text-2xl mt-2">{selected.label || 'Floor Plan'}</h3>
-                                        <p className="mono text-[8px] uppercase tracking-widest text-mid mt-1">{fmt(selected.createdAt)}</p>
+                                        <h3 className="studio-step-title mt-2">{selected.label || 'Floor Plan'}</h3>
+                                        <p className="mono text-[11px] uppercase tracking-widest text-mid mt-1">{fmt(selected.createdAt)}</p>
                                     </div>
                                     <button type="button" onClick={() => setSelected(null)} aria-label="Close session detail" className="w-9 h-9 bg-black/6 rounded-full flex items-center justify-center hover:bg-black/12 transition-colors shrink-0">
                                         <CloseIcon className="w-4 h-4"/>
@@ -105,8 +105,8 @@ export const Gallery = ({ onOpenModal }) => {
                                         style={{background:'white'}} onClick={() => setZoomImg(selected.svg)}>
                                         <div className="flex items-center gap-1.5 px-3 py-2 border-b border-black/5">
                                             <span style={{width:'5px',height:'5px',borderRadius:'50%',background:'var(--blue)',flexShrink:0,display:'inline-block'}}/>
-                                            <span className="mono text-[7px] uppercase tracking-widest text-mid">2D Blueprint</span>
-                                            <span className="mono text-[7px] text-mid ml-auto opacity-40">open</span>
+                                            <span className="mono text-[11px] uppercase tracking-widest text-mid">2D Blueprint</span>
+                                            <span className="mono text-[11px] text-mid ml-auto opacity-40">open</span>
                                         </div>
                                         {/* Fixed-height container, SVG scaled to fit at ~50% */}
                                         <div style={{height:'200px', overflow:'hidden', position:'relative', padding:'8px'}}>
@@ -125,8 +125,8 @@ export const Gallery = ({ onOpenModal }) => {
                                         style={{background:'var(--surface-1)'}}>
                                         <div className="flex items-center gap-1.5 px-3 py-2 border-b border-black/5">
                                             <span style={{width:'5px',height:'5px',borderRadius:'50%',background:'var(--gold)',flexShrink:0,display:'inline-block'}}/>
-                                            <span className="mono text-[7px] uppercase tracking-widest text-mid">3D Render</span>
-                                            {selected.renderImage && <span className="mono text-[7px] text-mid ml-auto opacity-40">open</span>}
+                                            <span className="mono text-[11px] uppercase tracking-widest text-mid">3D Render</span>
+                                            {selected.renderImage && <span className="mono text-[11px] text-mid ml-auto opacity-40">open</span>}
                                         </div>
                                         {selected.renderImage
                                             ? <img src={selected.renderImage} alt="3D render"
@@ -135,7 +135,7 @@ export const Gallery = ({ onOpenModal }) => {
                                                 style={{width:'100%', height:'200px', objectFit:'cover'}}/>
                                             : <div className="flex-1 flex flex-col items-center justify-center text-center" style={{height:'200px',opacity:0.3}}>
                                                 <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                                                <p className="mono text-[7px] uppercase tracking-widest">No render yet</p>
+                                                <p className="mono text-[11px] uppercase tracking-widest">No render yet</p>
                                               </div>
                                         }
                                     </div>
@@ -183,7 +183,7 @@ export const Gallery = ({ onOpenModal }) => {
                 {loading && (
                     <div className="flex items-center justify-center py-20 gap-3 text-mid" role="status" aria-live="polite">
                         <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"/>
-                        <span className="mono text-[9px] uppercase tracking-widest">Loading gallery...</span>
+                        <span className="mono text-[12px] uppercase tracking-widest">Loading gallery...</span>
                     </div>
                 )}
 
@@ -191,7 +191,7 @@ export const Gallery = ({ onOpenModal }) => {
                     <div className="paper-panel text-center py-20 px-6">
                         <div style={{marginBottom:'1rem',opacity:0.3,display:'flex',justifyContent:'center'}}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8M8 12h8"/></svg></div>
                         <p className="cg text-2xl opacity-50" style={{letterSpacing:'-0.05em',textTransform:'uppercase'}}>No recent sessions yet.</p>
-                        <p className="mono text-[9px] uppercase tracking-widest text-mid mt-2 opacity-50">Be the first - generate a plan above.</p>
+                        <p className="mono text-[12px] uppercase tracking-widest text-mid mt-2 opacity-50">Be the first - generate a plan above.</p>
                         <button onClick={() => scrollTo('generator')} className="cta-hero cta-glow mt-5 px-6 py-3">
                             Open Live Studio
                         </button>
@@ -221,7 +221,7 @@ export const Gallery = ({ onOpenModal }) => {
                                                     pointerEvents:'none',
                                                 }}/>
                                             <div style={{position:'absolute',bottom:'4px',left:'6px'}}>
-                                                <span className="mono text-[6px] uppercase tracking-widest opacity-30">Plan</span>
+                                                <span className="mono text-[11px] uppercase tracking-widest opacity-30">Plan</span>
                                             </div>
                                         </div>
                                         {/* 3D render if available */}
@@ -230,21 +230,21 @@ export const Gallery = ({ onOpenModal }) => {
                                                 <img src={entry.renderImage} alt="3D"
                                                     style={{width:'100%', height:'140px', objectFit:'cover'}}/>
                                                 <div style={{position:'absolute',bottom:'4px',right:'6px'}}>
-                                                    <span className="mono text-[6px] uppercase tracking-widest px-1.5 py-0.5 rounded-full font-bold" style={{background:'rgba(181,136,42,0.85)',color:'white'}}>3D</span>
+                                                    <span className="mono text-[11px] uppercase tracking-widest px-1.5 py-0.5 rounded-full font-bold" style={{background:'rgba(181,136,42,0.85)',color:'white'}}>3D</span>
                                                 </div>
                                             </div>
                                         )}
                                     </div>
                                     {/* Hover overlay */}
                                     <div className="absolute inset-0 bg-blue/0 group-hover:bg-blue/5 transition-all flex items-center justify-center opacity-0 group-hover:opacity-100">
-                                        <span className="bg-white/95 px-3 py-1.5 rounded-full shadow-xs mono text-[8px] uppercase tracking-widest text-blue font-bold">View Details</span>
+                                        <span className="bg-white/95 px-3 py-1.5 rounded-full shadow-xs mono text-[11px] uppercase tracking-widest text-blue font-bold">View Details</span>
                                     </div>
                                 </div>
 
                                 {/* Card footer */}
                                 <div style={{padding:'0.75rem 1rem'}}>
-                                    <p className="cg italic text-base leading-tight mb-0.5">{entry.label || 'Custom Plan'}</p>
-                                    <p className="mono text-[7px] uppercase tracking-widest text-mid opacity-60">{fmt(entry.createdAt)}</p>
+                                    <p className="studio-item-title mb-0.5">{entry.label || 'Custom Plan'}</p>
+                                    <p className="mono text-[11px] uppercase tracking-widest text-mid opacity-60">{fmt(entry.createdAt)}</p>
                                 </div>
                             </motion.div>
                         ))}
@@ -253,7 +253,7 @@ export const Gallery = ({ onOpenModal }) => {
 
                 {!loading && entries.length > 0 && (
                     <div className="text-center mt-10">
-                        <p className="mono text-[8px] uppercase tracking-widest text-mid opacity-40">Showing {entries.length} recent sessions - refreshes quietly while this section is visible</p>
+                        <p className="mono text-[11px] uppercase tracking-widest text-mid opacity-40">Showing {entries.length} recent sessions - refreshes quietly while this section is visible</p>
                     </div>
                 )}
             </div>

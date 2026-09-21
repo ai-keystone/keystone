@@ -41,9 +41,28 @@ export const PlanSequence = ({ onOpenStudio }) => {
         if (!plans.length) return undefined;
         let alive = true;
 
+        // The sheet carries the chosen plan's own aspect-ratio, so its
+        // height cannot be used to decide which plan to choose - that is
+        // circular, and before a choice is made it reports the fallback
+        // ratio for every screen. Measure the space the sheet is allowed
+        // to grow into instead: the section, less its padding and the two
+        // fixed rows above and below it.
         const paper = paperRef.current;
-        const box = paper?.getBoundingClientRect();
-        const boxRatio = box && box.height > 8 ? box.width / box.height : 1.6;
+        const root = rootRef.current;
+        let boxRatio = 1.6;
+        if (paper && root) {
+            const rs = getComputedStyle(root);
+            const gap = parseFloat(rs.rowGap) || 0;
+            const brief = root.querySelector('.hero-seq-brief');
+            const cta = root.querySelector('.hero-seq-cta');
+            const h = (el) => (el ? el.getBoundingClientRect().height : 0);
+            const ctaGap = cta ? parseFloat(getComputedStyle(cta).marginTop) || 0 : 0;
+            const avail = root.clientHeight
+                - parseFloat(rs.paddingTop) - parseFloat(rs.paddingBottom)
+                - h(brief) - h(cta) - ctaGap - gap * 2;
+            const w = paper.getBoundingClientRect().width;
+            if (avail > 8 && w > 8) boxRatio = w / avail;
+        }
 
         const scored = plans
             .map((p) => ({ p, score: fitScore(p.ratio, boxRatio) }))
@@ -64,6 +83,11 @@ export const PlanSequence = ({ onOpenStudio }) => {
                 svg.setAttribute('role', 'img');
                 svg.setAttribute('aria-label',
                     `Generated floor plan for ${chosen.brief}`);
+                // The sheet takes the drawing's own proportion so it does
+                // not letterbox; see .hero-seq-paper.
+                if (chosen.ratio) {
+                    paperRef.current.style.setProperty('--plan-ratio', String(chosen.ratio));
+                }
                 setBrief(chosen.brief);
 
                 const { beats } = prepareSequence(svg);
@@ -119,6 +143,13 @@ export const PlanSequence = ({ onOpenStudio }) => {
             ref={rootRef}
             id="hero"
         >
+            {/* The drawing is the headline, so there is no visible one.
+                The page still needs a level-one heading: without it the
+                home route has no h1 in the accessibility tree and no
+                outline for a screen reader to enter the page by. */}
+            <h1 className="sr-only">
+                Keystone draws a floor plan from a plain-language brief
+            </h1>
             <p className="hero-seq-brief">
                 <span>Brief</span> {brief || ' '}
             </p>

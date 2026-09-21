@@ -40,7 +40,11 @@
      open the studio modal; on the seven subpages the link did nothing at
      all. A skip link's job is to bypass the nav and land on content. -->
 <a href="#main" class="skip-link">Skip to content</a>
-<div class="page-veil" id="page-veil" aria-hidden="true"></div>
+<!-- The page-load veil was removed here. It painted the whole viewport in
+     --ink and faded out over 0.8s on every route. The hero opens on black
+     by design and earns it; on the eight paper-white pages it was a black
+     flash in front of content that had already painted, and it competed
+     with the one piece of signature motion the site has. -->
 <div class="scroll-progress-bar" id="scroll-progress" aria-hidden="true"></div>
 <div id="root"></div>
 <script>

@@ -207,15 +207,15 @@ export const Render3DPanel = ({
             <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData} planSpec={planSpec}/>
             {showLaunchButton ? (
                 <button onClick={handleRender}
-                    className="w-full py-3.5 cta-hero cta-glow text-[10px]">
+                    className="w-full py-3.5 cta-hero cta-glow text-[12px]">
                     {isLocked ? 'Unlock Exterior Render' : 'Generate Exterior Render'}
                 </button>
             ) : (
                 <div className="p-4 rounded-[16px] border border-black/8 bg-white/72">
-                    <p className="mono text-[8px] uppercase tracking-[0.22em]" style={{color:'var(--ink-soft)'}}>Exterior render</p>
-                    <p className="text-[11px] leading-relaxed mt-2" style={{color:'var(--ink)'}}>
+                    <p className="mono text-[11px] uppercase tracking-[0.22em]" style={{color:'var(--ink-soft)'}}>Exterior render</p>
+                    <p className="text-[13px] leading-relaxed mt-2" style={{color:'var(--ink)'}}>
                         {isLocked
-                            ? 'Unlock advanced features with a passkey to generate and download precise exterior renders from this plan.'
+                            ? 'A passkey generates an exterior render of this plan and lets you download it.'
                             : 'Use the main action bar above to open render options and generate the exterior render from this plan.'}
                     </p>
                 </div>
@@ -227,11 +227,11 @@ export const Render3DPanel = ({
         <div className="flex flex-col items-center gap-3 py-5">
             <div className="flex items-center gap-3 text-blue">
                 <div className="w-4 h-4 border-2 border-blue border-t-transparent rounded-full animate-spin"/>
-                <span className="mono text-[9px] uppercase tracking-widest animate-pulse">
+                <span className="mono text-[12px] uppercase tracking-widest animate-pulse">
                     {activeRefinement ? `Adjusting lighting: ${activeRefinement}...` : 'Rendering exterior view...'}
                 </span>
             </div>
-            <p className="mono text-[8px] text-mid opacity-50">
+            <p className="mono text-[11px] text-mid opacity-50">
                 {activeRefinement ? 'Changing lighting only - architecture unchanged' : 'Usually 15-30 seconds'}
             </p>
         </div>
@@ -241,13 +241,13 @@ export const Render3DPanel = ({
         <>
             <RenderSurveyModal isOpen={showSurvey} onClose={() => setShowSurvey(false)} onSubmit={handleSurveySubmit} initialData={renderSurveyData} baseSurveyData={formData} planSpec={planSpec}/>
             <div className="p-4 bg-red/5 border border-red/20 rounded-xs">
-                <p className="mono text-[9px] font-bold text-red uppercase mb-1">Render Failed</p>
-                <p className="text-[10px] text-mid leading-relaxed mb-3" style={{wordBreak:'break-word'}}>{errorMsg}</p>
+                <p className="mono text-[12px] font-bold text-red uppercase mb-1">Render Failed</p>
+                <p className="text-[12px] text-mid leading-relaxed mb-3" style={{wordBreak:'break-word'}}>{errorMsg}</p>
                 <button onClick={() => {
                     if (!ensureAdvancedAccess('Exterior Render')) return;
                     setShowSurvey(true);
                 }}
-                    className="mono text-[9px] uppercase tracking-widest px-3 py-1.5 bg-ink text-white rounded-xs hover:bg-blue transition-colors">
+                    className="mono text-[12px] uppercase tracking-widest px-3 py-1.5 bg-ink text-white rounded-xs hover:bg-blue transition-colors">
                     Retry
                 </button>
             </div>
@@ -260,32 +260,32 @@ export const Render3DPanel = ({
             <SmartImage src={renderImage} className="w-full object-cover rounded-[16px] shadow-xl" alt="Exterior render"/>
             {/* Toolbar */}
             <div className="flex items-center gap-2 mt-2 mb-3 flex-wrap">
-                <span className="mono text-[8px] uppercase tracking-widest text-mid">
+                <span className="mono text-[11px] uppercase tracking-widest text-mid">
                     {activeRefinement ? `Lighting: ${activeRefinement}` : 'Exterior render'}
                 </span>
                 <button onClick={() => {
                     if (!ensureAdvancedAccess('Exterior Render')) return;
                     const l=document.createElement('a'); l.href=renderImage; l.download=buildPlanExportFilename(formData, '3d render', 'png'); l.click();
                 }}
-                    className="ml-auto mono text-[9px] text-blue underline">Download</button>
-                <button onClick={handleRegenerate} className="mono text-[9px] text-mid underline">Regenerate</button>
+                    className="ml-auto mono text-[12px] text-blue underline">Download</button>
+                <button onClick={handleRegenerate} className="mono text-[12px] text-mid underline">Regenerate</button>
                 <button onClick={() => {
                     if (!ensureAdvancedAccess('Exterior Render')) return;
                     setShowSurvey(true);
-                }} className="mono text-[9px] text-mid underline">Options</button>
+                }} className="mono text-[12px] text-mid underline">Options</button>
             </div>
 
             {/* Lighting refinement chips Ã¢â‚¬" lighting only, architecture unchanged */}
             <div className="border-t border-black/5 pt-3">
                 <div className="flex items-center justify-between mb-2">
-                    <p className="mono text-[7px] uppercase tracking-widest text-mid">Lighting &amp; Mood</p>
-                    <p className="mono text-[7px] text-mid/40">Architecture stays unchanged</p>
+                    <p className="mono text-[11px] uppercase tracking-widest text-mid">Lighting &amp; Mood</p>
+                    <p className="mono text-[11px] text-mid/40">Architecture stays unchanged</p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
                     {RENDER_REFINEMENTS.map(ref => (
                         <button key={ref.label}
                             onClick={() => handleRefinement(ref)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 border rounded-xs transition-all mono text-[9px] font-bold uppercase tracking-wide"
+                            className="flex items-center gap-1.5 px-3 py-1.5 border rounded-xs transition-all mono text-[12px] font-bold uppercase tracking-wide"
                             style={{
                                 borderColor: activeRefinement === ref.label ? 'var(--blue)' : 'rgba(0,0,0,0.1)',
                                 background: activeRefinement === ref.label ? 'var(--blue)' : 'white',

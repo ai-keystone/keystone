@@ -8,14 +8,56 @@ export const JoinModal = ({ isOpen, onClose }) => {
     const [submitError, setSubmitError] = React.useState(null);
     const update = (e) => setFormData(p => ({ ...p, [e.target.name]: e.target.value }));
 
+    const panelRef = React.useRef(null);
+    const firstFieldRef = React.useRef(null);
+    const returnFocusRef = React.useRef(null);
+
     useEffect(() => {
-        if (!isOpen) return;
+        if (!isOpen) return undefined;
         const handleEscape = (event) => {
             if (event.key === 'Escape') onClose();
         };
         window.addEventListener('keydown', handleEscape);
         return () => window.removeEventListener('keydown', handleEscape);
     }, [isOpen, onClose]);
+
+    /* This dialog used to open without moving focus at all: the caret
+       stayed on the page underneath, so anyone on a keyboard had to tab
+       forward through the whole site to reach a form that was already
+       covering it. Remember where focus came from, put it on the first
+       field, and hand it back on close. */
+    useEffect(() => {
+        if (!isOpen) return undefined;
+        returnFocusRef.current = document.activeElement;
+        const id = window.setTimeout(() => firstFieldRef.current?.focus(), 60);
+        return () => {
+            window.clearTimeout(id);
+            const back = returnFocusRef.current;
+            if (back && typeof back.focus === 'function' && document.contains(back)) back.focus();
+        };
+    }, [isOpen]);
+
+    /* aria-modal tells assistive tech the rest of the page is inert; it
+       does not stop Tab. Without this, tabbing past the last field walks
+       out of the dialog and into the page it is covering. */
+    const trapTab = (event) => {
+        if (event.key !== 'Tab') return;
+        const panel = panelRef.current;
+        if (!panel) return;
+        const focusable = [...panel.querySelectorAll(
+            'a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])',
+        )].filter((el) => el.offsetParent !== null);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -74,90 +116,97 @@ export const JoinModal = ({ isOpen, onClose }) => {
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    initial={{ opacity:0 }}
-                    animate={{ opacity:1 }}
-                    exit={{ opacity:0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     onClick={onClose}
-                    className="fixed inset-0 z-700 flex items-end md:items-center justify-center bg-black/85 backdrop-blur-xs p-0 md:p-6"
+                    className="join-scrim"
                 >
                     <motion.div
-                        initial={{ y:50, opacity:0 }}
-                        animate={{ y:0, opacity:1 }}
-                        exit={{ y:50, opacity:0 }}
-                        transition={{ type:"spring", damping:26 }}
+                        initial={{ y: 24, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 24, opacity: 0 }}
+                        transition={{ type: 'spring', damping: 28, stiffness: 320 }}
                         onClick={(event) => event.stopPropagation()}
-                        className="electric-border w-full md:max-w-md rounded-t-2xl md:rounded-xl shadow-2xl relative overflow-hidden"
-                        style={{
-                            background:'linear-gradient(180deg, rgba(255,252,247,0.985), rgba(246,240,231,0.97))',
-                            border:'1px solid var(--ink-soft)',
-                            boxShadow:'0 28px 90px var(--ink-soft)',
-                        }}
+                        onKeyDown={trapTab}
+                        ref={panelRef}
+                        className="join-panel"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="join-title"
+                        aria-describedby="join-intro"
                     >
-                        <div style={{ height:'3px', background:'linear-gradient(90deg, var(--accent), var(--accent-2))' }}/>
-
                         <button
+                            type="button"
                             onClick={onClose}
-                            aria-label="Close access request"
-                            className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center transition-colors z-10"
-                            style={{
-                                background:'rgba(255,255,255,0.82)',
-                                color:'var(--ink)',
-                                border:'1px solid var(--ink-soft)',
-                            }}
+                            aria-label="Close"
+                            className="join-close"
                         >
                             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                                <path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                                <path d="M3 3L11 11M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
                             </svg>
                         </button>
 
-                        <div className="p-6 md:p-8 overflow-y-auto" style={{ maxHeight:'90vh', color:'var(--ink)' }}>
-                            <span className="badge mb-3 inline-block">Unlock Advanced Features</span>
-                            <h2 className="cg text-3xl mb-1 mt-2" style={{ letterSpacing:'-0.05em', textTransform:'uppercase', color:'var(--ink)' }}>Request a trial passkey.</h2>
-                            <p className="text-sm mt-2 mb-6 leading-relaxed" style={{color:'var(--ink)'}}>The free trial already includes the floor plan and elevations. Fill this out if you want access to the advanced package: Exterior Render, refinements, Cost Estimate workbook, and CAD export.</p>
+                        <div className="join-body">
+                            <p className="join-eyebrow">Trial access</p>
+                            <h2 id="join-title">Request a passkey.</h2>
 
                             {status === 'success' ? (
-                                <motion.div initial={{ scale:0.9, opacity:0 }} animate={{ scale:1, opacity:1 }} className="flex flex-col items-center text-center py-10">
-                                    <div className="w-16 h-16 rounded-full bg-blue flex items-center justify-center mb-4"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-                                    <h3 className="cg text-2xl" style={{ letterSpacing:'-0.05em', textTransform:'uppercase' }}>You&apos;re on the list.</h3>
-                                    <p className="text-mid text-sm mt-2">We will follow up with trial access details and next steps shortly.</p>
-                                </motion.div>
+                                <div className="join-done" role="status">
+                                    <p className="join-done-head">You&apos;re on the list.</p>
+                                    <p>We will email your passkey and what to do with it.</p>
+                                </div>
                             ) : (
-                                <form onSubmit={handleSubmit} className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div>
-                                            <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Full Name</label>
-                                            <input type="text" name="fullName" value={formData.fullName} onChange={update} required placeholder="Jane Doe"/>
+                                <>
+                                    <p id="join-intro" className="join-intro">
+                                        Floor plans and elevations are already free, with no account. A
+                                        passkey adds exterior renders, refinements in plain language, DXF
+                                        export and the cost estimate workbook &mdash; at no charge while
+                                        Keystone is in testing.
+                                    </p>
+                                    <form onSubmit={handleSubmit} className="join-form">
+                                        <div className="join-row">
+                                            <div className="join-field">
+                                                <label htmlFor="join-name">Your name</label>
+                                                <input id="join-name" ref={firstFieldRef} type="text" name="fullName"
+                                                       value={formData.fullName} onChange={update} required
+                                                       autoComplete="name" placeholder="Jane Doe"/>
+                                            </div>
+                                            <div className="join-field">
+                                                <label htmlFor="join-project">Project</label>
+                                                <input id="join-project" type="text" name="projectName"
+                                                       value={formData.projectName} onChange={update} required
+                                                       placeholder="Family home"/>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Project Name</label>
-                                            <input type="text" name="projectName" value={formData.projectName} onChange={update} required placeholder="Dream House / Family Home"/>
+                                        <div className="join-field">
+                                            <label htmlFor="join-email">Email</label>
+                                            <input id="join-email" type="email" name="email"
+                                                   value={formData.email} onChange={update} required
+                                                   autoComplete="email" placeholder="jane@email.com"/>
                                         </div>
-                                    </div>
-                                    <div>
-                                        <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Business Email</label>
-                                        <input type="email" name="email" value={formData.email} onChange={update} required placeholder="jane@email.com"/>
-                                    </div>
-                                    <div>
-                                        <label className="mono text-[7px] uppercase tracking-widest text-mid block mb-1">Additional Questions</label>
-                                        <textarea name="questions" rows="2" value={formData.questions} onChange={update} placeholder="Tell us what kind of house you are planning..."/>
-                                    </div>
-                                    {submitError && (
-                                        <p role="alert" style={{color:'var(--accent)',fontSize:'var(--t-meta)',marginBottom:'0.5rem'}}>
-                                            {submitError}
-                                        </p>
-                                    )}
-                                    <button type="submit" disabled={status === 'loading'} className="cta-hero w-full py-4 text-base disabled:opacity-60">
-                                        {status === 'loading' ? 'Sending...' : 'Request Trial Access'}
-                                    </button>
-                                    <p className="text-center mono text-[9px] text-mid">No spam • no credit card • fast follow-up</p>
-                                    <button
-                                        type="button"
-                                        onClick={onClose}
-                                        className="w-full py-3 text-[11px] uppercase tracking-[0.22em] mono text-mid border border-black/10 rounded-full hover:bg-black/4 transition-colors"
-                                    >
-                                        Not now, go back
-                                    </button>
-                                </form>
+                                        <div className="join-field">
+                                            <label htmlFor="join-questions">
+                                                Anything we should know <span className="join-optional">optional</span>
+                                            </label>
+                                            <textarea id="join-questions" name="questions" rows="2"
+                                                      value={formData.questions} onChange={update}
+                                                      placeholder="What kind of house are you planning?"/>
+                                        </div>
+
+                                        {submitError && (
+                                            <p role="alert" className="join-error">{submitError}</p>
+                                        )}
+
+                                        <button type="submit" disabled={status === 'loading'} className="btn-primary join-submit">
+                                            {status === 'loading' ? 'Sending' : 'Request a passkey'}
+                                        </button>
+                                        <p className="join-fineprint">No spam. No card. We reply by email.</p>
+                                        <button type="button" onClick={onClose} className="join-dismiss">
+                                            Not now
+                                        </button>
+                                    </form>
+                                </>
                             )}
                         </div>
                     </motion.div>
@@ -166,3 +215,4 @@ export const JoinModal = ({ isOpen, onClose }) => {
         </AnimatePresence>
     );
 };
+

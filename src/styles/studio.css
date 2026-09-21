@@ -499,9 +499,9 @@
 .studio-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 .studio-btn-primary {
-    background: var(--d-accent);
+    background: var(--d-accent-fill);
     color: #1A0D06;
-    border: 1px solid var(--d-accent);
+    border: 1px solid var(--d-accent-fill);
 }
 .studio-btn-primary:hover:not(:disabled) { background: #FF8F63; border-color: #FF8F63; }
 
@@ -721,18 +721,10 @@
    nothing indicated there were more steps off to the right - the fifth
    label just appeared clipped. Fade the trailing edge so the overflow
    reads as "there is more", and keep a visible focus path for keyboards. */
-.studio-modal-window .survey-step-row {
-    -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 28px), transparent 100%);
-    mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 28px), transparent 100%);
-    scroll-snap-type: x proximity;
-}
-.studio-modal-window .survey-step-pill { scroll-snap-align: start; }
-/* A masked element clips its own focus ring, so keep the active and
-   focused pills fully opaque by removing the mask while tabbing. */
-.studio-modal-window .survey-step-row:focus-within {
-    -webkit-mask-image: none;
-    mask-image: none;
-}
+/* The edge fade and the scroll snapping that used to live here went with
+   the horizontal scroller: the row wraps now, so there is no edge to
+   fade and nothing off-screen to snap to. Removing the mask also gives
+   the pills their focus ring back, which a masked element clips. */
 
 
 /* ===================================================================
@@ -825,17 +817,68 @@
    fill with ink on top - the same treatment as every other primary
    control in here, and 7.4:1. */
 .studio-modal-window .room-badge.active {
-    background: var(--d-accent) !important;
-    border-color: var(--d-accent) !important;
+    background: var(--d-accent-fill) !important;
+    border-color: var(--d-accent-fill) !important;
     color: #1A0D06 !important;
 }
 .studio-modal-window .cta-hero {
-    background: var(--d-accent) !important;
-    border-color: var(--d-accent) !important;
+    background: var(--d-accent-fill) !important;
+    border-color: var(--d-accent-fill) !important;
     color: #1A0D06 !important;
 }
 .studio-modal-window .cta-secondary {
     background: transparent !important;
     border-color: var(--d-control-edge) !important;
     color: var(--d-text) !important;
+}
+
+/* ===================================================================
+   STUDIO DISPLAY TYPE
+   -------------------------------------------------------------------
+   The studio carried a second type treatment from the old identity:
+   `cg` (a serif that is no longer loaded), italic, uppercase, and
+   -0.05em tracking. It appeared on the step title, the render dialog,
+   the gallery and the empty state, and nowhere else on the site. These
+   are the same display settings the marketing pages use, so a heading
+   reads the same wherever it is.
+   =================================================================== */
+.studio-step-title {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 700;
+    font-style: normal;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    text-transform: none;
+    margin-top: 2px;
+}
+.studio-item-title {
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    font-style: normal;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    text-transform: none;
+}
+
+/* ---- The empty viewport -------------------------------------------- */
+.studio-empty-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+    color: var(--d-text);
+}
+.studio-empty-note {
+    margin-top: var(--s3);
+    max-width: 38ch;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.6;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--d-muted);
+    text-wrap: pretty;
 }
