@@ -1,9 +1,32 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FINISH_OVERRIDE_OPTIONS, STYLE_FINISH_DEFAULTS, SURVEY_STEPS } from '../data/survey.js';
 import { CheckIcon } from '../ui/icons.jsx';
 
 export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => {
     const [step, setStep] = useState(0);
+    const [preflight, setPreflight] = useState(null);
+    const surveyKey = JSON.stringify(formData);
+    const currentPreflight = preflight?.surveyKey === surveyKey;
+    useEffect(() => {
+        const controller = new AbortController();
+        setPreflight(null);
+        const timer = setTimeout(async () => {
+            let timedOut = false;
+            const deadline = setTimeout(() => { timedOut = true; controller.abort(); }, 8000);
+            try {
+                const response = await fetch('/api/plan/preflight', { method:'POST', signal:controller.signal,
+                    headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ surveyData:formData }) });
+                if (!response.ok) throw new Error('Preflight unavailable');
+                const data = await response.json();
+                if (!controller.signal.aborted) setPreflight({ ...data, surveyKey: JSON.stringify(formData) });
+            } catch (error) {
+                if (!controller.signal.aborted || timedOut) setPreflight({ unavailable:true, surveyKey: JSON.stringify(formData) });
+            } finally {
+                clearTimeout(deadline);
+            }
+        }, 450);
+        return () => { clearTimeout(timer); controller.abort(); };
+    }, [formData]);
     const upd = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
     const styleFinishDefaults = STYLE_FINISH_DEFAULTS[formData.materials] || STYLE_FINISH_DEFAULTS['Craftsman (Wood & Stone)'];
     const effectiveFinishValue = (key) => (formData.finishOverrides?.[key] || styleFinishDefaults?.[key] || '');
@@ -82,23 +105,26 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
 
     // Toggle-chip button for multi-select style (features)
     const ToggleChip = ({ value, label, icon, field }) => {
-        const selected = (formData[field] || '').toLowerCase().includes(label.toLowerCase());
+        const selected = (formData[field] || '').toLowerCase().includes(value.toLowerCase());
+        const availability = currentPreflight ? preflight?.featureOptions?.find(option => option.value === value) : null;
+        const disabled = !selected && (!currentPreflight || availability?.allowed === false);
+        const reason = !currentPreflight ? 'Checking room combinations…' : availability?.blockers?.[0]?.message;
         const toggle = () => {
             const current = formData[field] || '';
             // Parse existing features into an array
             const parts = current.split(',').map(s => s.trim()).filter(Boolean);
             if (selected) {
-                const next = parts.filter(p => !p.toLowerCase().includes(label.toLowerCase())).join(', ');
+                const next = parts.filter(p => !p.toLowerCase().includes(value.toLowerCase())).join(', ');
                 upd(field, next);
             } else {
-                const next = [...parts, `1 ${label}`].join(', ');
+                const next = [...parts.filter(p => !/^(none|n\/a)$/i.test(p)), `1 ${value}`].join(', ');
                 upd(field, next);
             }
         };
         return (
-            <button type="button" aria-pressed={selected} onClick={toggle}
+            <button type="button" aria-pressed={selected} onClick={toggle} disabled={disabled} title={disabled ? reason : undefined}
                 className="flex items-center gap-1.5 px-3 py-2 border rounded-xs transition-all text-[12px] font-semibold"
-                style={choiceStyle(selected)}>
+                style={{ ...choiceStyle(selected), ...(disabled ? { opacity:0.6, cursor:'not-allowed' } : {}) }}>
                 {icon ? <span className="mono text-[12px] uppercase tracking-[0.18em]" style={{opacity:selected ? 0.76 : 0.6}}>{icon}</span> : null}
                 {label}
                 {selected && <CheckIcon className="w-3 h-3" style={{opacity:0.82}}/>}
@@ -182,7 +208,7 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                     while (next.length < bedCount) next.push({ privateBath: 'No', closet: 'Standard' });
                     next[idx] = { ...next[idx], [key]: val };
                     upd('bedroomConfigs', next.slice(0, bedCount));
-                    const privateCount = next.slice(1, bedCount).filter(c => c.privateBath === 'Yes').length;
+                    const privateCount = next.slice(0, bedCount).filter(c => c.privateBath === 'Yes').length;
                     upd('privateBaths', `${privateCount}`);
                 };
                 return (
@@ -419,11 +445,10 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
             case 'features': return (
                 <div key={field} className="space-y-2">
                     <Lbl>Special Rooms</Lbl>
-                    <p className="text-[12px] text-mid/60 mb-2">Tap to add special rooms to your plan. Default: none.</p>
+                    <p className="text-[12px] text-mid mb-2">Available rooms follow your house size and room combination. Selected rooms can always be removed.</p>
                     <div className="flex flex-wrap gap-2">
                         {[
-                            {label:'Study'},
-                            {label:'Home Office'},
+                            {label:'Study / home office', value:'Study'},
                             {label:'Home Theater'},
                             {label:'Gym'},
                             {label:'Gaming Room'},
@@ -432,8 +457,9 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                             {label:'Music Room'},
                             {label:'Guest Suite'},
                             {label:'Playroom'},
-                        ].map(f => <ToggleChip key={f.label} field="features" value={f.label} label={f.label} icon={f.icon}/>)}
+                        ].map(f => <ToggleChip key={f.label} field="features" value={f.value || f.label} label={f.label} icon={f.icon}/>)}
                     </div>
+                    {currentPreflight && preflight?.featureOptions?.some(option => !option.allowed) && <p className="text-[12px] text-mid">Unavailable rooms need a different size or room combination. Adjust the earlier steps to check availability again.</p>}
                     {(formData.features||'').trim() && (
                         <div className="mt-1 p-2 bg-blue/5 border border-blue/15 rounded-xs">
                             <span className="mono text-[11px] uppercase text-blue">Selected: </span>
@@ -548,12 +574,17 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
             <div className="space-y-4 step-in" key={step}>
                 {cur.fields.map(f => renderField(f))}
             </div>
+            {currentPreflight && preflight?.blockers?.length > 0 && <div role="status" className="mt-4 border rounded-xs p-3 text-[13px]" style={{borderColor:'var(--control-edge)'}}>
+                <p className="font-semibold">Review this combination</p>
+                <ul className="mt-2 space-y-1">{preflight.blockers.map(item => <li key={item.code}>{item.message}</li>)}</ul>
+            </div>}
+            {preflight?.unavailable && isLast && <p className="mt-3 text-[12px]">The advance check is unavailable. Your choices will be checked when you generate.</p>}
             <div className="flex gap-2.5 mt-5">
                 {step > 0 && <button type="button" onClick={() => setStep(s=>s-1)} className="px-5 py-3 border border-black/10 text-[13px] font-semibold hover:border-ink transition-colors rounded-xs">Back</button>}
                 {!isLast
                     ? <button type="button" onClick={() => setStep(s=>s+1)} className="flex-1 py-3 text-[13px] font-bold transition-colors rounded-xs border" style={actionStyle()}>Continue</button>
-                    : <button type="button" onClick={onSubmit} disabled={isLoading} className="flex-1 py-3 text-[13px] font-bold transition-colors disabled:opacity-50 rounded-xs border" style={actionStyle()}>
-                        {isLoading ? 'Generating' : 'Generate floor plan'}
+                    : <button type="button" onClick={onSubmit} disabled={isLoading || !currentPreflight || preflight?.featureBlockers?.length > 0 || (preflight?.supported === false && preflight?.legacyFallbackEnabled === false)} className="flex-1 py-3 text-[13px] font-bold transition-colors disabled:opacity-50 rounded-xs border" style={actionStyle()}>
+                        {isLoading ? 'Generating' : !currentPreflight ? 'Checking choices…' : 'Generate floor plan'}
                       </button>
                 }
             </div>

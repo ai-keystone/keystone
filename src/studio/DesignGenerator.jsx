@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X as XIcon } from '@phosphor-icons/react';
 import { STUDIO_SESSION_KEY, STUDIO_UNLOCK_KEY } from '../data/brand.js';
-import { DEFAULT_FORM_DATA } from '../data/survey.js';
+import { DEFAULT_FORM_DATA, normalizeSurveyFeatures } from '../data/survey.js';
 import { buildPresentationDxf } from '../lib/dxf.js';
 import { buildPlanExportFilename, profileLabel } from '../lib/format.js';
 import { composeElevationReferenceSheet, svgToPngDataUrl } from '../lib/raster.js';
@@ -28,7 +28,11 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
     const [passkeyInput, setPasskeyInput] = useState('');
     const [unlockStatus, setUnlockStatus] = useState('idle');
 
-    const [formData, setFormData] = useState(() => ({ ...DEFAULT_FORM_DATA, ...(initialSession?.formData || {}) }));
+    const [formData, setFormData] = useState(() => {
+        const saved = { ...DEFAULT_FORM_DATA, ...(initialSession?.formData || {}) };
+        if (Array.isArray(saved.bedroomConfigs)) saved.privateBaths = String(saved.bedroomConfigs.filter(c=>c.privateBath === 'Yes').length);
+        return { ...saved, features: normalizeSurveyFeatures(saved.features) };
+    });
 
     // A brief typed in the hero arrives here as {patch, read}. Merge it into the
     // survey and surface what was understood, so the reading is visible and
@@ -269,9 +273,12 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
             setRenderPanelStatus('idle');
             setStatus('plan-ready');
         } catch (err) {
-            if (err.code === 'NO_VALID_LAYOUT') {
+            if (err.code === 'NO_VALID_LAYOUT' || err.code === 'V2_FALLBACK_DISABLED') {
                 const rejected = err.diagnostics?.rejectedCandidates || [];
-                const reasons = [...new Set(rejected.map((r) => r.reason).filter(Boolean))].slice(0, 4);
+                const reasons = [...new Set([
+                    ...(err.diagnostics?.blockers || []).map(item => item.message),
+                    ...rejected.map((r) => r.reason).filter(Boolean),
+                ])].slice(0, 4);
                 setLayoutFailure({
                     message: err.message,
                     tried: err.diagnostics?.triedCandidateCount ?? rejected.length,
@@ -700,6 +707,16 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
                                   </div>
                                 : <span className="mono" style={{fontSize:11,color:'var(--d-muted)',letterSpacing:'0.1em',textTransform:'uppercase',whiteSpace:'nowrap'}}>Keystone</span>}
                         </div>
+                        {planSvg && planSpec?.generatorId === 'architect_v2' && optionSequence.length > 0 && optionSequence.length < 3 && (
+                            <p role="status" className="p-3 text-[13px]" style={{color:'var(--ink-soft)'}}>
+                                {optionSequence.length} distinct {optionSequence.length === 1 ? 'layout passes' : 'layouts pass'} the current checks for this brief. The generator could not yet produce three distinct options.
+                            </p>
+                        )}
+                        {planSvg && planSpec?.surveyFulfillment?.freeformWishes?.status === 'not_applied' && (
+                            <p role="status" className="p-3 text-[13px]" style={{color:'var(--ink-soft)'}}>
+                                Your additional written request was not applied. {planSpec.surveyFulfillment.freeformWishes.reason || 'It did not pass the layout checks.'}
+                            </p>
+                        )}
                         {planSvg && <div className="flex flex-wrap items-center gap-2 p-3" style={{background:'var(--surface-1)'}}>
                             <div role="group" aria-label="Plan and elevation view" className="flex gap-2">
                                 {['rendered', 'normal'].map(view => <button key={view} type="button"

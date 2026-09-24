@@ -65,7 +65,7 @@ export const DEFAULT_FORM_DATA = {
     bedroomConfigs: null,
     shape:'Rectangular', garage:'1 Car Garage', materials:'Craftsman (Wood & Stone)',
     openConcept:'Open Concept (Combined)', masterLocation:'Level 2 (Upper)', kitchenPlacement:'Rear of House',
-    features:'1 Study', frontFacing:'South', lotContext:'Suburban standard lot',
+    features:'', frontFacing:'South', lotContext:'Suburban standard lot',
     laundryLocation:'Level 1 (near garage/mud)', ceilingHeight:'Standard (9 ft)',
     indoorOutdoor:'Moderate (some connection)', naturalLight:'Balanced windows',
     accessibilityNeeds:'None', budgetTier:'Mid ($200-300/sqft)',
@@ -74,3 +74,12 @@ export const DEFAULT_FORM_DATA = {
     finishOverrides:{},
     freeformWishes:'',
 };
+
+// The old picker offered these aliases as two separate rooms. Migrate that
+// picker combination while preserving explicit counts such as "2 Study".
+export function normalizeSurveyFeatures(value = '') {
+    const parts = String(value).split(',').map(part => part.trim()).filter(part => part && !/^(none|n\/a)$/i.test(part));
+    const hasStudy = parts.some(part => /^1\s+study$/i.test(part));
+    return parts.filter(part => !(hasStudy && /^1\s+home office$/i.test(part)))
+        .map(part => /^1\s+home office$/i.test(part) ? '1 Study' : part).join(', ');
+}

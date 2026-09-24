@@ -6,6 +6,10 @@
   "installCommand": "npm install",
   "rewrites": [
     {
+      "source": "/api/plan/preflight",
+      "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/api/plan/preflight"
+    },
+    {
       "source": "/api/plan/presentation",
       "destination": "https://keystone-api-yhicwzbyja-uc.a.run.app/api/plan/presentation"
     },
