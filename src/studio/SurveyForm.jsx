@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FINISH_OVERRIDE_OPTIONS, STYLE_FINISH_DEFAULTS, SURVEY_STEPS } from '../data/survey.js';
 import { CheckIcon } from '../ui/icons.jsx';
+import { surveyWithBedroomConfigurations } from '../lib/bedroomConfigurations.js';
 
 export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => {
     const [step, setStep] = useState(0);
     const [preflight, setPreflight] = useState(null);
-    const surveyKey = JSON.stringify(formData);
+    const generationSurvey = useMemo(() => surveyWithBedroomConfigurations(formData), [formData]);
+    const surveyKey = JSON.stringify(generationSurvey);
     const currentPreflight = preflight?.surveyKey === surveyKey;
     useEffect(() => {
         const controller = new AbortController();
@@ -15,18 +17,18 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
             const deadline = setTimeout(() => { timedOut = true; controller.abort(); }, 8000);
             try {
                 const response = await fetch('/api/plan/preflight', { method:'POST', signal:controller.signal,
-                    headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ surveyData:formData }) });
+                    headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ surveyData:generationSurvey }) });
                 if (!response.ok) throw new Error('Preflight unavailable');
                 const data = await response.json();
-                if (!controller.signal.aborted) setPreflight({ ...data, surveyKey: JSON.stringify(formData) });
+                if (!controller.signal.aborted) setPreflight({ ...data, surveyKey: JSON.stringify(generationSurvey) });
             } catch (error) {
-                if (!controller.signal.aborted || timedOut) setPreflight({ unavailable:true, surveyKey: JSON.stringify(formData) });
+                if (!controller.signal.aborted || timedOut) setPreflight({ unavailable:true, surveyKey: JSON.stringify(generationSurvey) });
             } finally {
                 clearTimeout(deadline);
             }
         }, 450);
         return () => { clearTimeout(timer); controller.abort(); };
-    }, [formData]);
+    }, [generationSurvey]);
     const upd = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
     const styleFinishDefaults = STYLE_FINISH_DEFAULTS[formData.materials] || STYLE_FINISH_DEFAULTS['Craftsman (Wood & Stone)'];
     const effectiveFinishValue = (key) => (formData.finishOverrides?.[key] || styleFinishDefaults?.[key] || '');
@@ -194,29 +196,18 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                 const bedLabels = bedCount <= 1
                     ? ['Primary Bedroom']
                     : ['Primary Bedroom', ...Array.from({length: bedCount - 1}, (_, i) => `Bedroom ${i + 2}`)];
-                const configs = formData.bedroomConfigs || bedLabels.map((_, i) => ({
-                    privateBath: i === 0 ? 'Yes' : 'No',
-                    closet: i === 0 ? 'Walk-in' : 'Standard',
-                }));
-                const ensureConfigs = () => {
-                    if (!formData.bedroomConfigs) {
-                        upd('bedroomConfigs', configs);
-                    }
-                };
+                const configs = generationSurvey.bedroomConfigs;
                 const updateConfig = (idx, key, val) => {
-                    const next = [...(formData.bedroomConfigs || configs)];
-                    while (next.length < bedCount) next.push({ privateBath: 'No', closet: 'Standard' });
+                    const next = configs.map(config => ({ ...config }));
                     next[idx] = { ...next[idx], [key]: val };
-                    upd('bedroomConfigs', next.slice(0, bedCount));
-                    const privateCount = next.slice(0, bedCount).filter(c => c.privateBath === 'Yes').length;
-                    upd('privateBaths', `${privateCount}`);
+                    setFormData(prev => ({ ...prev, bedroomConfigs: next, privateBaths: String(next.filter(c => c.privateBath === 'Yes').length) }));
                 };
                 return (
                     <div key={field} className="space-y-3 p-3 bg-blue/4 border border-blue/15 rounded-xs">
                         <Lbl>Bedroom Configuration</Lbl>
                         <p className="text-[12px] text-mid mb-1">Set private bathroom and closet type for each bedroom.</p>
                         {bedLabels.map((label, idx) => {
-                            const cfg = (formData.bedroomConfigs || configs)[idx] || { privateBath: idx === 0 ? 'Yes' : 'No', closet: idx === 0 ? 'Walk-in' : 'Standard' };
+                            const cfg = configs[idx];
                             return (
                                 <div key={idx} className="p-2.5 bg-white/60 border border-black/5 rounded-xs space-y-2">
                                     <div className="text-[12px] font-bold uppercase tracking-wider" style={{color:'var(--blue)'}}>{label}</div>
@@ -225,7 +216,7 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                                         <div className="flex gap-1.5 flex-1">
                                             {['Yes', 'No'].map(v => {
                                                 const sel = cfg.privateBath === v;
-                                                return <button key={v} type="button" aria-pressed={sel} onClick={() => { ensureConfigs(); updateConfig(idx, 'privateBath', v); }} className="flex-1 h-8 border text-[12px] font-bold rounded-xs" style={choiceStyle(sel, 'blue')}>{v}</button>;
+                                                return <button key={v} type="button" aria-pressed={sel} onClick={() => updateConfig(idx, 'privateBath', v)} className="flex-1 h-8 border text-[12px] font-bold rounded-xs" style={choiceStyle(sel, 'blue')}>{v}</button>;
                                             })}
                                         </div>
                                     </div>
@@ -234,14 +225,14 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                                         <div className="flex gap-1.5 flex-1">
                                             {['Walk-in', 'Standard'].map(v => {
                                                 const sel = cfg.closet === v;
-                                                return <button key={v} type="button" aria-pressed={sel} onClick={() => { ensureConfigs(); updateConfig(idx, 'closet', v); }} className="flex-1 h-8 border text-[12px] font-bold rounded-xs" style={choiceStyle(sel, 'blue')}>{v}</button>;
+                                                return <button key={v} type="button" aria-pressed={sel} onClick={() => updateConfig(idx, 'closet', v)} className="flex-1 h-8 border text-[12px] font-bold rounded-xs" style={choiceStyle(sel, 'blue')}>{v}</button>;
                                             })}
                                         </div>
                                     </div>
                                 </div>
                             );
                         })}
-                        <p className="text-[12px] text-mid/50">Primary bedroom always gets an en-suite. Remaining baths are shared.</p>
+                        <p className="text-[12px] text-mid/50">These choices apply to each bedroom. Standard closets are reach-in; walk-in closets reserve an internal aisle. Remaining bathrooms are shared.</p>
                     </div>
                 );
             }

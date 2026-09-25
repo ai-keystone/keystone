@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X as XIcon } from '@phosphor-icons/react';
 import { STUDIO_SESSION_KEY, STUDIO_UNLOCK_KEY } from '../data/brand.js';
 import { DEFAULT_FORM_DATA, normalizeSurveyFeatures } from '../data/survey.js';
+import { surveyWithBedroomConfigurations } from '../lib/bedroomConfigurations.js';
 import { buildPresentationDxf } from '../lib/dxf.js';
 import { buildPlanExportFilename, profileLabel } from '../lib/format.js';
 import { composeElevationReferenceSheet, svgToPngDataUrl } from '../lib/raster.js';
@@ -223,10 +224,11 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
     };
 
     const handleGeneratePlan = async () => {
+        const generationSurvey = surveyWithBedroomConfigurations(formData);
         setLayoutFailure(null);
         setStatus('loading-plan');
         try {
-            const res = await fetch('/api/plan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ surveyData:formData, chatHistory:[] }) });
+            const res = await fetch('/api/plan', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ surveyData:generationSurvey, chatHistory:[] }) });
             const data = await res.json();
             if (!res.ok || !data.success) {
                 // res.ok was never checked, so a 422 NO_VALID_LAYOUT arrived
@@ -238,6 +240,7 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
                 throw err;
             }
             setLayoutFailure(null);
+            setFormData(generationSurvey);
             setPlanSvg(data.svg);
             setPlanSpec(data.planSpec ? { ...data.planSpec, estimate: data.estimate || data.planSpec?.estimate || null } : null);
             setRefinementHistory([]);
