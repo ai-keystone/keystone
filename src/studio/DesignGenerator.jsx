@@ -32,7 +32,7 @@ export const DesignGenerator = ({ onOpenModal, initialBrief = null }) => {
     const [formData, setFormData] = useState(() => {
         const saved = { ...DEFAULT_FORM_DATA, ...(initialSession?.formData || {}) };
         if (Array.isArray(saved.bedroomConfigs)) saved.privateBaths = String(saved.bedroomConfigs.filter(c=>c.privateBath === 'Yes').length);
-        return { ...saved, features: normalizeSurveyFeatures(saved.features) };
+        return { ...saved, features: normalizeSurveyFeatures(saved.features, saved.surveyVersion) };
     });
 
     // A brief typed in the hero arrives here as {patch, read}. Merge it into the

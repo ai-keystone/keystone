@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FINISH_OVERRIDE_OPTIONS, STYLE_FINISH_DEFAULTS, SURVEY_STEPS } from '../data/survey.js';
-import { CheckIcon } from '../ui/icons.jsx';
 import { surveyWithBedroomConfigurations } from '../lib/bedroomConfigurations.js';
+import { FeatureRoomControls } from './FeatureRoomControls.jsx';
 
 export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset }) => {
     const [step, setStep] = useState(0);
     const [preflight, setPreflight] = useState(null);
+    const [featurePending, setFeaturePending] = useState(false);
     const generationSurvey = useMemo(() => surveyWithBedroomConfigurations(formData), [formData]);
     const surveyKey = JSON.stringify(generationSurvey);
     const currentPreflight = preflight?.surveyKey === surveyKey;
@@ -104,35 +105,6 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
             })}
         </div>
     );
-
-    // Toggle-chip button for multi-select style (features)
-    const ToggleChip = ({ value, label, icon, field }) => {
-        const selected = (formData[field] || '').toLowerCase().includes(value.toLowerCase());
-        const availability = currentPreflight ? preflight?.featureOptions?.find(option => option.value === value) : null;
-        const disabled = !selected && (!currentPreflight || availability?.allowed === false);
-        const reason = !currentPreflight ? 'Checking room combinations…' : availability?.blockers?.[0]?.message;
-        const toggle = () => {
-            const current = formData[field] || '';
-            // Parse existing features into an array
-            const parts = current.split(',').map(s => s.trim()).filter(Boolean);
-            if (selected) {
-                const next = parts.filter(p => !p.toLowerCase().includes(value.toLowerCase())).join(', ');
-                upd(field, next);
-            } else {
-                const next = [...parts.filter(p => !/^(none|n\/a)$/i.test(p)), `1 ${value}`].join(', ');
-                upd(field, next);
-            }
-        };
-        return (
-            <button type="button" aria-pressed={selected} onClick={toggle} disabled={disabled} title={disabled ? reason : undefined}
-                className="flex items-center gap-1.5 px-3 py-2 border rounded-xs transition-all text-[12px] font-semibold"
-                style={{ ...choiceStyle(selected), ...(disabled ? { opacity:0.6, cursor:'not-allowed' } : {}) }}>
-                {icon ? <span className="mono text-[12px] uppercase tracking-[0.18em]" style={{opacity:selected ? 0.76 : 0.6}}>{icon}</span> : null}
-                {label}
-                {selected && <CheckIcon className="w-3 h-3" style={{opacity:0.82}}/>}
-            </button>
-        );
-    };
 
     const Lbl = ({children}) => <label className="mono text-[11px] uppercase tracking-widest text-mid block mb-1.5">{children}</label>;
 
@@ -436,21 +408,9 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
             case 'features': return (
                 <div key={field} className="space-y-2">
                     <Lbl>Special Rooms</Lbl>
-                    <p className="text-[12px] text-mid mb-2">Available rooms follow your house size and room combination. Selected rooms can always be removed.</p>
-                    <div className="flex flex-wrap gap-2">
-                        {[
-                            {label:'Study / home office', value:'Study'},
-                            {label:'Home Theater'},
-                            {label:'Gym'},
-                            {label:'Gaming Room'},
-                            {label:'Library'},
-                            {label:'Wine Cellar'},
-                            {label:'Music Room'},
-                            {label:'Guest Suite'},
-                            {label:'Playroom'},
-                        ].map(f => <ToggleChip key={f.label} field="features" value={f.value || f.label} label={f.label} icon={f.icon}/>)}
-                    </div>
-                    {currentPreflight && preflight?.featureOptions?.some(option => !option.allowed) && <p className="text-[12px] text-mid">Unavailable rooms need a different size or room combination. Adjust the earlier steps to check availability again.</p>}
+                    <FeatureRoomControls survey={generationSurvey} onBusyChange={setFeaturePending}
+                        onChange={(features, expectedKey) => setFormData(prev =>
+                            JSON.stringify(surveyWithBedroomConfigurations(prev)) === expectedKey ? { ...prev, features } : prev)} />
                     {(formData.features||'').trim() && (
                         <div className="mt-1 p-2 bg-blue/5 border border-blue/15 rounded-xs">
                             <span className="mono text-[11px] uppercase text-blue">Selected: </span>
@@ -574,7 +534,7 @@ export const SurveyForm = ({ formData, setFormData, onSubmit, isLoading, onReset
                 {step > 0 && <button type="button" onClick={() => setStep(s=>s-1)} className="px-5 py-3 border border-black/10 text-[13px] font-semibold hover:border-ink transition-colors rounded-xs">Back</button>}
                 {!isLast
                     ? <button type="button" onClick={() => setStep(s=>s+1)} className="flex-1 py-3 text-[13px] font-bold transition-colors rounded-xs border" style={actionStyle()}>Continue</button>
-                    : <button type="button" onClick={onSubmit} disabled={isLoading || !currentPreflight || preflight?.featureBlockers?.length > 0 || (preflight?.supported === false && preflight?.legacyFallbackEnabled === false)} className="flex-1 py-3 text-[13px] font-bold transition-colors disabled:opacity-50 rounded-xs border" style={actionStyle()}>
+                    : <button type="button" onClick={onSubmit} disabled={isLoading || featurePending || !currentPreflight || preflight?.featureBlockers?.length > 0 || (preflight?.supported === false && preflight?.legacyFallbackEnabled === false)} className="flex-1 py-3 text-[13px] font-bold transition-colors disabled:opacity-50 rounded-xs border" style={actionStyle()}>
                         {isLoading ? 'Generating' : !currentPreflight ? 'Checking choices…' : 'Generate floor plan'}
                       </button>
                 }

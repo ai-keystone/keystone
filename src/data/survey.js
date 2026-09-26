@@ -1,4 +1,6 @@
 // Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬ SURVEY FORM Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬Ã¢"â‚¬
+import { normalizeFeatureSelections } from '../lib/featureRooms.js';
+
 export const STYLE_FINISH_DEFAULTS = {
     'Craftsman (Wood & Stone)': {
         exteriorSiding: 'Cedar lap',
@@ -77,9 +79,6 @@ export const DEFAULT_FORM_DATA = {
 
 // The old picker offered these aliases as two separate rooms. Migrate that
 // picker combination while preserving explicit counts such as "2 Study".
-export function normalizeSurveyFeatures(value = '') {
-    const parts = String(value).split(',').map(part => part.trim()).filter(part => part && !/^(none|n\/a)$/i.test(part));
-    const hasStudy = parts.some(part => /^1\s+study$/i.test(part));
-    return parts.filter(part => !(hasStudy && /^1\s+home office$/i.test(part)))
-        .map(part => /^1\s+home office$/i.test(part) ? '1 Study' : part).join(', ');
+export function normalizeSurveyFeatures(value = '', sourceVersion = null) {
+    return normalizeFeatureSelections(value, sourceVersion);
 }
